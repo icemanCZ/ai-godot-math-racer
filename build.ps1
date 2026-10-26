@@ -8,6 +8,10 @@ Assert-ExitCode 'Import'
 & $godot --headless --path $PSScriptRoot --quit-after 5
 Assert-ExitCode 'Načtení projektu'
 if ($Test) {
+    foreach ($roadSeed in @(1, 2, 42, 44, 53, 7421)) {
+        & $godot --headless --path $PSScriptRoot -- --road-audit "--seed=$roadSeed"
+        Assert-ExitCode "Průjezdnost všech cest (seed $roadSeed)"
+    }
     & $godot --headless --path $PSScriptRoot --fixed-fps 60 -- --controller-checks
     Assert-ExitCode 'Testy Xbox ovladače'
     & $godot --headless --path $PSScriptRoot --fixed-fps 60 -- --collision-checks
@@ -16,6 +20,10 @@ if ($Test) {
     Assert-ExitCode 'Herní testy'
     & $godot --headless --path $PSScriptRoot --fixed-fps 60 -- --track-checks
     Assert-ExitCode 'Testy stop při zatáčení doprava'
+    foreach ($drivingSeed in @(1, 16)) {
+        & $godot --headless --path $PSScriptRoot --fixed-fps 60 -- --road-driving-checks "--seed=$drivingSeed"
+        Assert-ExitCode "Jízda po všech cestách v obou směrech (seed $drivingSeed)"
+    }
 }
 if ($Export) {
     New-Item -ItemType Directory -Force "$PSScriptRoot/exports" | Out-Null

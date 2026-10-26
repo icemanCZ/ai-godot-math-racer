@@ -34,6 +34,8 @@ public partial class SmokeTest : Node
         }
         if (frame == 195)
         {
+            WorldLayoutChecks.Run(Check);
+            RoadPassabilityChecks.Run(world);
             Check(car.Speed < -3, "reverse"); Check(Mathf.Abs(car.Heading) > .15f, "steering");
             Input.ActionRelease("reverse"); Input.ActionRelease("right");
             car.Reset(); Check(car.Position.DistanceTo(world.Ground.At(0, 8)) < 1, "reset");
@@ -65,6 +67,15 @@ public partial class SmokeTest : Node
                 "grass leaves roads, water and animal clearings open");
             WildlifeChecks.Run(world, car, Check);
             CheckRoadSurface();
+            bool bridgeClear = true;
+            for (float x = -19; x <= 19; x += .5f)
+                for (float z = -4; z <= 4; z += .5f)
+                {
+                    var p = world.Ground.At(River.CenterX(River.BridgeZ) + x, River.BridgeZ + z);
+                    bridgeClear &= p.Y <= River.BridgeHeight - .26f;
+                    bridgeClear &= world.Routes.SurfaceHeight(p, p.Y) < River.BridgeHeight - .05f;
+                }
+            Check(bridgeClear, "terrain triangles and dirt road stay below the bridge slab across its full footprint");
             Check(world.Animals.All(a => world.Routes.Distance(a.Position) >= 5.5f && world.Routes.Distance(a.Position) <= 7 && !world.Village.IsReserved(a.Position) && River.Distance(a.Position.X, a.Position.Z) > River.HalfWidth(a.Position.Z) + 5), "all animals stand safely beside roads within interaction range");
             Check(world.Animals.Select(a => a.Kind).Distinct().Count() == 3 && world.Animals.GroupBy(a => a.Kind).All(g => g.Select(a => a.FurColor).Distinct().Count() == 3), "three animal kinds with three fur colors each");
             Check(Settings.PlayableRadius * Settings.PlayableRadius / (166 * 166f) > 9.99f, "world playable area increased tenfold");
@@ -135,6 +146,8 @@ public partial class SmokeTest : Node
             {
                 var center = (faces[i] + faces[i + 1] + faces[i + 2]) / 3;
                 float height = world.Routes.SurfaceHeight(center, world.Ground.Height(center.X, center.Z));
+                if (height < center.Y - .001f)
+                    GD.Print($"ROAD_PROJECTION_MISS center={center} height={height} a={faces[i]} b={faces[i + 1]} c={faces[i + 2]}");
                 aboveRoad &= height >= center.Y - .001f;
                 samples++;
             }

@@ -5,31 +5,38 @@ namespace MathRacer;
 /// <summary>Shared channel profile used by terrain, water, vegetation and the crossing.</summary>
 public partial class River : Node3D
 {
-    public const float BridgeZ = 46;
-    public static float CenterX(float z) => 98 + 14 * Mathf.Sin(z * .022f) + 5 * Mathf.Sin(z * .051f);
-    public static float HalfWidth(float z) => 5.5f + .7f * Mathf.Sin(z * .037f);
+    public static float BridgeZ => WorldLayout.Plan.BridgeZ;
+    public static float CenterX(float z) => WorldLayout.Plan.CenterX(z);
+    public static float HalfWidth(float z) => 5.5f + .7f * Mathf.Sin(z * .037f + WorldLayout.Plan.RiverPhase);
     public static float Level(float z) => -.8f - z * .008f;
     public static float Distance(float x, float z) => Mathf.Abs(x - CenterX(z));
     public static float BridgeHeight => Level(BridgeZ) + 1;
-    public static bool OnBridge(float x, float z) => Mathf.Abs(z - BridgeZ) < 4.3f && Mathf.Abs(x - CenterX(BridgeZ)) < 19;
+    // Keep both the bank and its raised dirt-road surface below the wooden slab.
+    public static float BridgeGroundHeight => BridgeHeight - .32f;
+    public static bool OnBridge(float x, float z) => Mathf.Abs(z - BridgeZ) < 4.3f && Mathf.Abs(x - CenterX(BridgeZ)) < 22;
+    public static float BridgeSurfaceHeight(float x) => BridgeHeight + .01f -
+        Mathf.Clamp((Mathf.Abs(x - CenterX(BridgeZ)) - 19) / 3, 0, 1) * .2f;
 
     public static float ShapeTerrain(float x, float z, float natural)
     {
         float distance = Distance(x, z), width = HalfWidth(z), level = Level(z);
+        // A broad floodplain joins the hill feet instead of leaving tall walls at the water.
+        float slopeDistance = Mathf.Max(0, distance - width - 5);
+        float valleyCeiling = level + .85f + slopeDistance * .12f + slopeDistance * slopeDistance * .0008f;
+        float roundness = Mathf.Max(0, 2 - Mathf.Abs(natural - valleyCeiling)) / 2;
+        natural = Mathf.Min(natural, valleyCeiling) - roundness * roundness * .5f;
         float bank = Mathf.Max(natural, level + .85f);
-        // Flatten only the approaches; the channel stays open below the bridge.
-        if (Mathf.Abs(z - BridgeZ) < 7 && distance > width + 2)
-            bank = Mathf.Lerp(bank, BridgeHeight, 1 - Mathf.SmoothStep(4, 7, Mathf.Abs(z - BridgeZ)));
         float shaped = natural;
         if (distance < width + 5)
             shaped = Mathf.Lerp(level - 1.2f, bank, Mathf.SmoothStep(0, width + 5, distance));
         else if (distance < width + 13)
             shaped = Mathf.Lerp(bank, natural, Mathf.SmoothStep(width + 5, width + 13, distance));
-        if (distance > width + 5)
-        {
-            float approach = (1 - Mathf.SmoothStep(23, 33, distance)) * (1 - Mathf.SmoothStep(4, 8, Mathf.Abs(z - BridgeZ)));
-            shaped = Mathf.Lerp(shaped, BridgeHeight, approach);
-        }
+        // The deck is a straight rectangle, independent of the meandering river centre.
+        // Include a full terrain cell around it so interpolated triangles cannot cut its edges.
+        float along = Mathf.Abs(x - CenterX(BridgeZ)), across = Mathf.Abs(z - BridgeZ);
+        float approach = (1 - Mathf.SmoothStep(23, 36, along)) * (1 - Mathf.SmoothStep(7, 11, across));
+        if (distance > width + 5) shaped = Mathf.Lerp(shaped, BridgeGroundHeight, approach);
+        shaped = Mathf.Lerp(shaped, Mathf.Min(shaped, BridgeGroundHeight), approach);
         return shaped;
     }
 
@@ -77,6 +84,25 @@ public partial class River : Node3D
         var bridge = new Node3D { Position = new Vector3(CenterX(BridgeZ), BridgeHeight - .1f, BridgeZ) };
         AddChild(bridge);
         for (int i = 0; i < 38; i++) Art.Block(bridge, new(-18.5f + i, 0, 0), new(.97f, .22f, 7.6f), "c39770");
+        // Short sloping wooden approaches join the lowered banks without a vertical step.
+        foreach (float end in new[] { -1f, 1f })
+        {
+            float angle = -end * Mathf.Atan(.2f / 3);
+            float cosine = Mathf.Cos(angle);
+            for (int i = 0; i < 3; i++)
+            {
+                var plank = Art.Block(bridge, new(end * (19.5f + i), .11f - (i + .5f) * .2f / 3 - .11f * cosine, 0),
+                    new(.97f / cosine, .22f, 7.6f), "c39770");
+                plank.Rotation = new Vector3(0, 0, angle);
+            }
+            var ramp = new StaticBody3D
+            {
+                Position = new Vector3(end * 20.5f, .01f - .11f * cosine, 0),
+                Rotation = new Vector3(0, 0, angle)
+            };
+            bridge.AddChild(ramp);
+            ramp.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new(3 / cosine, .22f, 7.6f) } });
+        }
         foreach (float side in new[] { -3.9f, 3.9f })
         {
             for (int i = 0; i < 9; i++) Art.Cylinder(bridge, new(-18 + i * 4.5f, .65f, side), .14f, .12f, 1.5f, "a77a59");

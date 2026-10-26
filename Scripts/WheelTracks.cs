@@ -108,7 +108,7 @@ public partial class WheelTracks : MeshInstance3D
         float Surface(Vector3 p)
         {
             float height = roads.SurfaceHeight(p, terrain.Height(p.X, p.Z));
-            return River.OnBridge(p.X, p.Z) ? Mathf.Max(height, River.BridgeHeight + .01f) : height;
+            return River.OnBridge(p.X, p.Z) ? Mathf.Max(height, River.BridgeSurfaceHeight(p.X)) : height;
         }
         float Clearance(Vector3 a, Vector3 b, Vector3 c)
         {

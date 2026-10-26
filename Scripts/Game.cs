@@ -25,7 +25,27 @@ public partial class Game : Node3D
     public override void _Ready()
     {
         GameControls.Setup();
+        if (OS.GetCmdlineUserArgs().Contains("--road-audit"))
+        {
+            try
+            {
+                AddChild(world.Ground); world.Ground.Generate();
+                AddChild(world.Routes); world.Routes.Generate(world.Ground);
+                WorldLayoutChecks.ValidatePlan(WorldLayout.Plan, Settings.Seed);
+                RoadPassabilityChecks.Run(world);
+                GetTree().Quit();
+            }
+            catch (Exception error) { GD.PushError(error.ToString()); GetTree().Quit(1); }
+            return;
+        }
         AddChild(world); world.Generate(); AddChild(vehicle); vehicle.Setup(world.Ground, world.Routes);
+        if (OS.GetCmdlineUserArgs().Contains("--road-driving-checks"))
+        {
+            vehicle.Active = true;
+            RoadPassabilityChecks.Run(world);
+            AddChild(new RoadDrivingChecks(world, vehicle));
+            return;
+        }
         world.AddChild(world.Wildlife); world.Wildlife.Generate(world, vehicle);
         var camera = new FollowCamera { Target = vehicle, Ground = world.Ground, Fov = 62, Far = 1200, Current = true }; AddChild(camera); camera.Snap();
         world.AddChild(world.Grass); world.Grass.Setup(world, vehicle);

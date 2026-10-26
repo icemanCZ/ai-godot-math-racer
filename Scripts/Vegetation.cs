@@ -33,9 +33,7 @@ public partial class Vegetation : Node3D
         // Dense groves with open clearings between them.
         for (int grove = 0; grove < 14; grove++)
         {
-            float angle = grove * 2.39996f;
-            float radius = 180 + (grove % 4) * 75;
-            var center = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+            var center = GroveRegions[7 + grove].Center;
             for (int tree = 0; tree < 180; tree++)
             {
                 float a = rng.RandfRange(0, Mathf.Tau), r = Mathf.Sqrt(rng.Randf()) * 43;
@@ -50,7 +48,7 @@ public partial class Vegetation : Node3D
             if (new Vector2(x, z).Length() > Settings.PlayableRadius - 8) continue;
             var p = terrain.At(x, z);
             if (Reserved(p) || River.Distance(x, z) < River.HalfWidth(z) + 10 || roads.Distance(p) < 7 || new Vector2(x - 100, z - 46).Length() < 20) continue;
-            bool forest = (x < -60 && z < -30) || Mathf.Sin(x * .018f) * Mathf.Cos(z * .015f) > .12f;
+            bool forest = Mathf.Sin(x * .018f + WorldLayout.ForestPhase) * Mathf.Cos(z * .015f - WorldLayout.ForestPhase) > -.05f;
             if (!forest && rng.Randf() < .85f) continue;
             PlantTree(p, rng.RandfRange(.8f, 1.45f), TreeTypeAt(p));
         }
@@ -157,11 +155,17 @@ public partial class Vegetation : Node3D
             (new(-85, -50), 0), (new(-35, 35), 1), (new(-35, -130), 2),
             (new(-135, 75), 3), (new(40, -45), 4), (new(60, 115), 5), (new(155, -100), 6)
         };
+        var regionRandom = new System.Random(Settings.Seed + 412);
+        for (int i = 0; i < regions.Count; i++)
+        {
+            var center = regions[i].Item1 + new Vector2(regionRandom.Next(-25, 26), regionRandom.Next(-25, 26));
+            regions[i] = (center, regionRandom.Next(7));
+        }
         for (int grove = 0; grove < 14; grove++)
         {
-            float angle = grove * 2.39996f;
-            float radius = 180 + (grove % 4) * 75;
-            regions.Add((new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius, grove % 7));
+            float angle = grove * 2.39996f + WorldLayout.ForestPhase + (float)regionRandom.NextDouble() * .5f;
+            float radius = regionRandom.Next(180, 406);
+            regions.Add((new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius, regionRandom.Next(7)));
         }
         return regions.ToArray();
     }

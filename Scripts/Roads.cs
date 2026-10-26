@@ -1,175 +1,175 @@
 using Godot;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MathRacer;
 
 public partial class Roads : Node3D
 {
     public const float MainWidth = 7;
-    // Branch attachment points: blend directional marks into one shared dirt surface here.
-    private static readonly Vector2[] Junctions =
-    {
-        new(-18, -25), new(64, -62), new(35, 28),
-        new(-74, -88), new(66, 52), new(150, 61)
-    };
     private const float BucketSize = 12;
-    private readonly Dictionary<Vector2I, List<Vector2[]>> occupied = new();
+    private const float MeshStep = .75f;
+    private readonly record struct Segment(Vector2 A, Vector2 B, float Width, float Along);
+    private readonly record struct FieldPoint(Vector2 Position, float Distance, Vector2 Uv, float Marks);
+    private readonly Dictionary<Vector2I, List<Segment>> segments = new();
     private readonly Dictionary<Vector2I, List<Vector3[]>> surfaceTriangles = new();
     private Curve3D mainRoute = null!;
-    private readonly ShaderMaterial roadMaterial = new()
-    {
-        Shader = GD.Load<Shader>("res://Shaders/RoadSurface.gdshader")
-    };
+    private Vector2[] junctions = System.Array.Empty<Vector2>();
+    private readonly ShaderMaterial roadMaterial = new() { Shader = GD.Load<Shader>("res://Shaders/RoadSurface.gdshader") };
     public readonly List<Vector3> Samples = new();
+
     public (Vector3 Center, Vector3 Forward) SampleMain(float distance)
     {
         float length = mainRoute.GetBakedLength();
         float offset = Mathf.Clamp(distance, 0, length);
         var center = mainRoute.SampleBaked(offset);
-        var forward = (mainRoute.SampleBaked(Mathf.Min(offset + .2f, length)) - mainRoute.SampleBaked(Mathf.Max(offset - .2f, 0))).Normalized();
+        var forward = (mainRoute.SampleBaked(Mathf.Min(offset + .2f, length)) -
+            mainRoute.SampleBaked(Mathf.Max(offset - .2f, 0))).Normalized();
         return (center, forward);
     }
+
     public void Generate(Terrain terrain)
     {
-        mainRoute = Make(new[] { new Vector3(0, 0, 8), new Vector3(-18, 0, -25), new Vector3(-55, 0, -50), new Vector3(-74, 0, -88), new Vector3(-35, 0, -118), new Vector3(24, 0, -100), new Vector3(64, 0, -62), new Vector3(70, 0, -10), new Vector3(35, 0, 28), new Vector3(0, 0, 8) }, MainWidth, terrain);
-        Make(new[] { new Vector3(-18, 0, -25), new Vector3(12, 0, -40), new Vector3(40, 0, -53), new Vector3(64, 0, -62) }, 5, terrain);
-        Make(new[] { new Vector3(35, 0, 28), new Vector3(66, 0, 52), new Vector3(91, 0, 46), new Vector3(139, 0, 46), new Vector3(150, 0, 61) }, 5, terrain);
-        Make(new[] { new Vector3(-74, 0, -88), new Vector3(-210, 0, -180), new Vector3(-370, 0, -240), new Vector3(-400, 0, 0), new Vector3(-270, 0, 240), new Vector3(-70, 0, 360), new Vector3(55, 0, 270), new Vector3(65, 0, 110), new Vector3(66, 0, 52) }, 6, terrain);
-        Make(new[] { new Vector3(150, 0, 61), new Vector3(310, 0, 210), new Vector3(420, 0, 40), new Vector3(350, 0, -220), new Vector3(190, 0, -380), new Vector3(155, 0, -170), new Vector3(150, 0, 61) }, 6, terrain);
-    }
-    private Curve3D Make(Vector3[] points, float width, Terrain terrain)
-    {
-        var curve = new Curve3D();
-        for (int i = 0; i < points.Length; i++)
+        var routes = WorldLayout.Plan.Routes;
+        junctions = routes.SelectMany(route => route).GroupBy(point => point).Where(group => group.Count() > 1)
+            .Select(group => new Vector2(group.Key.X, group.Key.Z)).ToArray();
+        mainRoute = WorldPlan.CreateCurve(routes[0]);
+        for (int routeIndex = 0; routeIndex < routes.Length; routeIndex++)
         {
-            bool closed = points[0] == points[^1];
-            var tangent = closed && (i == 0 || i == points.Length - 1)
-                ? (points[1] - points[^2]) * .19f
-                : (points[Mathf.Min(i + 1, points.Length - 1)] - points[Mathf.Max(i - 1, 0)]) * .19f;
-            curve.AddPoint(points[i], -tangent, tangent);
-        }
-        var st = new SurfaceTool(); st.Begin(Mesh.PrimitiveType.Triangles);
-        var footprints = new List<Vector2[]>();
-        float length = curve.GetBakedLength();
-        bool StartsAtJunction() => System.Array.Exists(Junctions, j => j.DistanceTo(new Vector2(points[0].X, points[0].Z)) < .1f);
-        bool EndsAtJunction() => System.Array.Exists(Junctions, j => j.DistanceTo(new Vector2(points[^1].X, points[^1].Z)) < .1f);
-        bool flareStart = StartsAtJunction(), flareEnd = EndsAtJunction();
-        for (float distance = 0; distance < length; distance += 1.4f)
-        {
-            var p = curve.SampleBaked(distance); var q = curve.SampleBaked(Mathf.Min(distance + 1.4f, length));
-            Samples.Add(p);
-            // The wooden deck provides the route surface over the open channel.
-            bool CoveredByDeck(Vector3 point) => Mathf.Abs(point.Z - River.BridgeZ) < 3.4f && Mathf.Abs(point.X - River.CenterX(River.BridgeZ)) < 17;
-            if (CoveredByDeck(p) && CoveredByDeck(q)) continue;
-            Vector3 Side(float offset)
+            using var curve = WorldPlan.CreateCurve(routes[routeIndex]);
+            float length = curve.GetBakedLength();
+            float baseWidth = routeIndex == 0 ? MainWidth / 2 : 3;
+            for (float distance = 0; distance < length; distance += 1.4f)
             {
-                // Gently widen branch mouths, rounding the abrupt right-angle shoulders.
-                float mouth = Mathf.Max(flareStart ? 1 - Mathf.SmoothStep(0, 10, offset) : 0,
-                    flareEnd ? 1 - Mathf.SmoothStep(0, 10, length - offset) : 0);
-                return (curve.SampleBaked(Mathf.Min(offset + .15f, length)) - curve.SampleBaked(Mathf.Max(offset - .15f, 0))).Normalized().Cross(Vector3.Up) * (width / 2 + mouth * 2.5f);
-            }
-            var right = Side(distance);
-            var nextRight = Side(Mathf.Min(distance + 1.4f, length));
-            Vector2 Flat(Vector3 v) => new(v.X, v.Z);
-            var footprint = new[] { Flat(p - right), Flat(p + right), Flat(q + nextRight), Flat(q - nextRight) };
-            footprints.Add(footprint);
-            // Cut away earlier routes instead of stacking nearly coplanar ribbons at joins.
-            var blockers = new HashSet<Vector2[]>();
-            foreach (var bucket in Buckets(footprint))
-                if (occupied.TryGetValue(bucket, out var entries))
-                    foreach (var entry in entries) blockers.Add(entry);
-            for (int lane = 0; lane < 8; lane++)
-            {
-                float l = -1 + lane * .25f, r = l + .25f;
-                var a = terrain.At(p.X + right.X * l, p.Z + right.Z * l, .13f);
-                var b = terrain.At(p.X + right.X * r, p.Z + right.Z * r, .13f);
-                var c = terrain.At(q.X + nextRight.X * l, q.Z + nextRight.Z * l, .13f);
-                var d = terrain.At(q.X + nextRight.X * r, q.Z + nextRight.Z * r, .13f);
-                // Across-road position and distance in metres keep wheel tracks aligned on bends.
-                void Vertex(Vector3 position, float across, float along)
+                var p = curve.SampleBaked(distance);
+                var q = curve.SampleBaked(Mathf.Min(distance + 1.4f, length));
+                Samples.Add(p);
+                float mouth = Mathf.Max(1 - Mathf.SmoothStep(0, 10, distance),
+                    1 - Mathf.SmoothStep(0, 10, length - distance));
+                var segment = new Segment(new Vector2(p.X, p.Z), new Vector2(q.X, q.Z), baseWidth + mouth * 2.5f, distance);
+                foreach (var bucket in Buckets(segment.A.Min(segment.B) - Vector2.One * 8,
+                    segment.A.Max(segment.B) + Vector2.One * 8))
                 {
-                    float fade = 1;
-                    foreach (var junction in Junctions)
-                        fade = Mathf.Min(fade, Mathf.SmoothStep(6, 13, Flat(position).DistanceTo(junction)));
-                    st.SetColor(new Color(fade, 0, 0));
-                    st.SetUV(new Vector2(across, along));
-                    st.AddVertex(position);
+                    if (!segments.TryGetValue(bucket, out var entries)) segments[bucket] = entries = new();
+                    entries.Add(segment);
                 }
-                void Triangle(Vector3 v0, Vector3 v1, Vector3 v2, Vector2 uv0, Vector2 uv1, Vector2 uv2)
-                {
-                    var x0 = Flat(v0); var x1 = Flat(v1); var x2 = Flat(v2);
-                    var pieces = new List<Vector2[]> { new[] { x0, x1, x2 } };
-                    foreach (var blocker in blockers)
-                    {
-                        var remaining = new List<Vector2[]>();
-                        foreach (var piece in pieces)
-                            remaining.AddRange(Geometry2D.ClipPolygons(piece, blocker));
-                        pieces = remaining;
-                        if (pieces.Count == 0) break;
-                    }
-                    float area = (x1 - x0).Cross(x2 - x0);
-                    if (Mathf.Abs(area) < .000001f) return;
-                    foreach (var piece in pieces)
-                    {
-                        var indices = Geometry2D.TriangulatePolygon(piece);
-                        for (int i = 0; i < indices.Length; i += 3)
-                        {
-                            // Match the original ribbon winding regardless of clipping output order.
-                            int j1 = indices[i + 1], j2 = indices[i + 2];
-                            if ((piece[j1] - piece[indices[i]]).Cross(piece[j2] - piece[indices[i]]) * area < 0)
-                                (j1, j2) = (j2, j1);
-                            var triangle = new[] { Emit(piece[indices[i]]), Emit(piece[j1]), Emit(piece[j2]) };
-                            foreach (var bucket in Buckets(new[] { Flat(triangle[0]), Flat(triangle[1]), Flat(triangle[2]) }))
-                            {
-                                if (!surfaceTriangles.TryGetValue(bucket, out var entries)) surfaceTriangles[bucket] = entries = new();
-                                entries.Add(triangle);
-                            }
-                        }
-                    }
-                    Vector3 Emit(Vector2 x)
-                    {
-                        float u = (x - x0).Cross(x2 - x0) / area;
-                        float v = (x1 - x0).Cross(x - x0) / area;
-                        var uv = uv0 + (uv1 - uv0) * u + (uv2 - uv0) * v;
-                        var position = terrain.At(x.X, x.Y, .13f);
-                        Vertex(position, uv.X, uv.Y);
-                        return position;
-                    }
-                }
-                float nextDistance = Mathf.Min(distance + 1.4f, length);
-                Triangle(a, b, c, new(l, distance), new(r, distance), new(l, nextDistance));
-                Triangle(b, d, c, new(r, distance), new(r, nextDistance), new(l, nextDistance));
             }
         }
-        st.GenerateNormals();
-        AddChild(new MeshInstance3D { Mesh = st.Commit(), CastShadow = GeometryInstance3D.ShadowCastingSetting.Off, MaterialOverride = roadMaterial });
-        foreach (var footprint in footprints)
-            foreach (var bucket in Buckets(footprint))
-            {
-                if (!occupied.TryGetValue(bucket, out var entries)) occupied[bucket] = entries = new();
-                entries.Add(footprint);
-            }
-        return curve;
+        BuildSurface(terrain);
     }
-    private static IEnumerable<Vector2I> Buckets(Vector2[] polygon)
+
+    private FieldPoint SampleField(Vector2 point)
     {
-        var min = polygon[0]; var max = min;
-        foreach (var p in polygon) { min = min.Min(p); max = max.Max(p); }
+        float best = 1000;
+        Vector2 uv = Vector2.Zero;
+        var key = new Vector2I(Mathf.FloorToInt(point.X / BucketSize), Mathf.FloorToInt(point.Y / BucketSize));
+        if (segments.TryGetValue(key, out var entries))
+            foreach (var segment in entries)
+            {
+                var delta = segment.B - segment.A;
+                float lengthSquared = delta.LengthSquared();
+                float t = lengthSquared < .000001f ? 0 : Mathf.Clamp((point - segment.A).Dot(delta) / lengthSquared, 0, 1);
+                float signed = point.DistanceTo(segment.A + delta * t) - segment.Width;
+                if (signed >= best) continue;
+                best = signed;
+                float length = Mathf.Sqrt(lengthSquared);
+                uv = new Vector2(length > .0001f ? (point - segment.A).Cross(delta / length) / segment.Width : 0,
+                    segment.Along + t * length);
+            }
+        float marks = 1;
+        foreach (var junction in junctions)
+        {
+            float distance = point.DistanceTo(junction);
+            best = Mathf.Min(best, distance - 7);
+            marks = Mathf.Min(marks, Mathf.SmoothStep(7, 14, distance));
+        }
+        // A rectangular opening meets the wooden deck; ramps cover its ends.
+        float deck = Mathf.Max(Mathf.Abs(point.X - River.CenterX(River.BridgeZ)) - 18.9f,
+            Mathf.Abs(point.Y - River.BridgeZ) - 3.7f);
+        best = Mathf.Max(best, -deck);
+        return new FieldPoint(point, best, uv, marks);
+    }
+
+    private void BuildSurface(Terrain terrain)
+    {
+        // Sample the UNION once. Adjacent triangles share field values and contour edges,
+        // so intersecting routes cannot cut holes out of one another.
+        var cache = new Dictionary<Vector2I, FieldPoint>();
+        FieldPoint Sample(int x, int z)
+        {
+            var key = new Vector2I(x, z);
+            if (!cache.TryGetValue(key, out var point))
+                cache[key] = point = SampleField(new Vector2(x * MeshStep, z * MeshStep));
+            return point;
+        }
+        const int cellsPerBucket = 16;
+        foreach (var chunk in segments.Keys.GroupBy(key => new Vector2I(Mathf.FloorToInt(key.X / 4f), Mathf.FloorToInt(key.Y / 4f))))
+        {
+            var surface = new SurfaceTool(); surface.Begin(Mesh.PrimitiveType.Triangles);
+            int count = 0;
+            foreach (var bucket in chunk)
+              for (int z = bucket.Y * cellsPerBucket; z < (bucket.Y + 1) * cellsPerBucket; z++)
+                for (int x = bucket.X * cellsPerBucket; x < (bucket.X + 1) * cellsPerBucket; x++)
+                {
+                    var a = Sample(x, z); var b = Sample(x + 1, z);
+                    var c = Sample(x, z + 1); var d = Sample(x + 1, z + 1);
+                    Emit(a, b, c); Emit(b, d, c);
+                }
+            void Emit(FieldPoint a, FieldPoint b, FieldPoint c)
+            {
+                if (a.Distance >= 0 && b.Distance >= 0 && c.Distance >= 0) return;
+                var polygon = new List<FieldPoint>(4);
+                var input = new[] { a, b, c };
+                for (int i = 0; i < 3; i++)
+                {
+                    var p = input[i]; var q = input[(i + 1) % 3];
+                    if (p.Distance <= 0) polygon.Add(p);
+                    if ((p.Distance < 0) != (q.Distance < 0))
+                    {
+                        float t = p.Distance / (p.Distance - q.Distance);
+                        polygon.Add(new FieldPoint(p.Position.Lerp(q.Position, t), 0,
+                            p.Uv.Lerp(q.Uv, t), Mathf.Lerp(p.Marks, q.Marks, t)));
+                    }
+                }
+                for (int i = 1; i + 1 < polygon.Count; i++)
+                {
+                    var points = new[] { polygon[0], polygon[i], polygon[i + 1] };
+                    float area = (points[1].Position - points[0].Position).Cross(points[2].Position - points[0].Position);
+                    if (Mathf.Abs(area) < .000001f) continue;
+                    var triangle = new Vector3[3];
+                    for (int vertex = 0; vertex < 3; vertex++)
+                    {
+                        var point = points[vertex];
+                        triangle[vertex] = terrain.At(point.Position.X, point.Position.Y, .13f);
+                        surface.SetColor(new Color(point.Marks, 0, 0));
+                        surface.SetUV(point.Uv); surface.AddVertex(triangle[vertex]);
+                    }
+                    count++;
+                    var min = points[0].Position.Min(points[1].Position).Min(points[2].Position);
+                    var max = points[0].Position.Max(points[1].Position).Max(points[2].Position);
+                    foreach (var key in Buckets(min, max))
+                    {
+                        if (!surfaceTriangles.TryGetValue(key, out var entries)) surfaceTriangles[key] = entries = new();
+                        entries.Add(triangle);
+                    }
+                }
+            }
+            if (count == 0) continue;
+            surface.GenerateNormals();
+            AddChild(new MeshInstance3D { Mesh = surface.Commit(), MaterialOverride = roadMaterial,
+                CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
+        }
+    }
+
+    private static IEnumerable<Vector2I> Buckets(Vector2 min, Vector2 max)
+    {
         for (int z = Mathf.FloorToInt(min.Y / BucketSize); z <= Mathf.FloorToInt(max.Y / BucketSize); z++)
             for (int x = Mathf.FloorToInt(min.X / BucketSize); x <= Mathf.FloorToInt(max.X / BucketSize); x++)
                 yield return new Vector2I(x, z);
     }
-    public bool Contains(Vector3 p)
-    {
-        var flat = new Vector2(p.X, p.Z);
-        var bucket = new Vector2I(Mathf.FloorToInt(p.X / BucketSize), Mathf.FloorToInt(p.Z / BucketSize));
-        if (occupied.TryGetValue(bucket, out var entries))
-            foreach (var polygon in entries)
-                if (Geometry2D.IsPointInPolygon(flat, polygon)) return true;
-        return false;
-    }
-    // Roads span terrain triangle boundaries, so their rendered height can differ
-    // from terrain.Height + .13 between vertices. Sample the actual road mesh.
+
+    public bool Contains(Vector3 p) => !float.IsNegativeInfinity(SurfaceHeight(p, float.NegativeInfinity));
+
     public float SurfaceHeight(Vector3 p, float groundHeight)
     {
         float height = groundHeight;
@@ -185,11 +185,12 @@ public partial class Roads : Node3D
             if (Mathf.Abs(area) < .000001f) continue;
             float u = (flat - a).Cross(c - a) / area;
             float v = (b - a).Cross(flat - a) / area;
-            if (u >= -.00001f && v >= -.00001f && u + v <= 1.00001f)
+            if (u >= -.0001f && v >= -.0001f && u + v <= 1.0001f)
                 height = Mathf.Max(height, triangle[0].Y + u * (triangle[1].Y - triangle[0].Y) + v * (triangle[2].Y - triangle[0].Y));
         }
         return height;
     }
+
     public float Distance(Vector3 p)
     {
         float nearest = float.MaxValue;
@@ -197,4 +198,3 @@ public partial class Roads : Node3D
         return nearest;
     }
 }
-

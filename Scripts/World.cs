@@ -18,8 +18,18 @@ public partial class World : Node3D
         AddChild(Village); Village.Generate(Ground, Routes);
         var atmosphere = new Atmosphere(); AddChild(atmosphere); atmosphere.Generate();
         var river = new River(); AddChild(river); river.Generate(Ground);
-        Bench(Ground.At(80, -2)); Bench(Ground.At(91, 44));
-        Sign(0, -8, "VESNIČKA  ←\nŘEKA  →"); Sign(37, 29, "KVĚTINOVÁ LOUKA →");
+        foreach (float distance in new[] { 115f, 180f })
+        {
+            var frame = Routes.SampleMain(distance);
+            var benchSpot = frame.Center + frame.Forward.Cross(Vector3.Up) * 9;
+            Bench(Ground.At(benchSpot.X, benchSpot.Z));
+        }
+        foreach (float distance in new[] { 22f, 140f })
+        {
+            var frame = Routes.SampleMain(distance);
+            var verge = frame.Center + frame.Forward.Cross(Vector3.Up) * 6;
+            Sign(verge.X, verge.Z, "ZA KAMARÁDY");
+        }
         Animals = new[] { Animal.Create("Králíček Matěj","Ahoj! Vítej v našem údolí.\nProjeď se a najdi moje kamarády!",0),
             Animal.Create("Liška Eliška","Jé, ty máš krásné autíčko!\nU řeky je dnes moc hezky.",1),
             Animal.Create("Medvěd Brumla","Ahoj, kamaráde! Tady to voní květinami.\nMám pro tebe malý početní úkol!",2) };
@@ -39,13 +49,15 @@ public partial class World : Node3D
     }
     private void PlaceAnimalsBesideRoads()
     {
+        var random = new System.Random(Settings.Seed + 413);
         Animals[0].Position = Village.GreetingSpot;
         for (int i = 1; i < Animals.Length; i++)
         {
             bool placed = false;
+            int startIndex = random.Next(Routes.Samples.Count - 1);
             for (int attempt = 0; attempt < Routes.Samples.Count && !placed; attempt++)
             {
-                int index = (i * Routes.Samples.Count / Animals.Length + attempt) % (Routes.Samples.Count - 1);
+                int index = (startIndex + attempt) % (Routes.Samples.Count - 1);
                 var road = Routes.Samples[index];
                 var tangent = Routes.Samples[index + 1] - road;
                 if (tangent.Length() < .1f || tangent.Length() > 3) continue;

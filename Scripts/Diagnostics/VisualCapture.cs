@@ -95,7 +95,8 @@ public partial class VisualCapture : Node
         else if (view == "junction")
         {
             camera.SetProcess(false);
-            var focus = world.Ground.At(-18, -25);
+            var junction = WorldLayout.Plan.Routes[1][0];
+            var focus = world.Ground.At(junction.X, junction.Z);
             camera.Position = focus + new Vector3(16, 20, 22);
             camera.LookAt(focus);
         }
@@ -115,7 +116,7 @@ public partial class VisualCapture : Node
         else if (view != "gameplay" && view != "title" && view != "challenge" && view != "letters" && view != "reward" && view != "accessories")
         {
             camera.SetProcess(false);
-            Vector3 focus = (view == "river" || view == "pond") ? new Vector3(River.CenterX(30), River.Level(30), 30) : view == "village" ? world.Village.Center + Vector3.Up * 2 : world.Animals[view == "fox" ? 1 : view == "bear" ? 2 : 0].Position + Vector3.Up * 1.5f;
+            Vector3 focus = (view == "river" || view == "pond") ? new Vector3(River.CenterX(River.BridgeZ), River.BridgeHeight, River.BridgeZ) : view == "village" ? world.Village.Center + Vector3.Up * 2 : world.Animals[view == "fox" ? 1 : view == "bear" ? 2 : 0].Position + Vector3.Up * 1.5f;
             camera.Position = focus + (view == "village" ? new Vector3(30, 27, 39) : (view == "river" || view == "pond") ? new Vector3(34, 25, 33) : new Vector3(4, 2, 8));
             camera.LookAt(focus);
         }
