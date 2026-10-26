@@ -1,0 +1,7 @@
+.godot/
+.tools/
+bin/
+obj/
+exports/
+artifacts/
+.vs/
