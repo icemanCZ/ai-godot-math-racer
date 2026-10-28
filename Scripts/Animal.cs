@@ -4,6 +4,23 @@ namespace MathRacer;
 
 public partial class Animal : Node3D
 {
+    public bool IsFarmer { get; internal set; }
+    public bool IsGardener { get; internal set; }
+    public bool IsGemCollector { get; internal set; }
+    public bool IsToymaker { get; internal set; }
+    public bool IsCollectionOwner => IsGemCollector || IsToymaker;
+    public int HouseIndex { get; internal set; } = -1;
+    private Node3D wavingArm = null!;
+    internal bool IsWaving { get; private set; }
+    public void GreetPlayer(Vector3 player, bool active)
+    {
+        IsWaving = active && Position.DistanceSquaredTo(player) < 24 * 24;
+        if (IsWaving)
+        {
+            var direction = player - Position;
+            if (direction.LengthSquared() > .1f) Rotation = new(0, Mathf.Atan2(direction.X, direction.Z), 0);
+        }
+    }
     public string DisplayName { get; private set; } = "";
     public string Greeting { get; private set; } = "";
     private Node3D model = null!;
@@ -45,6 +62,10 @@ public partial class Animal : Node3D
         }
         Art.Ball(a.model, new(0, 1.58f, .76f), new(.13f, .1f, .09f), "6c5557");
         if (kind == 1) { var tail = Art.Ball(a.model, new(.5f, .7f, -.65f), new(.3f, .5f, .8f), color); tail.RotationDegrees = new(25, 30, 0); Art.Ball(a.model, new(.8f, 1, -1.1f), new(.25f, .3f, .32f), "fff0d9"); }
+        a.wavingArm = new Node3D { Position = new(.58f, 1.2f, 0) }; a.model.AddChild(a.wavingArm);
+        Art.Ball(a.wavingArm, new(.32f, -.15f, 0), new(.4f, .23f, .24f), color);
+        Art.Ball(a.wavingArm, new(.6f, -.22f, 0), new(.25f, .26f, .25f), color);
+        Art.Ball(a.model, new(-.67f, 1.05f, 0), new(.25f, .4f, .24f), color);
         a.taskMarker = Art.TaskMarker(a, new(0, 7.5f, 0), "?");
         Art.Sign(a, new(0, 3.65f, 0), name, 30);
         return a;
@@ -52,6 +73,7 @@ public partial class Animal : Node3D
     public override void _Process(double delta)
     {
         time += (float)delta;
+        wavingArm.Rotation = new(0, 0, IsWaving ? .95f + Mathf.Sin(time * 9) * .48f : -.35f);
         taskMarker.Position = Vector3.Up * (7.5f + Mathf.Sin(time * 2.4f) * .6f);
         model.Position = Vector3.Up * Mathf.Sin(time * 1.8f) * .045f;
         if (celebration > 0)

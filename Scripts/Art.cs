@@ -54,6 +54,9 @@ public static class Art
     {
         var marker = Sign(parent, pos, text, 132);
         marker.FixedSize = true;
+        // Fixed-size symbols grow in world space with distance. Keep the whole
+        // symbol above its anchor so its lower half cannot sink into the ground.
+        marker.VerticalAlignment = VerticalAlignment.Bottom;
         marker.PixelSize = .0011f;
         marker.Modulate = new Color(destination ? "63e7e0" : "ffeb3b");
         marker.OutlineSize = 16;

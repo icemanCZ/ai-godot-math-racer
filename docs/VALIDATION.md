@@ -1,5 +1,25 @@
 # Validation record
 
+## Gem collector and toymaker — 28 October 2026
+
+Added Jáchym's gem museum with six display pedestals and Pepa's toy workshop with six playground displays. Each resident offers six independent math/letter-gated collection trips. Faceted gems and six different toy models appear at off-road pickup clearings, on the car after collection and permanently at the destination after return. All four specialist residents share the active-expedition limit. Pending quizzes, cargo and both new collection counts persist; older saves default to empty new collections.
+
+Build passed without warnings/errors. Collection checks passed on seeds 1, 42 and 7421 for all twelve trips, incorrect/abandoned quizzes, pause, exact disk save/restore at each stage, cross-resident blocking, off-road placement, road pass-bys, duplicate pickups/handovers, reset, complete collections and older saves. Seed-42 farm, garden, village and save checks passed. New building and display footprints are checked against road surfaces. Rendered museum and toy workshop previews are saved under `artifacts/`.
+
+## Gardener and off-road expedition targets — 28 October 2026
+
+Added gardener Vítek, a separate garden building and six flower beds. Each trip starts after a math/letter quiz; a marked flower is collected in the meadow, shown on the car and planted on return. Garden progress and pending trips persist, while older saves default to zero planted beds. Farmer and gardener trips share the one-active-expedition rule.
+
+Both animal and flower pickup targets now use deterministic clearings beyond every road surface, at least 7.5 m from road centerlines, grounded on terrain and clear of trunks. Special pickups require approaching within 2.8 m. Garden placement validates its whole footprint against all road branches, existing plots and nearby benches; planted beds are checked against road surfaces.
+
+Build passed without warnings/errors. Garden checks passed on seeds 1, 42 and 7421, covering all six trips, wrong/abandoned quizzes, blocked trips, passing targets on the road, empty returns, duplicate collection/handover, cargo, saves and completed gardens. Seed-42 farm, village and save checks passed. Visually inspected `artifacts/garden-full.png` and `artifacts/garden-expedition.png` for the garden, planted beds and off-road pickup.
+
+## Farm expeditions — 28 October 2026
+
+Added a separate red farm building, farmer Tonda and fenced enclosure along the village road. Six named animals are unlocked through alternating math and letter challenges before departure, caught by approaching their marked roadside spot, visibly transported on the car, and transferred to the enclosure on return. Existing expeditions block another departure. Farm residents, pending quizzes and caught animals persist; old saves default to an empty farm.
+
+Build passed with zero warnings/errors. Farm checks cover all six departures, wrong answers, postponing quizzes, blocked departures, empty returns, duplicate pickups/handovers, resetting the car, disk save/restore at each stage and completed-farm interaction. Farm checks passed on seeds 1, 42 and 7421; seed-42 village, save and delivery regression checks also passed. Rendered and inspected `artifacts/farm-full.png` for the barn, farmer, enclosure and six animals, and `artifacts/farm-question.png` for the pre-departure quiz.
+
 ## Xbox controller — 26 October 2026
 
 - Added analog left-stick steering, RT/LT throttle/reverse with deadzones, X handbrake, Y reset, right-stick camera orbit, A interaction/confirmation, B back and Menu pause. All menus support D-pad and left-stick navigation with a visible focus border, and control hints follow the input device.
@@ -199,3 +219,15 @@ Added a reserved roadside garage plot with solid walls, an open entrance and a f
 
 ## Walkway road connections — 28 October 2026
 House paths and the wider garage driveway now meet the actual road mesh edge, sampled across their width with a small overlap. Their height follows terrain and the rendered road surface; the garage threshold joins its slab. Full path footprints exclude vegetation. Build and seed-42 garage checks passed. Captured and visually inspected village.png and garage-building.png to verify the connections.
+
+## Village residents and house upgrades — 28 October 2026
+Four dedicated village residents offer repeatable alternating math/letter tasks. Each correct answer adds one of ten cumulative visible house details, independently of original roadside visits and expeditions. Residents and roadside friends turn toward nearby players and wave. House levels, resident questions and completion screens persist; older saves default to zero house progress.
+
+Build passed with zero warnings/errors. Seed-42 village checks passed for all 40 upgrades, incorrect answers, abandoned tasks, pause, restoring pending questions and completion screens, disk saves, older saves, and an active collection expedition. Save, delivery, new-game, controller, garage, collision and smoke checks also passed. Updated the collision check's old obstacle count to include the existing garage's three walls. Captured and visually inspected `artifacts/village-upgraded.png` and `artifacts/village-question.png` at 1280 × 720. Headless runs reported the existing restricted user-log path warning; the checks and captures completed successfully.
+
+## Shuffled village tasks, fruit collections and quieter village — 28 October 2026
+Every house now has a deterministic shuffle of ten tasks: three arithmetic, three letter-picture, three fruit collection/return tasks, and one additional randomly selected type. Each house uses its own shuffle, reconstructed from the saved world seed; postponement and reload preserve the next task. Fruit tasks offer an empty cargo platform, three marked apples and navigation back to the resident. The house upgrades only after returning the full load and answering the counting question. Incomplete collections show a reminder on early return, preserve individual pickups across saves/reset/pause, and cannot replace another expedition. Cargo is explicitly detached on completion and restore.
+
+All 30 ordinary task animals, including the greeting rabbit, now use seeded roadside placement outside a 38 m horizontal buffer around every village plot and the garage. Dedicated house residents remain at their houses.
+
+Build passed with zero warnings/errors. Village checks passed all 40 scheduled tasks on seeds 1, 42 and 7421, including disk round trips for math, letters, fruit offers, partial collections, early-return instructions, cargo handover and house rewards. A further 512 generated schedules satisfy the required 3+3+3+1 composition and deterministic shuffle. Save, delivery and controller regression checks passed on seed 42. Captured and visually inspected `artifacts/village-fruit-offer.png`; import and capture completed successfully. Diagnostic logs: `artifacts/village-schedule-checks.log` and `artifacts/village-update-*-*.log`.

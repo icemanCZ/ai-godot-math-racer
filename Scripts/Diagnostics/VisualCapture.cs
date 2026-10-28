@@ -29,6 +29,37 @@ public partial class VisualCapture : Node
                 label.AddThemeFontSizeOverride("font_size", 22); card.AddChild(label);
             }
         }
+        else if ((view.StartsWith("museum") || view.StartsWith("toys")) && !view.EndsWith("expedition"))
+        {
+            camera.SetProcess(false); car.Active = false;
+            var building = view.StartsWith("toys") ? world.Village.ToyBuilding : world.Village.MuseumBuilding;
+            var focus = building.GlobalPosition + building.GlobalBasis * new Vector3(5, 2, 0);
+            camera.Position = focus + building.GlobalBasis * new Vector3(17, 17, 29); camera.LookAt(focus);
+        }
+        else if (view is "garden" or "garden-full" or "garden-question")
+        {
+            camera.SetProcess(false); car.Active = false;
+            var garden = world.Village.GardenBuilding;
+            var focus = garden.GlobalPosition + garden.GlobalBasis * new Vector3(5, 1.5f, 0);
+            camera.Position = focus + garden.GlobalBasis * new Vector3(17, 17, 29);
+            camera.LookAt(focus);
+        }
+        else if (view is "farm" or "farm-full" or "farm-question")
+        {
+            camera.SetProcess(false); car.Active = false;
+            var farm = world.Village.FarmBuilding;
+            var focus = farm.GlobalPosition + farm.GlobalBasis * new Vector3(5, 2, 0);
+            camera.Position = focus + farm.GlobalBasis * new Vector3(18, 18, 30);
+            camera.LookAt(focus);
+        }
+        else if (view is "village" or "village-upgraded" or "village-question" or "village-fruit-offer")
+        {
+            camera.SetProcess(false); car.Active = false;
+            var house = world.Village.Houses[0];
+            var focus = house.GlobalPosition + Vector3.Up * 3;
+            camera.Position = focus + house.GlobalBasis * new Vector3(12, 8, 20);
+            camera.LookAt(focus);
+        }
         else if (view == "garage-building")
         {
             camera.SetProcess(false); car.Active = false;
@@ -122,7 +153,7 @@ public partial class VisualCapture : Node
             camera.Position = focus + (view == "car-rear" ? new Vector3(-4, 2.5f, 5) : new Vector3(4, 2.5f, -5));
             camera.LookAt(focus);
         }
-        else if (view == "collection")
+        else if (view is "collection" or "village-fruit" or "farm-expedition" or "garden-expedition" or "museum-expedition" or "toys-expedition")
         {
             camera.SetProcess(false);
             var point = ((Game)GetParent()).Delivery!.PickupPositions[0];

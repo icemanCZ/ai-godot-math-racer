@@ -17,18 +17,30 @@ public partial class Expedition : Node3D
     public Animal Sender { get; }
     public Animal Recipient { get; }
     public bool Collection { get; }
+    public bool Farm => Sender.IsFarmer;
+    public bool Garden => Sender.IsGardener;
+    public bool Gems => Sender.IsGemCollector;
+    public bool Toys => Sender.IsToymaker;
+    public bool SpecialCollection => Farm || Garden || Gems || Toys;
+    public int FarmIndex { get; }
+    public string FarmName => Village.FarmNames[FarmIndex];
+    public string FlowerName => Village.FlowerNames[FarmIndex];
+    public string CollectionName => Village.CollectionNames(Toys)[FarmIndex];
     public string Cargo => Collection ? "apple" : Sender.Kind == 0 ? "carrot" : Sender.Kind == 1 ? "apple" : "honey";
     public int Amount { get; }
     public int Collected { get; private set; }
     public bool CanDeliver => !Collection || Collected == Amount;
     internal Vector3[] PickupPositions { get; }
     private readonly bool[] picked;
+    internal bool[] Picked => (bool[])picked.Clone();
     private Node3D[] pickupModels = Array.Empty<Node3D>();
     public Vector3 Destination => CanDeliver ? Recipient.Position : PickupPositions[Array.FindIndex(picked, p => !p)];
     public bool Arrived { get; set; }
     private readonly World world;
     private readonly Vehicle car;
     private Node3D? load;
+    private WildAnimal? transportedAnimal;
+    private WildAnimal? waitingAnimal;
     private readonly List<int>[] edges;
     private readonly int[] next;
     private readonly Dictionary<(int Anchor, bool Reverse), MeshInstance3D> routeArrows = new();
@@ -40,18 +52,30 @@ public partial class Expedition : Node3D
     internal bool CargoVisible => load != null && load.IsVisibleInTree();
     internal int RouteLength { get; private set; }
 
-    public Expedition(World world, Vehicle car, Animal sender, bool collection)
+    public Expedition(World world, Vehicle car, Animal sender, bool collection, bool[]? restoredPickups = null)
     {
         this.world = world; this.car = car; Sender = sender;
         // Existing clearings guarantee that both ends are reachable from a road.
         var candidates = world.Animals.Where(a => a != sender).OrderBy(a => a.Position.DistanceSquaredTo(sender.Position)).Take(5).ToArray();
-        int index = Array.IndexOf(world.Animals, sender);
+        int index = sender.HouseIndex >= 0 ? world.Animals.Length + sender.HouseIndex : Array.IndexOf(world.Animals, sender);
         Collection = collection;
+        FarmIndex = Farm ? world.Village.FarmCount : Garden ? world.Village.GardenCount : Gems ? world.Village.GemCount : Toys ? world.Village.ToyCount : 0;
         Recipient = Collection ? sender : candidates[index % candidates.Length];
-        Amount = Collection ? 3 : (index / 3 + index) % 3 + 1;
+        Amount = SpecialCollection ? 1 : Collection ? 3 : (index / 3 + index) % 3 + 1;
         Collected = Collection ? 0 : Amount;
         PickupPositions = Collection ? candidates.Take(3).Select(a => world.Routes.Samples[Nearest(a.Position)]).ToArray() : Array.Empty<Vector3>();
+        if (SpecialCollection)
+        {
+            Recipient = sender;
+            int offset = Garden ? 6 : Gems ? 12 : Toys ? 18 : 0;
+            PickupPositions = new[] { world.SpecialPickupSpots[FarmIndex + offset] };
+        }
         picked = new bool[PickupPositions.Length];
+        if (Collection && restoredPickups != null)
+        {
+            Array.Copy(restoredPickups, picked, picked.Length);
+            Collected = picked.Count(p => p);
+        }
         var samples = world.Routes.Samples;
         edges = Enumerable.Range(0, samples.Count).Select(_ => new List<int>()).ToArray();
         next = Enumerable.Repeat(-1, samples.Count).ToArray();
@@ -105,16 +129,38 @@ public partial class Expedition : Node3D
         car.AddChild(load);
         foreach (float x in new[] { -.65f, .65f }) Art.Block(load, new(x, -.23f, 0), new(.1f, .4f, .8f), "795b43");
         Art.Block(load, Vector3.Zero, new(1.8f, .28f, 1.05f), "bc8b61");
-        for (int i = 0; i < Collected; i++) AddCargo(load, new(-.6f + i * .6f, .5f, 0), Cargo);
+        for (int i = 0; i < Collected; i++) AddLoadAnimalOrCargo(new(-.6f + i * .6f, .5f, 0));
         pickupModels = new Node3D[PickupPositions.Length];
         for (int i = 0; i < PickupPositions.Length; i++)
         {
-            var p = PickupPositions[i]; float y = world.Routes.SurfaceHeight(p, world.Ground.Height(p.X, p.Z));
+            var p = PickupPositions[i]; float y = SpecialCollection ? world.Ground.Height(p.X, p.Z) : world.Routes.SurfaceHeight(p, world.Ground.Height(p.X, p.Z));
             if (River.OnBridge(p.X, p.Z)) y = Mathf.Max(y, River.BridgeSurfaceHeight(p.X));
             PickupPositions[i] = new(p.X, y, p.Z);
-            var pickup = new Node3D { Name = "CollectibleApple" + i, Position = PickupPositions[i] }; AddChild(pickup); pickupModels[i] = pickup;
-            var fruit = new Node3D { Scale = Vector3.One * 3 }; pickup.AddChild(fruit); AddCargo(fruit, Vector3.Up * .45f, Cargo);
+            var pickup = new Node3D { Name = (Gems ? "CollectibleGem" : Toys ? "CollectibleToy" : Garden ? "CollectibleFlower" : Farm ? "CatchableAnimal" : "CollectibleApple") + i, Position = PickupPositions[i] }; AddChild(pickup); pickupModels[i] = pickup;
+            if (Farm)
+            {
+                var animal = new WildAnimal(Village.FarmKinds[FarmIndex], .5f) { Scale = Vector3.One * 1.5f };
+                waitingAnimal = animal;
+                pickup.AddChild(animal); animal.Animate(0, false);
+                Art.Sign(pickup, Vector3.Up * 3.5f, FarmName, 28);
+            }
+            else if (Gems || Toys)
+            {
+                var item = Toys ? Village.CreateToy(pickup, Vector3.Zero, FarmIndex) : Village.CreateGem(pickup, Vector3.Zero, FarmIndex);
+                item.Scale = Vector3.One * 1.5f;
+                Art.Sign(pickup, Vector3.Up * 3.5f, CollectionName, 28);
+            }
+            else if (Garden)
+            {
+                var flower = Village.CreateFlower(pickup, Vector3.Zero, FarmIndex); flower.Scale = Vector3.One * 1.7f;
+                Art.Sign(pickup, Vector3.Up * 3.5f, FlowerName, 28);
+            }
+            else
+            {
+                var fruit = new Node3D { Scale = Vector3.One * 3 }; pickup.AddChild(fruit); AddCargo(fruit, Vector3.Up * .45f, Cargo);
+            }
             Art.TaskMarker(pickup, Vector3.Up * 5, "!", true);
+            if (picked[i]) pickup.Hide();
         }
         var arrowBuilder = new SurfaceTool(); arrowBuilder.Begin(Mesh.PrimitiveType.Triangles);
         // A flat chevron points along local -Z; double-sided material also covers steep grades.
@@ -146,22 +192,53 @@ public partial class Expedition : Node3D
         }
     }
 
-    public override void _ExitTree() { if (load != null && GodotObject.IsInstanceValid(load)) { car.RemoveChild(load); load.QueueFree(); } }
+    private void AddLoadAnimalOrCargo(Vector3 p)
+    {
+        if (Gems || Toys)
+        {
+            var item = Toys ? Village.CreateToy(load!, Vector3.Up * .15f, FarmIndex) : Village.CreateGem(load!, Vector3.Up * .15f, FarmIndex);
+            item.Scale = Vector3.One * .85f; return;
+        }
+        if (Garden)
+        {
+            Art.Cylinder(load!, new(0, .3f, 0), .25f, .4f, .6f, "cd8962");
+            Village.CreateFlower(load!, new(0, .6f, 0), FarmIndex); return;
+        }
+        if (!Farm) { AddCargo(load!, p, Cargo); return; }
+        var animal = new WildAnimal(Village.FarmKinds[FarmIndex], .5f) { Position = new(0, .15f, 0), Scale = Vector3.One * .85f };
+        load!.AddChild(animal); animal.Animate(0, false);
+        transportedAnimal = animal;
+    }
+
+    internal void ReleaseCargo()
+    {
+        if (load == null || !GodotObject.IsInstanceValid(load)) return;
+        load.Hide();
+        load.GetParent()?.RemoveChild(load); load.QueueFree(); load = null;
+    }
+    public override void _ExitTree() => ReleaseCargo();
     public void Tick(double delta)
     {
+        AnimateFarmAnimal(waitingAnimal, (float)delta);
+        AnimateFarmAnimal(transportedAnimal, (float)delta);
         if (Collection && !CanDeliver)
         {
             bool changed = false;
             for (int i = 0; i < picked.Length; i++)
-                if (!picked[i] && car.Position.DistanceTo(PickupPositions[i]) < 4)
+                if (!picked[i] && car.Position.DistanceTo(PickupPositions[i]) < (SpecialCollection ? 2.8f : 4))
                 {
                     picked[i] = true; pickupModels[i].Hide();
-                    AddCargo(load!, new(-.6f + Collected * .6f, .5f, 0), Cargo); Collected++; changed = true;
+                    AddLoadAnimalOrCargo(new(-.6f + Collected * .6f, .5f, 0)); Collected++; changed = true;
                 }
             if (changed) { RebuildRoute(); refresh = 0; }
         }
         refresh -= (float)delta;
         if (refresh <= 0) { refresh = .25f; UpdateGuidance(); }
+    }
+    private static void AnimateFarmAnimal(WildAnimal? animal, float delta)
+    {
+        if (animal == null || !GodotObject.IsInstanceValid(animal)) return;
+        animal.Phase += delta; animal.Animate(delta, false);
     }
     private void UpdateGuidance()
     {

@@ -6,7 +6,20 @@ namespace MathRacer;
 
 public static class WorldLayout
 {
-    public static WorldPlan Plan { get; } = new(Settings.Seed);
+    private static WorldPlan? plan;
+    private static int planSeed;
+    public static WorldPlan Plan
+    {
+        get
+        {
+            if (plan == null || planSeed != Settings.Seed)
+            {
+                plan = new WorldPlan(Settings.Seed);
+                planSeed = Settings.Seed;
+            }
+            return plan;
+        }
+    }
     public static float HillPhase => Plan.HillPhase;
     public static float ForestPhase => Plan.ForestPhase;
 }

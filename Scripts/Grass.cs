@@ -97,6 +97,8 @@ public partial class Grass : Node3D
 
     internal bool CanGrow(Vector3 p)
     {
+        foreach (var spot in world.SpecialPickupSpots)
+            if (new Vector2(p.X - spot.X, p.Z - spot.Z).LengthSquared() < 4) return false;
         if (new Vector2(p.X, p.Z).Length() > Settings.PlayableRadius - 3 ||
             River.Distance(p.X, p.Z) < River.HalfWidth(p.Z) + 3 || River.OnBridge(p.X, p.Z) ||
             world.Village.IsReserved(p) || world.Routes.SurfaceHeight(p, p.Y) > p.Y + .05f ||

@@ -25,7 +25,8 @@ public partial class CollisionChecks : Node
         Check(trunks.Count >= world.Plants.TreeCount + 26, "every tree, fence post and sign has a solid trunk");
         Check(rocks.Count > 100, "generated meadow and river rocks are solid");
         var boxes = GetTree().GetNodesInGroup("obstacle_boxes");
-        Check(boxes.Count == 20, "all bench parts and fence rails are solid, gates stay open");
+        int garageWalls = world.Village.GarageBuilding.GetChildren().OfType<StaticBody3D>().Count();
+        Check(garageWalls == 3 && boxes.Count == 20 + garageWalls, "all bench parts, fence rails and garage walls are solid, gates stay open");
         shapes = new[] {
             trunks.Cast<StaticBody3D>().Select(body => body.GetChild<CollisionShape3D>(0).Shape)
                 .OfType<CapsuleShape3D>().OrderByDescending(shape => shape.Height).First(),

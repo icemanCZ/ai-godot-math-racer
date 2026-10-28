@@ -5,6 +5,19 @@ namespace MathRacer;
 
 public partial class Village : Node3D
 {
+    public static readonly string[] Upgrades = { "Květiny pod okny", "Barevné okenice", "Zlatá klika", "Uvítací rohožka", "Stříška nad dveřmi", "Sloupky verandy", "Balkon", "Podkrovní okénko", "Větrná korouhvička", "Slavnostní výzdoba" };
+    public List<Animal> Residents { get; } = new();
+    public List<Node3D> Houses { get; } = new();
+    private readonly List<Node3D> decorations = new();
+    private readonly List<Label3D> progress = new();
+    private readonly int[] levels = new int[4];
+    public int Level(int house) => levels[house];
+    public int[] Levels => (int[])levels.Clone();
+    public void RestoreLevels(int[] saved)
+    {
+        for (int i = 0; i < Houses.Count; i++) SetLevel(i, i < saved.Length ? saved[i] : 0);
+    }
+    public void Upgrade(int house) => SetLevel(house, levels[house] + 1);
     private Terrain ground = null!;
     private Roads roads = null!;
     private readonly List<Transform3D> plots = new();
@@ -57,6 +70,19 @@ public partial class Village : Node3D
             var plot = new Transform3D(Basis.FromEuler(new Vector3(0, yaw, 0)), position);
             plots.Add(plot);
             House(position.X, position.Z, site.Color, yaw);
+            int index = Residents.Count;
+            tasks[index] = CreateTasks(Settings.Seed, index);
+            string[] names = { "Králíček stavitel Vojtík", "Liška zahradnice Róza", "Medvídek kutil Hugo", "Králíček malíř Fialka" };
+            string[] fur = { "a9d8e8", "df92ac", "97c9b0", "c5b4e3" };
+            var resident = Animal.Create(names[index], "Pomůžeš mi zkrášlit domeček?", index % 3, fur[index]);
+            resident.HouseIndex = index;
+            AddChild(resident); Residents.Add(resident);
+            var spot = plot * new Vector3(1.6f, 0, 6.3f);
+            resident.Position = ground.At(spot.X, spot.Z);
+            resident.Rotation = new Vector3(0, yaw, 0);
+            Art.Ball(resident, new(0, 1.3f, 0), new(.6f, .13f, .6f), site.Color);
+            progress.Add(Art.Sign(Houses[index], new(0, 8.5f, 0), "", 27));
+            SetLevel(index, 0);
             var doorway = plot * new Vector3(0, 0, 3.02f);
             Path(doorway, frame.Center);
             Fence(plot, -5, -1.4f);
@@ -69,10 +95,33 @@ public partial class Village : Node3D
         var entrance = roads.SampleMain(49);
         var greeting = entrance.Center - entrance.Forward.Cross(Vector3.Up) * 6.8f;
         GreetingSpot = ground.At(greeting.X, greeting.Z);
+        GenerateFarm();
+        GenerateGarden();
+        GenerateCollections();
+    }
+
+    public bool IsNearVillage(Vector3 point)
+    {
+        // Leave a quiet belt around every house and the garage for village residents.
+        foreach (var plot in plots)
+            if (new Vector2(point.X - plot.Origin.X, point.Z - plot.Origin.Z).Length() < 38) return true;
+        return false;
     }
 
     public bool IsReserved(Vector3 point)
     {
+        foreach (var plot in collectionPlots)
+        {
+            var local = plot.AffineInverse() * point;
+            if (local.X > -5 && local.X < 17 && Mathf.Abs(local.Z) < 8) return true;
+        }
+        if (GardenBuilding != null)
+        {
+            var gardenLocal = gardenPlot.AffineInverse() * point;
+            if (gardenLocal.X > -5 && gardenLocal.X < 17 && Mathf.Abs(gardenLocal.Z) < 8) return true;
+        }
+        var farmLocal = farmPlot.AffineInverse() * point;
+        if (farmLocal.X > -6 && farmLocal.X < 19 && Mathf.Abs(farmLocal.Z) < 8) return true;
         foreach (var path in paths)
         {
             var a = new Vector2(path.From.X, path.From.Z);
@@ -166,6 +215,8 @@ public partial class Village : Node3D
     private void House(float x, float z, string color, float yaw)
     {
         var h = new Node3D { Position = ground.At(x, z), Rotation = new Vector3(0, yaw, 0) }; AddChild(h);
+        h.Name = $"House{Houses.Count}"; Houses.Add(h);
+        var details = new Node3D { Name = "Upgrades" }; h.AddChild(details); decorations.Add(details);
         Art.Block(h, new(0, 2.1f, 0), new(7, 4.2f, 6), color);
         // A gabled roof, with a deliberately generous overhang.
         var st = new SurfaceTool(); st.Begin(Mesh.PrimitiveType.Triangles);

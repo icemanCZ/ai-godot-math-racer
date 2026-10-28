@@ -13,7 +13,7 @@ public partial class Vegetation : Node3D
     private readonly Dictionary<(string Shape, string Color, int X, int Z), List<Transform3D>> batches = new();
     private readonly Dictionary<Vector2I, List<Vector3>> treePositions = new();
     private Terrain ground = null!;
-    private static readonly (Vector2 Center, int Type)[] GroveRegions = CreateGroveRegions();
+    private readonly (Vector2 Center, int Type)[] GroveRegions = CreateGroveRegions();
     public Vector3 PreviewSpot { get; private set; }
     public int TreeCount { get; private set; }
     public int BushCount { get; private set; }
@@ -170,7 +170,7 @@ public partial class Vegetation : Node3D
         return regions.ToArray();
     }
 
-    private static int TreeTypeAt(Vector3 p)
+    private int TreeTypeAt(Vector3 p)
     {
         // All placement passes use the same continuous species map, including roadside trees.
         // Willows form a riverbank ribbon; other species form coherent adjoining groves.

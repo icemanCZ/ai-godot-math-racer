@@ -6,6 +6,7 @@ namespace MathRacer;
 public partial class GameUi : CanvasLayer
 {
     public event Action? PlayRequested;
+    public event Action? NewGameRequested;
     public event Action? ResumeRequested;
     public event Action? CloseInteractionRequested;
     public event Action<int>? AnswerSelected;
@@ -13,6 +14,7 @@ public partial class GameUi : CanvasLayer
     public event Action<string>? AccessorySelected;
     public event Action<string>? ModelSelected;
     public event Action? TalkRequested;
+    public event Action? VillageFruitRequested;
     public event Action<bool>? ExpeditionSelected;
     public event Action<CarReward>? GarageRewardSelected;
     private float garageScroll;
@@ -142,12 +144,32 @@ public partial class GameUi : CanvasLayer
         if (root.GetViewport().GuiGetFocusOwner() == null) b.GrabFocus();
         return b;
     }
-    public void Title() { Clear(); Text("Vítej v kouzelném údolí", 34); Text("Malé autíčko. Velká dobrodružství.", 23); Button("Hrát", () => PlayRequested?.Invoke()).GrabFocus(); }
-    public void Pause() { Clear(); Text("Chvilka odpočinku", 34); Button("Pokračovat", () => ResumeRequested?.Invoke()); Button("Konec hry", () => GetTree().Quit()); }
+    public void Title(bool saved = false)
+    {
+        Clear(); Text("Vítej v kouzelném údolí", 34);
+        Text(saved ? "Tvoje dobrodružství je uložené. Můžeš pokračovat." : "Malé autíčko. Velká dobrodružství.", 23);
+        Text($"Seed údolí: {Settings.Seed}", 20);
+        Button(saved ? "Pokračovat" : "Hrát", () => PlayRequested?.Invoke()).GrabFocus();
+        Button("Nová hra", () => NewGameRequested?.Invoke()).Name = "NewGame";
+        if (saved) Text("Nová hra nahradí uložený postup.", 18);
+    }
+    public void Pause()
+    {
+        Clear(); Text("Chvilka odpočinku", 34); Text($"Seed údolí: {Settings.Seed}", 20);
+        Button("Pokračovat", () => ResumeRequested?.Invoke()).GrabFocus();
+        Button("Nová hra", () => NewGameRequested?.Invoke()).Name = "NewGame";
+        Text("Nová hra nahradí uložený postup.", 18);
+        Button("Konec hry", () => GetTree().Quit());
+    }
+    public void LoadingWorld() { Clear(); Text("Připravujeme nové údolí…", 30); }
     public void Challenge(Animal animal, IChallenge question, string feedback, System.Collections.Generic.IReadOnlySet<int> rejected)
     {
         if (question is DeliveryChallenge delivery) { DeliveryQuestion(animal, delivery, rejected); return; }
         Clear(); Text(animal.DisplayName, 30);
+        if (animal.IsFarmer) Text("Výprava za zvířátkem · Nejdřív malý úkol", 23);
+        if (animal.IsGardener) Text("Výprava pro květinu · Nejdřív malý úkol", 23);
+        if (animal.IsCollectionOwner) Text(animal.IsToymaker ? "Výprava pro hračku · Nejdřív malý úkol" : "Výprava pro drahokam · Nejdřív malý úkol", 23);
+        if (animal.HouseIndex >= 0) Text("Pomoz mi vylepšit domeček!", 23);
         Text(question is LetterChallenge ? "Co začíná na toto písmenko? Vyber obrázek." : "Kolik to je? Vyber odpověď.", 23);
         Text(question.Expression, question is LetterChallenge ? 78 : 54);
         var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center }; row.AddThemeConstantOverride("separation", 16); content.AddChild(row);
@@ -175,6 +197,33 @@ public partial class GameUi : CanvasLayer
         message.AddThemeFontSizeOverride("font_size", 22); content.AddChild(message);
         Button("Pokračovat v jízdě", () => CloseInteractionRequested?.Invoke()).Name = "LeaveChallenge";
         first?.GrabFocus();
+    }
+    public void HouseReward(Animal animal, int level)
+    {
+        Clear(); Text(animal.DisplayName, 30);
+        Text(level == 10 ? "Domeček je hotový! Děkuji za pomoc!" : "Správně! Domeček je krásnější!", 30);
+        Text($"Vylepšení {level} / {Village.Upgrades.Length}", 28);
+        if (level > 0) Text($"✓ {Village.Upgrades[level - 1]}", 25);
+        if (level < Village.Upgrades.Length) Text($"Příště: {Village.Upgrades[level]}", 23);
+        Button("Prohlédnout domeček", () => CloseInteractionRequested?.Invoke()).GrabFocus();
+    }
+    public void HouseCollection(Animal animal, int collected)
+    {
+        Clear(); Text(animal.DisplayName, 30);
+        Text("Nasbírej a přivez mi 3 jablka.", 28);
+        Text($"Nasbíráno: {collected} / 3", 28);
+        Text("Jeď za zelenými šipkami a posbírej jablka.\nPotom se vrať pro vylepšení domečku.", 22);
+        Button("Pokračovat ve sběru", () => CloseInteractionRequested?.Invoke()).GrabFocus();
+    }
+    public void HouseFruitOffer(Animal animal, int level, bool canStart)
+    {
+        Clear(); Text(animal.DisplayName, 30);
+        Text("Nasbírej a přivez mi 3 jablka.", 28);
+        Text($"Domeček {level} / 10 · Odměna: {Village.Upgrades[level]}", 22);
+        Text("Posbírej označená jablka podle šipek\na přivez je zpátky k mému domečku.", 22);
+        if (canStart) Button("Vyrazit pro ovoce", () => VillageFruitRequested?.Invoke()).Name = "VillageFruitTask";
+        else Text("Nejdřív dokonči rozjetou výpravu.\nTento úkol tu na tebe počká.", 22);
+        Button("Později", () => CloseInteractionRequested?.Invoke());
     }
     public void Reward(Animal animal, VehicleAppearance appearance, System.Collections.Generic.IReadOnlyList<CarReward> rewards)
     {
@@ -295,6 +344,64 @@ public partial class GameUi : CanvasLayer
         talkButton.Visible = !modal.Visible;
         talkButton.Text = controller ? "A · Garáž" : "E · Garáž";
     }
+    public void HouseHint()
+    {
+        talkButton.Visible = !modal.Visible;
+        talkButton.Text = controller ? "A · Domeček" : "E · Domeček";
+    }
+    public void FarmHint()
+    {
+        talkButton.Visible = !modal.Visible;
+        talkButton.Text = controller ? "A · Farma" : "E · Farma";
+    }
+    public void GardenHint()
+    {
+        talkButton.Visible = !modal.Visible;
+        talkButton.Text = controller ? "A · Zahradník" : "E · Zahradník";
+    }
+    public void CollectionHint(bool toys)
+    {
+        talkButton.Visible = !modal.Visible;
+        talkButton.Text = (controller ? "A · " : "E · ") + (toys ? "Hračkář" : "Sběratel drahokamů");
+    }
+    public void CollectionStatus(Village village, Animal owner, Expedition? expedition, bool returned = false)
+    {
+        bool toys = owner.IsToymaker;
+        int count = village.CollectionCount(toys);
+        Clear(); Text(owner.DisplayName, 30);
+        Text(returned ? toys ? "Děkuji! Hračka už je na hřišti!" : "Děkuji! Drahokam už je v muzeu!" : toys ? "Vítej v hračkářství!" : "Vítej v muzeu drahokamů!", 28);
+        Text($"{(toys ? "Hračky na hřišti" : "Drahokamy v muzeu")}: {count} / 6", 26);
+        if (expedition?.Sender == owner)
+            Text($"Přivez {expedition.CollectionName}.\nJeď za šipkami a sjeď z cesty k předmětu.\nPotom se vrať ke mně.", 22);
+        else if (expedition != null) Text("Nejdřív dokonči rozjetou výpravu.\nTento úkol tu na tebe počká.", 22);
+        else if (count == 6) Text(toys ? "Hřiště je plné hraček! Přijeď zase na návštěvu." : "Sbírka je kompletní! Přijeď si ji zase prohlédnout.", 22);
+        else Text("Přijeď za mnou pro další výpravu.\nPřed cestou tě čeká příklad nebo písmenko.", 22);
+        Button("Pokračovat v jízdě", () => CloseInteractionRequested?.Invoke()).GrabFocus();
+    }
+    public void GardenStatus(Village village, Expedition? expedition, bool returned = false)
+    {
+        Clear(); Text("Zahradník Vítek", 32);
+        Text(returned ? "Děkuji! Květina už roste v záhonku!" : "Vítej v zahradnictví!", 28);
+        Text($"Rozkvetlé záhonky: {village.GardenCount} / {Village.FlowerNames.Length}", 26);
+        if (expedition?.Garden == true)
+            Text($"Přivez {expedition.FlowerName}.\nJeď za šipkami a sjeď z cesty ke květině.\nPak ji přivez zpátky ke mně.", 22);
+        else if (expedition != null) Text("Nejdřív dokonči rozjetou výpravu.\nKvětiny tu na tebe počkají.", 22);
+        else if (village.GardenCount == Village.FlowerNames.Length) Text("Celá zahrádka kvete. Přijeď se zase podívat!", 22);
+        else Text("Přijeď za mnou pro další květinu.\nPřed cestou tě čeká příklad nebo písmenko.", 22);
+        Button("Pokračovat v jízdě", () => CloseInteractionRequested?.Invoke()).GrabFocus();
+    }
+    public void FarmStatus(Village village, Expedition? expedition, bool returned = false)
+    {
+        Clear(); Text("Farmář Tonda", 32);
+        Text(returned ? "Děkuji! Zvířátko už je v ohradě!" : "Vítej na farmě!", 28);
+        Text($"Zvířátka v ohradě: {village.FarmCount} / {Village.FarmKinds.Length}", 26);
+        if (expedition?.Farm == true)
+            Text($"Najdi {expedition.FarmName}.\nJeď za šipkami a přibliž se ke zvířátku.\nPak ho přivez zpátky ke mně.", 22);
+        else if (expedition != null) Text("Nejdřív dokonči rozjetou výpravu.\nZvířátka tu na tebe počkají.", 22);
+        else if (village.FarmCount == Village.FarmKinds.Length) Text("Všechna zvířátka jsou doma. Přijeď je zase navštívit!", 22);
+        else Text("Přijeď za mnou pro další výpravu.\nPřed cestou tě čeká příklad nebo písmenko.", 22);
+        Button("Pokračovat v jízdě", () => CloseInteractionRequested?.Invoke()).GrabFocus();
+    }
     public void HideModal() { modal.Hide(); deliveryHud.Visible = directionPicture != null; }
     public void AnimalCount(int remaining, int total) => animalCount.Text = remaining == 0
         ? "Všechna zvířátka navštívena!"
@@ -341,7 +448,13 @@ public partial class GameUi : CanvasLayer
         if (delivery == null) return;
         directionPicture = Picture(deliveryHud, "arrow");
         directionPicture!.CustomMinimumSize = new(80, 80);
-        var label = new Label { Name = "NavigationText", Text = delivery.Collection && !delivery.CanDeliver
+        var label = new Label { Name = "NavigationText", Text = delivery.Gems || delivery.Toys
+            ? delivery.CanDeliver ? $"Vrať se: {delivery.Recipient.DisplayName}\nVezeš {delivery.CollectionName}" : $"Najdi {delivery.CollectionName}\nSjeď z cesty a přijeď blíž"
+            : delivery.Garden
+            ? delivery.CanDeliver ? $"Vrať se k zahradníku Vítkovi\nVezeš {delivery.FlowerName}" : $"Najdi {delivery.FlowerName}\nSjeď z cesty a přijeď ke květině"
+            : delivery.Farm
+            ? delivery.CanDeliver ? $"Vrať se k farmáři Tondovi\nVezeš {delivery.FarmName}" : $"Najdi {delivery.FarmName}\nPřijeď blíž a chyť zvířátko"
+            : delivery.Collection && !delivery.CanDeliver
             ? $"Najdi a přivez 3 jablka\nNasbíráno: {delivery.Collected} / {delivery.Amount}"
             : $"{(delivery.Collection ? "Vrať se" : "Doruč náklad")}: {delivery.Recipient.DisplayName}\n{CargoText(delivery.Cargo, delivery.Amount)}",
             HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, CustomMinimumSize = new(530, 80) };

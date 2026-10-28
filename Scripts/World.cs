@@ -12,6 +12,7 @@ public partial class World : Node3D
     public Grass Grass { get; } = new();
     public Wildlife Wildlife { get; } = new();
     public Animal[] Animals { get; private set; } = System.Array.Empty<Animal>();
+    internal Vector3[] SpecialPickupSpots { get; private set; } = System.Array.Empty<Vector3>();
     public void Generate()
     {
         AddChild(Ground); Ground.Generate(); AddChild(Routes); Routes.Generate(Ground);
@@ -50,13 +51,13 @@ public partial class World : Node3D
         }
         Animals = animals.ToArray();
         PlaceAnimalsBesideRoads();
+        SpecialPickupSpots = CreateSpecialPickupSpots();
         AddChild(Plants); Plants.Generate(Ground, Routes, Village, Animals);
     }
     private void PlaceAnimalsBesideRoads()
     {
         var random = new System.Random(Settings.Seed + 413);
-        Animals[0].Position = Village.GreetingSpot;
-        for (int i = 1; i < Animals.Length; i++)
+        for (int i = 0; i < Animals.Length; i++)
         {
             bool placed = false;
             int startIndex = random.Next(Routes.Samples.Count - 1);
@@ -72,7 +73,7 @@ public partial class World : Node3D
                     var verge = road + side * sign * 6.5f;
                     var position = Ground.At(verge.X, verge.Z);
                     if (new Vector2(position.X, position.Z).Length() > Settings.PlayableRadius - 10 ||
-                        Village.IsReserved(position) || Routes.Distance(position) < 5.5f ||
+                        Village.IsNearVillage(position) || Village.IsReserved(position) || Routes.Distance(position) < 5.5f ||
                         River.Distance(position.X, position.Z) < River.HalfWidth(position.Z) + 7) continue;
                     bool crowded = false;
                     for (int previous = 0; previous < i; previous++)
