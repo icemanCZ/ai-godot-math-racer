@@ -17,6 +17,8 @@ public partial class Roads : Node3D
     private Vector2[] junctions = System.Array.Empty<Vector2>();
     private readonly ShaderMaterial roadMaterial = new() { Shader = GD.Load<Shader>("res://Shaders/RoadSurface.gdshader") };
     public readonly List<Vector3> Samples = new();
+    internal readonly List<(Vector3 Position, Vector3 Forward)> NavigationAnchors = new();
+    internal readonly List<int> SampleAnchors = new();
 
     public (Vector3 Center, Vector3 Forward) SampleMain(float distance)
     {
@@ -36,6 +38,7 @@ public partial class Roads : Node3D
         mainRoute = WorldPlan.CreateCurve(routes[0]);
         for (int routeIndex = 0; routeIndex < routes.Length; routeIndex++)
         {
+            int sampleStart = Samples.Count;
             using var curve = WorldPlan.CreateCurve(routes[routeIndex]);
             float length = curve.GetBakedLength();
             float baseWidth = routeIndex == 0 ? MainWidth / 2 : 3;
@@ -54,6 +57,17 @@ public partial class Roads : Node3D
                     entries.Add(segment);
                 }
             }
+            // Fixed road markings: route searches must never determine their spacing or position.
+            int anchorStart = NavigationAnchors.Count;
+            for (int i = sampleStart; i < Samples.Count; i += 6)
+            {
+                var forward = Samples[Mathf.Min(i + 1, Samples.Count - 1)] - Samples[Mathf.Max(i - 1, sampleStart)];
+                forward.Y = 0;
+                NavigationAnchors.Add((Samples[i], forward.Normalized()));
+            }
+            int lastAnchor = NavigationAnchors.Count - 1;
+            for (int i = sampleStart; i < Samples.Count; i++)
+                SampleAnchors.Add(Mathf.Min(anchorStart + Mathf.RoundToInt((i - sampleStart) / 6f), lastAnchor));
         }
         BuildSurface(terrain);
     }

@@ -55,7 +55,7 @@ public static class ChallengeChecks
         for (int i = 0; i < 1000; i++)
         {
             var next = CarReward.Draw(rewardRandom, drawn);
-            if (next.Count != 3 || next.Distinct().Count() != 3 || !next.Any(r => r.IsAccessory) ||
+            if (next.Count != 4 || next.Distinct().Count() != 4 || next.Count(r => r.IsAccessory) != 2 ||
                 !next.Any(r => !r.IsAccessory && !r.IsModel) || !next.Any(r => r.IsModel) || next.ToHashSet().SetEquals(drawn))
                 throw new InvalidOperationException("Invalid mixed reward set.");
             seen.UnionWith(next); drawn = next;
@@ -114,7 +114,16 @@ public static class ChallengeChecks
             int secondWrong = question.Choices.First(value => value != question.Answer && value != wrong);
             Press($"Answer{secondWrong}");
             Press($"Answer{question.Answer}");
-            check(game.State == GameState.Reward && !car.Active, "correct answer opens reward");
+            check(game.State == GameState.ExpeditionChoice && !car.Active && game.CurrentRewards.Count == 0, "correct answer opens task choice before reward");
+            game.TogglePause(); game.TogglePause();
+            check(game.State == GameState.ExpeditionChoice, "pause preserves task choice");
+            Press(visits % 2 == 0 ? "ChooseCollection" : "ChooseDelivery");
+            var expedition = game.Delivery!;
+            if (expedition.Collection)
+                foreach (var point in expedition.PickupPositions) { car.SetPose(point + Vector3.Up * .2f, 0); expedition.Tick(.25); }
+            car.SetPose(expedition.Recipient.Position + Vector3.Right * 2, 0); game.BeginDeliveryQuestion();
+            Press($"Answer{game.CurrentChallenge!.Answer}");
+            check(game.State == GameState.Reward && !car.Active, "completing chosen expedition opens reward");
             var rewards = game.CurrentRewards.ToArray();
             game.TogglePause(); game.TogglePause();
             check(game.State == GameState.Reward && game.CurrentRewards.SequenceEqual(rewards), "pause preserves exact reward choices");

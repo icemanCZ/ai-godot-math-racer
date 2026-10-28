@@ -8,14 +8,22 @@ public partial class Animal : Node3D
     public string Greeting { get; private set; } = "";
     private Node3D model = null!;
     private float time;
-    private Label3D rewardArrow = null!;
+    private float celebration;
+    public void Celebrate() => celebration = 2.5f;
+    private Label3D taskMarker = null!;
     public bool RewardAvailable { get; private set; } = true;
     public int Kind { get; private set; }
     public string FurColor { get; private set; } = "";
+    public void Guide(bool visible, bool destination = false)
+    {
+        taskMarker.Visible = visible;
+        taskMarker.Text = destination ? "!" : "?";
+        taskMarker.Modulate = new Color(destination ? "63e7e0" : "ffeb3b");
+    }
     public void SetRewardAvailable(bool available)
     {
         RewardAvailable = available;
-        rewardArrow.Visible = available;
+        taskMarker.Visible = available;
     }
     public static Animal Create(string name, string greeting, int kind, string? furColor = null)
     {
@@ -37,21 +45,20 @@ public partial class Animal : Node3D
         }
         Art.Ball(a.model, new(0, 1.58f, .76f), new(.13f, .1f, .09f), "6c5557");
         if (kind == 1) { var tail = Art.Ball(a.model, new(.5f, .7f, -.65f), new(.3f, .5f, .8f), color); tail.RotationDegrees = new(25, 30, 0); Art.Ball(a.model, new(.8f, 1, -1.1f), new(.25f, .3f, .32f), "fff0d9"); }
-        a.rewardArrow = Art.Sign(a, new(0, 7.5f, 0), "⬇", 100);
-        a.rewardArrow.FixedSize = true;
-        a.rewardArrow.PixelSize = .00085f;
-        a.rewardArrow.NoDepthTest = false;
-        a.rewardArrow.Modulate = new Color("ffeb3b");
-        a.rewardArrow.OutlineSize = 10;
-        a.rewardArrow.OutlineModulate = new Color("402707");
+        a.taskMarker = Art.TaskMarker(a, new(0, 7.5f, 0), "?");
         Art.Sign(a, new(0, 3.65f, 0), name, 30);
         return a;
     }
     public override void _Process(double delta)
     {
         time += (float)delta;
-        rewardArrow.Position = Vector3.Up * (7.5f + Mathf.Sin(time * 2.4f) * .6f);
+        taskMarker.Position = Vector3.Up * (7.5f + Mathf.Sin(time * 2.4f) * .6f);
         model.Position = Vector3.Up * Mathf.Sin(time * 1.8f) * .045f;
+        if (celebration > 0)
+        {
+            celebration = Mathf.Max(0, celebration - (float)delta);
+            model.Position += Vector3.Up * Mathf.Abs(Mathf.Sin(celebration * 7)) * .65f;
+        }
     }
 }
 

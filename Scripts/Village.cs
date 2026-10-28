@@ -6,13 +6,41 @@ namespace MathRacer;
 public partial class Village : Node3D
 {
     private Terrain ground = null!;
+    private Roads roads = null!;
     private readonly List<Transform3D> plots = new();
+    private readonly List<(Vector3 From, Vector3 To, float HalfWidth)> paths = new();
     public Vector3 Center { get; private set; }
     public Vector3 GreetingSpot { get; private set; }
+    public Vector3 GarageEntrance { get; private set; }
+    public Node3D GarageBuilding { get; private set; } = null!;
 
     public void Generate(Terrain terrain, Roads roads)
     {
         ground = terrain;
+        this.roads = roads;
+        var garageFrame = roads.SampleMain(29);
+        var garageOutward = garageFrame.Forward.Cross(Vector3.Up);
+        var garagePosition = ground.At(garageFrame.Center.X + garageOutward.X * 11, garageFrame.Center.Z + garageOutward.Z * 11);
+        float garageYaw = Mathf.Atan2(-garageOutward.X, -garageOutward.Z);
+        var garagePlot = new Transform3D(Basis.FromEuler(new(0, garageYaw, 0)), garagePosition);
+        plots.Add(garagePlot);
+        GarageBuilding = new Node3D { Name = "Garage", Transform = garagePlot }; AddChild(GarageBuilding);
+        Art.Block(GarageBuilding, new(0, .08f, 0), new(9, .16f, 8), "dfd4bd");
+        foreach (float x in new[] { -3.7f, 3.7f })
+        {
+            Art.Block(GarageBuilding, new(x, 2, 0), new(.45f, 4, 6), "79bba7");
+            Obstacles.Box(GarageBuilding, new(x, 2, 0), new(.45f, 4, 6));
+        }
+        Art.Block(GarageBuilding, new(0, 2, -2.8f), new(7.5f, 4, .4f), "79bba7");
+        Obstacles.Box(GarageBuilding, new(0, 2, -2.8f), new(7.5f, 4, .4f));
+        Art.Block(GarageBuilding, new(0, 4.1f, 0), new(8.5f, .4f, 7), "edb45e");
+        Art.Block(GarageBuilding, new(0, 3.5f, 3), new(7.5f, .7f, .4f), "fff1d2");
+        var garageSign = Art.Sign(GarageBuilding, new(0, 3.5f, 3.6f), "GARÁŽ", 38);
+        garageSign.NoDepthTest = true;
+        Art.TaskMarker(GarageBuilding, new(0, 6.5f, 0), "⌂");
+        var entrancePoint = garagePlot * new Vector3(0, 0, 4.5f);
+        GarageEntrance = ground.At(entrancePoint.X, entrancePoint.Z);
+        Path(garagePlot * new Vector3(0, .16f, 3.8f), garageFrame.Center, 5.8f);
         // Staggered pairs on opposite verges follow the road's actual curve.
         (float Distance, float Side, string Color)[] sites =
         {
@@ -29,8 +57,8 @@ public partial class Village : Node3D
             var plot = new Transform3D(Basis.FromEuler(new Vector3(0, yaw, 0)), position);
             plots.Add(plot);
             House(position.X, position.Z, site.Color, yaw);
-            var doorway = plot * new Vector3(0, 0, 3.15f);
-            Path(doorway, frame.Center + outward * (Roads.MainWidth / 2 - .25f));
+            var doorway = plot * new Vector3(0, 0, 3.02f);
+            Path(doorway, frame.Center);
             Fence(plot, -5, -1.4f);
             Fence(plot, 1.4f, 5);
             var shrub = plot * new Vector3(-4.4f, 0, 1.5f);
@@ -45,6 +73,15 @@ public partial class Village : Node3D
 
     public bool IsReserved(Vector3 point)
     {
+        foreach (var path in paths)
+        {
+            var a = new Vector2(path.From.X, path.From.Z);
+            var b = new Vector2(path.To.X, path.To.Z);
+            var p = new Vector2(point.X, point.Z);
+            var delta = b - a;
+            float t = Mathf.Clamp((p - a).Dot(delta) / delta.LengthSquared(), 0, 1);
+            if (p.DistanceTo(a + delta * t) < path.HalfWidth + .35f) return true;
+        }
         foreach (var plot in plots)
         {
             var local = plot.AffineInverse() * point;
@@ -53,25 +90,55 @@ public partial class Village : Node3D
         return false;
     }
 
-    private void Path(Vector3 from, Vector3 to)
+    private void Path(Vector3 from, Vector3 to, float width = 1.8f)
     {
         var direction = new Vector3(to.X - from.X, 0, to.Z - from.Z);
-        var side = direction.Normalized().Cross(Vector3.Up) * .9f;
-        int segments = Mathf.CeilToInt(direction.Length() / .6f);
+        var side = direction.Normalized().Cross(Vector3.Up);
+        paths.Add((from, to, width / 2));
+        int columns = Mathf.CeilToInt(width / .3f);
+        int segments = Mathf.CeilToInt(direction.Length() / .3f);
         var surface = new SurfaceTool(); surface.Begin(Mesh.PrimitiveType.Triangles);
-        for (int i = 0; i < segments; i++)
+        // Find the real meshed road edge for every strip, including curved/widened verges.
+        // A small overlap joins the surfaces without painting a path across the carriageway.
+        Vector3 End(float lateral)
         {
-            var p = from.Lerp(to, (float)i / segments);
-            var q = from.Lerp(to, (float)(i + 1) / segments);
-            var a = ground.At(p.X - side.X, p.Z - side.Z, .16f);
-            var b = ground.At(p.X + side.X, p.Z + side.Z, .16f);
-            var c = ground.At(q.X - side.X, q.Z - side.Z, .16f);
-            var d = ground.At(q.X + side.X, q.Z + side.Z, .16f);
-            surface.AddVertex(a); surface.AddVertex(c); surface.AddVertex(b);
-            surface.AddVertex(b); surface.AddVertex(c); surface.AddVertex(d);
+            var start = from + side * lateral;
+            var end = to + side * lateral;
+            float outside = 0, inside = 1;
+            for (int i = 0; i < 16; i++)
+            {
+                float middle = (outside + inside) / 2;
+                if (roads.Contains(start.Lerp(end, middle))) inside = middle;
+                else outside = middle;
+            }
+            return start.Lerp(end, Mathf.Min(1, inside + .4f / direction.Length()));
+        }
+        Vector3 Point(Vector3 start, Vector3 end, float t)
+        {
+            var p = start.Lerp(end, t);
+            float terrain = ground.Height(p.X, p.Z);
+            p.Y = Mathf.Max(terrain + .06f, roads.SurfaceHeight(p, terrain) + .015f);
+            // Meet the garage slab at the threshold rather than leaving a gap below it.
+            p.Y = Mathf.Lerp(Mathf.Max(p.Y, start.Y + .015f), p.Y, Mathf.SmoothStep(0, 1, t * direction.Length()));
+            return p;
+        }
+        for (int column = 0; column < columns; column++)
+        {
+            float left = Mathf.Lerp(-width / 2, width / 2, (float)column / columns);
+            float right = Mathf.Lerp(-width / 2, width / 2, (float)(column + 1) / columns);
+            var leftStart = from + side * left; var rightStart = from + side * right;
+            var leftEnd = End(left); var rightEnd = End(right);
+            for (int i = 0; i < segments; i++)
+            {
+                float t = (float)i / segments, next = (float)(i + 1) / segments;
+                var a = Point(leftStart, leftEnd, t); var b = Point(rightStart, rightEnd, t);
+                var c = Point(leftStart, leftEnd, next); var d = Point(rightStart, rightEnd, next);
+                surface.AddVertex(a); surface.AddVertex(c); surface.AddVertex(b);
+                surface.AddVertex(b); surface.AddVertex(c); surface.AddVertex(d);
+            }
         }
         surface.GenerateNormals();
-        AddChild(new MeshInstance3D { Mesh = surface.Commit(), MaterialOverride = Art.Mat("e9cf9e"), CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
+        AddChild(new MeshInstance3D { Name = "Walkway", Mesh = surface.Commit(), MaterialOverride = Art.Mat("e9cf9e"), CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
     }
 
     private void Fence(Transform3D plot, float left, float right)

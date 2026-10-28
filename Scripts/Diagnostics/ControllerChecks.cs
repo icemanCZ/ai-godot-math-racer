@@ -80,7 +80,8 @@ public partial class ControllerChecks : Node
             Check(game.State == GameState.Exploring, "B resumes pause");
             car.SetPose(world.Animals[0].Position + Vector3.Right * 2, 0); await Frames(5);
             await Button(JoyButton.A);
-            Check(game.State == GameState.Challenge, "A opens animal task without also answering");
+            Check(game.State == GameState.Challenge && game.CurrentChallenge is MathChallenge && game.Delivery == null,
+                "A opens original arithmetic task without starting expedition");
             var focus = GetViewport().GuiGetFocusOwner();
             await Button(JoyButton.DpadRight);
             Check(GetViewport().GuiGetFocusOwner() != focus, "D-pad changes answer selection");
@@ -90,14 +91,21 @@ public partial class ControllerChecks : Node
             int answer = game.CurrentChallenge!.Answer;
             ((Control)game.FindChild($"Answer{answer}", true, false)).GrabFocus();
             await Button(JoyButton.A);
-            Check(game.State == GameState.Reward, "A submits correct answer through UI");
+            Check(game.State == GameState.ExpeditionChoice && game.CurrentRewards.Count == 0, "A solves example and opens task choice before rewards");
             focus = GetViewport().GuiGetFocusOwner();
             await Button(JoyButton.Start); await Button(JoyButton.Start);
-            Check(game.State == GameState.Reward, "Menu restores reward screen");
-            await Button(JoyButton.DpadRight);
+            Check(game.State == GameState.ExpeditionChoice, "Menu restores task choice");
+            ((Control)game.FindChild("ChooseDelivery", true, false)).GrabFocus();
             await Button(JoyButton.A);
+            Check(game.State == GameState.Exploring && game.Delivery != null, "A selects delivery and immediately starts driving");
+            car.SetPose(game.Delivery!.Recipient.Position + Vector3.Right * 2, 0); await Frames(5);
+            Check(game.State == GameState.Challenge && game.CurrentChallenge is DeliveryChallenge, "arrival opens picture counting task");
+            ((Control)game.FindChild($"Answer{game.CurrentChallenge!.Answer}", true, false)).GrabFocus();
+            await Button(JoyButton.A); await Button(JoyButton.A);
             Check(game.State == GameState.Exploring, "controller selects reward and returns to driving");
-            game.OpenChallenge(world.Animals[1]); await Frames(); await Button(JoyButton.B);
+            car.SetPose(world.Animals[1].Position + Vector3.Right * 2, 0); await Frames(); await Button(JoyButton.A);
+            Check(game.CurrentChallenge is LetterChallenge, "A opens original picture task at second animal");
+            await Button(JoyButton.B);
             Check(game.State == GameState.Exploring, "B leaves task");
             GD.Print("CONTROLLER_CHECKS_PASSED"); GetTree().Quit();
         }

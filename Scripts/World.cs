@@ -36,11 +36,16 @@ public partial class World : Node3D
         var animals = new List<Animal>(Animals);
         for (int i = 0; i < Animals.Length; i++) { AddChild(Animals[i]); }
         string[] names = { "Králíček", "Liška", "Medvěd" };
+        string[][] givenNames = {
+            new[] { "Toník", "Pepík", "Kubík", "Vašík", "Honzík", "Vítek", "Jeník", "Štěpánek", "Filípek" },
+            new[] { "Anička", "Bětka", "Klárka", "Terezka", "Barunka", "Maruška", "Zuzanka", "Kačenka", "Rozárka" },
+            new[] { "Míša", "Bručoun", "Medoušek", "Bohouš", "Břéťa", "Dobromil", "Vojta", "Olda", "Radouš" }
+        };
         string[][] colors = { new[] { "f3e8d5", "c5b4e3", "a9d8e8" }, new[] { "e9a16a", "e8bf73", "df92ac" }, new[] { "b98d71", "c5a9db", "97c9b0" } };
         for (int i = 0; i < 27; i++)
         {
             int kind = i % 3;
-            var animal = Animal.Create($"{names[kind]} {i + 1}", "Ahoj! Vyřeš příklad a vyber si odměnu.", kind, colors[kind][i / 3 % 3]);
+            var animal = Animal.Create($"{names[kind]} {givenNames[kind][i / 3]}", "Ahoj! Vyřeš příklad a vyber si odměnu.", kind, colors[kind][i / 3 % 3]);
             AddChild(animal); animals.Add(animal);
         }
         Animals = animals.ToArray();

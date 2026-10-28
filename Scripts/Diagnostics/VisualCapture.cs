@@ -29,6 +29,15 @@ public partial class VisualCapture : Node
                 label.AddThemeFontSizeOverride("font_size", 22); card.AddChild(label);
             }
         }
+        else if (view == "garage-building")
+        {
+            camera.SetProcess(false); car.Active = false;
+            var building = world.Village.GarageBuilding;
+            var focus = building.GlobalPosition + Vector3.Up * 2;
+            camera.Position = focus + building.GlobalBasis * new Vector3(12, 8, 19);
+            camera.LookAt(focus);
+        }
+        else if (view == "garage") { }
         else if (view == "grass")
         {
             // A drive through the generated meadow exposes bending and the recovering wake.
@@ -113,7 +122,21 @@ public partial class VisualCapture : Node
             camera.Position = focus + (view == "car-rear" ? new Vector3(-4, 2.5f, 5) : new Vector3(4, 2.5f, -5));
             camera.LookAt(focus);
         }
-        else if (view != "gameplay" && view != "title" && view != "challenge" && view != "letters" && view != "reward" && view != "accessories")
+        else if (view == "collection")
+        {
+            camera.SetProcess(false);
+            var point = ((Game)GetParent()).Delivery!.PickupPositions[0];
+            car.SetPose(world.Ground.At(point.X, point.Z + 7, .15f), 0);
+            camera.Position = point + new Vector3(7, 6, 14); camera.LookAt(point + Vector3.Up);
+        }
+        else if (view == "delivery")
+        {
+            camera.SetProcess(false);
+            var direction = (((Game)GetParent()).Delivery!.Waypoint - car.Position); direction.Y = 0; direction = direction.Normalized();
+            car.SetPose(car.Position, Mathf.Atan2(-direction.X, -direction.Z));
+            camera.Position = car.Position - direction * 12 + Vector3.Up * 7; camera.LookAt(car.Position + direction * 5);
+        }
+        else if (!view.StartsWith("collection-") && !view.StartsWith("delivery-") && view != "gameplay" && view != "title" && view != "challenge" && view != "letters" && view != "reward" && view != "accessories")
         {
             camera.SetProcess(false);
             Vector3 focus = (view == "river" || view == "pond") ? new Vector3(River.CenterX(River.BridgeZ), River.BridgeHeight, River.BridgeZ) : view == "village" ? world.Village.Center + Vector3.Up * 2 : world.Animals[view == "fox" ? 1 : view == "bear" ? 2 : 0].Position + Vector3.Up * 1.5f;

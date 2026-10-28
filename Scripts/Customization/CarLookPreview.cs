@@ -9,6 +9,9 @@ public partial class CarLookPreview : SubViewportContainer
     public CarLook Look { get; set; } = CarLook.All[0];
     public string? AccessoryId { get; set; }
     public string ModelId { get; set; } = "classic";
+    public string? ExpeditionCargo { get; set; }
+    public int CargoAmount { get; set; } = 1;
+    public IReadOnlyList<string> Accessories { get; set; } = System.Array.Empty<string>();
 
     public override void _Ready()
     {
@@ -51,6 +54,19 @@ public partial class CarLookPreview : SubViewportContainer
         VehicleModel.BuildDisplay(car, appearance, new List<Node3D>(), ModelId);
         appearance.Apply(Look);
         if (AccessoryId != null) appearance.ToggleAccessory(AccessoryId);
+        foreach (var id in Accessories) appearance.ToggleAccessory(id);
+        if (ExpeditionCargo != null)
+        {
+            var rack = new Node3D { Position = new(0, 2.4f, .3f) }; car.AddChild(rack);
+            foreach (float x in new[] { -.65f, .65f }) Art.Block(rack, new(x, -.23f, 0), new(.1f, .4f, .8f), "795b43");
+            Art.Block(rack, Vector3.Zero, new(1.8f, .28f, 1.05f), "bc8b61");
+            for (int i = 0; i < CargoAmount; i++) Expedition.AddCargo(rack, new(-.6f + i * .6f, .5f, 0), ExpeditionCargo);
+            // A destination pennant distinguishes the expedition from a cosmetic upgrade.
+            Art.Cylinder(studio, new(-1.6f, 1.35f, .4f), .045f, .045f, 2.7f, "795b43");
+            var flag = new SurfaceTool(); flag.Begin(Mesh.PrimitiveType.Triangles);
+            flag.AddVertex(new(-1.6f, 2.7f, .4f)); flag.AddVertex(new(-.72f, 2.42f, .4f)); flag.AddVertex(new(-1.6f, 2.14f, .4f));
+            studio.AddChild(new MeshInstance3D { Mesh = flag.Commit(), MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color("27bd62").SrgbToLinear(), CullMode = BaseMaterial3D.CullModeEnum.Disabled, Roughness = .8f } });
+        }
 
         bool rear = AccessoryId is "spare" or "exhaust" or "spoiler" or "antenna" or "flag";
         var camera = new Camera3D {
@@ -58,6 +74,6 @@ public partial class CarLookPreview : SubViewportContainer
             Position = new Vector3(4, 3.4f, rear ? 5 : -5), Current = true
         };
         studio.AddChild(camera);
-        camera.LookAt(new Vector3(0, 1.25f, 0));
+        camera.LookAt(new Vector3(0, ExpeditionCargo != null ? 1.5f : 1.25f, 0));
     }
 }

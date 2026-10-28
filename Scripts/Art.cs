@@ -50,5 +50,15 @@ public static class Art
         parent.AddChild(label);
         return label;
     }
+    public static Label3D TaskMarker(Node3D parent, Vector3 pos, string text, bool destination = false)
+    {
+        var marker = Sign(parent, pos, text, 132);
+        marker.FixedSize = true;
+        marker.PixelSize = .0011f;
+        marker.Modulate = new Color(destination ? "63e7e0" : "ffeb3b");
+        marker.OutlineSize = 16;
+        marker.OutlineModulate = new Color("241a10");
+        return marker;
+    }
 }
 
