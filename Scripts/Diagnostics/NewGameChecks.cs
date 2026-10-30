@@ -28,7 +28,7 @@ public partial class NewGameChecks : Node
             {
                 Check(Settings.Seed != oldSeed && !ReferenceEquals(oldPlan, WorldLayout.Plan), "new game rebuilds the world with a fresh seed");
                 Check(game.State == GameState.Exploring && car.Active, "new game starts driving automatically");
-                Check(game.RemainingAnimals == 30 && game.RemainingDeliveries == 30 && game.OwnedRewards.Count == 2 &&
+                Check(game.RemainingAnimals == World.QuestAnimalCount && game.RemainingDeliveries == World.QuestAnimalCount && game.OwnedRewards.Count == 2 &&
                     game.Delivery == null && game.CurrentChallenge == null && car.Appearance.CurrentModelId == "classic",
                     "new game clears tasks, expeditions and cosmetics");
                 Check(game.CaptureProgress().Seed == Settings.Seed, "new progress uses the new seed");

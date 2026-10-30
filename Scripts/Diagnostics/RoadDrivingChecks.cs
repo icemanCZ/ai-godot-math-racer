@@ -12,7 +12,20 @@ public partial class RoadDrivingChecks : Node
     private readonly List<Vector3> path = new();
     private int route, direction, progress, frame, lastProgressFrame;
     private bool started;
+    private int routeLimit;
     public RoadDrivingChecks(World world, Vehicle car) { this.world = world; this.car = car; }
+
+    public override void _Ready()
+    {
+        routeLimit = WorldLayout.Plan.Routes.Length;
+        foreach (string argument in OS.GetCmdlineUserArgs())
+            if (argument.StartsWith("--road-driving-route="))
+            {
+                route = int.Parse(argument.Substring("--road-driving-route=".Length));
+                if (route < 0 || route >= routeLimit) throw new ArgumentOutOfRangeException(nameof(route));
+                routeLimit = route + 1;
+            }
+    }
 
     private void Begin()
     {
@@ -49,7 +62,7 @@ public partial class RoadDrivingChecks : Node
             {
                 var collision = car.GetSlideCollision(i);
                 var collider = collision.GetCollider() as Node3D;
-                GD.Print($"ROAD_DRIVING_CONTACT collider={collider?.GetPath()} position={collider?.GlobalPosition} normal={collision.GetNormal()} floor={car.IsOnFloor()}");
+                GD.Print($"ROAD_DRIVING_CONTACT collider={collider?.GetPath()} parent_type={collider?.GetParent()?.GetParent()?.GetType().Name} position={collider?.GlobalPosition} normal={collision.GetNormal()} floor={car.IsOnFloor()}");
             }
             GD.PushError($"ROAD_DRIVING_FAILED seed={Settings.Seed} route={route} direction={direction} progress={progress}/{path.Count} position={car.Position} distance={Mathf.Sqrt(best)} speed={car.Speed}");
             GetTree().Quit(1); SetPhysicsProcess(false); return;
@@ -58,7 +71,7 @@ public partial class RoadDrivingChecks : Node
         {
             GD.Print($"ROAD_DRIVEN seed={Settings.Seed} route={route} direction={direction} metres={path.Count}");
             if (++direction == 2) { direction = 0; route++; }
-            if (route == WorldLayout.Plan.Routes.Length)
+            if (route == routeLimit)
             {
                 GD.Print("ROAD_DRIVING_CHECKS_PASSED"); GetTree().Quit(); SetPhysicsProcess(false); return;
             }

@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace MathRacer;
 
-public enum GameState { Title, Exploring, Challenge, Reward, Paused, ExpeditionChoice, Garage, HouseReward, HouseCollection, HouseFruitOffer, FarmStatus, GardenStatus, CollectionStatus }
+public enum GameState { Title, Exploring, Challenge, Reward, Paused, ExpeditionChoice, Garage, HouseReward, HouseCollection, HouseFruitOffer, FarmStatus, GardenStatus, CollectionStatus, TradeStatus }
 
 public partial class Game : Node3D
 {
@@ -42,8 +42,7 @@ public partial class Game : Node3D
             SetProcess(false);
             try
             {
-                AddChild(world.Ground); world.Ground.Generate();
-                AddChild(world.Routes); world.Routes.Generate(world.Ground);
+                AddChild(world); world.GenerateVillage();
                 WorldLayoutChecks.ValidatePlan(WorldLayout.Plan, Settings.Seed);
                 RoadPassabilityChecks.Run(world);
                 GetTree().Quit();
@@ -60,8 +59,9 @@ public partial class Game : Node3D
             AddChild(new RoadDrivingChecks(world, vehicle));
             return;
         }
+        world.AddChild(Events); Events.Generate(world);
         world.AddChild(world.Wildlife); world.Wildlife.Generate(world, vehicle);
-        var camera = new FollowCamera { Target = vehicle, Ground = world.Ground, Fov = 62, Far = 1200, Current = true }; AddChild(camera); camera.Snap();
+        var camera = new FollowCamera { Target = vehicle, Ground = world.Ground, Fov = 62, Far = 1200, Current = true }; AddChild(camera); followCamera = camera; camera.Snap();
         world.AddChild(world.Grass); world.Grass.Setup(world, vehicle);
         AddChild(ui); ui.Setup(); ui.PlayRequested += ContinueGame; ui.ResumeRequested += Resume; ui.CloseInteractionRequested += CloseInteraction; ui.Title(SaveStore.Initial != null);
         ui.NewGameRequested += NewGame;
@@ -86,17 +86,31 @@ public partial class Game : Node3D
         if (args.Contains("--village-checks")) { Start(); AddChild(new VillageChecks(this, world, vehicle)); }
         if (args.Contains("--farm-checks")) { Start(); AddChild(new FarmChecks(this, world, vehicle)); }
         if (args.Contains("--garden-checks")) { Start(); AddChild(new GardenChecks(this, world, vehicle)); }
+        if (args.Contains("--trade-checks")) { Start(); AddChild(new TradeChecks(this, world, vehicle)); }
         if (args.Contains("--collection-checks")) { Start(); AddChild(new CollectionChecks(this, world, vehicle)); }
         if (args.Contains("--save-checks")) { Start(); AddChild(new SaveChecks(this, world, vehicle)); }
+        if (args.Contains("--event-checks")) { Start(); AddChild(new EventChecks(this, world, vehicle)); }
         if (args.Contains("--new-game-checks")) AddChild(new NewGameChecks(this, world, vehicle));
         if (args.Contains("--capture"))
         {
             string view = args.FirstOrDefault(a => a.StartsWith("--view="))?.Substring(7) ?? "gameplay";
+            if (view.StartsWith("baker") || view.StartsWith("merchant") || view.StartsWith("confectioner"))
+            {
+                int trade = view.StartsWith("baker") ? 0 : view.StartsWith("merchant") ? 1 : 2;
+                var owner = world.Village.Traders[trade];
+                vehicle.SetPose(owner.Position + Vector3.Right * 3, 0);
+                if (view.EndsWith("question") || view.EndsWith("delivery") || view.EndsWith("reward")) OpenChallenge(owner);
+                if (view.EndsWith("delivery") || view.EndsWith("reward")) SubmitAnswer(CurrentChallenge!.Answer);
+                if (view.EndsWith("reward"))
+                {
+                    vehicle.SetPose(Delivery!.Recipient.Position + Vector3.Right * 2, 0); BeginDeliveryQuestion();
+                }
+            }
             if (view.StartsWith("museum") || view.StartsWith("toys"))
             {
                 bool toys = view.StartsWith("toys");
                 var owner = toys ? world.Village.Toymaker : world.Village.GemCollector;
-                if (view.EndsWith("full")) world.Village.RestoreCollection(toys, 6);
+                if (view.EndsWith("full")) world.Village.RestoreCollection(toys, Village.CollectionNames(toys).Length);
                 vehicle.SetPose(owner.Position + Vector3.Right * 3, 0);
                 if (view.EndsWith("question") || view.EndsWith("expedition")) OpenChallenge(owner);
                 if (view.EndsWith("expedition")) SubmitAnswer(CurrentChallenge!.Answer);
@@ -114,6 +128,12 @@ public partial class Game : Node3D
                 vehicle.SetPose(world.Village.Farmer.Position + Vector3.Right * 3, 0);
                 if (view is "farm-question" or "farm-expedition") OpenChallenge(world.Village.Farmer);
                 if (view == "farm-expedition") SubmitAnswer(CurrentChallenge!.Answer);
+            }
+            if (view == "house-celebration")
+            {
+                var owner = world.Village.Residents[0];
+                vehicle.SetPose(owner.Position + Vector3.Right * 3, 0);
+                CompleteHouseTask(owner);
             }
             if (view == "garage") { vehicle.SetPose(world.Village.GarageEntrance, 0); OpenGarage(); }
             if (view is "village" or "village-upgraded" or "village-question" or "village-fruit-offer" or "village-fruit")
@@ -170,6 +190,7 @@ public partial class Game : Node3D
     {
         if (State == GameState.Reward && deliveryReward && Delivery != null)
         {
+            if (Delivery.Sender.IsTrader) world.Village.TradeCounts[Delivery.Sender.TradeIndex]++;
             Delivery.ReleaseCargo(); RemoveChild(Delivery); Delivery.QueueFree(); Delivery = null; ui.DeliveryHud(null);
             UpdateDeliveryGuides();
         }
@@ -189,7 +210,9 @@ public partial class Game : Node3D
         else if (State == GameState.FarmStatus) ui.FarmStatus(world.Village, Delivery);
         else if (State == GameState.GardenStatus) ui.GardenStatus(world.Village, Delivery);
         else if (State == GameState.CollectionStatus && nearby != null) ui.CollectionStatus(world.Village, nearby, Delivery);
+        else if (State == GameState.TradeStatus && nearby != null) ui.TradeStatus(nearby, Delivery);
         else ui.HideModal();
+        if (celebrationPanel == State && celebrationTime > 0) ui.HideModal();
     }
     public override void _Input(InputEvent e)
     {
@@ -202,7 +225,7 @@ public partial class Game : Node3D
         else if (e.IsActionPressed("back") && State != GameState.Title)
         {
             if (State == GameState.Paused) Resume();
-            else if (State is GameState.Challenge or GameState.Reward or GameState.ExpeditionChoice or GameState.Garage or GameState.HouseReward or GameState.HouseCollection or GameState.HouseFruitOffer or GameState.FarmStatus or GameState.GardenStatus or GameState.CollectionStatus) CloseInteraction();
+            else if (State is GameState.Challenge or GameState.Reward or GameState.ExpeditionChoice or GameState.Garage or GameState.HouseReward or GameState.HouseCollection or GameState.HouseFruitOffer or GameState.FarmStatus or GameState.GardenStatus or GameState.CollectionStatus or GameState.TradeStatus) CloseInteraction();
             else TogglePause();
             GetViewport().SetInputAsHandled();
         }
@@ -218,6 +241,7 @@ public partial class Game : Node3D
     {
         if (State != GameState.Exploring) return;
         if (AtGarage) { OpenGarage(); return; }
+        if (InteractWithEvent()) return;
         if (Delivery != null && Delivery.Arrived && vehicle.Position.DistanceTo(Delivery.Recipient.Position) < Settings.InteractionRange) BeginDeliveryQuestion();
         else if (nearby != null) OpenChallenge(nearby);
     }
@@ -254,7 +278,7 @@ public partial class Game : Node3D
     private bool CanChooseExpedition(Animal animal) => unlockedExpeditions.Contains(animal) && !completedDeliveries.Contains(animal) && Delivery?.Sender != animal;
     private void UpdateDeliveryGuides()
     {
-        foreach (var animal in world.Animals.Concat(world.Village.Residents).Append(world.Village.Farmer).Append(world.Village.Gardener).Append(world.Village.GemCollector).Append(world.Village.Toymaker))
+        foreach (var animal in world.Animals.Concat(world.Village.Residents).Append(world.Village.Farmer).Append(world.Village.Gardener).Append(world.Village.GemCollector).Append(world.Village.Toymaker).Concat(world.Village.Traders))
         {
             bool target = Delivery != null && Delivery.CanDeliver && animal == Delivery.Recipient;
             animal.Guide(animal.RewardAvailable || CanChooseExpedition(animal) || target, target);
@@ -264,17 +288,20 @@ public partial class Game : Node3D
     {
         if (Delivery == null || !Delivery.CanDeliver || State != GameState.Exploring || vehicle.Position.DistanceTo(Delivery.Recipient.Position) >= Settings.InteractionRange) return;
         Delivery.Arrived = true; nearby = Delivery.Recipient; vehicle.Active = false;
+        if (Delivery.Sender.IsTrader) { CompleteTrade(); return; }
         if (Delivery.SpecialCollection)
         {
             if (Delivery.Gems || Delivery.Toys)
             {
                 bool toys = Delivery.Toys;
+                CelebrateCompletion(nearby, "Nový poklad ve sbírce! Děkujeme!", true);
                 Delivery.ReleaseCargo(); RemoveChild(Delivery); Delivery.QueueFree(); Delivery = null;
                 world.Village.RestoreCollection(toys, world.Village.CollectionCount(toys) + 1); nearby.Celebrate();
                 CurrentChallenge = null; rejectedAnswers.Clear(); ui.DeliveryHud(null); UpdateDeliveryGuides();
-                State = GameState.CollectionStatus; ui.CollectionStatus(world.Village, nearby, null, true); SaveProgress(); return;
+                State = GameState.CollectionStatus; ui.CollectionStatus(world.Village, nearby, null, true); ShowCelebrationView(); SaveProgress(); return;
             }
             bool garden = Delivery.Garden;
+            CelebrateCompletion(nearby, garden ? "Nová květina na zahrádce!" : "Zvířátko je doma! Děkujeme!", true);
             Delivery.ReleaseCargo(); RemoveChild(Delivery); Delivery.QueueFree(); Delivery = null;
             if (garden) world.Village.RestoreGarden(world.Village.GardenCount + 1);
             else world.Village.RestoreFarm(world.Village.FarmCount + 1);
@@ -282,6 +309,7 @@ public partial class Game : Node3D
             CurrentChallenge = null; rejectedAnswers.Clear(); ui.DeliveryHud(null); UpdateDeliveryGuides();
             State = garden ? GameState.GardenStatus : GameState.FarmStatus;
             if (garden) ui.GardenStatus(world.Village, null, true); else ui.FarmStatus(world.Village, null, true);
+            ShowCelebrationView();
             SaveProgress(); return;
         }
         CurrentChallenge = new DeliveryChallenge(Delivery.Cargo, Delivery.Amount); rejectedAnswers.Clear();
@@ -290,6 +318,7 @@ public partial class Game : Node3D
     internal void OpenChallenge(Animal animal)
     {
         if (State != GameState.Exploring) return;
+        if (animal.IsTrader) { OpenTrade(animal); return; }
         if (animal.IsFarmer) { OpenFarm(); return; }
         if (animal.IsGardener) { OpenGarden(); return; }
         if (animal.IsCollectionOwner) { OpenCollection(animal); return; }
@@ -339,10 +368,12 @@ public partial class Game : Node3D
         if (State != GameState.Challenge || CurrentChallenge == null || nearby == null || !CurrentChallenge.Choices.Contains(answer)) return;
         if (answer == CurrentChallenge.Answer)
         {
+            if (nearby.IsTrader) { StartTrade(); return; }
             if (nearby.IsFarmer || nearby.IsGardener || nearby.IsCollectionOwner)
             {
                 int count = nearby.IsFarmer ? world.Village.FarmCount : nearby.IsGardener ? world.Village.GardenCount : world.Village.CollectionCount(nearby.IsToymaker);
-                if (Delivery != null || count >= 6) return;
+                int total = nearby.IsFarmer ? Village.FarmKinds.Length : nearby.IsGardener ? Village.FlowerNames.Length : Village.CollectionNames(nearby.IsToymaker).Length;
+                if (Delivery != null || count >= total) return;
                 Delivery = new Expedition(world, vehicle, nearby, true); AddChild(Delivery);
                 CurrentChallenge = null; rejectedAnswers.Clear(); lastCollected = Delivery.Collected;
                 ui.DeliveryHud(Delivery); Start(); UpdateDeliveryGuides(); SaveProgress(); return;
@@ -350,8 +381,8 @@ public partial class Game : Node3D
             if (CurrentChallenge is DeliveryChallenge && Delivery?.Sender.HouseIndex >= 0)
             {
                 var owner = Delivery.Sender;
-                Delivery.ReleaseCargo(); RemoveChild(Delivery); Delivery.QueueFree(); Delivery = null; ui.DeliveryHud(null);
-                CompleteHouseTask(owner); UpdateDeliveryGuides(); SaveProgress(); return;
+                CompleteHouseTask(owner);
+                Delivery.ReleaseCargo(); RemoveChild(Delivery); Delivery.QueueFree(); Delivery = null; ui.DeliveryHud(null); UpdateDeliveryGuides(); SaveProgress(); return;
             }
             if (nearby.HouseIndex >= 0 && CurrentChallenge is not DeliveryChallenge)
             {
@@ -369,10 +400,10 @@ public partial class Game : Node3D
             if (deliveryReward && Delivery != null)
             {
                 completedDeliveries.Add(Delivery.Sender);
-                Delivery.Recipient.Celebrate();
+                CelebrateCompletion(Delivery.Recipient, "Doručeno! Děkujeme za pomoc!", true);
             }
             CurrentRewards = CarReward.Draw(rewardRandom, previousRewards); previousRewards = CurrentRewards;
-            State = GameState.Reward; ShowRewards();
+            State = GameState.Reward; ShowRewards(); ShowCelebrationView();
         }
         else
         {
@@ -407,11 +438,14 @@ public partial class Game : Node3D
     internal void FinishInteraction() => CloseInteraction();
     public override void _Process(double delta)
     {
-        foreach (var animal in world.Animals.Concat(world.Village.Residents).Append(world.Village.Farmer).Append(world.Village.Gardener).Append(world.Village.GemCollector).Append(world.Village.Toymaker))
+        foreach (var animal in world.Animals.Concat(world.Village.Residents).Append(world.Village.Farmer).Append(world.Village.Gardener).Append(world.Village.GemCollector).Append(world.Village.Toymaker).Concat(world.Village.Traders))
+        {
+            animal.AnimationPaused = State is GameState.Paused or GameState.Title;
             animal.GreetPlayer(vehicle.Position, State == GameState.Exploring);
+        }
         if (State == GameState.Exploring)
         {
-            nearby = world.Animals.Concat(world.Village.Residents).Append(world.Village.Farmer).Append(world.Village.Gardener).Append(world.Village.GemCollector).Append(world.Village.Toymaker).Where(a => a.Position.DistanceTo(vehicle.Position) < Settings.InteractionRange)
+            nearby = world.Animals.Concat(world.Village.Residents).Append(world.Village.Farmer).Append(world.Village.Gardener).Append(world.Village.GemCollector).Append(world.Village.Toymaker).Concat(world.Village.Traders).Where(a => a.Position.DistanceTo(vehicle.Position) < Settings.InteractionRange)
                 .OrderByDescending(a => a.RewardAvailable || CanChooseExpedition(a)).ThenBy(a => a.Position.DistanceSquaredTo(vehicle.Position)).FirstOrDefault();
             if (Delivery != null)
             {
@@ -430,9 +464,11 @@ public partial class Game : Node3D
             if (nearby?.IsFarmer == true) ui.FarmHint();
             if (nearby?.IsGardener == true) ui.GardenHint();
             if (nearby?.IsCollectionOwner == true) ui.CollectionHint(nearby.IsToymaker);
+            if (nearby?.IsTrader == true) ui.TradeHint(nearby);
             if (AtGarage) ui.GarageHint();
         }
         else ui.DeliveryHint(false);
+        TickEvents(delta);
         saveTimer += delta;
         if (State != GameState.Title && (State != lastSavedState || saveTimer >= (State == GameState.Exploring ? 2 : .5))) SaveProgress();
     }

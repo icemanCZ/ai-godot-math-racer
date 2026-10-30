@@ -12,7 +12,45 @@ public partial class VisualCapture : Node
     public VisualCapture(FollowCamera camera, World world, Vehicle car, string view) { this.camera = camera; this.world = world; this.car = car; this.view = view; }
     public override async void _Ready()
     {
-        if (view == "letter-pictures" || view == "letter-pictures-2")
+        if (view is "nature" or "riverbank")
+        {
+            camera.SetProcess(false); car.Active = false;
+            var focus = view == "nature" ? world.Plants.MeadowPreview : world.Plants.BankPreview;
+            if (focus == Vector3.Zero) focus = world.Plants.PreviewSpot;
+            if (view == "riverbank")
+            {
+                int side = focus.X < River.CenterX(focus.Z) ? -1 : 1;
+                camera.Position = focus + new Vector3(side * 7, 3.8f, 9);
+                camera.LookAt(focus + new Vector3(-side * 2, .5f, 0));
+            }
+            else
+            {
+                camera.Position = focus + new Vector3(6, 3.3f, 8);
+                camera.LookAt(focus + Vector3.Up * .6f);
+            }
+        }
+        else if (view == "square")
+        {
+            camera.SetProcess(false); car.Active = false;
+            var square = world.Village.Square;
+            var focus = square.GlobalPosition + Vector3.Up;
+            camera.Position = focus + square.GlobalBasis * new Vector3(17, 17, 27);
+            camera.LookAt(focus);
+        }
+        else if (view is "events" or "slalom")
+        {
+            var game = (Game)GetParent();
+            int course = view == "slalom" ? 1 : 0;
+            game.Events.Begin(course);
+            var frame = game.Events.Sample(course, game.Events.StartDistances[course]);
+            var before = game.Events.Sample(course, game.Events.StartDistances[course] - 8).Center;
+            before.Y = world.Routes.SurfaceHeight(before, world.Ground.Height(before.X, before.Z));
+            if (River.OnBridge(before.X, before.Z)) before.Y = Mathf.Max(before.Y, River.BridgeSurfaceHeight(before.X));
+            car.SetPose(before + Vector3.Up * .2f, Mathf.Atan2(-frame.Forward.X, -frame.Forward.Z));
+            car.SetPhysicsProcess(false);
+            camera.Snap();
+        }
+        else if (view == "letter-pictures" || view == "letter-pictures-2")
         {
             var layer = new CanvasLayer { Layer = 100 }; AddChild(layer);
             var background = new ColorRect { Color = new Color("fff5df") }; layer.AddChild(background);
@@ -28,6 +66,14 @@ public partial class VisualCapture : Node
                 label.AddThemeColorOverride("font_color", new Color("3c5960"));
                 label.AddThemeFontSizeOverride("font_size", 22); card.AddChild(label);
             }
+        }
+        else if ((view.StartsWith("baker") || view.StartsWith("merchant") || view.StartsWith("confectioner")) && !view.EndsWith("delivery") && !view.EndsWith("reward"))
+        {
+            camera.SetProcess(false); car.Active = false;
+            int trade = view.StartsWith("baker") ? 0 : view.StartsWith("merchant") ? 1 : 2;
+            var shop = world.Village.Shops[trade];
+            var focus = shop.GlobalPosition + Vector3.Up * 2;
+            camera.Position = focus + shop.GlobalBasis * new Vector3(11, 9, 19); camera.LookAt(focus);
         }
         else if ((view.StartsWith("museum") || view.StartsWith("toys")) && !view.EndsWith("expedition"))
         {
@@ -135,9 +181,9 @@ public partial class VisualCapture : Node
         else if (view == "junction")
         {
             camera.SetProcess(false);
-            var junction = WorldLayout.Plan.Routes[1][0];
+            var junction = WorldLayout.Plan.VillageJunction;
             var focus = world.Ground.At(junction.X, junction.Z);
-            camera.Position = focus + new Vector3(16, 20, 22);
+            camera.Position = focus + new Vector3(48, 58, 62);
             camera.LookAt(focus);
         }
         else if (view == "world")
@@ -160,21 +206,22 @@ public partial class VisualCapture : Node
             car.SetPose(world.Ground.At(point.X, point.Z + 7, .15f), 0);
             camera.Position = point + new Vector3(7, 6, 14); camera.LookAt(point + Vector3.Up);
         }
-        else if (view == "delivery")
+        else if (view == "delivery" || view.EndsWith("-delivery"))
         {
             camera.SetProcess(false);
             var direction = (((Game)GetParent()).Delivery!.Waypoint - car.Position); direction.Y = 0; direction = direction.Normalized();
             car.SetPose(car.Position, Mathf.Atan2(-direction.X, -direction.Z));
             camera.Position = car.Position - direction * 12 + Vector3.Up * 7; camera.LookAt(car.Position + direction * 5);
         }
-        else if (!view.StartsWith("collection-") && !view.StartsWith("delivery-") && view != "gameplay" && view != "title" && view != "challenge" && view != "letters" && view != "reward" && view != "accessories")
+        else if (view == "house-celebration") { }
+        else if (!view.EndsWith("-reward") && !view.StartsWith("collection-") && !view.StartsWith("delivery-") && view != "gameplay" && view != "title" && view != "challenge" && view != "letters" && view != "reward" && view != "accessories")
         {
             camera.SetProcess(false);
             Vector3 focus = (view == "river" || view == "pond") ? new Vector3(River.CenterX(River.BridgeZ), River.BridgeHeight, River.BridgeZ) : view == "village" ? world.Village.Center + Vector3.Up * 2 : world.Animals[view == "fox" ? 1 : view == "bear" ? 2 : 0].Position + Vector3.Up * 1.5f;
             camera.Position = focus + (view == "village" ? new Vector3(30, 27, 39) : (view == "river" || view == "pond") ? new Vector3(34, 25, 33) : new Vector3(4, 2, 8));
             camera.LookAt(focus);
         }
-        await ToSignal(GetTree().CreateTimer(view == "grass" ? .15 : view == "tree-impact" ? .5 : 3), SceneTreeTimer.SignalName.Timeout);
+        await ToSignal(GetTree().CreateTimer(view == "grass" ? .15 : view == "tree-impact" ? .5 : view == "delivery-reward" || view == "house-celebration" ? 1.2 : 3), SceneTreeTimer.SignalName.Timeout);
         if (DisplayServer.GetName() == "headless") { GetTree().Quit(); return; }
         await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
         DirAccess.MakeDirRecursiveAbsolute(ProjectSettings.GlobalizePath("res://artifacts"));

@@ -8,6 +8,12 @@ Assert-ExitCode 'Import'
 & $godot --headless --path $PSScriptRoot --quit-after 5
 Assert-ExitCode 'Načtení projektu'
 if ($Test) {
+    & $godot --headless --path $PSScriptRoot --fixed-fps 60 -- --event-checks --seed=42
+    Assert-ExitCode 'Testy jízdních eventů a oslav'
+    foreach ($tradeSeed in @(1, 42, 7421)) {
+        & $godot --headless --path $PSScriptRoot --fixed-fps 60 -- --trade-checks "--seed=$tradeSeed"
+        Assert-ExitCode "Testy pekaře, obchodníka a cukráře (seed $tradeSeed)"
+    }
     & $godot --headless --path $PSScriptRoot --fixed-fps 60 -- --collection-checks --seed=42
     Assert-ExitCode 'Testy sběratele drahokamů a hračkáře'
     & $godot --headless --path $PSScriptRoot --fixed-fps 60 -- --garden-checks --seed=42

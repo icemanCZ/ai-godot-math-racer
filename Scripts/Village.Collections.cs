@@ -6,9 +6,9 @@ namespace MathRacer;
 
 public partial class Village
 {
-    public static readonly string[] GemNames = { "rubín", "safír", "smaragd", "ametyst", "citrín", "růženín" };
-    public static readonly string[] GemColors = { "ed586e", "609ff1", "5cce9c", "b084e5", "f5cd57", "f3abc9" };
-    public static readonly string[] ToyNames = { "míč", "autíčko", "medvídka", "káču", "vláček", "kostky" };
+    public static readonly string[] GemNames = { "rubín", "safír", "smaragd", "ametyst", "citrín", "růženín", "tyrkys", "opál", "topaz", "akvamarín", "olivín", "lazurit" };
+    public static readonly string[] GemColors = { "ed586e", "609ff1", "5cce9c", "b084e5", "f5cd57", "f3abc9", "55c9bb", "eee7ff", "efaa66", "9adeef", "b7cf67", "4a65bd" };
+    public static readonly string[] ToyNames = { "míč", "autíčko", "medvídka", "káču", "vláček", "kostky", "bubínek", "raketu", "kachničku", "robota", "letadélko", "plachetnici" };
     public Animal GemCollector { get; private set; } = null!;
     public Animal Toymaker { get; private set; } = null!;
     public Node3D MuseumBuilding { get; private set; } = null!;
@@ -26,8 +26,9 @@ public partial class Village
         foreach (bool toys in new[] { false, true })
         {
             var (plot, road) = FindCollectionPlot(toys ? 235 : 195);
+            var building = CreateBuilding(toys ? "ToyWorkshop" : "GemMuseum", plot, new(7, 7.1f));
+            plot = building.Transform;
             collectionPlots.Add(plot); plots.Add(plot); plots.Add(new(plot.Basis, plot * new Vector3(10, 0, 0)));
-            var building = new Node3D { Name = toys ? "ToyWorkshop" : "GemMuseum", Transform = plot }; AddChild(building);
             if (toys) ToyBuilding = building; else MuseumBuilding = building;
             Art.Block(building, new(0, 1.8f, 0), new(7, 3.6f, 5.5f), toys ? "f1be72" : "b4b1df");
             Obstacles.Box(building, new(0, 1.8f, 0), new(7, 3.6f, 5.5f));
@@ -40,7 +41,7 @@ public partial class Village
             if (toys) CreateToy(building, new(0, 4.1f, 0), 0).Scale = Vector3.One * .85f;
             else CreateGem(building, new(0, 4.1f, 0), 1);
             Art.Sign(building, new(0, 6, 0), toys ? "HRAČKÁŘSTVÍ" : "MUZEUM DRAHOKAMŮ", 34);
-            collectionProgress.Add(Art.Sign(building, new(10, 3, 0), toys ? "Hračky: 0 / 6" : "Drahokamy: 0 / 6", 28));
+            collectionProgress.Add(Art.Sign(building, new(10, 3, 0), $"{(toys ? "Hračky" : "Drahokamy")}: 0 / {CollectionNames(toys).Length}", 28));
             var owner = Animal.Create(toys ? "Hračkář Pepa" : "Sběratel drahokamů Jáchym", "Přivezeš mi něco do sbírky?", toys ? 2 : 1, toys ? "e8b87e" : "b2a6df");
             owner.IsToymaker = toys; owner.IsGemCollector = !toys;
             if (toys) Toymaker = owner; else GemCollector = owner;
@@ -53,7 +54,7 @@ public partial class Village
                 Art.Ball(owner, new(0, 2.7f, .52f), new(.18f, .18f, .09f), "fff4c2");
             }
             Path(plot * new Vector3(-1.5f, 0, 2.9f), road, 2.6f);
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < CollectionNames(toys).Length; i++)
             {
                 var p = CollectionSpot(toys, i);
                 Art.Block(this, p + Vector3.Up * (toys ? .07f : .4f), toys ? new(2.5f, .14f, 2.5f) : new Vector3(1.6f, .8f, 1.6f), toys ? "e9d29e" : "dcd9ee");
@@ -61,16 +62,16 @@ public partial class Village
         }
     }
 
-    private (Transform3D Plot, Vector3 Road) FindCollectionPlot(float start)
+    private (Transform3D Plot, Vector3 Road) FindCollectionPlot(float start, float minX = -4.5f, float maxX = 16.5f, float end = 435)
     {
-        for (float distance = start; distance <= 435; distance += 20)
+        for (float distance = start; distance <= end; distance += 20)
             foreach (int side in new[] { 1, -1 })
             {
                 var frame = roads.SampleMain(distance); var outward = frame.Forward.Cross(Vector3.Up) * side;
                 var origin = frame.Center + outward * 14;
                 var plot = new Transform3D(Basis.FromEuler(new(0, Mathf.Atan2(-outward.X, -outward.Z), 0)), ground.At(origin.X, origin.Z));
                 bool clear = true;
-                for (float x = -4.5f; x <= 16.5f && clear; x += 1.5f)
+                for (float x = minX; x <= maxX && clear; x += 1.5f)
                     for (float z = -6.5f; z <= 7 && clear; z += 1.5f)
                     {
                         var p = plot * new Vector3(x, 0, z);
@@ -86,7 +87,7 @@ public partial class Village
 
     private Vector3 CollectionSpot(bool toys, int index)
     {
-        var p = collectionPlots[toys ? 1 : 0] * new Vector3(6.5f + index % 3 * 3.5f, 0, -2.2f + index / 3 * 4.3f);
+        var p = collectionPlots[toys ? 1 : 0] * new Vector3(6 + index % 4 * 3, 0, -4 + index / 4 * 4);
         return ground.At(p.X, p.Z);
     }
 
@@ -139,8 +140,55 @@ public partial class Village
             Art.Cylinder(toy, new(0, .75f, 0), .6f, .05f, .3f, "f3cd66");
             Art.Cylinder(toy, new(0, 1, 0), .08f, .08f, .3f, "7bbfbd");
         }
-        else
+        else if (index == 5)
             for (int i = 0; i < 3; i++) Art.Block(toy, new((i - 1) * .42f, .25f + (i == 1 ? .5f : 0), 0), Vector3.One * .5f, new[] { "ef897d", "7dbfce", "f4ce70" }[i]);
+        else if (index == 6)
+        {
+            Art.Cylinder(toy, new(0, .45f, 0), .55f, .55f, .8f, "ef897d");
+            foreach (float y in new[] { .05f, .85f }) Art.Cylinder(toy, new(0, y, 0), .58f, .58f, .08f, "fff0d3");
+            Art.Beam(toy, new(-.5f, 1, -.2f), new(.45f, 1.2f, .2f), .07f, "c79869");
+        }
+        else if (index == 7)
+        {
+            Art.Cylinder(toy, new(0, .65f, 0), .3f, .3f, 1, "e9edf5");
+            Art.Cylinder(toy, new(0, 1.35f, 0), .3f, 0, .4f, "ef897d");
+            Art.Ball(toy, new(0, .85f, .29f), new(.15f, .15f, .04f), "7dbfce");
+            foreach (int side in new[] { -1, 1 }) Art.Block(toy, new(side * .35f, .25f, 0), new(.2f, .5f, .4f), "ef897d");
+        }
+        else if (index == 8)
+        {
+            Art.Ball(toy, new(0, .4f, 0), new(.5f, .4f, .65f), "f4ce70");
+            Art.Ball(toy, new(0, .95f, -.3f), Vector3.One * .32f, "f4ce70");
+            Art.Block(toy, new(0, .9f, -.65f), new(.35f, .12f, .3f), "ef9b58");
+            foreach (int side in new[] { -1, 1 }) Art.Ball(toy, new(side * .26f, 1.03f, -.45f), Vector3.One * .045f, "394d52");
+        }
+        else if (index == 9)
+        {
+            Art.Block(toy, new(0, .65f, 0), new(.6f, .65f, .35f), "7dbfce");
+            Art.Block(toy, new(0, 1.2f, 0), new(.65f, .45f, .4f), "b9c9d2");
+            foreach (int side in new[] { -1, 1 })
+            {
+                Art.Ball(toy, new(side * .16f, 1.25f, -.22f), Vector3.One * .07f, "f4ce70");
+                Art.Block(toy, new(side * .45f, .65f, 0), new(.2f, .55f, .25f), "b9c9d2");
+                Art.Block(toy, new(side * .2f, .18f, 0), new(.25f, .35f, .4f), "b9c9d2");
+            }
+        }
+        else if (index == 10)
+        {
+            Art.Ball(toy, new(0, .45f, 0), new(.2f, .2f, .8f), "ef897d");
+            Art.Block(toy, new(0, .45f, -.1f), new(1.7f, .09f, .4f), "f4ce70");
+            Art.Block(toy, new(0, .6f, .55f), new(.08f, .45f, .3f), "7dbfce");
+            Art.Block(toy, new(0, .45f, .6f), new(.7f, .08f, .25f), "f4ce70");
+        }
+        else
+        {
+            Art.Ball(toy, new(0, .25f, 0), new(.45f, .25f, .8f), "7dbfce");
+            Art.Cylinder(toy, new(0, .9f, 0), .04f, .04f, 1.4f, "c79869");
+            var sail = new SurfaceTool(); sail.Begin(Mesh.PrimitiveType.Triangles);
+            var a = new Vector3(.05f, .5f, 0); var b = new Vector3(.05f, 1.55f, 0); var c = new Vector3(.7f, .5f, 0);
+            foreach (var v in new[] { a, b, c, c, b, a }) sail.AddVertex(v);
+            sail.GenerateNormals(); Art.Mesh(toy, sail.Commit(), Vector3.Zero, Vector3.One, "fff0d3");
+        }
         return toy;
     }
 
@@ -153,7 +201,7 @@ public partial class Village
             var p = CollectionSpot(toys, i) + Vector3.Up * (toys ? .15f : .8f);
             displays.Add(toys ? CreateToy(this, p, i) : CreateGem(this, p, i));
         }
-        (toys ? Toymaker : GemCollector).SetRewardAvailable(displays.Count < 6);
-        collectionProgress[toys ? 1 : 0].Text = $"{(toys ? "Hračky" : "Drahokamy")}: {displays.Count} / 6";
+        (toys ? Toymaker : GemCollector).SetRewardAvailable(displays.Count < CollectionNames(toys).Length);
+        collectionProgress[toys ? 1 : 0].Text = $"{(toys ? "Hračky" : "Drahokamy")}: {displays.Count} / {CollectionNames(toys).Length}";
     }
 }

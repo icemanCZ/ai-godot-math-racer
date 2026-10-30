@@ -38,14 +38,22 @@ public partial class CollectionChecks : Node
                 for (float x = -4; x <= 16; x += 2)
                     for (float z = -6; z <= 6; z += 2)
                         Check(!world.Routes.Contains(building.ToGlobal(new(x, 0, z))), "collection building and display grounds stay off roads");
-            Check(world.SpecialPickupSpots.Length == 24, "all four residents have six off-road targets");
+            Check(world.SpecialPickupSpots.Length == 48, "all four residents have twelve off-road targets");
             foreach (var spot in world.SpecialPickupSpots)
+            {
                 Check(!world.Routes.Contains(spot) && world.Routes.Distance(spot) >= 7.5f && !world.Plants.NearTrunk(spot, 2.8f), "pickup stays off-road and clear of trees");
+                Check(world.Routes.Distance(spot) >= 16 && world.Animals.Concat(village.Residents).All(a =>
+                    new Vector2(a.Position.X - spot.X, a.Position.Z - spot.Z).Length() >= 28),
+                    "pickup lies deeper in the landscape and away from every quest animal and resident");
+            }
+            foreach (var (road, pickup) in world.PickupApproaches)
+                for (float t = 0; t <= 1; t += .05f)
+                    Check(!world.Plants.NearTrunk(road.Lerp(pickup, t), 3.5f), "off-road pickup has a clear driving approach");
             int visits = game.RemainingAnimals, deliveries = game.RemainingDeliveries;
             foreach (bool toys in new[] { false, true })
             {
                 var owner = toys ? village.Toymaker : village.GemCollector;
-                for (int i = 0; i < 6; i++)
+                for (int i = 0; i < Village.CollectionNames(toys).Length; i++)
                 {
                     car.SetPose(owner.Position + Vector3.Right * 2, 0); game.OpenChallenge(owner);
                     Check(game.State == GameState.Challenge && (i % 2 == 0 ? game.CurrentChallenge is MathChallenge : game.CurrentChallenge is LetterChallenge), "each departure requires math or letters");
@@ -81,7 +89,7 @@ public partial class CollectionChecks : Node
                 Check(game.State == GameState.CollectionStatus && game.CurrentChallenge == null && !owner.RewardAvailable, "completed collection thanks the player");
                 RoundTrip(); game.FinishInteraction();
             }
-            Check(village.GemCount == 6 && village.ToyCount == 6 && village.FarmCount == 0 && village.GardenCount == 0 &&
+            Check(village.GemCount == 12 && village.ToyCount == 12 && village.FarmCount == 0 && village.GardenCount == 0 &&
                 game.RemainingAnimals == visits && game.RemainingDeliveries == deliveries, "all four collections and roadside quests remain independent");
             var oldSave = JsonNode.Parse(JsonSerializer.Serialize(game.CaptureProgress()))!;
             oldSave.AsObject().Remove("GemCount"); oldSave.AsObject().Remove("ToyCount");

@@ -7,6 +7,13 @@ public partial class FollowCamera : Camera3D
     public Vehicle Target = null!;
     public Terrain Ground = null!;
     private Vector3 focus;
+    private float moment;
+    private Vector3 momentFocus, momentSide;
+    internal bool MomentPaused;
+    internal void ShowMoment(Vector3 target, Vector3 outward)
+    {
+        moment = 3; momentFocus = target; momentSide = outward;
+    }
     private const float ReturnDelay = 3f;
     private const float Sensitivity = .006f;
     private static readonly float DefaultPitch = Mathf.Atan2(4.3f, 10.5f);
@@ -58,6 +65,7 @@ public partial class FollowCamera : Camera3D
     public void Snap()
     {
         StopDragging();
+        moment = 0;
         yaw = 0; pitch = DefaultPitch; idleTime = 0;
         focus = Target.Position + Vector3.Up * 1.5f;
         Position = Target.Position + Target.Transform.Basis.Z * 10.5f + Vector3.Up * 5.7f;
@@ -66,6 +74,18 @@ public partial class FollowCamera : Camera3D
     public override void _Process(double delta)
     {
         float dt = (float)delta;
+        if (moment > 0)
+        {
+            StopDragging();
+            if (MomentPaused) return;
+            moment -= dt;
+            var view = momentFocus + momentSide * 17 + Vector3.Up * 8;
+            view.Y = Mathf.Max(view.Y, Ground.Height(view.X, view.Z) + 3);
+            Position = Position.Lerp(view, 1 - Mathf.Exp(-dt * 4));
+            focus = focus.Lerp(momentFocus, 1 - Mathf.Exp(-dt * 4)); LookAt(focus);
+            if (Target.Active) moment = 0;
+            return;
+        }
         if (!Target.Active) StopDragging();
         idleTime += dt;
         var stick = Input.GetVector("camera_left", "camera_right", "camera_up", "camera_down");

@@ -22,10 +22,50 @@ public partial class Village : Node3D
     private Roads roads = null!;
     private readonly List<Transform3D> plots = new();
     private readonly List<(Vector3 From, Vector3 To, float HalfWidth)> paths = new();
+    private readonly List<(Vector3 A, Vector3 B, Vector3 C)> walkwayTriangles = new();
     public Vector3 Center { get; private set; }
     public Vector3 GreetingSpot { get; private set; }
     public Vector3 GarageEntrance { get; private set; }
     public Node3D GarageBuilding { get; private set; } = null!;
+    internal readonly List<(Node3D Building, Vector2 Footprint)> BuildingFoundations = new();
+    internal Rect2 TerrainArea
+    {
+        get
+        {
+            var area = new Rect2(new Vector2(Center.X, Center.Z), Vector2.Zero);
+            // Include all yards, collection displays, the square and the connecting road.
+            foreach (var plot in plots)
+                foreach (float x in new[] { -13f, 13f })
+                    foreach (float z in new[] { -10f, 10f })
+                    {
+                        var p = plot * new Vector3(x, 0, z);
+                        area = area.Expand(new Vector2(p.X, p.Z));
+                    }
+            return area.Grow(Settings.TerrainStep * 2);
+        }
+    }
+
+    private Node3D CreateBuilding(string name, Transform3D plot, Vector2 footprint)
+    {
+        float highest = float.NegativeInfinity, lowest = float.PositiveInfinity;
+        var size = footprint + Vector2.One * .4f;
+        int columns = Mathf.CeilToInt(size.X / .25f), rows = Mathf.CeilToInt(size.Y / .25f);
+        for (int x = 0; x <= columns; x++)
+            for (int z = 0; z <= rows; z++)
+            {
+                var p = plot * new Vector3(size.X * (x / (float)columns - .5f), 0, size.Y * (z / (float)rows - .5f));
+                float y = ground.Height(p.X, p.Z);
+                highest = Mathf.Max(highest, y); lowest = Mathf.Min(lowest, y);
+            }
+        plot.Origin = new Vector3(plot.Origin.X, highest + .15f, plot.Origin.Z);
+        var building = new Node3D { Name = name, Transform = plot }; AddChild(building);
+        float height = plot.Origin.Y - lowest + .25f;
+        var foundation = Art.Block(building, Vector3.Down * height / 2, new(size.X, height, size.Y), "b7ab96");
+        foundation.Name = "Foundation";
+        Obstacles.Add(building, foundation.Position, new BoxShape3D { Size = foundation.Scale }).Name = "FoundationCollision";
+        BuildingFoundations.Add((building, size));
+        return building;
+    }
 
     public void Generate(Terrain terrain, Roads roads)
     {
@@ -36,8 +76,8 @@ public partial class Village : Node3D
         var garagePosition = ground.At(garageFrame.Center.X + garageOutward.X * 11, garageFrame.Center.Z + garageOutward.Z * 11);
         float garageYaw = Mathf.Atan2(-garageOutward.X, -garageOutward.Z);
         var garagePlot = new Transform3D(Basis.FromEuler(new(0, garageYaw, 0)), garagePosition);
-        plots.Add(garagePlot);
-        GarageBuilding = new Node3D { Name = "Garage", Transform = garagePlot }; AddChild(GarageBuilding);
+        GarageBuilding = CreateBuilding("Garage", garagePlot, new(9, 8));
+        garagePlot = GarageBuilding.Transform; plots.Add(garagePlot);
         Art.Block(GarageBuilding, new(0, .08f, 0), new(9, .16f, 8), "dfd4bd");
         foreach (float x in new[] { -3.7f, 3.7f })
         {
@@ -54,11 +94,11 @@ public partial class Village : Node3D
         var entrancePoint = garagePlot * new Vector3(0, 0, 4.5f);
         GarageEntrance = ground.At(entrancePoint.X, entrancePoint.Z);
         Path(garagePlot * new Vector3(0, .16f, 3.8f), garageFrame.Center, 5.8f);
-        // Staggered pairs on opposite verges follow the road's actual curve.
+        // Paired homes frame the village crossroads, leaving its four mouths open.
         (float Distance, float Side, string Color)[] sites =
         {
-            (62, -1, "f7ddac"), (68, 1, "68cfee"),
-            (90, -1, "ffbb7d"), (98, 1, "ffe58a")
+            (63, -1, "f7ddac"), (63, 1, "68cfee"),
+            (117, -1, "ffbb7d"), (117, 1, "ffe58a")
         };
         foreach (var site in sites)
         {
@@ -68,8 +108,8 @@ public partial class Village : Node3D
             var inward = -outward;
             float yaw = Mathf.Atan2(inward.X, inward.Z);
             var plot = new Transform3D(Basis.FromEuler(new Vector3(0, yaw, 0)), position);
-            plots.Add(plot);
             House(position.X, position.Z, site.Color, yaw);
+            plot = Houses[^1].Transform; plots.Add(plot);
             int index = Residents.Count;
             tasks[index] = CreateTasks(Settings.Seed, index);
             string[] names = { "Králíček stavitel Vojtík", "Liška zahradnice Róza", "Medvídek kutil Hugo", "Králíček malíř Fialka" };
@@ -89,8 +129,9 @@ public partial class Village : Node3D
             Fence(plot, 1.4f, 5);
             var shrub = plot * new Vector3(-4.4f, 0, 1.5f);
             Art.Ball(this, ground.At(shrub.X, shrub.Z, .4f), new(.7f, .6f, .7f), "56c980");
+            HouseMailbox(plot, site.Color);
         }
-        var center = roads.SampleMain(80).Center;
+        var center = WorldLayout.Plan.VillageJunction;
         Center = ground.At(center.X, center.Z);
         var entrance = roads.SampleMain(49);
         var greeting = entrance.Center - entrance.Forward.Cross(Vector3.Up) * 6.8f;
@@ -98,18 +139,49 @@ public partial class Village : Node3D
         GenerateFarm();
         GenerateGarden();
         GenerateCollections();
+        GenerateTrades();
+        GenerateSquare();
+        AddVillageDetails();
+        foreach (var trader in Traders) trader.Position = ApproachSpot(trader.Position);
+        foreach (var resident in Residents) resident.Position = ApproachSpot(resident.Position);
+        foreach (var resident in new[] { Farmer, Gardener, GemCollector, Toymaker }) resident.Position = ApproachSpot(resident.Position);
+        GarageEntrance = ApproachSpot(GarageEntrance);
     }
+
+    private Vector3 ApproachSpot(Vector3 point)
+    {
+        point.Y = ground.Height(point.X, point.Z);
+        var flat = new Vector2(point.X, point.Z);
+        foreach (var (a, b, c) in walkwayTriangles)
+        {
+            var origin = new Vector2(a.X, a.Z);
+            var ab = new Vector2(b.X, b.Z) - origin; var ac = new Vector2(c.X, c.Z) - origin;
+            float area = ab.Cross(ac);
+            if (Mathf.Abs(area) < .000001f) continue;
+            float u = (flat - origin).Cross(ac) / area, v = ab.Cross(flat - origin) / area;
+            if (u >= -.0001f && v >= -.0001f && u + v <= 1.0001f)
+                point.Y = Mathf.Max(point.Y, a.Y + (b.Y - a.Y) * u + (c.Y - a.Y) * v);
+        }
+        return point;
+    }
+
+    public const float TaskAnimalClearance = 100;
 
     public bool IsNearVillage(Vector3 point)
     {
         // Leave a quiet belt around every house and the garage for village residents.
         foreach (var plot in plots)
-            if (new Vector2(point.X - plot.Origin.X, point.Z - plot.Origin.Z).Length() < 38) return true;
+            if (new Vector2(point.X - plot.Origin.X, point.Z - plot.Origin.Z).Length() < TaskAnimalClearance) return true;
         return false;
     }
 
     public bool IsReserved(Vector3 point)
     {
+        if (Square != null)
+        {
+            var local = Square.Transform.AffineInverse() * point;
+            if (Mathf.Abs(local.X) < 11.5f && Mathf.Abs(local.Z) < 7.5f) return true;
+        }
         foreach (var plot in collectionPlots)
         {
             var local = plot.AffineInverse() * point;
@@ -120,8 +192,11 @@ public partial class Village : Node3D
             var gardenLocal = gardenPlot.AffineInverse() * point;
             if (gardenLocal.X > -5 && gardenLocal.X < 17 && Mathf.Abs(gardenLocal.Z) < 8) return true;
         }
-        var farmLocal = farmPlot.AffineInverse() * point;
-        if (farmLocal.X > -6 && farmLocal.X < 19 && Mathf.Abs(farmLocal.Z) < 8) return true;
+        if (FarmBuilding != null)
+        {
+            var farmLocal = farmPlot.AffineInverse() * point;
+            if (farmLocal.X > -6 && farmLocal.X < 19 && Mathf.Abs(farmLocal.Z) < 8) return true;
+        }
         foreach (var path in paths)
         {
             var a = new Vector2(path.From.X, path.From.Z);
@@ -154,6 +229,14 @@ public partial class Village : Node3D
             var start = from + side * lateral;
             var end = to + side * lateral;
             float outside = 0, inside = 1;
+            // Stop at the first road edge, including a branch before the intended road.
+            int probes = Mathf.CeilToInt(direction.Length() / .2f);
+            for (int i = 0; i <= probes; i++)
+            {
+                float t = i / (float)probes;
+                if (roads.Contains(start.Lerp(end, t))) { inside = t; break; }
+                outside = t;
+            }
             for (int i = 0; i < 16; i++)
             {
                 float middle = (outside + inside) / 2;
@@ -167,8 +250,11 @@ public partial class Village : Node3D
             var p = start.Lerp(end, t);
             float terrain = ground.Height(p.X, p.Z);
             p.Y = Mathf.Max(terrain + .06f, roads.SurfaceHeight(p, terrain) + .015f);
+            if (roads.Contains(p)) { p.Y = roads.SurfaceHeight(p, terrain) + .015f; return p; }
             // Meet the garage slab at the threshold rather than leaving a gap below it.
-            p.Y = Mathf.Lerp(Mathf.Max(p.Y, start.Y + .015f), p.Y, Mathf.SmoothStep(0, 1, t * direction.Length()));
+            float endTerrain = ground.Height(end.X, end.Z);
+            float endHeight = Mathf.Max(endTerrain + .06f, roads.SurfaceHeight(end, endTerrain) + .015f);
+            p.Y = Mathf.Max(p.Y, Mathf.Lerp(start.Y + .015f, endHeight, t));
             return p;
         }
         for (int column = 0; column < columns; column++)
@@ -182,16 +268,19 @@ public partial class Village : Node3D
                 float t = (float)i / segments, next = (float)(i + 1) / segments;
                 var a = Point(leftStart, leftEnd, t); var b = Point(rightStart, rightEnd, t);
                 var c = Point(leftStart, leftEnd, next); var d = Point(rightStart, rightEnd, next);
+                walkwayTriangles.Add((a, c, b)); walkwayTriangles.Add((b, c, d));
                 surface.AddVertex(a); surface.AddVertex(c); surface.AddVertex(b);
                 surface.AddVertex(b); surface.AddVertex(c); surface.AddVertex(d);
             }
         }
         surface.GenerateNormals();
-        AddChild(new MeshInstance3D { Name = "Walkway", Mesh = surface.Commit(), MaterialOverride = Art.Mat("e9cf9e"), CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
+        var walkway = new MeshInstance3D { Name = "Walkway", Mesh = surface.Commit(), MaterialOverride = Art.Mat("e9cf9e"), CastShadow = GeometryInstance3D.ShadowCastingSetting.Off };
+        AddChild(walkway); walkway.CreateTrimeshCollision();
     }
 
     private void Fence(Transform3D plot, float left, float right)
     {
+        var detail = DetailRoot(this);
         Vector3 Position(float x, float lift)
         {
             var p = plot * new Vector3(x, 0, 4.8f);
@@ -201,6 +290,7 @@ public partial class Village : Node3D
         {
             var center = Position(Mathf.Lerp(left, right, i / 2f), .65f);
             Art.Cylinder(this, center, .1f, .085f, 1.3f, "f2ddb0");
+            Art.Cylinder(detail, center + Vector3.Up * .72f, .15f, .025f, .18f, "fff1d2");
             Obstacles.Trunk(this, center - Vector3.Up * .65f, .1f, 1.3f);
         }
         foreach (float lift in new[] { .45f, .95f })
@@ -211,10 +301,17 @@ public partial class Village : Node3D
             Obstacles.Box(this, (from + to) / 2, new Vector3(.13f, .13f, from.DistanceTo(to)),
                 Basis.LookingAt(to - from, Vector3.Up));
         }
+        int pickets = Mathf.CeilToInt((right - left) / .4f);
+        for (int i = 1; i < pickets; i++)
+        {
+            var picket = Art.Block(detail, Position(Mathf.Lerp(left, right, i / (float)pickets), .72f), new(.1f, .85f, .09f), "fff1d2");
+            picket.Rotation = plot.Basis.GetEuler();
+        }
+        BakeDetails(detail);
     }
     private void House(float x, float z, string color, float yaw)
     {
-        var h = new Node3D { Position = ground.At(x, z), Rotation = new Vector3(0, yaw, 0) }; AddChild(h);
+        var h = CreateBuilding($"House{Houses.Count}", new Transform3D(Basis.FromEuler(new(0, yaw, 0)), ground.At(x, z)), new(7, 6.6f));
         h.Name = $"House{Houses.Count}"; Houses.Add(h);
         var details = new Node3D { Name = "Upgrades" }; h.AddChild(details); decorations.Add(details);
         Art.Block(h, new(0, 2.1f, 0), new(7, 4.2f, 6), color);

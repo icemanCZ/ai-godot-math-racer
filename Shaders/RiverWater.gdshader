@@ -2,9 +2,9 @@ shader_type spatial;
 render_mode cull_disabled;
 
 // Keep the surface opaque: no screen/depth texture dependency in Compatibility.
-uniform vec4 deep_color : source_color = vec4(0.025, 0.43, 0.64, 1.0);
-uniform vec4 shallow_color : source_color = vec4(0.12, 0.68, 0.66, 1.0);
-uniform vec4 foam_color : source_color = vec4(0.84, 0.97, 0.92, 1.0);
+uniform vec4 deep_color : source_color = vec4(0.14, 0.43, 0.51, 1.0);
+uniform vec4 shallow_color : source_color = vec4(0.35, 0.66, 0.59, 1.0);
+uniform vec4 foam_color : source_color = vec4(0.85, 0.94, 0.88, 1.0);
 uniform float flow_speed : hint_range(0.0, 2.0) = 0.45;
 uniform float wave_height : hint_range(0.0, 0.1) = 0.035;
 
@@ -53,7 +53,7 @@ void fragment() {
     vec3 normal_world = normalize(vec3(-gradient.x * 0.16, 1.0, -gradient.y * 0.16));
     NORMAL = normalize((VIEW_MATRIX * vec4(normal_world, 0.0)).xyz);
     float fresnel = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 3.0);
-    color = mix(color, vec3(0.35, 0.65, 0.85), fresnel * 0.28);
+    color = mix(color, vec3(0.28, 0.48, 0.53), fresnel * 0.28);
 
     // Broken, soft glints instead of continuous stripes across the channel.
     float glints = smoothstep(0.74, 0.9, detail) * smoothstep(0.52, 0.76, eddy);

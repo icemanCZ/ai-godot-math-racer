@@ -9,6 +9,7 @@ public partial class Roads : Node3D
     public const float MainWidth = 7;
     private const float BucketSize = 12;
     private const float MeshStep = .75f;
+    private const int NavigationAnchorStep = 12;
     private readonly record struct Segment(Vector2 A, Vector2 B, float Width, float Along);
     private readonly record struct FieldPoint(Vector2 Position, float Distance, Vector2 Uv, float Marks);
     private readonly Dictionary<Vector2I, List<Segment>> segments = new();
@@ -59,7 +60,7 @@ public partial class Roads : Node3D
             }
             // Fixed road markings: route searches must never determine their spacing or position.
             int anchorStart = NavigationAnchors.Count;
-            for (int i = sampleStart; i < Samples.Count; i += 6)
+            for (int i = sampleStart; i < Samples.Count; i += NavigationAnchorStep)
             {
                 var forward = Samples[Mathf.Min(i + 1, Samples.Count - 1)] - Samples[Mathf.Max(i - 1, sampleStart)];
                 forward.Y = 0;
@@ -67,7 +68,7 @@ public partial class Roads : Node3D
             }
             int lastAnchor = NavigationAnchors.Count - 1;
             for (int i = sampleStart; i < Samples.Count; i++)
-                SampleAnchors.Add(Mathf.Min(anchorStart + Mathf.RoundToInt((i - sampleStart) / 6f), lastAnchor));
+                SampleAnchors.Add(Mathf.Min(anchorStart + Mathf.RoundToInt((i - sampleStart) / (float)NavigationAnchorStep), lastAnchor));
         }
         BuildSurface(terrain);
     }

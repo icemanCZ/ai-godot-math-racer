@@ -101,7 +101,13 @@ public partial class ControllerChecks : Node
             car.SetPose(game.Delivery!.Recipient.Position + Vector3.Right * 2, 0); await Frames(5);
             Check(game.State == GameState.Challenge && game.CurrentChallenge is DeliveryChallenge, "arrival opens picture counting task");
             ((Control)game.FindChild($"Answer{game.CurrentChallenge!.Answer}", true, false)).GrabFocus();
-            await Button(JoyButton.A); await Button(JoyButton.A);
+            await Button(JoyButton.A);
+            Check(game.State == GameState.Reward && game.CelebrationShowing, "correct answer shows cargo celebration before reward selection");
+            await Button(JoyButton.Start); await Frames(20);
+            Check(game.State == GameState.Paused && game.CelebrationShowing, "Menu pauses the celebration");
+            await Button(JoyButton.Start); await Frames(185);
+            Check(game.State == GameState.Reward && !game.CelebrationShowing, "celebration returns focus to reward choices");
+            await Button(JoyButton.A);
             Check(game.State == GameState.Exploring, "controller selects reward and returns to driving");
             car.SetPose(world.Animals[1].Position + Vector3.Right * 2, 0); await Frames(); await Button(JoyButton.A);
             Check(game.CurrentChallenge is LetterChallenge, "A opens original picture task at second animal");

@@ -1,5 +1,13 @@
 # Validation record
 
+## Building foundations and twelve-item collections — 30 October 2026
+
+All nine village buildings now sit above the highest terrain sample across their full foundation footprint. Solid plinths extend below the lowest sample; raised approach paths have matching mesh collision. Residents and the garage entrance use the actual walkway triangle height so sloped approaches cannot bury them. Farm placement checks the entire building and enclosure against all road branches; walkways stop at the first road edge.
+
+Farm, garden, museum and toy workshop now have twelve trips each. Added six named animals, six flower varieties, six gems and six distinct toy models. Three-by-four display layouts fit within the existing reserved plots; pickup offsets, UI counts, completion checks, full previews and save validation follow catalogue lengths. Existing six-item progress continues with six remaining trips.
+
+Build passed without warnings/errors. Village checks passed on seeds 1, 42 and 7421, including terrain clearance for every foundation and physics raycasts beneath all eight residents. Seed-42 collection, garden and farm checks complete all twelve trips and round-trip progress through disk saves. Garage and save checks passed. Collision checks passed on seed 1. The previously obstructed branch (seed 1, route 4) passes the focused driving check in both directions; the diagnostic now accepts --road-driving-route=N for reproductions. Inspected full farm, garden, museum and toy workshop previews.
+
 ## Gem collector and toymaker — 28 October 2026
 
 Added Jáchym's gem museum with six display pedestals and Pepa's toy workshop with six playground displays. Each resident offers six independent math/letter-gated collection trips. Faceted gems and six different toy models appear at off-road pickup clearings, on the car after collection and permanently at the destination after return. All four specialist residents share the active-expedition limit. Pending quizzes, cargo and both new collection counts persist; older saves default to empty new collections.
@@ -231,3 +239,48 @@ Every house now has a deterministic shuffle of ten tasks: three arithmetic, thre
 All 30 ordinary task animals, including the greeting rabbit, now use seeded roadside placement outside a 38 m horizontal buffer around every village plot and the garage. Dedicated house residents remain at their houses.
 
 Build passed with zero warnings/errors. Village checks passed all 40 scheduled tasks on seeds 1, 42 and 7421, including disk round trips for math, letters, fruit offers, partial collections, early-return instructions, cargo handover and house rewards. A further 512 generated schedules satisfy the required 3+3+3+1 composition and deterministic shuffle. Save, delivery and controller regression checks passed on seed 42. Captured and visually inspected `artifacts/village-fruit-offer.png`; import and capture completed successfully. Diagnostic logs: `artifacts/village-schedule-checks.log` and `artifacts/village-update-*-*.log`.
+
+## Village trade deliveries (2026-10-30)
+
+- `dotnet build MathRacer.csproj`: passed, no warnings or errors.
+- `--trade-checks` passed on seeds 1, 42 and 7421: three shops off roads, arithmetic and wrong-answer gating, repeat deliveries, one active expedition, stable restored destinations and amounts, pause, disk save round trips, all three reward categories, garage ownership, and old-save compatibility.
+- Seed 42 regressions passed: village, saves, deliveries, garage, collections, farm, garden, new game and controller.
+- Rendered and inspected `artifacts/baker.png`, `artifacts/confectioner.png` and `artifacts/merchant-reward.png` using the actual game renderer.
+
+## Ten roadside task animals (2026-10-30)
+
+The world now generates 10 ordinary quest animals (five math and five letter tasks), with at least 100 m of horizontal clearance from every village plot, including the garage and trade shops. Village actors keep their saved IDs. Thirty-animal saves migrate to the first ten records, preserving village progress and earned cosmetics; interactions and expeditions belonging to removed animals return safely to driving.
+
+Build passed with no warnings or errors. Seed 42 checks passed for saves (including migration from 30 animals), village placement and upgrades, all deliveries, trade rewards, new game, and the gameplay smoke suite.
+
+## Driving events and completion celebrations
+
+- Added `--event-checks` to `build.ps1 -Test`: ordered checkpoints, normal interaction, cancellation, repeat completion protection, disk save/restore, real vehicle support at starts/finishes, cargo ownership and handover, and pause/resume during the house celebration.
+- Event logic checked on seeds 1, 42 and 7421. Physics and final integration checked on seed 42.
+- Regression suites passed on seed 42: delivery, village, trade, save, farm, garden, collection and controller. Controller checks now wait for the celebration and verify pausing it before choosing a reward.
+- Visual captures inspected: `artifacts/slalom.png` and `artifacts/house-celebration.png`. Capture modes: `events`, `slalom`, `house-celebration`.
+
+## Level village terrain (2026-10-30)
+
+- Build passed without warnings or errors.
+- Village checks passed for seeds 1, 42 and 7421, including the common terrain elevation at all twelve buildings, level streets, square paving collision and all house tasks.
+- Road passability and river bank checks passed for seeds 1, 2, 42, 44, 53 and 7421 using the final leveled terrain. The headless road audit also reports shutdown resource-leak warnings.
+- Save checks passed on seed 42, including lifting an older position out of the newly leveled village terrain without changing X/Z.
+- Rendered and visually inspected artifacts/square.png: level square, low fountain base and flat adjacent road, with hills retained beyond the village.
+
+Event placement update: both courses now use the outer country loops; continuous route samples must stay at least 160 m from every village building. Event checks passed on seeds 1, 42 and 7421, including real vehicle support at the relocated starts/finishes and smile marker styling.
+
+## Village architectural details (2026-10-30)
+
+- C# build passed with zero warnings and errors.
+- Seed 42 village and garage suites passed, covering all 40 earned house upgrades, persistence, raised foundations, square paving and garage access.
+- Collision suite passed, including forward/reverse impacts and recovery. The new garage workbench has its own collider under a separate Workbench node; the three wall colliders and entrance remain intact.
+- Actual Compatibility renderer captures inspected: village, village-upgraded, baker, square and garage-building. Final upgraded-house capture verifies thin fence pickets and compatibility with all earned decorations.
+- Permanent architectural details are generated without consuming random state. Geometry is combined by material per detail group; no additional per-frame animation or physics bodies are created for roof tiles, facade trim or other small decoration. Frame rate was not benchmarked.
+
+## Nature detail and palette pass (2026-10-30)
+
+- C# build passed with zero warnings and errors. Seed 42 smoke and collision suites passed, including grass streaming, clear interaction areas, driving over the bridge, tree impacts and falling-leaf cleanup.
+- Rendered and inspected nature, riverbank and vegetation-detail captures using the Compatibility renderer. The final riverbank capture includes the revised water/sky palette and procedural ground material.
+- Seed 42 still generates 3905 trees and 2110 bushes. New meadow, fern, moss, cattail and water-lily details use an independent seed stream and add no physics obstacles. Existing tree colliders and impact batch bookkeeping remain intact.
+- Small foliage uses the existing spatial batches and 85 m visibility range; small-detail shadows are disabled. The terrain shares one shader material across its chunks. No frame-rate benchmark was performed.

@@ -9,10 +9,15 @@ uniform float grass_time = 0.0;
 uniform vec4 trail[8];
 varying float tint;
 varying float tip_height;
+varying float meadow_tint;
+
+uniform vec4 grass_low : source_color = vec4(0.43, 0.64, 0.29, 1.0);
+uniform vec4 grass_high : source_color = vec4(0.67, 0.77, 0.43, 1.0);
 
 void vertex() {
     vec3 root = MODEL_MATRIX[3].xyz;
     tint = INSTANCE_CUSTOM.r;
+    meadow_tint = 0.5 + 0.5 * sin(root.x * 0.035 + sin(root.z * 0.042) * 1.8);
     tip_height = UV.y;
     float weight = UV.y * UV.y;
     float wave = sin(TIME * 1.6 - root.x * 0.21 - root.z * 0.16);
@@ -52,10 +57,10 @@ void vertex() {
 }
 
 void fragment() {
-    vec3 green = mix(vec3(0.38, 0.65, 0.18), vec3(0.54, 0.79, 0.28), tint);
-    ALBEDO = green * mix(0.96, 1.08, tip_height);
+    vec3 green = mix(grass_low.rgb, grass_high.rgb, tint * 0.55 + meadow_tint * 0.45);
+    ALBEDO = green * mix(0.87, 1.14, tip_height);
     // Soft fill preserves the light meadow color even on blades facing away from the sun.
-    EMISSION = green * 0.22;
+    EMISSION = green * 0.12;
     ROUGHNESS = 0.95;
     BACKLIGHT = green * 0.3;
 }

@@ -60,6 +60,36 @@ public partial class SaveChecks : Node
             File.WriteAllText(path + ".bak", "{}");
             Check(SaveStore.Read(path) == null, "invalid saves are safely ignored");
             File.WriteAllText(path, backup);
+            var legacy = game.CaptureProgress();
+            legacy.Animals = legacy.Animals.Concat(Enumerable.Repeat(true, 20)).ToArray();
+            legacy.Unlocked = new[] { 0, 12, 29 }; legacy.Completed = new[] { 1, 22 };
+            legacy.State = GameState.Exploring; legacy.Nearby = 30;
+            legacy.Sender = -1; legacy.Picked = Array.Empty<bool>(); legacy.DeliveryReward = false;
+            Check(SaveStore.Write(legacy, path), "legacy thirty-animal save written");
+            var migrated = SaveStore.Read(path)!;
+            Check(migrated != null && migrated.Animals.Length == 10 && migrated.Unlocked.SequenceEqual(new[] { 0 }) &&
+                migrated.Completed.SequenceEqual(new[] { 1 }) && migrated.Nearby == 30,
+                "old saves retain ten animal records and stable village IDs");
+            game.RestoreProgress(migrated!);
+            Check(game.RemainingAnimals <= 10, "migrated progress restores in the ten-animal world");
+            legacy.State = GameState.Challenge; legacy.Nearby = 22;
+            legacy.Math = new ChallengeGenerator(42).Next();
+            Check(SaveStore.Write(legacy, path), "removed animal question saved");
+            migrated = SaveStore.Read(path)!;
+            Check(migrated is { State: GameState.Exploring, Nearby: -1, Math: null }, "removed animal interaction returns safely to driving");
+            legacy.State = GameState.Exploring; legacy.Nearby = -1; legacy.Math = null;
+            legacy.Sender = 22; legacy.Collection = true; legacy.Picked = new[] { true, false, false };
+            Check(SaveStore.Write(legacy, path), "removed animal expedition saved");
+            migrated = SaveStore.Read(path)!;
+            Check(migrated is { Sender: -1, State: GameState.Exploring } && migrated.Picked.Length == 0 &&
+                migrated.Owned.SequenceEqual(legacy.Owned), "removed sender cancels only its expedition and preserves earned rewards");
+            var beforeLeveling = game.CaptureProgress();
+            var villageSpot = world.Village.Center;
+            float villageGround = world.Ground.Height(villageSpot.X, villageSpot.Z);
+            beforeLeveling.Position = new[] { villageSpot.X, villageGround - 3, villageSpot.Z };
+            game.RestoreProgress(beforeLeveling);
+            Check(Mathf.Abs(car.Position.X - villageSpot.X) < .001f && Mathf.Abs(car.Position.Z - villageSpot.Z) < .001f &&
+                car.Position.Y >= villageGround, "old village position below the leveled terrain restores above ground without moving horizontally");
             GD.Print("SAVE_CHECKS_PASSED"); GetTree().Quit();
         }
         catch (Exception error) { GD.PushError(error.ToString()); GetTree().Quit(1); }

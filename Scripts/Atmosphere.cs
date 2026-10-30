@@ -7,14 +7,14 @@ public partial class Atmosphere : Node3D
 {
     public void Generate()
     {
-        var horizon = new Color("419de8").SrgbToLinear();
+        var horizon = new Color("8cbfed").SrgbToLinear();
         var sky = new ProceduralSkyMaterial
         {
-            SkyTopColor = new Color("1763d1").SrgbToLinear(),
+            SkyTopColor = new Color("397fb9").SrgbToLinear(),
             SkyHorizonColor = horizon,
             SkyCurve = .3f,
             GroundHorizonColor = horizon,
-            GroundBottomColor = new Color("4d9cc4").SrgbToLinear()
+            GroundBottomColor = new Color("739fa3").SrgbToLinear()
         };
         AddChild(new WorldEnvironment
         {
@@ -27,8 +27,8 @@ public partial class Atmosphere : Node3D
                 AmbientLightEnergy = .42f,
                 TonemapMode = Godot.Environment.ToneMapper.Linear,
                 FogEnabled = true,
-                FogLightColor = new Color("79b9ec").SrgbToLinear(),
-                FogDensity = .00035f
+                FogLightColor = new Color("a7c9df").SrgbToLinear(),
+                FogDensity = .00055f
             }
         });
         AddChild(new DirectionalLight3D

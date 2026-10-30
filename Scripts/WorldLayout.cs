@@ -47,6 +47,7 @@ public sealed class WorldPlan
     public float HillPhase { get; }
     public float ForestPhase { get; }
     public Vector3[][] Routes { get; }
+    public Vector3 VillageJunction { get; }
     private readonly FastNoiseLite landscapeNoise;
     private readonly RiverCourse riverCourse;
     public float CenterX(float z) => Side * RiverX(z);
@@ -77,11 +78,18 @@ public sealed class WorldPlan
         var main = new[]
         {
             Point(0, 8), Point(Range(-22, 20), Range(-38, -25)),
-            Point(Range(-105, -55), Range(-90, -55)), Point(Range(-190, -125), Range(-160, -115)),
-            Point(Range(-100, -40), Range(-235, -180)), Point(Range(5, 40), Range(-165, -115)),
+            Point(Range(-105, -55), Range(-90, -55)), Point(Range(-155, -125), Range(-205, -185)),
+            Point(Range(-110, -80), Range(-275, -245)), Point(Range(30, 45), Range(-205, -185)),
             Point(Range(30, 55), Range(-65, -25)), Point(Range(15, 45), Range(35, 70)), Point(0, 8)
         };
-        var routes = new List<Vector3[]> { main };
+        // A straight village high street gives the settlement a readable centre.
+        // Keep the generated countryside beyond it, with a cross street on both sides.
+        main[1] = Point(0, -32);
+        main[2] = Point(0, -82);
+        var villageMain = new List<Vector3>(main);
+        villageMain.Insert(3, Point(0, -132));
+        VillageJunction = Point(0, -82);
+        var routes = new List<Vector3[]> { villageMain.ToArray() };
         float crossing = RiverX(BridgeZ);
         var bridgeEnd = Point(crossing + 40, BridgeZ);
         routes.Add(new[] { main[7], Point(crossing - 40, BridgeZ), Point(crossing - 20, BridgeZ),
@@ -111,8 +119,9 @@ public sealed class WorldPlan
         }
         east.Add(bridgeEnd);
         routes.Add(east.ToArray());
-        if (random.Next(2) == 0)
-            routes.Add(new[] { main[2], Point(Range(-35, -10), Range(-110, -80)), main[6] });
+        // Both arms are through streets, joined to the existing road network.
+        routes.Add(new[] { main[3], Point(-65, -82), VillageJunction,
+            Point(28, -82), main[6] });
 
         Routes = routes.ToArray();
         foreach (var route in Routes)

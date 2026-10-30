@@ -7,10 +7,29 @@ public partial class Terrain : Node3D
     private readonly FastNoiseLite noise = new() { Seed = Settings.Seed, Frequency = .013f, FractalOctaves = 3 };
     private readonly RoadGrading roadbed = new(WorldLayout.Plan);
     private float[,]? heights;
+    private Rect2? villageArea;
+    private float villageHeight;
+    private readonly ShaderMaterial meadowMaterial = new() { Shader = GD.Load<Shader>("res://Shaders/MeadowGround.gdshader") };
     private float RawHeight(float x, float z)
     {
         float landscape = WorldLayout.Plan.NaturalHeight(x, z);
-        return River.ShapeTerrain(x, z, roadbed.Apply(x, z, landscape));
+        float height = roadbed.Apply(x, z, landscape);
+        if (villageArea is Rect2 area)
+        {
+            float dx = Mathf.Max(area.Position.X - x, Mathf.Max(0, x - area.End.X));
+            float dz = Mathf.Max(area.Position.Y - z, Mathf.Max(0, z - area.End.Y));
+            float blend = 1 - Mathf.SmoothStep(0, 80, new Vector2(dx, dz).Length());
+            height = Mathf.Lerp(height, villageHeight, blend);
+        }
+        return River.ShapeTerrain(x, z, height);
+    }
+    internal void LevelVillage(Rect2 area, float height)
+    {
+        villageArea = area;
+        villageHeight = height;
+        // Rebuild both visuals and collision from the same final height cache.
+        foreach (var child in GetChildren()) { RemoveChild(child); child.Free(); }
+        Generate();
     }
     // Interpolate the same triangles as the collider, rather than sampling noise between vertices.
     public float Height(float x, float z)
@@ -52,15 +71,14 @@ public partial class Terrain : Node3D
         void Add(Vector3 p)
         {
             float tint = (noise.GetNoise2D(p.X * 3 + 1000, p.Z * 3) + 1) * .5f;
-            var grass = new Color("48b95c").Lerp(new Color("8bd653"), tint);
+            var grass = new Color("6caa68").Lerp(new Color("a6c67c"), tint);
             float shore = 1 - Mathf.SmoothStep(River.HalfWidth(p.Z) + 2, River.HalfWidth(p.Z) + 5, River.Distance(p.X, p.Z));
             surface.SetColor(grass.Lerp(new Color("dcc995"), shore).SrgbToLinear());
             surface.AddVertex(p);
         }
         surface.GenerateNormals();
         var mesh = surface.Commit();
-        var material = new StandardMaterial3D { VertexColorUseAsAlbedo = true, Roughness = 1, CullMode = BaseMaterial3D.CullModeEnum.Disabled };
-        var visual = new MeshInstance3D { Mesh = mesh, MaterialOverride = material };
+        var visual = new MeshInstance3D { Mesh = mesh, MaterialOverride = meadowMaterial };
         AddChild(visual);
         var body = new StaticBody3D(); AddChild(body);
         body.AddChild(new CollisionShape3D { Shape = mesh.CreateTrimeshShape() });

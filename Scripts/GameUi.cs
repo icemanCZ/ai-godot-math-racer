@@ -121,6 +121,7 @@ public partial class GameUi : CanvasLayer
         talkButton.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterBottom);
         talkButton.OffsetLeft = -65; talkButton.OffsetRight = 65; talkButton.OffsetTop = -245; talkButton.OffsetBottom = -130;
         talkButton.Name = "PrimaryTask";
+        SetupEvents();
     }
     private static StyleBoxFlat Style(string color, int radius)
         => new() { BgColor = new Color(color), CornerRadiusTopLeft = radius, CornerRadiusTopRight = radius, CornerRadiusBottomLeft = radius, CornerRadiusBottomRight = radius, ContentMarginLeft = 32, ContentMarginRight = 32, ContentMarginTop = 22, ContentMarginBottom = 22, ShadowColor = new Color(0, 0, 0, .12f), ShadowSize = 8 };
@@ -370,11 +371,11 @@ public partial class GameUi : CanvasLayer
         int count = village.CollectionCount(toys);
         Clear(); Text(owner.DisplayName, 30);
         Text(returned ? toys ? "Děkuji! Hračka už je na hřišti!" : "Děkuji! Drahokam už je v muzeu!" : toys ? "Vítej v hračkářství!" : "Vítej v muzeu drahokamů!", 28);
-        Text($"{(toys ? "Hračky na hřišti" : "Drahokamy v muzeu")}: {count} / 6", 26);
+        Text($"{(toys ? "Hračky na hřišti" : "Drahokamy v muzeu")}: {count} / {Village.CollectionNames(toys).Length}", 26);
         if (expedition?.Sender == owner)
             Text($"Přivez {expedition.CollectionName}.\nJeď za šipkami a sjeď z cesty k předmětu.\nPotom se vrať ke mně.", 22);
         else if (expedition != null) Text("Nejdřív dokonči rozjetou výpravu.\nTento úkol tu na tebe počká.", 22);
-        else if (count == 6) Text(toys ? "Hřiště je plné hraček! Přijeď zase na návštěvu." : "Sbírka je kompletní! Přijeď si ji zase prohlédnout.", 22);
+        else if (count == Village.CollectionNames(toys).Length) Text(toys ? "Hřiště je plné hraček! Přijeď zase na návštěvu." : "Sbírka je kompletní! Přijeď si ji zase prohlédnout.", 22);
         else Text("Přijeď za mnou pro další výpravu.\nPřed cestou tě čeká příklad nebo písmenko.", 22);
         Button("Pokračovat v jízdě", () => CloseInteractionRequested?.Invoke()).GrabFocus();
     }
@@ -460,7 +461,12 @@ public partial class GameUi : CanvasLayer
             HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, CustomMinimumSize = new(530, 80) };
         deliveryHud.AddChild(label);
     }
-    private static string CargoText(string cargo, int count) => cargo == "apple" ? $"Jablka: {count}" : cargo == "carrot" ? $"Mrkve: {count}" : $"Sklenice medu: {count}";
+    private static string CargoText(string cargo, int count) => cargo switch
+    {
+        "apple" => $"Jablka: {count}", "carrot" => $"Mrkve: {count}",
+        "bread" => $"Bochníky chleba: {count}", "parcel" => $"Balíčky: {count}",
+        "cake" => $"Dortíky: {count}", _ => $"Sklenice medu: {count}"
+    };
     public void DeliveryDirection(Vector3 waypoint, Vehicle car)
     {
         if (directionPicture == null) return;

@@ -38,9 +38,66 @@ public partial class VillageChecks : Node
         {
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             var village = world.Village;
+            await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            Check(village.Square != null, "village has a public square");
+            float villageHeight = world.Ground.Height(village.Center.X, village.Center.Z);
+            bool levelSettlement = true;
+            var flatArea = village.TerrainArea;
+            for (float x = flatArea.Position.X; x <= flatArea.End.X; x += 2.5f)
+                for (float z = flatArea.Position.Y; z <= flatArea.End.Y; z += 2.5f)
+                {
+                    // River banks keep their channel profile outside the inhabited parcels.
+                    if (River.Distance(x, z) < River.HalfWidth(z) + 25) continue;
+                    if (Mathf.Abs(world.Ground.Height(x, z) - villageHeight) > .025f) levelSettlement = false;
+                }
+            Check(levelSettlement, "village and connecting streets share a level terrain platform");
+            foreach (var (building, size) in village.BuildingFoundations)
+            {
+                var origin = building.Position;
+                Check(Mathf.Abs(world.Ground.Height(origin.X, origin.Z) - villageHeight) < .025f,
+                    building.Name + " stands at the shared village elevation");
+            }
+            bool squareClear = true;
+            for (float x = -11; x <= 11; x += .5f)
+                for (float z = -6.5f; z <= 6.5f; z += .5f)
+                {
+                    var p = village.Square!.Transform * new Vector3(x, 0, z);
+                    if (world.Routes.Contains(p) || River.Distance(p.X, p.Z) < River.HalfWidth(p.Z) + 5 || !village.IsReserved(p)) squareClear = false;
+                }
+            Check(squareClear, "square stays off roads and water and excludes generated vegetation");
+            var pavingPoint = village.Square!.Transform * new Vector3(0, 0, 4);
+            pavingPoint.Y = world.Ground.Height(pavingPoint.X, pavingPoint.Z) + .065f;
+            var pavingRay = PhysicsRayQueryParameters3D.Create(pavingPoint + Vector3.Up * .2f, pavingPoint + Vector3.Down * .2f);
+            var pavingHit = world.GetWorld3D().DirectSpaceState.IntersectRay(pavingRay);
+            Check(pavingHit.Count > 0 && Mathf.Abs(pavingHit["position"].AsVector3().Y - pavingPoint.Y) < .02f,
+                "square paving has a drivable collider at the visible surface");
+            foreach (var resident in village.Residents.Concat(new[] { village.Farmer, village.Gardener, village.GemCollector, village.Toymaker }))
+            {
+                var ray = PhysicsRayQueryParameters3D.Create(resident.Position + Vector3.Up * .25f, resident.Position + Vector3.Down * .25f);
+                var hit = world.GetWorld3D().DirectSpaceState.IntersectRay(ray);
+                Check(hit.Count > 0 && Mathf.Abs(hit["position"].AsVector3().Y - resident.Position.Y) < .08f,
+                    resident.DisplayName + " stands on the terrain or raised walkway collider");
+            }
+            Check(village.BuildingFoundations.Count == 12, "all homes, workshops and the garage have foundations");
+            foreach (var (building, size) in village.BuildingFoundations)
+            {
+                bool clear = true;
+                bool streetsClear = true;
+                for (float x = -size.X / 2; x <= size.X / 2; x += .2f)
+                    for (float z = -size.Y / 2; z <= size.Y / 2; z += .2f)
+                    {
+                        var p = building.Transform * new Vector3(x, 0, z);
+                        if (world.Ground.Height(p.X, p.Z) >= p.Y) clear = false;
+                        if (world.Routes.Contains(p)) streetsClear = false;
+                    }
+                Check(clear && building.GetNodeOrNull<MeshInstance3D>("Foundation") != null,
+                    building.Name + " sits above terrain across its entire foundation");
+                Check(streetsClear, building.Name + " leaves the village streets clear");
+            }
             string path = ProjectSettings.GlobalizePath("res://artifacts/village-checks/progress.json");
             Check(village.Residents.Count == 4 && village.Houses.Count == 4, "each house has a dedicated resident");
-            Check(world.Animals.All(a => !village.IsNearVillage(a.Position)), "all standard task animals stand beyond the village buffer");
+            Check(world.Animals.Length == 10 && Village.TaskAnimalClearance == 100 && world.Animals.All(a => !village.IsNearVillage(a.Position)), "ten standard task animals stand at least 100 metres from every village plot");
             for (int seed = 1; seed <= 128; seed++)
                 for (int house = 0; house < 4; house++)
                 {

@@ -41,7 +41,7 @@ public partial class DeliveryChecks : Node
             Check(game.FindChildren("*", "", true, false).OfType<CarLookPreview>().Any(p => p.ExpeditionCargo == "apple" && p.CargoAmount == 0),
                 "collection choice shows an empty platform");
             Press("LeaveExpeditionChoice");
-            Check(game.RemainingAnimals == 29 && game.Delivery == null, "postponing task preserves the solved original question");
+            Check(game.RemainingAnimals == world.Animals.Length - 1 && game.Delivery == null, "postponing task preserves the solved original question");
             foreach (var sender in world.Animals)
             {
                 if (sender.RewardAvailable)

@@ -6,8 +6,8 @@ namespace MathRacer;
 
 public partial class Village
 {
-    public static readonly string[] FlowerNames = { "kopretinu", "tulipán", "slunečnici", "vlčí mák", "fialku", "růži" };
-    public static readonly string[] FlowerColors = { "fff8e5", "ed80ae", "ffd34f", "ec655d", "a58ae5", "ed9a76" };
+    public static readonly string[] FlowerNames = { "kopretinu", "tulipán", "slunečnici", "vlčí mák", "fialku", "růži", "sedmikrásku", "narcis", "chrpu", "měsíček", "jiřinu", "kosatec" };
+    public static readonly string[] FlowerColors = { "fff8e5", "ed80ae", "ffd34f", "ec655d", "a58ae5", "ed9a76", "fff0f7", "fff09a", "689cf0", "f7a44b", "dc78c7", "746fdb" };
     public Animal Gardener { get; private set; } = null!;
     public Node3D GardenBuilding { get; private set; } = null!;
     public int GardenCount => gardenFlowers.Count;
@@ -18,8 +18,9 @@ public partial class Village
     private void GenerateGarden()
     {
         var frame = FindGardenPlot();
+        GardenBuilding = CreateBuilding("Garden", gardenPlot, new(6, 5.7f));
+        gardenPlot = GardenBuilding.Transform;
         plots.Add(gardenPlot); plots.Add(new(gardenPlot.Basis, gardenPlot * new Vector3(10, 0, 0)));
-        GardenBuilding = new Node3D { Name = "Garden", Transform = gardenPlot }; AddChild(GardenBuilding);
         Art.Block(GardenBuilding, new(0, 1.7f, 0), new(6, 3.4f, 5), "83bfa0");
         Obstacles.Box(GardenBuilding, new(0, 1.7f, 0), new(6, 3.4f, 5));
         Art.Block(GardenBuilding, new(0, 3.55f, 0), new(7, .35f, 6), "e4ad64");
@@ -27,7 +28,7 @@ public partial class Village
         Art.Block(GardenBuilding, new(1.4f, 2, 2.58f), new(1.5f, 1.4f, .16f), "fff4d7");
         Art.Block(GardenBuilding, new(1.4f, 2, 2.7f), new(1.2f, 1.1f, .1f), "a8dfeb");
         Art.Sign(GardenBuilding, new(0, 4.5f, 0), "ZAHRADNICTVÍ", 34);
-        gardenProgress = Art.Sign(GardenBuilding, new(10, 3.3f, 0), "Květiny: 0 / 6", 28);
+        gardenProgress = Art.Sign(GardenBuilding, new(10, 3.3f, 0), $"Květiny: 0 / {FlowerNames.Length}", 28);
         Gardener = Animal.Create("Zahradník Vítek", "Přivezeš mi květiny do zahrádky?", 0, "a9d8b3");
         Gardener.IsGardener = true; AddChild(Gardener);
         var spot = gardenPlot * new Vector3(-1.6f, 0, 5.8f);
@@ -80,7 +81,7 @@ public partial class Village
 
     private Vector3 GardenBed(int index)
     {
-        var p = gardenPlot * new Vector3(6.5f + index % 3 * 3.5f, 0, -2.2f + index / 3 * 4.3f);
+        var p = gardenPlot * new Vector3(6 + index % 4 * 3, 0, -4 + index / 4 * 4);
         return ground.At(p.X, p.Z);
     }
 

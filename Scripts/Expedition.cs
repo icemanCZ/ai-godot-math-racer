@@ -26,7 +26,7 @@ public partial class Expedition : Node3D
     public string FarmName => Village.FarmNames[FarmIndex];
     public string FlowerName => Village.FlowerNames[FarmIndex];
     public string CollectionName => Village.CollectionNames(Toys)[FarmIndex];
-    public string Cargo => Collection ? "apple" : Sender.Kind == 0 ? "carrot" : Sender.Kind == 1 ? "apple" : "honey";
+    public string Cargo => Sender.IsTrader ? Village.TradeCargo[Sender.TradeIndex] : Collection ? "apple" : Sender.Kind == 0 ? "carrot" : Sender.Kind == 1 ? "apple" : "honey";
     public int Amount { get; }
     public int Collected { get; private set; }
     public bool CanDeliver => !Collection || Collected == Amount;
@@ -39,6 +39,7 @@ public partial class Expedition : Node3D
     private readonly World world;
     private readonly Vehicle car;
     private Node3D? load;
+    private bool cargoDetached;
     private WildAnimal? transportedAnimal;
     private WildAnimal? waitingAnimal;
     private readonly List<int>[] edges;
@@ -46,10 +47,11 @@ public partial class Expedition : Node3D
     private readonly Dictionary<(int Anchor, bool Reverse), MeshInstance3D> routeArrows = new();
     private readonly List<MeshInstance3D> visibleArrows = new();
     private Mesh arrowMesh = null!;
-    private Material arrowMaterial = null!;
+    private ShaderMaterial arrowMaterial = null!;
+    private float arrowPhase;
     private float refresh;
     public Vector3 Waypoint { get; private set; }
-    internal bool CargoVisible => load != null && load.IsVisibleInTree();
+    internal bool CargoVisible => !cargoDetached && load != null && load.IsVisibleInTree();
     internal int RouteLength { get; private set; }
 
     public Expedition(World world, Vehicle car, Animal sender, bool collection, bool[]? restoredPickups = null)
@@ -57,7 +59,7 @@ public partial class Expedition : Node3D
         this.world = world; this.car = car; Sender = sender;
         // Existing clearings guarantee that both ends are reachable from a road.
         var candidates = world.Animals.Where(a => a != sender).OrderBy(a => a.Position.DistanceSquaredTo(sender.Position)).Take(5).ToArray();
-        int index = sender.HouseIndex >= 0 ? world.Animals.Length + sender.HouseIndex : Array.IndexOf(world.Animals, sender);
+        int index = sender.IsTrader ? sender.TradeIndex + world.Village.TradeCounts[sender.TradeIndex] : sender.HouseIndex >= 0 ? world.Animals.Length + sender.HouseIndex : Array.IndexOf(world.Animals, sender);
         Collection = collection;
         FarmIndex = Farm ? world.Village.FarmCount : Garden ? world.Village.GardenCount : Gems ? world.Village.GemCount : Toys ? world.Village.ToyCount : 0;
         Recipient = Collection ? sender : candidates[index % candidates.Length];
@@ -67,7 +69,9 @@ public partial class Expedition : Node3D
         if (SpecialCollection)
         {
             Recipient = sender;
-            int offset = Garden ? 6 : Gems ? 12 : Toys ? 18 : 0;
+            int offset = Farm ? 0 : Village.FarmKinds.Length;
+            if (Gems || Toys) offset += Village.FlowerNames.Length;
+            if (Toys) offset += Village.GemNames.Length;
             PickupPositions = new[] { world.SpecialPickupSpots[FarmIndex + offset] };
         }
         picked = new bool[PickupPositions.Length];
@@ -163,17 +167,52 @@ public partial class Expedition : Node3D
             if (picked[i]) pickup.Hide();
         }
         var arrowBuilder = new SurfaceTool(); arrowBuilder.Begin(Mesh.PrimitiveType.Triangles);
-        // A flat chevron points along local -Z; double-sided material also covers steep grades.
+        // A solid arrow points along local -Z, with lit sides that make its depth visible.
         var outline = new Vector3[] { new(0, 0, -1.2f), new(.72f, 0, -.35f), new(.28f, 0, -.35f), new(.28f, 0, .85f), new(-.28f, 0, .85f), new(-.28f, 0, -.35f), new(-.72f, 0, -.35f) };
-        foreach (int vertex in new[] { 0, 1, 2, 0, 2, 5, 0, 5, 6, 2, 3, 4, 2, 4, 5 }) arrowBuilder.AddVertex(outline[vertex]);
+        const float halfThickness = .18f;
+        var cap = new[] { 0, 1, 2, 0, 2, 5, 0, 5, 6, 2, 3, 4, 2, 4, 5 };
+        arrowBuilder.SetNormal(Vector3.Up);
+        foreach (int vertex in cap) arrowBuilder.AddVertex(outline[vertex] + Vector3.Up * halfThickness);
+        arrowBuilder.SetNormal(Vector3.Down);
+        for (int i = cap.Length - 1; i >= 0; i--) arrowBuilder.AddVertex(outline[cap[i]] + Vector3.Down * halfThickness);
+        for (int i = 0; i < outline.Length; i++)
+        {
+            var a = outline[i]; var b = outline[(i + 1) % outline.Length];
+            var edge = b - a;
+            arrowBuilder.SetNormal(new Vector3(edge.Z, 0, -edge.X).Normalized());
+            var topA = a + Vector3.Up * halfThickness; var bottomA = a + Vector3.Down * halfThickness;
+            var topB = b + Vector3.Up * halfThickness; var bottomB = b + Vector3.Down * halfThickness;
+            foreach (var vertex in new[] { topA, bottomA, bottomB, topA, bottomB, topB }) arrowBuilder.AddVertex(vertex);
+        }
         arrowMesh = arrowBuilder.Commit();
-        arrowMaterial = new StandardMaterial3D { AlbedoColor = new Color("27bd62"), ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded, CullMode = BaseMaterial3D.CullModeEnum.Disabled };
+        arrowMaterial = new ShaderMaterial
+        {
+            Shader = GD.Load<Shader>("res://Shaders/RouteArrow.gdshader")
+        };
         UpdateGuidance();
     }
 
     internal static void AddCargo(Node3D parent, Vector3 p, string cargo)
     {
-        if (cargo == "carrot")
+        if (cargo == "bread")
+        {
+            Art.Ball(parent, p, new(.33f, .22f, .22f), "d99b52");
+            for (int i = -1; i <= 1; i++)
+                Art.Block(parent, p + new Vector3(i * .14f, .2f, 0), new(.045f, .025f, .25f), "ffe1a4");
+        }
+        else if (cargo == "parcel")
+        {
+            Art.Block(parent, p, new(.53f, .5f, .46f), "bf9565");
+            Art.Block(parent, p + Vector3.Up * .26f, new(.12f, .025f, .47f), "fff0cf");
+            Art.Block(parent, p + new Vector3(0, 0, .24f), new(.12f, .5f, .025f), "fff0cf");
+        }
+        else if (cargo == "cake")
+        {
+            Art.Cylinder(parent, p, .27f, .27f, .38f, "e9a0be");
+            Art.Cylinder(parent, p + Vector3.Up * .22f, .28f, .28f, .1f, "fff2dc");
+            Art.Ball(parent, p + Vector3.Up * .34f, Vector3.One * .1f, "ed586e");
+        }
+        else if (cargo == "carrot")
         {
             Art.Cylinder(parent, p, .04f, .19f, .75f, "f59242");
             for (int k = -1; k <= 1; k++) Art.Ball(parent, p + new Vector3(k * .12f, .5f, 0), new(.08f, .25f, .07f), "70b765");
@@ -210,6 +249,18 @@ public partial class Expedition : Node3D
         transportedAnimal = animal;
     }
 
+    internal Node3D? DetachCargo()
+    {
+        if (load == null || cargoDetached) return null;
+        cargoDetached = true;
+        var delivered = new Node3D { Name = "HandedOverCargo", Transform = load.Transform };
+        car.AddChild(delivered);
+        // The first three meshes form the carrier. Only its contents fly to the recipient.
+        foreach (var item in load.GetChildren().Skip(3).ToArray())
+            if (item is Node3D model) model.Reparent(delivered, true);
+        return delivered;
+    }
+
     internal void ReleaseCargo()
     {
         if (load == null || !GodotObject.IsInstanceValid(load)) return;
@@ -219,6 +270,9 @@ public partial class Expedition : Node3D
     public override void _ExitTree() => ReleaseCargo();
     public void Tick(double delta)
     {
+        // Move the rendered mesh while keeping the road anchors fixed; pause freezes the phase.
+        arrowPhase = (arrowPhase + (float)delta * 2.1f) % Mathf.Tau;
+        arrowMaterial.SetShaderParameter("bob_phase", arrowPhase);
         AnimateFarmAnimal(waitingAnimal, (float)delta);
         AnimateFarmAnimal(transportedAnimal, (float)delta);
         if (Collection && !CanDeliver)
@@ -234,6 +288,11 @@ public partial class Expedition : Node3D
         }
         refresh -= (float)delta;
         if (refresh <= 0) { refresh = .25f; UpdateGuidance(); }
+        // Hide before the arrow reaches the front bumper, checking every frame
+        // so the route refresh interval cannot leave it overlapping the car.
+        foreach (var arrow in visibleArrows)
+            if (new Vector2(arrow.Position.X - car.Position.X, arrow.Position.Z - car.Position.Z).LengthSquared() < 16f)
+                arrow.Hide();
     }
     private static void AnimateFarmAnimal(WildAnimal? animal, float delta)
     {
@@ -273,7 +332,7 @@ public partial class Expedition : Node3D
                 {
                     Name = "RouteArrow" + routeArrows.Count, Mesh = arrowMesh, MaterialOverride = arrowMaterial,
                     CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
-                    Position = new Vector3(p.X, y + .35f, p.Z),
+                    Position = new Vector3(p.X, y + 1.25f, p.Z),
                     Rotation = new Vector3(0, Mathf.Atan2(-forward.X, -forward.Z), 0)
                 };
                 routeArrows.Add(key, arrow); AddChild(arrow);

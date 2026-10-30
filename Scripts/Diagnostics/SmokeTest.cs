@@ -11,6 +11,7 @@ public partial class SmokeTest : Node
     private readonly World world;
     private readonly Vehicle car;
     private int frame;
+    private Vector3 waterStop;
     public SmokeTest(Game game, World world, Vehicle car) { this.game = game; this.world = world; this.car = car; }
     public override void _PhysicsProcess(double delta)
     {
@@ -44,7 +45,7 @@ public partial class SmokeTest : Node
             game.TogglePause(); game.TogglePause(); Check(game.State == GameState.Challenge, "resume question");
             game.FinishInteraction(); game.TogglePause(); Check(!car.Active, "pause freezes driving"); game.TogglePause();
             Check(game.State == GameState.Exploring && car.Active, "pause resume");
-            Check(world.Animals.Length == 30 && world.Routes.Samples.Count > 100, "world content");
+            Check(world.Animals.Length == World.QuestAnimalCount && world.Routes.Samples.Count > 100, "world content");
             Check(world.Grass.TileCount > 200 && world.Grass.TileCount <= 1024 &&
                 world.Grass.TuftCount > 40000 && world.Grass.TuftCount < 260000,
                 "dense grass streams within a bounded camera neighborhood");
@@ -76,7 +77,7 @@ public partial class SmokeTest : Node
                     bridgeClear &= world.Routes.SurfaceHeight(p, p.Y) < River.BridgeHeight - .05f;
                 }
             Check(bridgeClear, "terrain triangles and dirt road stay below the bridge slab across its full footprint");
-            Check(world.Animals.All(a => world.Routes.Distance(a.Position) >= 5.5f && world.Routes.Distance(a.Position) <= 7 && !world.Village.IsReserved(a.Position) && River.Distance(a.Position.X, a.Position.Z) > River.HalfWidth(a.Position.Z) + 5), "all animals stand safely beside roads within interaction range");
+            Check(world.Animals.All(a => world.Routes.Distance(a.Position) >= 5.5f && world.Routes.Distance(a.Position) <= 7 && !world.Village.IsReserved(a.Position) && !world.Village.IsNearVillage(a.Position) && River.Distance(a.Position.X, a.Position.Z) > River.HalfWidth(a.Position.Z) + 5), "all animals stand safely beside roads within interaction range");
             Check(world.Animals.Select(a => a.Kind).Distinct().Count() == 3 && world.Animals.GroupBy(a => a.Kind).All(g => g.Select(a => a.FurColor).Distinct().Count() == 3), "three animal kinds with three fur colors each");
             Check(Settings.PlayableRadius * Settings.PlayableRadius / (166 * 166f) > 9.99f, "world playable area increased tenfold");
             Check(world.Ground.Height(-350, -250) > 10, "outer hills have elevation");
@@ -131,6 +132,28 @@ public partial class SmokeTest : Node
         {
             Check(Mathf.Abs(car.Speed) < .01f && new Vector2(car.Velocity.X, car.Velocity.Z).Length() < .01f, "handbrake stops sideways motion completely");
             Input.ActionRelease("brake"); Input.ActionRelease("accelerate");
+            float z = River.BridgeZ + 50;
+            car.SetPose(world.Ground.At(River.CenterX(z) - River.HalfWidth(z) - 3, z, .15f), -Mathf.Pi / 2);
+            Input.ActionPress("accelerate");
+        }
+        if (frame == 2135)
+        {
+            Check(Mathf.Abs(car.Position.Z - (River.BridgeZ + 50)) < 2 &&
+                River.Distance(car.Position.X, car.Position.Z) < River.HalfWidth(car.Position.Z) + 1 &&
+                Mathf.Abs(car.Speed) < .01f, "stream stops the vehicle locally instead of resetting to the village");
+            waterStop = car.Position;
+        }
+        if (frame == 2555)
+        {
+            Check(car.Position.DistanceTo(waterStop) < .1f && Mathf.Abs(car.Speed) < .01f,
+                "holding throttle against the stream for seven seconds does not trigger stuck reset");
+            Input.ActionRelease("accelerate"); Input.ActionPress("reverse");
+        }
+        if (frame == 2675)
+        {
+            Check(car.Position.X < waterStop.X - 2 && car.Position.Y > waterStop.Y,
+                "vehicle can reverse away from the stream and climb back onto the bank");
+            Input.ActionRelease("reverse");
             GD.Print("SMOKE_TEST_PASSED"); GetTree().Quit();
         }
     }

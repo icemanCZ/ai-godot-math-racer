@@ -19,7 +19,7 @@ Road proximity is the minimum horizontal distance to stored samples. Road contai
 
 ## Village along the road
 
-`Roads.SampleMain(distance)` returns a position and a central-difference tangent on the same baked curve that generates the visible main road. `Village` places four staggered plots at distances 62, 68, 90 and 98 m, alternating sides. House centers are offset 11 m from the centerline along the horizontal perpendicular. Rotate each house so its local +Z entrance faces the road. This keeps placement tied to the road when its control points change.
+`Roads.SampleMain(distance)` returns a position and a central-difference tangent on the same baked curve that generates the visible main road. `Village` places two pairs of plots at distances 63 and 117 m, on opposite sides before and after the crossroads at 90 m. House centers are offset 11 m from the centerline along the horizontal perpendicular. Rotate each house so its local +Z entrance faces the road. This keeps placement tied to the road when its control points change.
 
 Connect each doorway to the road edge with a 1.8 m footpath, sampled every 0.6 m and projected onto terrain. Split each front fence around the entrance, with the fence 4.8 m in front of the house center. Vegetation rejects candidates inside the oriented plot bounds, keeping houses, yards and access paths clear. The rabbit stands on the verge near the village entrance. Buildings retain their collision bodies.
 

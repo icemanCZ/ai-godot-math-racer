@@ -36,7 +36,7 @@ public partial class DeliveryPicture : Control
             Oval(new(90, 104), new(9, 6), ink);
             DrawArc(new(90, 109), 14, .15f, Mathf.Pi - .15f, 20, ink, 3, true);
         }
-        else if (Icon is "carrot" or "apple" or "honey" or "dots")
+        else if (Icon is "carrot" or "apple" or "honey" or "dots" or "bread" or "parcel" or "cake")
         {
             for (int i = 0; i < Count; i++)
             {
@@ -55,6 +55,23 @@ public partial class DeliveryPicture : Control
                 {
                     DrawStyleBox(new StyleBoxFlat { BgColor = new("f1bb43"), CornerRadiusTopLeft = 10, CornerRadiusTopRight = 10, CornerRadiusBottomLeft = 12, CornerRadiusBottomRight = 12 }, new(x - 22, 60, 44, 52));
                     DrawRect(new(x - 24, 51, 48, 13), new Color("a27452")); Oval(new(x, 87), new(12, 15), new("fff5df"));
+                }
+                else if (Icon == "bread")
+                {
+                    Oval(new(x, 85), new(24, 17), new("d99b52"));
+                    for (int cut = -1; cut <= 1; cut++) DrawLine(new(x + cut * 12 - 3, 74), new(x + cut * 12 + 3, 85), new Color("ffe1a4"), 4, true);
+                }
+                else if (Icon == "parcel")
+                {
+                    DrawRect(new(x - 22, 62, 44, 44), new Color("bf9565"));
+                    DrawRect(new(x - 5, 62, 10, 44), new Color("fff0cf"));
+                    DrawRect(new(x - 22, 77, 44, 8), new Color("fff0cf"));
+                }
+                else if (Icon == "cake")
+                {
+                    DrawRect(new(x - 22, 70, 44, 36), new Color("e9a0be"));
+                    Oval(new(x, 70), new(22, 9), new("fff2dc"));
+                    DrawCircle(new(x, 56), 8, new Color("ed586e"));
                 }
                 else { DrawCircle(new(x, 75), 18, ink); DrawCircle(new(x, 75), 14, new Color("fff5df")); }
                 if (FilledCount >= 0)

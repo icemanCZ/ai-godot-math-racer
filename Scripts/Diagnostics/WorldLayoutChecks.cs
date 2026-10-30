@@ -23,6 +23,8 @@ public static class WorldLayoutChecks
             if (visited.Add(point)) foreach (var neighbour in links[point]) pending.Push(neighbour);
         if (visited.Count != links.Count || links.Values.Any(neighbours => neighbours.Count < 2))
             throw new InvalidOperationException($"Disconnected road or dead end: seed={seed}");
+        if (!links.TryGetValue(plan.VillageJunction, out var streets) || streets.Count != 4)
+            throw new InvalidOperationException($"Village must have a four-way crossroads: seed={seed}");
         foreach (var route in plan.Routes)
         {
             using var curve = WorldPlan.CreateCurve(route);
@@ -45,7 +47,7 @@ public static class WorldLayoutChecks
     {
         var signatures = new HashSet<string>();
         var sides = new HashSet<int>();
-        var routeCounts = new HashSet<int>();
+        var bendCounts = new HashSet<int>();
         double selectedCost = 0, originalCost = 0;
         for (int seed = 1; seed <= 128; seed++)
         {
@@ -53,7 +55,7 @@ public static class WorldLayoutChecks
             var repeat = new WorldPlan(seed);
             string Signature(WorldPlan p) => string.Join(";", p.Routes.SelectMany(route => route).Select(point => point.ToString())) + p.BridgeZ;
             if (Signature(plan) != Signature(repeat)) throw new InvalidOperationException("World layout is not reproducible.");
-            signatures.Add(Signature(plan)); sides.Add(plan.Side); routeCounts.Add(plan.Routes.Length);
+            signatures.Add(Signature(plan)); sides.Add(plan.Side); bendCounts.Add(plan.Routes[2].Length);
             ValidatePlan(plan, seed);
             for (float z = -Settings.WorldRadius; z <= Settings.WorldRadius; z += 8)
             {
@@ -66,7 +68,7 @@ public static class WorldLayoutChecks
                 originalCost += original * original;
             }
         }
-        check(signatures.Count == 128 && sides.Count == 2 && routeCounts.Count > 1,
+        check(signatures.Count == 128 && sides.Count == 2 && bendCounts.Count > 1,
             "128 reproducible distinct layouts have connected roads, no dead ends, valid bridges and gradual river bends");
         check(selectedCost < originalCost,
             "terrain-aware river routes avoid higher ground better than the previous terrain-independent curves");

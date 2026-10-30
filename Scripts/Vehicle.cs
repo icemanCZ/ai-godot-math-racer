@@ -75,7 +75,21 @@ public partial class Vehicle : CharacterBody3D
         movement = movement.Lerp(forward * Speed, 1 - Mathf.Exp(-(braking ? 1.5f : 18f) * dt));
         movement = movement.LimitLength(Mathf.Abs(Speed));
         Velocity = new Vector3(movement.X, Velocity.Y - 24 * dt, movement.Z);
+        var previousPosition = Position;
+        var intendedPosition = Position + movement * dt;
         MoveAndSlide();
+        bool movingAwayFromWater = River.Distance(intendedPosition.X, intendedPosition.Z) - River.HalfWidth(intendedPosition.Z) >
+            River.Distance(previousPosition.X, previousPosition.Z) - River.HalfWidth(previousPosition.Z) + .00001f;
+        bool blockedByWater = !movingAwayFromWater && !River.OnBridge(Position.X, Position.Z) &&
+            River.Distance(Position.X, Position.Z) < River.HalfWidth(Position.Z) + 1 &&
+            Position.Y < River.Level(Position.Z) - .35f;
+        if (blockedByWater)
+        {
+            // Keep the last safe position so the driver can reverse away from the stream.
+            Position = previousPosition;
+            Speed = 0;
+            Velocity = Vector3.Zero;
+        }
         // MoveAndSlide removes blocked velocity; also shed the arcade speed so
         // the car cannot store full throttle against a wall and launch away.
         float impact = 0;
@@ -91,11 +105,10 @@ public partial class Vehicle : CharacterBody3D
         }
         if (impact > 0)
             Speed *= Mathf.Sqrt(Mathf.Max(0, 1 - impact * impact));
-        stuckTime = Mathf.Abs(throttle) > .5f && !braking && Position.DistanceTo(lastPosition) < .005f ? stuckTime + dt : 0;
+        stuckTime = !blockedByWater && Mathf.Abs(throttle) > .5f && !braking && Position.DistanceTo(lastPosition) < .005f ? stuckTime + dt : 0;
         lastPosition = Position;
         if (stuckTime > 5) Reset();
         if (new Vector2(Position.X, Position.Z).Length() > Settings.PlayableRadius || Position.Y < terrain.Height(Position.X, Position.Z) - 25) Reset();
-        if (!River.OnBridge(Position.X, Position.Z) && River.Distance(Position.X, Position.Z) < River.HalfWidth(Position.Z) + 1 && Position.Y < River.Level(Position.Z) - .35f) Reset();
         float slope = (Surface(Position.X + forward.X, Position.Z + forward.Z) - Surface(Position.X - forward.X, Position.Z - forward.Z)) / 2;
         model.Rotation = model.Rotation.Lerp(new Vector3(Mathf.Atan(slope), 0, bank - steer * Speed * .003f), dt * 7);
         foreach (var wheel in wheels) wheel.RotateX(-Speed * dt * 2);

@@ -148,8 +148,8 @@ public static class ChallengeChecks
             check(game.State == GameState.Exploring && game.CurrentChallenge == null && game.RemainingAnimals == before - 1,
                 "all previous visits stay blocked after other rewards, reset and pause");
         }
-        check(game.RemainingAnimals == 0 && world.Animals.All(a => !a.RewardAvailable) && car.Active, "all 30 visits complete and free driving remains available");
-        check(letterVisits == 15 && mathVisits == 14, "world has 15 letter and 15 math animals including the cancelled first math visit");
+        check(game.RemainingAnimals == 0 && world.Animals.All(a => !a.RewardAvailable) && car.Active, "all 10 visits complete and free driving remains available");
+        check(letterVisits == 5 && mathVisits == 4, "world has 5 letter and 5 math animals including the cancelled first math visit");
         CheckCounter();
 
         // Verify the complete cosmetic catalogue independently of finite gameplay visits.

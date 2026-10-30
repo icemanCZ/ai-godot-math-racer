@@ -34,9 +34,11 @@ public partial class Game
 
     internal SaveData CaptureProgress() => new()
     {
+        EventActive = Events.Active, EventNext = Events.Next, EventWins = (int[])Events.Wins.Clone(),
         Seed = Settings.Seed, Position = new[] { vehicle.Position.X, vehicle.Position.Y, vehicle.Position.Z }, Heading = vehicle.Heading,
         State = State == GameState.Paused ? beforePause : State,
-        Nearby = nearby?.IsToymaker == true ? 37 : nearby?.IsGemCollector == true ? 36 : nearby?.IsGardener == true ? 35 : nearby?.IsFarmer == true ? 34 : nearby?.HouseIndex >= 0 ? world.Animals.Length + nearby.HouseIndex : Array.IndexOf(world.Animals, nearby),
+        Nearby = ActorId(nearby),
+        TradeCounts = (int[])world.Village.TradeCounts.Clone(),
         HouseLevels = world.Village.Levels,
         FarmCount = world.Village.FarmCount,
         GardenCount = world.Village.GardenCount,
@@ -47,8 +49,7 @@ public partial class Game
         Owned = OwnedRewards.ToArray(), Rewards = CurrentRewards.ToArray(), PreviousRewards = previousRewards.ToArray(),
         Look = vehicle.Appearance.CurrentLookId, Model = vehicle.Appearance.CurrentModelId,
         Accessories = CarAccessory.All.Where(a => vehicle.Appearance.HasAccessory(a.Id)).Select(a => a.Id).ToArray(),
-        Sender = Delivery == null ? -1 : Delivery.Toys ? 37 : Delivery.Gems ? 36 : Delivery.Garden ? 35 : Delivery.Farm ? 34 : Delivery.Sender.HouseIndex >= 0
-            ? world.Animals.Length + Delivery.Sender.HouseIndex : Array.IndexOf(world.Animals, Delivery.Sender), Collection = Delivery?.Collection ?? false,
+        Sender = ActorId(Delivery?.Sender), Collection = Delivery?.Collection ?? false,
         Picked = Delivery?.Picked ?? Array.Empty<bool>(), Arrived = Delivery?.Arrived ?? false, DeliveryReward = deliveryReward,
         Math = CurrentChallenge as MathChallenge, Letters = CurrentChallenge as LetterChallenge,
         DeliveryQuestion = CurrentChallenge as DeliveryChallenge, Rejected = rejectedAnswers.ToArray(), Feedback = feedback
@@ -57,13 +58,21 @@ public partial class Game
     internal void RestoreProgress(SaveData data)
     {
         if (Delivery != null) { Delivery.ReleaseCargo(); RemoveChild(Delivery); Delivery.QueueFree(); Delivery = null; }
-        vehicle.SetPose(new(data.Position[0], data.Position[1], data.Position[2]), data.Heading);
+        ClearHighlight();
+        celebrationFx?.QueueFree(); celebrationFx = null; celebrationTime = 0; celebrationPanel = null; ui.CelebrationMessage("");
+        Events.Restore(data.EventActive, data.EventNext, data.EventWins);
+        var restoredPosition = new Vector3(data.Position[0], data.Position[1], data.Position[2]);
+        float surface = world.Ground.Height(restoredPosition.X, restoredPosition.Z);
+        if (world.Village.TerrainArea.HasPoint(new(restoredPosition.X, restoredPosition.Z)) && restoredPosition.Y < surface - .2f)
+            restoredPosition.Y = surface + .15f;
+        vehicle.SetPose(restoredPosition, data.Heading);
         vehicle.Appearance.ApplyModel(data.Model);
         vehicle.Appearance.Apply(CarLook.All.FirstOrDefault(l => l.Id == data.Look) ?? CarLook.All[0]);
         foreach (var accessory in CarAccessory.All)
             if (vehicle.Appearance.HasAccessory(accessory.Id) != data.Accessories.Contains(accessory.Id)) vehicle.Appearance.ToggleAccessory(accessory.Id);
         for (int i = 0; i < world.Animals.Length; i++) world.Animals[i].SetRewardAvailable(data.Animals[i]);
         world.Village.RestoreLevels(data.HouseLevels);
+        world.Village.RestoreTrades(data.TradeCounts);
         world.Village.RestoreFarm(data.FarmCount);
         world.Village.RestoreGarden(data.GardenCount);
         world.Village.RestoreCollection(false, data.GemCount); world.Village.RestoreCollection(true, data.ToyCount);
@@ -72,16 +81,16 @@ public partial class Game
         foreach (int i in data.Completed) completedDeliveries.Add(world.Animals[i]);
         OwnedRewards.Clear(); OwnedRewards.UnionWith(data.Owned);
         CurrentRewards = data.Rewards; previousRewards = data.PreviousRewards;
-        nearby = data.Nearby == 37 ? world.Village.Toymaker : data.Nearby == 36 ? world.Village.GemCollector : data.Nearby == 35 ? world.Village.Gardener : data.Nearby == 34 ? world.Village.Farmer : data.Nearby < 0 ? null : data.Nearby >= world.Animals.Length
-            ? world.Village.Residents[data.Nearby - world.Animals.Length] : world.Animals[data.Nearby];
+        nearby = ActorAt(data.Nearby);
         CurrentChallenge = (IChallenge?)data.Math ?? (IChallenge?)data.Letters ?? data.DeliveryQuestion;
         rejectedAnswers.Clear(); rejectedAnswers.UnionWith(data.Rejected); feedback = data.Feedback;
         deliveryReward = data.DeliveryReward;
         if (data.Sender >= 0)
         {
-            var sender = data.Sender == 37 ? world.Village.Toymaker : data.Sender == 36 ? world.Village.GemCollector : data.Sender == 35 ? world.Village.Gardener : data.Sender == 34 ? world.Village.Farmer : data.Sender >= world.Animals.Length ? world.Village.Residents[data.Sender - world.Animals.Length] : world.Animals[data.Sender];
+            var sender = ActorAt(data.Sender)!;
             Delivery = new Expedition(world, vehicle, sender, data.Collection, data.Picked) { Arrived = data.Arrived };
             AddChild(Delivery);
+            if (deliveryReward) Delivery.ReleaseCargo();
         }
         lastCollected = Delivery?.Collected ?? -1;
         ui.DeliveryHud(Delivery); ui.AnimalCount(RemainingAnimals, world.Animals.Length); UpdateDeliveryGuides();

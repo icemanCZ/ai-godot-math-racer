@@ -26,10 +26,10 @@ public partial class Vegetation : Node3D
         buildingTree?.Parts.Add(new TreePart(key, batch.Count, new Transform3D((rotation ?? Basis.Identity).ScaledLocal(scale), p)));
         batch.Add(new Transform3D((rotation ?? Basis.Identity).ScaledLocal(scale), p));
     }
-    public void Generate(Terrain terrain, Roads roads, Village village, Animal[] animals)
+    public void Generate(Terrain terrain, Roads roads, Village village, Animal[] animals, System.Func<Vector3, bool> pickupReserved)
     {
         ground = terrain;
-        bool Reserved(Vector3 p) => village.IsReserved(p) || animals.Any(a => a.Position.DistanceTo(p) < 6);
+        bool Reserved(Vector3 p) => village.IsReserved(p) || animals.Any(a => a.Position.DistanceTo(p) < 6) || pickupReserved(p);
         // Dense groves with open clearings between them.
         for (int grove = 0; grove < 14; grove++)
         {
@@ -104,13 +104,16 @@ public partial class Vegetation : Node3D
                 Leaf(p + Vector3.Up * .45f, new Vector3(.32f, .15f, .32f), "f54257");
             }
         }
+        GenerateNatureDetails(terrain, roads, Reserved);
         var meshes = new Dictionary<string, Mesh>
         {
             ["leaf"] = new SphereMesh { Radius = 1, Height = 2, RadialSegments = 10, Rings = 5 },
             ["canopy"] = FoliageMesh(),
             ["detail"] = new SphereMesh { Radius = 1, Height = 2, RadialSegments = 7, Rings = 4 },
+            ["sprig"] = PointedLeafMesh(),
+            ["pad"] = LilyPadMesh(),
             ["wood"] = new CylinderMesh { BottomRadius = 1, TopRadius = .7f, Height = 2, RadialSegments = 8 },
-            ["cone"] = new CylinderMesh { BottomRadius = 1, TopRadius = .035f, Height = 2, RadialSegments = 10 }
+            ["cone"] = ConiferMesh()
         };
         var foliageShader = GD.Load<Shader>("res://Shaders/Foliage.gdshader");
         var foliageMaterials = new Dictionary<string, ShaderMaterial>();
@@ -125,7 +128,7 @@ public partial class Vegetation : Node3D
             for (int i = 0; i < pair.Value.Count; i++) mm.SetInstanceTransform(i, pair.Value[i]);
             renderedBatches[pair.Key] = mm;
             Material material = Art.Mat(pair.Key.Color);
-            if (pair.Key.Shape == "canopy")
+            if (pair.Key.Shape is "canopy" or "sprig")
             {
                 if (!foliageMaterials.TryGetValue(pair.Key.Color, out var foliage))
                 {
@@ -139,8 +142,9 @@ public partial class Vegetation : Node3D
             {
                 Multimesh = mm, MaterialOverride = material,
                 // Small leaves and bark marks only matter near the camera.
-                VisibilityRangeEnd = pair.Key.Shape == "detail" ? 85 : 0,
-                VisibilityRangeEndMargin = pair.Key.Shape == "detail" ? 10 : 0
+                VisibilityRangeEnd = pair.Key.Shape is "detail" or "sprig" or "pad" ? 85 : 0,
+                VisibilityRangeEndMargin = pair.Key.Shape is "detail" or "sprig" or "pad" ? 10 : 0,
+                CastShadow = pair.Key.Shape is "detail" or "sprig" or "pad" ? GeometryInstance3D.ShadowCastingSetting.Off : GeometryInstance3D.ShadowCastingSetting.On
             });
         }
         batches.Clear();

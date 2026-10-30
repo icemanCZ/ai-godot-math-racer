@@ -9,11 +9,16 @@ public partial class Animal : Node3D
     public bool IsGemCollector { get; internal set; }
     public bool IsToymaker { get; internal set; }
     public bool IsCollectionOwner => IsGemCollector || IsToymaker;
+    public int TradeIndex { get; internal set; } = -1;
+    public bool IsTrader => TradeIndex >= 0;
     public int HouseIndex { get; internal set; } = -1;
     private Node3D wavingArm = null!;
     internal bool IsWaving { get; private set; }
     public void GreetPlayer(Vector3 player, bool active)
     {
+        var markerDistance = Position - player;
+        markerDistance.Y = 0;
+        markerDistanceBlend = Mathf.SmoothStep(8, 32, markerDistance.Length());
         IsWaving = active && Position.DistanceSquaredTo(player) < 24 * 24;
         if (IsWaving)
         {
@@ -26,15 +31,27 @@ public partial class Animal : Node3D
     private Node3D model = null!;
     private float time;
     private float celebration;
+    internal bool AnimationPaused;
     public void Celebrate() => celebration = 2.5f;
     private Label3D taskMarker = null!;
+    private Sprite3D? roleIcon;
+    private float markerDistanceBlend = 1;
+    private float markerBlend = 1;
     public bool RewardAvailable { get; private set; } = true;
     public int Kind { get; private set; }
     public string FurColor { get; private set; } = "";
+    public override void _Ready()
+    {
+        string icon = IsFarmer || IsGardener || IsCollectionOwner ? "basket" :
+            IsTrader ? "hand" : HouseIndex >= 0 ? "person" : "";
+        if (icon != "") roleIcon = Art.RoleTaskIcon(taskMarker, icon);
+        Guide(taskMarker.Visible);
+    }
     public void Guide(bool visible, bool destination = false)
     {
         taskMarker.Visible = visible;
-        taskMarker.Text = destination ? "!" : "?";
+        taskMarker.Text = destination ? "!" : roleIcon != null ? "" : "?";
+        if (roleIcon != null) roleIcon.Visible = !destination;
         taskMarker.Modulate = new Color(destination ? "63e7e0" : "ffeb3b");
     }
     public void SetRewardAvailable(bool available)
@@ -72,9 +89,15 @@ public partial class Animal : Node3D
     }
     public override void _Process(double delta)
     {
+        if (AnimationPaused) return;
         time += (float)delta;
-        wavingArm.Rotation = new(0, 0, IsWaving ? .95f + Mathf.Sin(time * 9) * .48f : -.35f);
-        taskMarker.Position = Vector3.Up * (7.5f + Mathf.Sin(time * 2.4f) * .6f);
+        wavingArm.Rotation = new(0, 0, (IsWaving || celebration > 0) ? .95f + Mathf.Sin(time * 9) * .48f : -.35f);
+        markerBlend = Mathf.Lerp(markerBlend, markerDistanceBlend, 1 - Mathf.Exp(-(float)delta * 8));
+        float markerSize = Mathf.Lerp(.5f, 1, markerBlend);
+        taskMarker.PixelSize = .0011f * markerSize;
+        if (roleIcon != null) roleIcon.PixelSize = .00055f * markerSize;
+        taskMarker.Position = Vector3.Up * (Mathf.Lerp(4.7f, 7.5f, markerBlend) +
+            Mathf.Sin(time * 2.4f) * Mathf.Lerp(.15f, .6f, markerBlend));
         model.Position = Vector3.Up * Mathf.Sin(time * 1.8f) * .045f;
         if (celebration > 0)
         {

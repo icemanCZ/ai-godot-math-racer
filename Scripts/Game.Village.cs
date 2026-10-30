@@ -17,9 +17,11 @@ public partial class Game
 
     private void CompleteHouseTask(Animal owner)
     {
-        world.Village.Upgrade(owner.HouseIndex); owner.Celebrate(); nearby = owner;
+        world.Village.Upgrade(owner.HouseIndex); nearby = owner;
+        CelebrateCompletion(owner, $"Nové vylepšení: {Village.Upgrades[world.Village.Level(owner.HouseIndex) - 1]}", unload: Delivery?.Sender == owner, building: world.Village.Houses[owner.HouseIndex]);
         CurrentChallenge = null; rejectedAnswers.Clear(); deliveryReward = false;
         State = GameState.HouseReward; vehicle.Active = false;
         ui.HouseReward(owner, world.Village.Level(owner.HouseIndex));
+        ShowCelebrationView();
     }
 }

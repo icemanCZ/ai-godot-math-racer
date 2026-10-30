@@ -5,9 +5,10 @@ namespace MathRacer;
 
 public partial class World : Node3D
 {
+    public const int QuestAnimalCount = 10;
     public Terrain Ground { get; } = new();
-    public Roads Routes { get; } = new();
-    public Village Village { get; } = new();
+    public Roads Routes { get; private set; } = new();
+    public Village Village { get; private set; } = new();
     public Vegetation Plants { get; } = new();
     public Grass Grass { get; } = new();
     public Wildlife Wildlife { get; } = new();
@@ -15,8 +16,7 @@ public partial class World : Node3D
     internal Vector3[] SpecialPickupSpots { get; private set; } = System.Array.Empty<Vector3>();
     public void Generate()
     {
-        AddChild(Ground); Ground.Generate(); AddChild(Routes); Routes.Generate(Ground);
-        AddChild(Village); Village.Generate(Ground, Routes);
+        GenerateVillage();
         var atmosphere = new Atmosphere(); AddChild(atmosphere); atmosphere.Generate();
         var river = new River(); AddChild(river); river.Generate(Ground);
         foreach (float distance in new[] { 115f, 180f })
@@ -43,16 +43,31 @@ public partial class World : Node3D
             new[] { "Míša", "Bručoun", "Medoušek", "Bohouš", "Břéťa", "Dobromil", "Vojta", "Olda", "Radouš" }
         };
         string[][] colors = { new[] { "f3e8d5", "c5b4e3", "a9d8e8" }, new[] { "e9a16a", "e8bf73", "df92ac" }, new[] { "b98d71", "c5a9db", "97c9b0" } };
-        for (int i = 0; i < 27; i++)
+        for (int i = 0; i < QuestAnimalCount - Animals.Length; i++)
         {
             int kind = i % 3;
-            var animal = Animal.Create($"{names[kind]} {givenNames[kind][i / 3]}", "Ahoj! Vyřeš příklad a vyber si odměnu.", kind, colors[kind][i / 3 % 3]);
+            var animal = Animal.Create($"{names[kind]} {givenNames[kind][i / 3]}", "Ahoj! Vyřeš příklad a vyber si odměnu.", kind, colors[kind][(i / 3 + 1) % 3]);
             AddChild(animal); animals.Add(animal);
         }
         Animals = animals.ToArray();
         PlaceAnimalsBesideRoads();
         SpecialPickupSpots = CreateSpecialPickupSpots();
-        AddChild(Plants); Plants.Generate(Ground, Routes, Village, Animals);
+        AddChild(Plants); Plants.Generate(Ground, Routes, Village, Animals, IsPickupApproachReserved);
+    }
+    internal void GenerateVillage()
+    {
+        AddChild(Ground); Ground.Generate();
+        AddChild(Routes); Routes.Generate(Ground);
+        AddChild(Village); Village.Generate(Ground, Routes);
+        // Discover the seeded parcels first, then level the whole settlement together.
+        // Rebuild before spawning animals or restoring saves, preserving all X/Z positions.
+        var area = Village.TerrainArea;
+        float height = Mathf.Max(1, Ground.Height(Village.Center.X, Village.Center.Z));
+        RemoveChild(Village); Village.Free();
+        RemoveChild(Routes); Routes.Free();
+        Ground.LevelVillage(area, height);
+        Routes = new Roads(); AddChild(Routes); Routes.Generate(Ground);
+        Village = new Village(); AddChild(Village); Village.Generate(Ground, Routes);
     }
     private void PlaceAnimalsBesideRoads()
     {
