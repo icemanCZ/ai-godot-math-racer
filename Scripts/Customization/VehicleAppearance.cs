@@ -19,6 +19,7 @@ public sealed class VehicleAppearance
         if (!models.ContainsKey(id)) return;
         foreach (var model in models) model.Value.Visible = model.Key == id;
         CurrentModelId = id;
+        if (accessories.TryGetValue(CarAccessory.ValleyMap.Id, out var sticker)) CarAccessory.PlaceValleyMap(sticker, id);
     }
     public void SetupStripes(Node3D model)
     {
@@ -36,7 +37,7 @@ public sealed class VehicleAppearance
     public bool HasAccessory(string id) => id == "wheels" ? BigWheels : accessories.TryGetValue(id, out var node) && node.Visible;
     public void SetupAccessories(Node3D model)
     {
-        foreach (var accessory in CarAccessory.All)
+        foreach (var accessory in CarAccessory.Catalogue)
             if (accessory.Id != "wheels") accessories.Add(accessory.Id, accessory.Create(model));
     }
     public void ToggleAccessory(string id)

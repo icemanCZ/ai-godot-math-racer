@@ -17,6 +17,9 @@ public partial class GameUi : CanvasLayer
     public event Action? VillageFruitRequested;
     public event Action<bool>? ExpeditionSelected;
     public event Action<CarReward>? GarageRewardSelected;
+    public event Action? GolemToggleRequested;
+    internal event Action<CollectorPetKind>? CollectorPetToggleRequested;
+    public event Action? GolemQuestRequested;
     private float garageScroll;
     private string garageFocus = "";
     private ScrollContainer? garageCatalogue;
@@ -283,15 +286,16 @@ public partial class GameUi : CanvasLayer
         Button("Později", () => CloseInteractionRequested?.Invoke()).Name = "LeaveExpeditionChoice";
         first?.GrabFocus();
     }
-    public void Garage(VehicleAppearance appearance, System.Collections.Generic.IReadOnlySet<CarReward> owned)
+    internal void Garage(VehicleAppearance appearance, System.Collections.Generic.IReadOnlySet<CarReward> owned,
+        bool golemOwned, bool golemActive, System.Collections.Generic.IReadOnlyList<CollectorPet> collectorPets)
     {
         Clear(); Text("Garáž", 32);
-        Text($"Získáno {owned.Count} / {CarLook.All.Count + CarBody.All.Count + CarAccessory.All.Count}  ·  Šedé odměny získáš za úkoly", 20);
+        Text($"Získáno {owned.Count} / {CarLook.All.Count + CarBody.All.Count + CarAccessory.Catalogue.Count}  ·  Šedé odměny získáš za úkoly", 20);
         var row = new HBoxContainer(); row.AddThemeConstantOverride("separation", 22); content.AddChild(row);
         var current = System.Linq.Enumerable.First(CarLook.All, look => look.Id == appearance.CurrentLookId);
         var car = new VBoxContainer(); row.AddChild(car);
         var preview = new CarLookPreview { Look = current, ModelId = appearance.CurrentModelId,
-            Accessories = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(System.Linq.Enumerable.Where(CarAccessory.All, a => appearance.HasAccessory(a.Id)), a => a.Id)) };
+            Accessories = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(System.Linq.Enumerable.Where(CarAccessory.Catalogue, a => appearance.HasAccessory(a.Id)), a => a.Id)) };
         car.AddChild(preview);
         var caption = new Label { Text = "Tvoje auto\n\nVyber lak nebo model.\nDoplňky zapneš i vypneš.\n\n✓ = nasazeno\n\nKolečko / pravá páčka\nprochází odměny", HorizontalAlignment = HorizontalAlignment.Center };
         caption.AddThemeFontSizeOverride("font_size", 19); car.AddChild(caption);
@@ -301,6 +305,7 @@ public partial class GameUi : CanvasLayer
         scroll.GetVScrollBar().ValueChanged += value => garageScroll = (float)value;
         var catalogue = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }; scroll.AddChild(catalogue);
         Button? first = null;
+        Button? firstPet = null;
         Button? selectedFocus = null;
         var gray = new ShaderMaterial { Shader = new Shader { Code = "shader_type canvas_item; void fragment() { vec4 c = texture(TEXTURE, UV); float g = dot(c.rgb, vec3(0.299, 0.587, 0.114)); COLOR = vec4(vec3(g), c.a); }" } };
         void Category(string title, System.Collections.Generic.IEnumerable<(CarReward Reward, string Name)> items)
@@ -333,11 +338,42 @@ public partial class GameUi : CanvasLayer
                 if (unlocked && garageFocus == reward.ButtonName) selectedFocus = button;
             }
         }
+        catalogue.AddChild(new Label { Text = "Mazlíčci" });
+        var petGrid = new GridContainer { Columns = 5 };
+        petGrid.AddThemeConstantOverride("h_separation", 8);
+        petGrid.AddThemeConstantOverride("v_separation", 8);
+        catalogue.AddChild(petGrid);
+        void PetButton(string id, string name, Node3D model, bool unlocked, bool active, string hint, Action toggle)
+        {
+            string status = unlocked ? active ? "Vypnout" : "Zapnout" : "Zatím nezískán";
+            var button = Button("", () =>
+            {
+                garageScroll = scroll.ScrollVertical;
+                garageFocus = "GaragePet_" + id;
+                toggle();
+            }, petGrid);
+            button.Name = "GaragePet_" + id;
+            button.CustomMinimumSize = new(120, 112);
+            button.Disabled = !unlocked;
+            button.AccessibilityName = $"{name} · {status}";
+            button.TooltipText = unlocked ? $"{name} · {status}" : $"{name}\n{hint}";
+            if (!unlocked) button.AddThemeStyleboxOverride("disabled", Style("d5d5d5", 16));
+            AddPetPreview(button, model, unlocked ? null : gray, active);
+            if (unlocked) firstPet ??= button;
+            if (unlocked && garageFocus == button.Name) selectedFocus = button;
+        }
+        foreach (var pet in collectorPets)
+            PetButton(pet.Kind.ToString(), pet.DisplayName, pet.CreatePreviewModel(), pet.IsOwned, pet.IsActive,
+                $"{pet.Collector.DisplayName} · {pet.Count} / {pet.Goal}", () => CollectorPetToggleRequested?.Invoke(pet.Kind));
+        var golemPreview = GolemModel.Create();
+        golemPreview.Scale = Vector3.One * .64f;
+        golemPreview.RotateY(Mathf.Pi);
+        PetButton("Golem", "Malý golem", golemPreview, golemOwned, golemActive, "Černokněžník Baltazar", () => GolemToggleRequested?.Invoke());
         Category("Laky", System.Linq.Enumerable.Select(CarLook.All, l => (new CarReward(l.Id, false), l.Name)));
         Category("Modely", System.Linq.Enumerable.Select(CarBody.All, b => (new CarReward(b.Id, false, true), b.Name)));
-        Category("Doplňky", System.Linq.Enumerable.Select(CarAccessory.All, a => (new CarReward(a.Id, true), a.Name)));
+        Category("Doplňky", System.Linq.Enumerable.Select(CarAccessory.Catalogue, a => (new CarReward(a.Id, true), a.Name)));
         Button("Vyjet z garáže", () => { garageScroll = 0; garageFocus = ""; CloseInteractionRequested?.Invoke(); }).Name = "LeaveGarage";
-        (selectedFocus ?? first)?.GrabFocus();
+        (selectedFocus ?? firstPet ?? first)?.GrabFocus();
         scroll.SetDeferred(ScrollContainer.PropertyName.ScrollVertical, (int)garageScroll);
     }
     public void GarageHint()
@@ -377,6 +413,7 @@ public partial class GameUi : CanvasLayer
         else if (expedition != null) Text("Nejdřív dokonči rozjetou výpravu.\nTento úkol tu na tebe počká.", 22);
         else if (count == Village.CollectionNames(toys).Length) Text(toys ? "Hřiště je plné hraček! Přijeď zase na návštěvu." : "Sbírka je kompletní! Přijeď si ji zase prohlédnout.", 22);
         else Text("Přijeď za mnou pro další výpravu.\nPřed cestou tě čeká příklad nebo písmenko.", 22);
+        CollectorPetStatus(village.PetFor(owner));
         Button("Pokračovat v jízdě", () => CloseInteractionRequested?.Invoke()).GrabFocus();
     }
     public void GardenStatus(Village village, Expedition? expedition, bool returned = false)
@@ -389,6 +426,7 @@ public partial class GameUi : CanvasLayer
         else if (expedition != null) Text("Nejdřív dokonči rozjetou výpravu.\nKvětiny tu na tebe počkají.", 22);
         else if (village.GardenCount == Village.FlowerNames.Length) Text("Celá zahrádka kvete. Přijeď se zase podívat!", 22);
         else Text("Přijeď za mnou pro další květinu.\nPřed cestou tě čeká příklad nebo písmenko.", 22);
+        CollectorPetStatus(village.PetFor(village.Gardener));
         Button("Pokračovat v jízdě", () => CloseInteractionRequested?.Invoke()).GrabFocus();
     }
     public void FarmStatus(Village village, Expedition? expedition, bool returned = false)
@@ -401,8 +439,11 @@ public partial class GameUi : CanvasLayer
         else if (expedition != null) Text("Nejdřív dokonči rozjetou výpravu.\nZvířátka tu na tebe počkají.", 22);
         else if (village.FarmCount == Village.FarmKinds.Length) Text("Všechna zvířátka jsou doma. Přijeď je zase navštívit!", 22);
         else Text("Přijeď za mnou pro další výpravu.\nPřed cestou tě čeká příklad nebo písmenko.", 22);
+        CollectorPetStatus(village.PetFor(village.Farmer));
         Button("Pokračovat v jízdě", () => CloseInteractionRequested?.Invoke()).GrabFocus();
     }
+    private void CollectorPetStatus(CollectorPet pet) =>
+        Text(pet.IsOwned ? $"Mazlíček získán: {pet.DisplayName}.\nZapnout nebo vypnout ho můžeš v garáži." : pet.RewardHint, 22);
     public void HideModal() { modal.Hide(); deliveryHud.Visible = directionPicture != null; }
     public void AnimalCount(int remaining, int total) => animalCount.Text = remaining == 0
         ? "Všechna zvířátka navštívena!"
@@ -449,7 +490,9 @@ public partial class GameUi : CanvasLayer
         if (delivery == null) return;
         directionPicture = Picture(deliveryHud, "arrow");
         directionPicture!.CustomMinimumSize = new(80, 80);
-        var label = new Label { Name = "NavigationText", Text = delivery.Gems || delivery.Toys
+        var label = new Label { Name = "NavigationText", Text = delivery.Golem
+            ? delivery.CanDeliver ? $"Vrať se k černokněžníkovi\nDílky golema: {delivery.Collected} / 6" : $"Najdi dílky golema\nNasbíráno: {delivery.Collected} / 6"
+            : delivery.Gems || delivery.Toys
             ? delivery.CanDeliver ? $"Vrať se: {delivery.Recipient.DisplayName}\nVezeš {delivery.CollectionName}" : $"Najdi {delivery.CollectionName}\nSjeď z cesty a přijeď blíž"
             : delivery.Garden
             ? delivery.CanDeliver ? $"Vrať se k zahradníku Vítkovi\nVezeš {delivery.FlowerName}" : $"Najdi {delivery.FlowerName}\nSjeď z cesty a přijeď ke květině"

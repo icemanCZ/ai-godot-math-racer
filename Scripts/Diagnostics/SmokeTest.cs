@@ -211,6 +211,24 @@ public partial class SmokeTest : Node
         camera._Notification((int)NotificationApplicationFocusOut);
         Check(Input.MouseMode == originalMouseMode, "losing focus releases orbit mouse");
         camera.Snap();
+        var start = car.Position;
+        car.SetPose(start, Mathf.Pi);
+        bool keepsDistance = true;
+        for (int i = 0; i < 180; i++)
+        {
+            camera._Process(1.0 / 60);
+            offset = camera.Position - car.Position;
+            keepsDistance &= new Vector2(offset.X, offset.Z).Length() > 10;
+        }
+        Check(keepsDistance && camera.Position.Z < car.Position.Z - 10,
+            "camera orbits around car during a half turn instead of crossing overhead");
+        car.SetPose(start, 0); camera.Snap();
+        car.SetPose(start + Vector3.Back * 10, 0);
+        camera._Process(1.0 / 60);
+        offset = camera.Position - car.Position;
+        Check(Mathf.Abs(offset.Z - 10.5f) < .05f,
+            "vehicle relocation preserves camera distance instead of leaving camera above car");
+        car.SetPose(start, 0); camera.Snap();
     }
 
     private void Check(bool condition, string label)

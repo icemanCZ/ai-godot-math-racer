@@ -31,24 +31,7 @@ public partial class CarLookPreview : SubViewportContainer
             Msaa3D = Viewport.Msaa.Msaa4X
         };
         AddChild(viewport);
-        var studio = new Node3D(); viewport.AddChild(studio);
-        studio.AddChild(new WorldEnvironment {
-            Environment = new Godot.Environment {
-                BackgroundMode = Godot.Environment.BGMode.ClearColor,
-                AmbientLightSource = Godot.Environment.AmbientSource.Color,
-                AmbientLightColor = new Color("fff3df"), AmbientLightEnergy = .85f,
-                ReflectedLightSource = Godot.Environment.ReflectionSource.Disabled,
-                TonemapMode = Godot.Environment.ToneMapper.Filmic
-            }
-        });
-        studio.AddChild(new DirectionalLight3D {
-            RotationDegrees = new Vector3(-45, -35, 0), LightEnergy = 1.5f,
-            LightColor = new Color("fff6e5")
-        });
-        studio.AddChild(new DirectionalLight3D {
-            RotationDegrees = new Vector3(-25, 140, 0), LightEnergy = .65f,
-            LightColor = new Color("d6efff")
-        });
+        var studio = CreateStudio(viewport);
         var car = new Node3D(); studio.AddChild(car);
         var appearance = new VehicleAppearance();
         VehicleModel.BuildDisplay(car, appearance, new List<Node3D>(), ModelId);
@@ -68,12 +51,35 @@ public partial class CarLookPreview : SubViewportContainer
             studio.AddChild(new MeshInstance3D { Mesh = flag.Commit(), MaterialOverride = new StandardMaterial3D { AlbedoColor = new Color("27bd62").SrgbToLinear(), CullMode = BaseMaterial3D.CullModeEnum.Disabled, Roughness = .8f } });
         }
 
-        bool rear = AccessoryId is "spare" or "exhaust" or "spoiler" or "antenna" or "flag";
+        bool rear = AccessoryId is "spare" or "exhaust" or "spoiler" or "antenna" or "flag" or "valley-map";
         var camera = new Camera3D {
             Projection = Camera3D.ProjectionType.Orthogonal, Size = 4.5f,
             Position = new Vector3(4, 3.4f, rear ? 5 : -5), Current = true
         };
         studio.AddChild(camera);
         camera.LookAt(new Vector3(0, ExpeditionCargo != null ? 1.5f : 1.25f, 0));
+    }
+
+    internal static Node3D CreateStudio(SubViewport viewport)
+    {
+        var studio = new Node3D(); viewport.AddChild(studio);
+        studio.AddChild(new WorldEnvironment {
+            Environment = new Godot.Environment {
+                BackgroundMode = Godot.Environment.BGMode.ClearColor,
+                AmbientLightSource = Godot.Environment.AmbientSource.Color,
+                AmbientLightColor = new Color("fff3df"), AmbientLightEnergy = .85f,
+                ReflectedLightSource = Godot.Environment.ReflectionSource.Disabled,
+                TonemapMode = Godot.Environment.ToneMapper.Filmic
+            }
+        });
+        studio.AddChild(new DirectionalLight3D {
+            RotationDegrees = new Vector3(-45, -35, 0), LightEnergy = 1.5f,
+            LightColor = new Color("fff6e5")
+        });
+        studio.AddChild(new DirectionalLight3D {
+            RotationDegrees = new Vector3(-25, 140, 0), LightEnergy = .65f,
+            LightColor = new Color("d6efff")
+        });
+        return studio;
     }
 }

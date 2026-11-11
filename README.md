@@ -129,3 +129,10 @@ Domky mají členěné taškové střechy s hřebenáči, lemování štítů, p
 ### Příroda a říční břehy
 
 Louky doplňují nepravidelné skupiny kopretin, žlutých lučních květů a lupin, kapradiny se skládanými špičatými listy, mech na kamenech a drobné oblázky. U řeky rostou skupiny orobinců a na vodě lekníny s vykrojenými listy. Jehličnany mají nepravidelné okraje pater. Tráva, povrch luk, obloha a voda používají jemnější barevnost; terén má drobnou procedurální kresbu a tráva širší barevné pásy. Nové porosty respektují cesty, most, vesnici, zvířátka a místa pro úkoly. Samostatný náhodný generátor zachovává původní pozice stromů a překážek. Drobné prvky jsou vykreslované v prostorových MultiMesh dávkách s omezeným dohledem. Náhledy: `./run.ps1 -Capture -View nature` a `./run.ps1 -Capture -View riverbank`.
+
+### Pohlednice z Kouzelného údolí
+
+U kašny otevři **Album pohlednic** pomocí **E / A**. Podle obrázkových nápověd najdi šest obálek nad silnicí. U každé zastav a stejným tlačítkem vyfoť krajinu i svoje auto. Vyber obrázek, jehož název začíná zobrazeným písmenem, a získáš razítko. K otázce se můžeš kdykoli vrátit v albu. Fotky a razítka se ukládají i při rozjetém rozvozu. Tři razítka odemknou samolepku **Mapka údolí**, kterou můžeš zapnout či vypnout v garáži.
+
+### Černokněžník a golem
+Na kopci poblíž cesty stojí věž černokněžníka Baltazara. Po rozhovoru vyrazíš pro šest označených dílků golema; navigace tě dovede k jednotlivým dílkům a potom zpátky k věži. Za jejich doručení získáš malého golema, který poběží za autem. V garáži v kategorii **Peti** ho můžeš vypnout a zase zapnout. Rozpracovaná výprava, získání golema i jeho zapnutí se ukládají. Současně může probíhat jen jedna výprava. Testy: `--golem-checks`.

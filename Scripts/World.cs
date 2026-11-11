@@ -12,12 +12,16 @@ public partial class World : Node3D
     public Vegetation Plants { get; } = new();
     public Grass Grass { get; } = new();
     public Wildlife Wildlife { get; } = new();
+    internal Atmosphere Atmosphere { get; } = new();
+    internal Animal Witch { get; private set; } = null!;
+    internal Animal Sorcerer { get; private set; } = null!;
+    internal Node3D Tower { get; private set; } = null!;
     public Animal[] Animals { get; private set; } = System.Array.Empty<Animal>();
     internal Vector3[] SpecialPickupSpots { get; private set; } = System.Array.Empty<Vector3>();
     public void Generate()
     {
         GenerateVillage();
-        var atmosphere = new Atmosphere(); AddChild(atmosphere); atmosphere.Generate();
+        AddChild(Atmosphere); Atmosphere.Generate();
         var river = new River(); AddChild(river); river.Generate(Ground);
         foreach (float distance in new[] { 115f, 180f })
         {
@@ -31,6 +35,8 @@ public partial class World : Node3D
             var verge = frame.Center + frame.Forward.Cross(Vector3.Up) * 6;
             Sign(verge.X, verge.Z, "ZA KAMARÁDY");
         }
+        PlaceWitch();
+        PlaceSorcerer();
         Animals = new[] { Animal.Create("Králíček Matěj","Ahoj! Vítej v našem údolí.\nProjeď se a najdi moje kamarády!",0),
             Animal.Create("Liška Eliška","Jé, ty máš krásné autíčko!\nU řeky je dnes moc hezky.",1),
             Animal.Create("Medvěd Brumla","Ahoj, kamaráde! Tady to voní květinami.\nMám pro tebe malý početní úkol!",2) };
@@ -52,7 +58,8 @@ public partial class World : Node3D
         Animals = animals.ToArray();
         PlaceAnimalsBesideRoads();
         SpecialPickupSpots = CreateSpecialPickupSpots();
-        AddChild(Plants); Plants.Generate(Ground, Routes, Village, Animals, IsPickupApproachReserved);
+        AddChild(Plants); Plants.Generate(Ground, Routes, Village, Animals,
+            p => p.DistanceSquaredTo(Witch.Position) < 7 * 7 || p.DistanceSquaredTo(Tower.Position) < 18 * 18 || p.DistanceSquaredTo(Sorcerer.Position) < 8 * 8 || IsPickupApproachReserved(p));
     }
     internal void GenerateVillage()
     {
@@ -89,6 +96,7 @@ public partial class World : Node3D
                     var position = Ground.At(verge.X, verge.Z);
                     if (new Vector2(position.X, position.Z).Length() > Settings.PlayableRadius - 10 ||
                         Village.IsNearVillage(position) || Village.IsReserved(position) || Routes.Distance(position) < 5.5f ||
+                        position.DistanceSquaredTo(Witch.Position) < 20 * 20 || position.DistanceSquaredTo(Sorcerer.Position) < 25 * 25 ||
                         River.Distance(position.X, position.Z) < River.HalfWidth(position.Z) + 7) continue;
                     bool crowded = false;
                     for (int previous = 0; previous < i; previous++)
@@ -103,6 +111,40 @@ public partial class World : Node3D
             }
             if (!placed) throw new System.InvalidOperationException("No free roadside animal spot found.");
         }
+    }
+    private void PlaceWitch()
+    {
+        Witch = Animal.Create("Čarodějnice Bára", "Vyřeš příklad a vyber, jaké počasí mám přičarovat.", 2, "b6a2c8");
+        Witch.DressAsWitch();
+        var villageEdge = Village.TerrainArea.Grow(6);
+        float best = float.PositiveInfinity;
+        for (float distance = 192; distance <= 384; distance += 8)
+        {
+            var (road, forward) = Routes.SampleMain(distance);
+            var verge = forward.Cross(Vector3.Up);
+            foreach (int side in new[] { 1, -1 })
+            {
+                var spot = road + verge * (5.3f * side);
+                spot.Y = Ground.Height(spot.X, spot.Z);
+                float roadHeight = Routes.SurfaceHeight(road, Ground.Height(road.X, road.Z));
+                float score = Mathf.Abs(spot.Y - roadHeight) + (distance - 192) * .07f +
+                    (villageEdge.HasPoint(new Vector2(road.X, road.Z)) ? 20 : 0) +
+                    (villageEdge.HasPoint(new Vector2(spot.X, spot.Z)) ? 20 : 0) +
+                    (Village.IsReserved(spot) ? 20 : 0) +
+                    (River.Distance(spot.X, spot.Z) < River.HalfWidth(spot.Z) + 8 ? 100 : 0);
+                if (score >= best) continue;
+                best = score;
+                Witch.Position = spot;
+                var facing = -verge * side;
+                Witch.Rotation = new(0, Mathf.Atan2(facing.X, facing.Z), 0);
+            }
+        }
+        AddChild(Witch);
+        var cauldron = Ground.At(Witch.Position.X + Witch.Basis.X.X * 1.7f, Witch.Position.Z + Witch.Basis.X.Z * 1.7f);
+        Art.Ball(this, cauldron + Vector3.Up * .42f, new(.63f, .5f, .63f), "434050");
+        Art.Cylinder(this, cauldron + Vector3.Up * .75f, .55f, .62f, .15f, "554b62");
+        Art.Cylinder(this, cauldron + Vector3.Up * .83f, .51f, .51f, .025f, "76d7aa");
+        Obstacles.Box(this, cauldron + Vector3.Up * .4f, new(1.1f, .8f, 1.1f));
     }
     private void Bench(Vector3 p)
     {

@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MathRacer;
 
@@ -20,6 +21,23 @@ public partial class Village
     private readonly List<Label3D> collectionProgress = new();
     public int CollectionCount(bool toys) => toys ? ToyCount : GemCount;
     public static string[] CollectionNames(bool toys) => toys ? ToyNames : GemNames;
+
+    private void GenerateCollectorPets()
+    {
+        var pets = new List<CollectorPet>();
+        foreach (var kind in Enum.GetValues<CollectorPetKind>())
+        {
+            var pet = new CollectorPet(kind, this);
+            var collector = pet.Collector;
+            var spot = collector.Position + collector.Basis * new Vector3(1.9f, 0, .35f);
+            pet.SetHome(ApproachSpot(spot), collector.Rotation.Y);
+            AddChild(pet);
+            pets.Add(pet);
+        }
+        CollectorPets = pets;
+    }
+
+    internal CollectorPet PetFor(Animal collector) => CollectorPets.First(p => p.Collector == collector);
 
     private void GenerateCollections()
     {

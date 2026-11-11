@@ -7,6 +7,7 @@ public partial class FollowCamera : Camera3D
     public Vehicle Target = null!;
     public Terrain Ground = null!;
     private Vector3 focus;
+    private Vector3 lastTargetPosition;
     private float moment;
     private Vector3 momentFocus, momentSide;
     internal bool MomentPaused;
@@ -68,6 +69,7 @@ public partial class FollowCamera : Camera3D
         moment = 0;
         yaw = 0; pitch = DefaultPitch; idleTime = 0;
         focus = Target.Position + Vector3.Up * 1.5f;
+        lastTargetPosition = Target.Position;
         Position = Target.Position + Target.Transform.Basis.Z * 10.5f + Vector3.Up * 5.7f;
         LookAt(focus);
     }
@@ -84,6 +86,7 @@ public partial class FollowCamera : Camera3D
             Position = Position.Lerp(view, 1 - Mathf.Exp(-dt * 4));
             focus = focus.Lerp(momentFocus, 1 - Mathf.Exp(-dt * 4)); LookAt(focus);
             if (Target.Active) moment = 0;
+            lastTargetPosition = Target.Position;
             return;
         }
         if (!Target.Active) StopDragging();
@@ -107,7 +110,21 @@ public partial class FollowCamera : Camera3D
         var desired = Target.Position + orbit * (Mathf.Cos(pitch) * OrbitDistance)
             + Vector3.Up * (1.4f + Mathf.Sin(pitch) * OrbitDistance);
         desired.Y = Mathf.Max(desired.Y, Ground.Height(desired.X, desired.Z) + 3);
-        Position = Position.Lerp(desired, blend);
+        // Follow translation immediately, but smooth the orbit in polar coordinates.
+        // A straight lerp across opposite viewpoints cuts through the car and looks
+        // straight down, especially after a sharp turn or returning from inspection.
+        var movement = Target.Position - lastTargetPosition;
+        var offset = Position - lastTargetPosition;
+        lastTargetPosition = Target.Position;
+        var desiredOffset = desired - Target.Position;
+        float angle = Mathf.LerpAngle(Mathf.Atan2(offset.X, offset.Z), Mathf.Atan2(desiredOffset.X, desiredOffset.Z), blend);
+        float radius = Mathf.Lerp(new Vector2(offset.X, offset.Z).Length(), new Vector2(desiredOffset.X, desiredOffset.Z).Length(), blend);
+        radius = Mathf.Max(radius, 3);
+        var next = Target.Position + new Vector3(Mathf.Sin(angle) * radius,
+            Mathf.Lerp(offset.Y, desiredOffset.Y, blend), Mathf.Cos(angle) * radius);
+        next.Y = Mathf.Max(next.Y, Ground.Height(next.X, next.Z) + 3);
+        Position = next;
+        focus += movement;
         // Center the car when looking around so front and roof accessories stay in view.
         float inspection = Mathf.Clamp(Mathf.Abs(yaw) + Mathf.Abs(pitch - DefaultPitch) * 2, 0, 1);
         focus = focus.Lerp(Target.Position + Vector3.Up * 1.4f - behind * (3 * (1 - inspection)), blend);

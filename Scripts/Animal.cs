@@ -5,6 +5,8 @@ namespace MathRacer;
 public partial class Animal : Node3D
 {
     public bool IsFarmer { get; internal set; }
+    public bool IsWitch { get; private set; }
+    public bool IsSorcerer { get; internal set; }
     public bool IsGardener { get; internal set; }
     public bool IsGemCollector { get; internal set; }
     public bool IsToymaker { get; internal set; }
@@ -33,7 +35,8 @@ public partial class Animal : Node3D
     private float celebration;
     internal bool AnimationPaused;
     public void Celebrate() => celebration = 2.5f;
-    private Label3D taskMarker = null!;
+    private TaskMarker taskMarker = null!;
+    private Label3D nameLabel = null!;
     private Sprite3D? roleIcon;
     private float markerDistanceBlend = 1;
     private float markerBlend = 1;
@@ -42,7 +45,7 @@ public partial class Animal : Node3D
     public string FurColor { get; private set; } = "";
     public override void _Ready()
     {
-        string icon = IsFarmer || IsGardener || IsCollectionOwner ? "basket" :
+        string icon = IsSorcerer ? "sorcerer" : IsWitch ? "cloud" : IsFarmer || IsGardener || IsCollectionOwner ? "basket" :
             IsTrader ? "hand" : HouseIndex >= 0 ? "person" : "";
         if (icon != "") roleIcon = Art.RoleTaskIcon(taskMarker, icon);
         Guide(taskMarker.Visible);
@@ -84,8 +87,19 @@ public partial class Animal : Node3D
         Art.Ball(a.wavingArm, new(.6f, -.22f, 0), new(.25f, .26f, .25f), color);
         Art.Ball(a.model, new(-.67f, 1.05f, 0), new(.25f, .4f, .24f), color);
         a.taskMarker = Art.TaskMarker(a, new(0, 7.5f, 0), "?");
-        Art.Sign(a, new(0, 3.65f, 0), name, 30);
+        a.nameLabel = Art.Sign(a, new(0, 3.65f, 0), name, 30);
         return a;
+    }
+    internal void DressAsSorcerer() { DressAsWitch(); IsWitch = false; IsSorcerer = true; }
+    internal void DressAsWitch()
+    {
+        IsWitch = true;
+        nameLabel.Position += Vector3.Up * .45f;
+        Art.Cylinder(model, new(0, 2.46f, 0), .96f, .92f, .13f, "453758");
+        Art.Cylinder(model, new(0, 2.95f, 0), .63f, .025f, 1.05f, "534165").RotationDegrees =
+            new Vector3(0, 0, -10);
+        Art.Cylinder(model, new(0, 2.56f, 0), .64f, .56f, .16f, "9d63a8");
+        Art.Block(model, new(0, 2.57f, .61f), new(.21f, .15f, .065f), "ffd376");
     }
     public override void _Process(double delta)
     {
@@ -96,7 +110,7 @@ public partial class Animal : Node3D
         float markerSize = Mathf.Lerp(.5f, 1, markerBlend);
         taskMarker.PixelSize = .0011f * markerSize;
         if (roleIcon != null) roleIcon.PixelSize = .00055f * markerSize;
-        taskMarker.Position = Vector3.Up * (Mathf.Lerp(4.7f, 7.5f, markerBlend) +
+        taskMarker.AnchorPosition = Vector3.Up * (Mathf.Lerp(4.7f, 7.5f, markerBlend) +
             Mathf.Sin(time * 2.4f) * Mathf.Lerp(.15f, .6f, markerBlend));
         model.Position = Vector3.Up * Mathf.Sin(time * 1.8f) * .045f;
         if (celebration > 0)

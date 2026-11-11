@@ -12,7 +12,7 @@ public partial class World
     private Vector3[] CreateSpecialPickupSpots()
     {
         var random = new Random(Settings.Seed + 1753);
-        var friends = Animals.Concat(Village.Residents).ToArray();
+        var friends = Animals.Concat(Village.Residents).Append(Witch).Append(Sorcerer).ToArray();
         var spots = new List<Vector3>();
         int count = MathRacer.Village.FarmKinds.Length + MathRacer.Village.FlowerNames.Length +
             MathRacer.Village.GemNames.Length + MathRacer.Village.ToyNames.Length;

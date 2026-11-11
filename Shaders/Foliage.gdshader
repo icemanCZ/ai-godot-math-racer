@@ -1,15 +1,18 @@
 shader_type spatial;
-render_mode diffuse_burley, specular_schlick_ggx;
+render_mode world_vertex_coords, diffuse_burley, specular_schlick_ggx;
 
+global uniform vec2 weather_wind;
 uniform vec4 leaf_color : source_color = vec4(0.3, 0.6, 0.3, 1.0);
 varying vec3 leaf_position;
 
 void vertex() {
-    leaf_position = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+    leaf_position = VERTEX;
     // Quiet breeze, with a different phase across the valley.
     float breeze = sin(TIME * 1.15 + leaf_position.x * 0.35 + leaf_position.z * 0.24);
-    VERTEX.x += breeze * 0.035;
-    VERTEX.z += cos(TIME * 0.85 + leaf_position.x * 0.2) * 0.02;
+    VERTEX.xz += (MODEL_MATRIX * vec4(breeze * 0.035, 0.0,
+        cos(TIME * 0.85 + leaf_position.x * 0.2) * 0.02, 0.0)).xz;
+    float gust = sin(TIME * 2.8 - VERTEX.x * 0.09 - VERTEX.z * 0.07);
+    VERTEX.xz += weather_wind * (0.23 + gust * 0.29);
 }
 
 void fragment() {

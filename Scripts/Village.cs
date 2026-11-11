@@ -7,6 +7,7 @@ public partial class Village : Node3D
 {
     public static readonly string[] Upgrades = { "Květiny pod okny", "Barevné okenice", "Zlatá klika", "Uvítací rohožka", "Stříška nad dveřmi", "Sloupky verandy", "Balkon", "Podkrovní okénko", "Větrná korouhvička", "Slavnostní výzdoba" };
     public List<Animal> Residents { get; } = new();
+    internal IReadOnlyList<CollectorPet> CollectorPets { get; private set; } = System.Array.Empty<CollectorPet>();
     public List<Node3D> Houses { get; } = new();
     private readonly List<Node3D> decorations = new();
     private readonly List<Label3D> progress = new();
@@ -145,6 +146,7 @@ public partial class Village : Node3D
         foreach (var trader in Traders) trader.Position = ApproachSpot(trader.Position);
         foreach (var resident in Residents) resident.Position = ApproachSpot(resident.Position);
         foreach (var resident in new[] { Farmer, Gardener, GemCollector, Toymaker }) resident.Position = ApproachSpot(resident.Position);
+        GenerateCollectorPets();
         GarageEntrance = ApproachSpot(GarageEntrance);
     }
 

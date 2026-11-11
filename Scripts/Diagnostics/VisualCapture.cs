@@ -213,7 +213,7 @@ public partial class VisualCapture : Node
             car.SetPose(car.Position, Mathf.Atan2(-direction.X, -direction.Z));
             camera.Position = car.Position - direction * 12 + Vector3.Up * 7; camera.LookAt(car.Position + direction * 5);
         }
-        else if (view == "house-celebration") { }
+        else if (view == "house-celebration" || view.StartsWith("postcard-")) { }
         else if (!view.EndsWith("-reward") && !view.StartsWith("collection-") && !view.StartsWith("delivery-") && view != "gameplay" && view != "title" && view != "challenge" && view != "letters" && view != "reward" && view != "accessories")
         {
             camera.SetProcess(false);

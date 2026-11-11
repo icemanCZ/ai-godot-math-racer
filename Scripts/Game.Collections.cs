@@ -13,7 +13,7 @@ public partial class Game
             State = GameState.CollectionStatus; ui.CollectionStatus(world.Village, owner, Delivery); return;
         }
         CurrentChallenge = count % 2 == 0 ? challenges.Next() : letterChallenges.Next();
-        feedback = $"Přivez {Village.CollectionNames(toys)[count]}. Nejdřív vyřeš úkol a pak vyrazíme!";
+        feedback = $"Přivez {Village.CollectionNames(toys)[count]}. Nejdřív vyřeš úkol a pak vyrazíme!\n{world.Village.PetFor(owner).RewardHint}";
         State = GameState.Challenge; ShowChallenge();
     }
 }

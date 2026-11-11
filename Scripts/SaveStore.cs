@@ -9,9 +9,14 @@ namespace MathRacer;
 // Plain data only: scene nodes are regenerated from the saved world seed.
 public sealed class SaveData
 {
+    public PostcardProgress?[] Postcards { get; set; } = new PostcardProgress?[Game.PostcardCount];
+    public int PostcardPage { get; set; } = -1;
     public int EventActive { get; set; } = -1;
     public int EventNext { get; set; }
     public int[] EventWins { get; set; } = new int[2];
+    public bool GolemOwned { get; set; }
+    public bool GolemActive { get; set; }
+    public string[] DisabledCollectorPets { get; set; } = Array.Empty<string>();
     public int Version { get; set; } = 1;
     public int Seed { get; set; }
     public float[] Position { get; set; } = new float[3];
@@ -62,18 +67,28 @@ public static class SaveStore
                 if (!File.Exists(candidate)) continue;
                 var data = JsonSerializer.Deserialize<SaveData>(File.ReadAllText(candidate));
                 if (data == null || data.Version != 1 || data.Seed <= 0 || data.Seed >= int.MaxValue - 4096 ||
+                    data.Postcards == null || (data.Postcards.Length != Game.PostcardCount && data.Postcards.Length != Game.OriginalPostcardCount) ||
+                    data.Postcards.Any(card => card != null && (card.Jpeg == null || card.Jpeg.Length > 300000)) ||
+                    data.PostcardPage < -1 || data.PostcardPage >= data.Postcards.Length ||
+                    (data.PostcardPage >= 0 && data.Postcards[data.PostcardPage] == null) ||
                     data.EventActive < -1 || data.EventActive > 1 || data.EventNext < 0 || data.EventNext >= DrivingEvents.GateCount ||
                     data.EventWins == null || data.EventWins.Length != 2 || data.EventWins.Any(w => w < 0 || w > 9999) ||
                     data.Position == null || data.Position.Length != 3 || data.Position.Any(p => !float.IsFinite(p)) ||
                     !float.IsFinite(data.Heading) || !Enum.IsDefined(data.State) || data.State == GameState.Title || data.State == GameState.Paused ||
                     data.Animals == null || (data.Animals.Length != World.QuestAnimalCount && data.Animals.Length != 30) || data.Unlocked == null || data.Completed == null ||
                     data.Owned == null || data.Rewards == null || data.PreviousRewards == null || data.Accessories == null ||
-                    data.Picked == null || data.Rejected == null || data.Nearby < -1 || data.Nearby >= 41 || data.Sender < -1 || data.Sender >= 41 ||
+                    data.Picked == null || data.Rejected == null || data.Nearby < -1 || data.Nearby > Game.SorcererId || data.Sender < -1 || data.Sender > Game.SorcererId || data.Sender == Game.WitchId ||
+                    (data.GolemActive && !data.GolemOwned) ||
+                    (data.Sender == Game.SorcererId && (!data.Collection || data.GolemOwned || data.DeliveryReward)) ||
+                    (data.State == GameState.SorcererStatus && data.Nearby != Game.SorcererId) ||
+                    (data.State == GameState.WeatherChoice && data.Nearby != Game.WitchId) ||
+                    (data.Nearby == Game.WitchId && (data.State is not (GameState.Exploring or GameState.Challenge or GameState.WeatherChoice) ||
+                        (data.State == GameState.Challenge && data.Math == null))) ||
                     data.TradeCounts == null || data.TradeCounts.Length != 3 || data.TradeCounts.Any(c => c < 0 || c > 1000000) ||
-                    (data.Sender >= 38 && data.Collection) ||
+                    (data.Sender >= 38 && data.Sender < Game.WitchId && data.Collection) ||
                     (data.State == GameState.TradeStatus && (data.Nearby < 38 || data.Sender < 0)) ||
-                    (data.Nearby >= 38 && data.State == GameState.Challenge && (data.Sender >= 0 || data.Math == null)) ||
-                    (data.Sender >= 38 && data.DeliveryReward && (data.State != GameState.Reward || !data.Arrived)) ||
+                    (data.Nearby >= 38 && data.Nearby < Game.WitchId && data.State == GameState.Challenge && (data.Sender >= 0 || data.Math == null)) ||
+                    (data.Sender >= 38 && data.Sender < Game.WitchId && data.DeliveryReward && (data.State != GameState.Reward || !data.Arrived)) ||
                     data.GemCount < 0 || data.GemCount > Village.GemNames.Length || data.ToyCount < 0 || data.ToyCount > Village.ToyNames.Length ||
                     (data.Sender == 36 && (data.GemCount == Village.GemNames.Length || !data.Collection || data.DeliveryReward)) ||
                     (data.Sender == 37 && (data.ToyCount == Village.ToyNames.Length || !data.Collection || data.DeliveryReward)) ||
@@ -98,8 +113,14 @@ public static class SaveStore
                     (data.Nearby == 34 && data.State == GameState.Challenge && (data.Sender >= 0 || data.FarmCount == Village.FarmKinds.Length || data.DeliveryQuestion != null)) ||
                     (data.Nearby == 35 && data.State == GameState.Challenge && (data.Sender >= 0 || data.GardenCount == Village.FlowerNames.Length || data.DeliveryQuestion != null)) ||
                     (data.Nearby >= 36 && data.Nearby < 38 && data.State == GameState.Challenge && (data.Sender >= 0 || (data.Nearby == 36 ? data.GemCount : data.ToyCount) == Village.CollectionNames(data.Nearby == 37).Length || data.DeliveryQuestion != null)) ||
-                    (data.Sender >= 0 && data.Picked.Length != (data.Sender >= 34 && data.Sender < 38 ? 1 : data.Collection ? 3 : 0)))
+                    (data.Sender >= 0 && data.Picked.Length != (data.Sender == Game.SorcererId ? 6 : data.Sender >= 34 && data.Sender < 38 ? 1 : data.Collection ? 3 : 0)))
                     throw new JsonException("Invalid save data.");
+                if (data.Postcards.Length == Game.OriginalPostcardCount)
+                {
+                    var expanded = new PostcardProgress?[Game.PostcardCount];
+                    data.Postcards.CopyTo(expanded, 0);
+                    data.Postcards = expanded;
+                }
                 MigrateAnimalCount(data);
                 return data;
             }

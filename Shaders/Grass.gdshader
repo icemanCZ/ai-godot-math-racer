@@ -1,6 +1,7 @@
 shader_type spatial;
 render_mode cull_disabled, world_vertex_coords, diffuse_burley;
 
+global uniform vec2 weather_wind;
 uniform vec3 car_position;
 uniform vec3 car_forward = vec3(0.0, 0.0, -1.0);
 uniform float car_speed = 0.0;
@@ -24,6 +25,7 @@ void vertex() {
     float gust = 0.5 + 0.5 * sin(TIME * 0.63 - root.x * 0.045 + root.z * 0.031);
     vec2 wind = vec2(0.85, 0.53) * (0.08 + gust * 0.19 + wave * 0.09);
     wind += vec2(sin(TIME * 3.8 + root.z), cos(TIME * 3.1 + root.x)) * 0.025;
+    wind += weather_wind * (0.31 + gust * 0.26 + wave * 0.13);
     vec2 away = root.xz - car_position.xz;
     vec2 forward = normalize(car_forward.xz);
     vec2 side = vec2(-forward.y, forward.x);

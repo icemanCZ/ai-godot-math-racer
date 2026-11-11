@@ -14,6 +14,7 @@ public partial class Vehicle : CharacterBody3D
     private readonly Node3D model = new();
     private CollisionShape3D chassis = null!;
     private readonly System.Collections.Generic.List<Node3D> wheels = new();
+    internal System.Collections.Generic.IReadOnlyList<Node3D> Wheels => wheels;
     private float stuckTime;
     private Vector3 lastPosition;
     public void Setup(Terrain ground, Roads routes)

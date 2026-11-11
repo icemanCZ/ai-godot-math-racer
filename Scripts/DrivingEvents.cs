@@ -21,7 +21,7 @@ public partial class DrivingEvents : Node3D
     internal readonly float[] StartDistances = new float[2];
     internal readonly Vector3[,] Points = new Vector3[2, GateCount];
     private readonly Node3D[,] gates = new Node3D[2, GateCount];
-    private Label3D nextMarker = null!;
+    private TaskMarker nextMarker = null!;
     private readonly Label3D[] signs = new Label3D[2];
     internal int Active { get; private set; } = -1;
     internal int Next { get; private set; }
@@ -102,7 +102,7 @@ public partial class DrivingEvents : Node3D
     private void Refresh()
     {
         nextMarker.Visible = Active >= 0 && Next > 0;
-        if (Active >= 0) nextMarker.Position = Points[Active, Next] + Vector3.Up * 7;
+        if (Active >= 0) nextMarker.AnchorPosition = Points[Active, Next] + Vector3.Up * 7;
         for (int course = 0; course < 2; course++)
         {
             signs[course].Text = Title(course) + (Wins[course] > 0 ? $" · Hotovo {Wins[course]}×" : "") + (Active == course ? "\nProjížděj brány v pořadí" : "\nZastav a stiskni tlačítko úkolu");

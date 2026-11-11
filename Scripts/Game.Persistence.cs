@@ -34,6 +34,9 @@ public partial class Game
 
     internal SaveData CaptureProgress() => new()
     {
+        GolemOwned = GolemOwned, GolemActive = GolemActive,
+        DisabledCollectorPets = world.Village.CollectorPets.Where(p => p.IsOwned && p.Disabled).Select(p => p.Kind.ToString()).ToArray(),
+        Postcards = (PostcardProgress?[])postcards.Clone(), PostcardPage = postcardPage,
         EventActive = Events.Active, EventNext = Events.Next, EventWins = (int[])Events.Wins.Clone(),
         Seed = Settings.Seed, Position = new[] { vehicle.Position.X, vehicle.Position.Y, vehicle.Position.Z }, Heading = vehicle.Heading,
         State = State == GameState.Paused ? beforePause : State,
@@ -48,7 +51,7 @@ public partial class Game
         Completed = completedDeliveries.Select(a => Array.IndexOf(world.Animals, a)).ToArray(),
         Owned = OwnedRewards.ToArray(), Rewards = CurrentRewards.ToArray(), PreviousRewards = previousRewards.ToArray(),
         Look = vehicle.Appearance.CurrentLookId, Model = vehicle.Appearance.CurrentModelId,
-        Accessories = CarAccessory.All.Where(a => vehicle.Appearance.HasAccessory(a.Id)).Select(a => a.Id).ToArray(),
+        Accessories = CarAccessory.Catalogue.Where(a => vehicle.Appearance.HasAccessory(a.Id)).Select(a => a.Id).ToArray(),
         Sender = ActorId(Delivery?.Sender), Collection = Delivery?.Collection ?? false,
         Picked = Delivery?.Picked ?? Array.Empty<bool>(), Arrived = Delivery?.Arrived ?? false, DeliveryReward = deliveryReward,
         Math = CurrentChallenge as MathChallenge, Letters = CurrentChallenge as LetterChallenge,
@@ -58,6 +61,10 @@ public partial class Game
     internal void RestoreProgress(SaveData data)
     {
         if (Delivery != null) { Delivery.ReleaseCargo(); RemoveChild(Delivery); Delivery.QueueFree(); Delivery = null; }
+        CancelPostcardPhoto();
+        Array.Copy(data.Postcards, postcards, postcards.Length);
+        postcardPage = data.PostcardPage; rejectedPostcardPictures = 0; postcardFeedback = "";
+        for (int i = 0; i < postcards.Length; i++) viewpoints[i].Sign.Visible = postcards[i] == null;
         ClearHighlight();
         celebrationFx?.QueueFree(); celebrationFx = null; celebrationTime = 0; celebrationPanel = null; ui.CelebrationMessage("");
         Events.Restore(data.EventActive, data.EventNext, data.EventWins);
@@ -66,9 +73,10 @@ public partial class Game
         if (world.Village.TerrainArea.HasPoint(new(restoredPosition.X, restoredPosition.Z)) && restoredPosition.Y < surface - .2f)
             restoredPosition.Y = surface + .15f;
         vehicle.SetPose(restoredPosition, data.Heading);
+        RestoreGolem(data.GolemOwned, data.GolemActive);
         vehicle.Appearance.ApplyModel(data.Model);
         vehicle.Appearance.Apply(CarLook.All.FirstOrDefault(l => l.Id == data.Look) ?? CarLook.All[0]);
-        foreach (var accessory in CarAccessory.All)
+        foreach (var accessory in CarAccessory.Catalogue)
             if (vehicle.Appearance.HasAccessory(accessory.Id) != data.Accessories.Contains(accessory.Id)) vehicle.Appearance.ToggleAccessory(accessory.Id);
         for (int i = 0; i < world.Animals.Length; i++) world.Animals[i].SetRewardAvailable(data.Animals[i]);
         world.Village.RestoreLevels(data.HouseLevels);
@@ -76,6 +84,11 @@ public partial class Game
         world.Village.RestoreFarm(data.FarmCount);
         world.Village.RestoreGarden(data.GardenCount);
         world.Village.RestoreCollection(false, data.GemCount); world.Village.RestoreCollection(true, data.ToyCount);
+        foreach (var pet in world.Village.CollectorPets)
+        {
+            pet.Disabled = pet.IsOwned && (data.DisabledCollectorPets?.Contains(pet.Kind.ToString()) ?? false);
+            PlaceCollectorPet(pet);
+        }
         unlockedExpeditions.Clear(); completedDeliveries.Clear();
         foreach (int i in data.Unlocked) unlockedExpeditions.Add(world.Animals[i]);
         foreach (int i in data.Completed) completedDeliveries.Add(world.Animals[i]);

@@ -81,6 +81,74 @@ public partial class DeliveryPicture : Control
                 }
             }
         }
+        else if (Icon.StartsWith("postcard-"))
+        {
+            DrawRect(new Rect2(9, 12, 162, 125), new Color("ffedce"));
+            DrawRect(new Rect2(18, 21, 144, 107), new Color("aadbec"));
+            if (Icon == "postcard-bridge")
+            {
+                DrawRect(new Rect2(18, 88, 144, 40), new Color("59bad4"));
+                DrawArc(new(90, 120), 54, Mathf.Pi, Mathf.Tau, 32, new Color("8d6146"), 12, true);
+                DrawLine(new(36, 95), new(144, 95), new Color("b88752"), 10, true);
+                Oval(new(133, 114), new(13, 6), green);
+                DrawCircle(new(133, 111), 4, new Color("e782ae"));
+            }
+            else
+            {
+                DrawColoredPolygon(new Vector2[] { new(18, 85), new(67, 43), new(117, 80), new(162, 57),
+                    new(162, 128), new(18, 128) }, green);
+                if (Icon == "postcard-garage")
+                {
+                    DrawRect(new Rect2(43, 62, 94, 60), new Color("76b69e"));
+                    DrawRect(new Rect2(38, 56, 104, 10), new Color("e6af63"));
+                    DrawRect(new Rect2(55, 74, 70, 48), ink);
+                    DrawRect(new Rect2(63, 91, 54, 19), new Color("e96f61"));
+                    DrawRect(new Rect2(74, 83, 32, 10), new Color("9ed5df"));
+                    DrawCircle(new(72, 111), 6, Colors.White);
+                    DrawCircle(new(108, 111), 6, Colors.White);
+                }
+                else if (Icon == "postcard-garden")
+                {
+                    DrawRect(new Rect2(32, 85, 116, 35), new Color("885f47"));
+                    foreach (int x in new[] { 53, 90, 127 })
+                    {
+                        DrawLine(new(x, 100), new(x, 66), new Color("427846"), 5, true);
+                        DrawCircle(new(x, 65), 11, new Color("ee87ab"));
+                        DrawCircle(new(x, 65), 4, new Color("ffd86f"));
+                    }
+                }
+                else if (Icon == "postcard-meadow")
+                {
+                    DrawCircle(new(131, 44), 13, new Color("ffd86f"));
+                    DrawColoredPolygon(new Vector2[] { new(48, 128), new(82, 85), new(99, 85), new(88, 128) },
+                        new Color("dfbc83"));
+                    foreach (var flower in new Vector2[] { new(39, 102), new(111, 111), new(141, 91) })
+                    {
+                        DrawCircle(flower, 5, Colors.White);
+                        DrawCircle(flower, 2, new Color("edb24c"));
+                    }
+                }
+                else if (Icon == "postcard-farm")
+                {
+                    House(90, 66, 72, "ca6252", "704b47");
+                    DrawRect(new Rect2(77, 92, 26, 31), new Color("f3cf97"));
+                }
+                else
+                {
+                    House(60, 82, 41, "ffd794", "a25c53");
+                    House(112, 73, 49, "fff0cd", "9b6863");
+                    DrawRect(new Rect2(54, 94, 12, 14), new Color("70adc7"));
+                    DrawRect(new Rect2(106, 88, 12, 14), new Color("70adc7"));
+                }
+            }
+
+            void House(float x, float y, float width, string wall, string roof)
+            {
+                DrawRect(new Rect2(x - width / 2, y, width, 123 - y), new Color(wall));
+                DrawColoredPolygon(new Vector2[] { new(x - width / 2 - 6, y), new(x, y - 24),
+                    new(x + width / 2 + 6, y) }, new Color(roof));
+            }
+        }
         else if (Icon == "paint")
         {
             Oval(new(90, 77), new(55, 43), new("fff0ce"));

@@ -21,7 +21,8 @@ public partial class Expedition : Node3D
     public bool Garden => Sender.IsGardener;
     public bool Gems => Sender.IsGemCollector;
     public bool Toys => Sender.IsToymaker;
-    public bool SpecialCollection => Farm || Garden || Gems || Toys;
+    public bool Golem => Sender.IsSorcerer;
+    public bool SpecialCollection => Farm || Garden || Gems || Toys || Golem;
     public int FarmIndex { get; }
     public string FarmName => Village.FarmNames[FarmIndex];
     public string FlowerName => Village.FlowerNames[FarmIndex];
@@ -45,7 +46,7 @@ public partial class Expedition : Node3D
     private readonly List<int>[] edges;
     private readonly int[] next;
     private readonly Dictionary<(int Anchor, bool Reverse), MeshInstance3D> routeArrows = new();
-    private readonly List<MeshInstance3D> visibleArrows = new();
+    private readonly List<MeshInstance3D> guidanceArrows = new();
     private Mesh arrowMesh = null!;
     private ShaderMaterial arrowMaterial = null!;
     private float arrowPhase;
@@ -63,10 +64,15 @@ public partial class Expedition : Node3D
         Collection = collection;
         FarmIndex = Farm ? world.Village.FarmCount : Garden ? world.Village.GardenCount : Gems ? world.Village.GemCount : Toys ? world.Village.ToyCount : 0;
         Recipient = Collection ? sender : candidates[index % candidates.Length];
-        Amount = SpecialCollection ? 1 : Collection ? 3 : (index / 3 + index) % 3 + 1;
+        Amount = Golem ? 6 : SpecialCollection ? 1 : Collection ? 3 : (index / 3 + index) % 3 + 1;
         Collected = Collection ? 0 : Amount;
         PickupPositions = Collection ? candidates.Take(3).Select(a => world.Routes.Samples[Nearest(a.Position)]).ToArray() : Array.Empty<Vector3>();
-        if (SpecialCollection)
+        if (Golem)
+        {
+            Recipient = sender;
+            PickupPositions = world.SpecialPickupSpots.Take(6).ToArray();
+        }
+        else if (SpecialCollection)
         {
             Recipient = sender;
             int offset = Farm ? 0 : Village.FarmKinds.Length;
@@ -133,15 +139,23 @@ public partial class Expedition : Node3D
         car.AddChild(load);
         foreach (float x in new[] { -.65f, .65f }) Art.Block(load, new(x, -.23f, 0), new(.1f, .4f, .8f), "795b43");
         Art.Block(load, Vector3.Zero, new(1.8f, .28f, 1.05f), "bc8b61");
-        for (int i = 0; i < Collected; i++) AddLoadAnimalOrCargo(new(-.6f + i * .6f, .5f, 0));
+        int loaded = 0;
+        for (int i = 0; i < picked.Length; i++)
+            if (picked[i]) { AddLoadAnimalOrCargo(Golem ? new(-.65f + (loaded % 3) * .65f, .5f, -.25f + (loaded / 3) * .5f) : new(-.6f + loaded * .6f, .5f, 0), i); loaded++; }
+        if (!Collection) for (int i = 0; i < Collected; i++) AddLoadAnimalOrCargo(new(-.6f + i * .6f, .5f, 0));
         pickupModels = new Node3D[PickupPositions.Length];
         for (int i = 0; i < PickupPositions.Length; i++)
         {
             var p = PickupPositions[i]; float y = SpecialCollection ? world.Ground.Height(p.X, p.Z) : world.Routes.SurfaceHeight(p, world.Ground.Height(p.X, p.Z));
             if (River.OnBridge(p.X, p.Z)) y = Mathf.Max(y, River.BridgeSurfaceHeight(p.X));
             PickupPositions[i] = new(p.X, y, p.Z);
-            var pickup = new Node3D { Name = (Gems ? "CollectibleGem" : Toys ? "CollectibleToy" : Garden ? "CollectibleFlower" : Farm ? "CatchableAnimal" : "CollectibleApple") + i, Position = PickupPositions[i] }; AddChild(pickup); pickupModels[i] = pickup;
-            if (Farm)
+            var pickup = new Node3D { Name = (Golem ? "GolemPart" : Gems ? "CollectibleGem" : Toys ? "CollectibleToy" : Garden ? "CollectibleFlower" : Farm ? "CatchableAnimal" : "CollectibleApple") + i, Position = PickupPositions[i] }; AddChild(pickup); pickupModels[i] = pickup;
+            if (Golem)
+            {
+                GolemModel.Part(pickup, i, Vector3.Up * .7f);
+                Art.Sign(pickup, Vector3.Up * 3.5f, "Dílek golema", 28);
+            }
+            else if (Farm)
             {
                 var animal = new WildAnimal(Village.FarmKinds[FarmIndex], .5f) { Scale = Vector3.One * 1.5f };
                 waitingAnimal = animal;
@@ -190,6 +204,7 @@ public partial class Expedition : Node3D
             Shader = GD.Load<Shader>("res://Shaders/RouteArrow.gdshader")
         };
         UpdateGuidance();
+        UpdateArrowVisibility();
     }
 
     internal static void AddCargo(Node3D parent, Vector3 p, string cargo)
@@ -231,8 +246,9 @@ public partial class Expedition : Node3D
         }
     }
 
-    private void AddLoadAnimalOrCargo(Vector3 p)
+    private void AddLoadAnimalOrCargo(Vector3 p, int pieceIndex = 0)
     {
+        if (Golem) { GolemModel.Part(load!, pieceIndex, p); return; }
         if (Gems || Toys)
         {
             var item = Toys ? Village.CreateToy(load!, Vector3.Up * .15f, FarmIndex) : Village.CreateGem(load!, Vector3.Up * .15f, FarmIndex);
@@ -282,17 +298,23 @@ public partial class Expedition : Node3D
                 if (!picked[i] && car.Position.DistanceTo(PickupPositions[i]) < (SpecialCollection ? 2.8f : 4))
                 {
                     picked[i] = true; pickupModels[i].Hide();
-                    AddLoadAnimalOrCargo(new(-.6f + Collected * .6f, .5f, 0)); Collected++; changed = true;
+                    AddLoadAnimalOrCargo(new(-.65f + (Collected % 3) * .65f, .5f, -.25f + (Collected / 3) * .5f), i); Collected++; changed = true;
                 }
             if (changed) { RebuildRoute(); refresh = 0; }
         }
         refresh -= (float)delta;
         if (refresh <= 0) { refresh = .25f; UpdateGuidance(); }
-        // Hide before the arrow reaches the front bumper, checking every frame
-        // so the route refresh interval cannot leave it overlapping the car.
-        foreach (var arrow in visibleArrows)
-            if (new Vector2(arrow.Position.X - car.Position.X, arrow.Position.Z - car.Position.Z).LengthSquared() < 16f)
-                arrow.Hide();
+        UpdateArrowVisibility();
+    }
+    private void UpdateArrowVisibility()
+    {
+        var forward = -car.Transform.Basis.Z;
+        foreach (var arrow in guidanceArrows)
+        {
+            var offset = arrow.Position - car.Position;
+            offset.Y = 0;
+            arrow.Visible = offset.Dot(forward) > 0 && offset.LengthSquared() >= 16f;
+        }
     }
     private static void AnimateFarmAnimal(WildAnimal? animal, float delta)
     {
@@ -311,8 +333,8 @@ public partial class Expedition : Node3D
         points.Add(Destination);
         // Aim ahead along the road instead of across the river or through trees.
         Waypoint = points[Math.Min(8, points.Count - 1)];
-        foreach (var arrow in visibleArrows) arrow.Hide();
-        visibleArrows.Clear();
+        foreach (var arrow in guidanceArrows) arrow.Hide();
+        guidanceArrows.Clear();
         var shownAnchors = new HashSet<int>();
         for (int sample = 0; sample < Math.Min(54, nodes.Count - 1); sample++)
         {
@@ -337,7 +359,7 @@ public partial class Expedition : Node3D
                 };
                 routeArrows.Add(key, arrow); AddChild(arrow);
             }
-            arrow.Show(); visibleArrows.Add(arrow);
+            guidanceArrows.Add(arrow);
         }
     }
 }

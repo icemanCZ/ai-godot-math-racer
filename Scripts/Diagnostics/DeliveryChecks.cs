@@ -77,19 +77,29 @@ public partial class DeliveryChecks : Node
                 if (sender == world.Animals[0])
                 {
                     var originalPose = car.Position;
-                    car.SetPose(world.Routes.Samples.MaxBy(p => p.DistanceSquaredTo(delivery.Destination)), 0);
+                    float originalHeading = car.Heading;
+                    var routeStart = world.Routes.Samples.MaxBy(p => p.DistanceSquaredTo(delivery.Destination));
+                    car.SetPose(routeStart, 0);
+                    delivery.Tick(.25);
+                    var direction = delivery.Waypoint - routeStart;
+                    float routeHeading = Mathf.Atan2(-direction.X, -direction.Z);
+                    car.SetPose(routeStart, routeHeading);
                     delivery.Tick(.25);
                     var arrows = delivery.GetChildren().OfType<MeshInstance3D>().Where(a => a.Visible).ToArray();
                     Check(arrows.Length > 1, "long route displays multiple road arrows");
                     var transforms = arrows.Select(a => a.Transform).ToArray();
-                    car.SetPose(arrows[^1].Position, 0); delivery.Tick(.25);
+                    car.SetPose(routeStart, routeHeading + Mathf.Pi); delivery.Tick(.01);
+                    Check(arrows.All(a => !a.Visible), "turning away hides arrows behind the car before the route refresh");
+                    car.SetPose(routeStart, routeHeading); delivery.Tick(.01);
+                    Check(arrows.All(a => a.Visible), "turning back restores arrows before the route refresh");
+                    car.SetPose(arrows[^1].Position, routeHeading); delivery.Tick(.25);
                     Check(arrows.Select((a, i) => a.Transform == transforms[i]).All(same => same) && arrows.Any(a => !a.Visible),
                         "driving hides passed arrows without moving or rotating their anchors");
-                    car.SetPose(world.Routes.Samples.MaxBy(p => p.DistanceSquaredTo(delivery.Destination)), 0);
+                    car.SetPose(routeStart, routeHeading);
                     delivery.Tick(.25);
                     Check(arrows.All(a => a.Visible) && arrows.Select((a, i) => a.Transform == transforms[i]).All(same => same),
                         "returning reveals the same arrows in their original places");
-                    int start = world.Routes.Samples.IndexOf(world.Routes.Samples.MaxBy(p => p.DistanceSquaredTo(delivery.Destination)));
+                    int start = world.Routes.Samples.IndexOf(routeStart);
                     for (int step = 0; step < 12; step++)
                     {
                         car.SetPose(world.Routes.Samples[Math.Min(start + step, world.Routes.Samples.Count - 1)], 0);
@@ -99,7 +109,7 @@ public partial class DeliveryChecks : Node
                             new Vector2(a.Position.X - anchor.Position.X, a.Position.Z - anchor.Position.Z).LengthSquared() < .0001f)),
                             "road arrows use road-defined anchors while nearest route samples change");
                     }
-                    car.SetPose(originalPose, 0); delivery.Tick(.25);
+                    car.SetPose(originalPose, originalHeading); delivery.Tick(.25);
                     var other = world.Animals.Last(a => a.RewardAvailable && a != delivery.Recipient);
                     game.OpenChallenge(other); game.SubmitAnswer(game.CurrentChallenge!.Answer);
                     Check(game.State == GameState.Exploring && game.CurrentRewards.Count == 0, "solving another question preserves active expedition and postpones its task choice");

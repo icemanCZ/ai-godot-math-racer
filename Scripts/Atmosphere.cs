@@ -5,42 +5,65 @@ namespace MathRacer;
 /// <summary>Daylight and distant cloud silhouettes, independent of world landmarks.</summary>
 public partial class Atmosphere : Node3D
 {
+    private static readonly Color ClearHorizon = new Color("8cbfed").SrgbToLinear();
+    private static readonly Color ClearSky = new Color("397fb9").SrgbToLinear();
+    private static readonly Color CloudyHorizon = new Color("a0aebf").SrgbToLinear();
+    private static readonly Color CloudySky = new Color("576984").SrgbToLinear();
+    private static readonly Color ClearFog = new Color("a7c9df").SrgbToLinear();
+    private static readonly Color CloudyFog = new Color("8897af").SrgbToLinear();
+    private static readonly Color CloudTint = new("8995a8");
+    private ProceduralSkyMaterial sky = null!;
+    private Godot.Environment environment = null!;
+    private DirectionalLight3D sun = null!;
+    private StandardMaterial3D cloudMaterial = null!;
+
+    internal void ApplyWeather(float cover, float flash)
+    {
+        var horizon = ClearHorizon.Lerp(CloudyHorizon, cover);
+        sky.SkyTopColor = ClearSky.Lerp(CloudySky, cover);
+        sky.SkyHorizonColor = horizon;
+        sky.GroundHorizonColor = horizon;
+        environment.AmbientLightEnergy = .42f - cover * .12f + flash * .22f;
+        environment.FogLightColor = ClearFog.Lerp(CloudyFog, cover);
+        environment.FogDensity = .00055f + cover * .0035f;
+        sun.LightEnergy = .6f - cover * .41f + flash * .53f;
+        cloudMaterial.AlbedoColor = Colors.White.Lerp(CloudTint, cover);
+    }
+
     public void Generate()
     {
-        var horizon = new Color("8cbfed").SrgbToLinear();
-        var sky = new ProceduralSkyMaterial
+        sky = new ProceduralSkyMaterial
         {
-            SkyTopColor = new Color("397fb9").SrgbToLinear(),
-            SkyHorizonColor = horizon,
+            SkyTopColor = ClearSky,
+            SkyHorizonColor = ClearHorizon,
             SkyCurve = .3f,
-            GroundHorizonColor = horizon,
+            GroundHorizonColor = ClearHorizon,
             GroundBottomColor = new Color("739fa3").SrgbToLinear()
         };
-        AddChild(new WorldEnvironment
+        environment = new Godot.Environment
         {
-            Environment = new Godot.Environment
-            {
-                BackgroundMode = Godot.Environment.BGMode.Sky,
-                Sky = new Sky { SkyMaterial = sky },
-                AmbientLightSource = Godot.Environment.AmbientSource.Color,
-                AmbientLightColor = new Color("edf5ff"),
-                AmbientLightEnergy = .42f,
-                TonemapMode = Godot.Environment.ToneMapper.Linear,
-                FogEnabled = true,
-                FogLightColor = new Color("a7c9df").SrgbToLinear(),
-                FogDensity = .00055f
-            }
-        });
-        AddChild(new DirectionalLight3D
+            BackgroundMode = Godot.Environment.BGMode.Sky,
+            Sky = new Sky { SkyMaterial = sky },
+            AmbientLightSource = Godot.Environment.AmbientSource.Color,
+            AmbientLightColor = new Color("edf5ff"),
+            AmbientLightEnergy = .42f,
+            TonemapMode = Godot.Environment.ToneMapper.Linear,
+            FogEnabled = true,
+            FogLightColor = ClearFog,
+            FogDensity = .00055f
+        };
+        AddChild(new WorldEnvironment { Environment = environment });
+        sun = new DirectionalLight3D
         {
             RotationDegrees = new Vector3(-55, -28, 0),
             LightColor = new Color("fff5e5"),
             LightEnergy = .6f,
             ShadowEnabled = true,
             DirectionalShadowMaxDistance = 100
-        });
+        };
+        AddChild(sun);
 
-        var cloudMaterial = new StandardMaterial3D
+        cloudMaterial = new StandardMaterial3D
         {
             AlbedoColor = new Color("ffffff"),
             ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded

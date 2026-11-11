@@ -26,6 +26,8 @@ void vertex() {
     ground_position = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xz;
 }
 
+global uniform float road_wetness;
+
 void fragment() {
     vec2 p = ground_position;
     float patches = noise(p * 0.48);
@@ -56,7 +58,7 @@ void fragment() {
     float edge_noise = noise(p * 3.2);
     float verge = smoothstep(0.78 + edge_noise * 0.13, 1.02, abs(UV.x));
     color = mix(color, verge_color.rgb * (0.86 + patches * 0.24), verge * COLOR.r * 0.65);
-    ALBEDO = color;
-    ROUGHNESS = 0.96;
+    ALBEDO = color * mix(vec3(1.0), vec3(0.68, 0.72, 0.76), road_wetness);
+    ROUGHNESS = mix(0.96, 0.65, road_wetness);
     SPECULAR = 0.15;
 }

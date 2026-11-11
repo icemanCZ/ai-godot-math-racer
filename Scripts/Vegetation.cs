@@ -128,7 +128,7 @@ public partial class Vegetation : Node3D
             for (int i = 0; i < pair.Value.Count; i++) mm.SetInstanceTransform(i, pair.Value[i]);
             renderedBatches[pair.Key] = mm;
             Material material = Art.Mat(pair.Key.Color);
-            if (pair.Key.Shape is "canopy" or "sprig")
+            if (pair.Key.Shape is "canopy" or "sprig" or "cone")
             {
                 if (!foliageMaterials.TryGetValue(pair.Key.Color, out var foliage))
                 {

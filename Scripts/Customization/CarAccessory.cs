@@ -1,5 +1,6 @@
 using Godot;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MathRacer;
 
@@ -23,12 +24,36 @@ public sealed record CarAccessory(string Id, string Name)
         new CarAccessory("spare", "Rezervní kolo")
     });
 
+    public static CarAccessory ValleyMap { get; } = new("valley-map", "Mapka údolí");
+    public static IReadOnlyList<CarAccessory> Catalogue { get; } = System.Array.AsReadOnly(All.Append(ValleyMap).ToArray());
+
+    internal static void PlaceValleyMap(Node3D sticker, string model)
+    {
+        sticker.Position = model switch
+        {
+            "pickup" => new(-.23f, 1.62f, .60f),
+            "wagon" => new(-.23f, 1.62f, 1.29f),
+            "buggy" => new(0, 1.95f, .798f),
+            _ => new(-.23f, 1.62f, .93f)
+        };
+        sticker.RotationDegrees = new Vector3(model == "classic" ? -34 : 0, 0, 0);
+    }
+
     public Node3D Create(Node3D parent)
     {
         var root = new Node3D { Name = "Attachment_" + Id, Visible = false };
         parent.AddChild(root);
         switch (Id)
         {
+            case "valley-map":
+                PlaceValleyMap(root, "classic");
+                Art.Block(root, Vector3.Zero, new(.34f, .17f, .012f), "fff0ce");
+                Art.Block(root, new(0, 0, .008f), new(.305f, .138f, .007f), "8cc681");
+                var river = Art.Block(root, new(.02f, 0, .014f), new(.029f, .14f, .004f), "55b8dc");
+                river.RotateZ(-.35f);
+                Art.Block(root, new(0, .014f, .018f), new(.095f, .025f, .006f), "c28a50");
+                Art.Ball(root, new(-.088f, -.024f, .016f), new(.025f, .025f, .004f), "ee805e");
+                break;
             case "spoiler":
                 foreach (float side in new[] { -1f, 1f })
                     Art.Block(root, new(side * .61f, 1.47f, 1.32f), new(.09f, .42f, .10f), "344555");
