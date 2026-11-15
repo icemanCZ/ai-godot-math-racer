@@ -9,34 +9,22 @@ public sealed record PictureWord(string Id, string Word)
     public string Initial => Word[..1].ToUpperInvariant();
 }
 
-public sealed record LetterChallenge(string Letter, IReadOnlyList<PictureWord> Pictures) : IChallenge
+public interface IPictureChallenge : IChallenge
+{
+    IReadOnlyList<PictureWord> Pictures { get; }
+}
+
+public sealed record LetterChallenge(string Letter, IReadOnlyList<PictureWord> Pictures) : IPictureChallenge
 {
     public int Answer => Pictures.ToList().FindIndex(picture => picture.Initial == Letter);
     public IReadOnlyList<int> Choices { get; } = Array.AsReadOnly(new[] { 0, 1, 2 });
     public string Expression => Letter;
+    public bool Accepts(int choice) => choice == Answer;
 }
 
 public sealed class LetterChallengeGenerator
 {
-    public static IReadOnlyList<PictureWord> Words { get; } = Array.AsReadOnly(new[]
-    {
-        new PictureWord("car", "auto"), new PictureWord("banana", "banán"),
-        new PictureWord("lemon", "citron"), new PictureWord("house", "dům"),
-        new PictureWord("pear", "hruška"), new PictureWord("apple", "jablko"),
-        new PictureWord("key", "klíč"), new PictureWord("boat", "loď"),
-        new PictureWord("ball", "míč"), new PictureWord("fish", "ryba"),
-        new PictureWord("sun", "slunce"), new PictureWord("snail", "šnek"),
-        new PictureWord("butterfly", "motýl"), new PictureWord("cat", "kočka"),
-        new PictureWord("dog", "pes"), new PictureWord("elephant", "slon"),
-        new PictureWord("giraffe", "žirafa"), new PictureWord("zebra", "zebra"),
-        new PictureWord("turtle", "želva"), new PictureWord("duck", "kachna"),
-        new PictureWord("umbrella", "deštník"), new PictureWord("tree", "strom"),
-        new PictureWord("flower", "květina"), new PictureWord("strawberry", "jahoda"),
-        new PictureWord("carrot", "mrkev"), new PictureWord("icecream", "zmrzlina"),
-        new PictureWord("clock", "hodiny"), new PictureWord("book", "kniha"),
-        new PictureWord("pencil", "tužka"), new PictureWord("chocolate", "čokoláda"),
-        new PictureWord("train", "vlak"), new PictureWord("rocket", "raketa")
-    });
+    public static IReadOnlyList<PictureWord> Words { get; } = Array.AsReadOnly(SyllableChallengeGenerator.Words.Select(word => new PictureWord(word.Id, word.Word)).ToArray());
     private readonly Random random;
     private readonly List<PictureWord> remaining = new();
     public LetterChallengeGenerator(int seed) => random = new Random(seed);

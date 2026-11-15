@@ -13,12 +13,10 @@ public partial class GameUi
         Clear(); Text(owner.DisplayName, 30);
         if (expedition?.Sender == owner)
         {
-            Text("Objednávka už je naložená!", 28);
             Picture(content, expedition.Cargo, null, expedition.Amount);
-            Text($"Doruč náklad: {expedition.Recipient.DisplayName}\nZelené šipky tě povedou k zákazníkovi.", 22);
+            Picture(content, "", expedition.Recipient);
         }
-        else Text("Nejdřív dokonči rozjetou výpravu.\nMoje objednávka tu na tebe počká.", 24);
-        Text("Za doručení si vybereš doplněk, barvu nebo typ auta.", 22);
-        Button("Pokračovat v jízdě", () => CloseInteractionRequested?.Invoke()).GrabFocus();
+        else Text("…", 30);
+        BackButton().GrabFocus();
     }
 }

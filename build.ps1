@@ -12,6 +12,8 @@ if ($Test) {
     Assert-ExitCode 'Testy černokněžníka a golema'
     & $godot --headless --path $PSScriptRoot --fixed-fps 60 -- --weather-checks --seed=42
     Assert-ExitCode 'Testy počasí a čarodějnice'
+    & $godot --headless --path $PSScriptRoot --fixed-fps 60 -- --bandit-checks --seed=42
+    Assert-ExitCode 'Testy lesních loupežníků'
     & $godot --headless --path $PSScriptRoot --fixed-fps 60 -- --postcard-checks --seed=42
     Assert-ExitCode 'Testy pohlednic'
     & $godot --headless --path $PSScriptRoot --fixed-fps 60 -- --event-checks --seed=42

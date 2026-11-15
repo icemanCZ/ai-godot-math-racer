@@ -5,6 +5,16 @@ namespace MathRacer;
 
 public partial class Game
 {
+    private const int GolemWanderIndex = 4;
+    private struct CompanionWander
+    {
+        internal Vector3? Goal;
+        internal float Pause;
+    }
+    private readonly CompanionWander[] companionWanders = new CompanionWander[GolemWanderIndex + 1];
+    private readonly RandomNumberGenerator companionRandom = new() { Seed = (ulong)Settings.Seed + 710 };
+    private float companionStopTime;
+
     private void ToggleCollectorPet(CollectorPetKind kind)
     {
         if (State != GameState.Garage) return;
@@ -26,6 +36,7 @@ public partial class Game
             var target = CollectorPetTarget(pet);
             target.Y = CompanionSurface(target);
             pet.Place(target, vehicle.Heading + Mathf.Pi);
+            companionWanders[(int)pet.Kind] = default;
         }
         else pet.ReturnHome();
     }
@@ -41,7 +52,7 @@ public partial class Game
                 continue;
             }
             if (!pet.IsActive || State != GameState.Exploring) continue;
-            var target = CollectorPetTarget(pet);
+            var target = CompanionTarget((int)pet.Kind, pet.Position, CollectorPetTarget(pet), delta);
             var offset = target - pet.Position;
             offset.Y = 0;
             float distance = offset.Length();
@@ -50,7 +61,7 @@ public partial class Game
                 PlaceCollectorPet(pet);
                 continue;
             }
-            float speed = Mathf.Clamp((distance - .25f) * 3.4f, 0, 24);
+            float speed = Mathf.Clamp((distance - .25f) * 3.4f, 0, companionStopTime >= .65f ? 4.8f : 24);
             if (speed > 0)
             {
                 var position = pet.Position + offset / distance * Mathf.Min(distance, speed * delta);
@@ -62,4 +73,59 @@ public partial class Game
             pet.Animate(delta, speed);
         }
     }
+
+    private void TickCompanionStop(float delta)
+    {
+        if (State != GameState.Exploring) return;
+        if (Mathf.Abs(vehicle.Speed) < .55f) companionStopTime = Mathf.Min(.65f, companionStopTime + delta);
+        else if (companionStopTime > 0)
+        {
+            companionStopTime = 0;
+            System.Array.Clear(companionWanders);
+        }
+    }
+
+    private Vector3 CompanionTarget(int index, Vector3 current, Vector3 trail, float delta)
+    {
+        if (companionStopTime < .65f || current.DistanceTo(vehicle.Position) > 12) return trail;
+        ref var wander = ref companionWanders[index];
+        if (wander.Goal is Vector3 goal)
+        {
+            if (FlatDistanceSquared(current, goal) > .32f && FlatDistanceSquared(vehicle.Position, goal) < 7.5f * 7.5f)
+                return goal;
+            wander.Goal = null;
+        }
+        wander.Pause -= delta;
+        if (wander.Pause > 0) return current;
+
+        var radial = current - vehicle.Position;
+        float heading = Mathf.Atan2(radial.X, radial.Z);
+        for (int attempt = 0; attempt < 10; attempt++)
+        {
+            float angle = heading + companionRandom.RandfRange(-1.45f, 1.45f);
+            float radius = companionRandom.RandfRange(3.4f, 6);
+            var target = vehicle.Position + new Vector3(Mathf.Sin(angle), 0, Mathf.Cos(angle)) * radius;
+            if (River.OnBridge(vehicle.Position.X, vehicle.Position.Z))
+                target.Z = Mathf.Clamp(target.Z, River.BridgeZ - 2.1f, River.BridgeZ + 2.1f);
+            if (FlatDistanceSquared(current, target) < 2 || !ClearCompanionPath(current, target)) continue;
+            wander.Goal = target;
+            wander.Pause = companionRandom.RandfRange(.45f, 2.1f);
+            return target;
+        }
+        wander.Pause = .4f;
+        return current;
+    }
+
+    private bool ClearCompanionPath(Vector3 from, Vector3 to)
+    {
+        for (int step = 1; step <= 8; step++)
+        {
+            var p = from.Lerp(to, step / 8f);
+            if (FlatDistanceSquared(p, vehicle.Position) < 5.3f || world.Plants.NearTrunk(p, .95f)) return false;
+            if (!River.OnBridge(p.X, p.Z) && River.Distance(p.X, p.Z) < River.HalfWidth(p.Z) + .55f) return false;
+        }
+        return true;
+    }
+
+    private static float FlatDistanceSquared(Vector3 a, Vector3 b) => new Vector2(a.X - b.X, a.Z - b.Z).LengthSquared();
 }

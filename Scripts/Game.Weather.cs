@@ -11,11 +11,7 @@ public partial class Game
     {
         nearby = world.Witch;
         vehicle.Active = false;
-        CurrentChallenge = challenges.Next();
-        rejectedAnswers.Clear();
-        feedback = "Za správnou odpověď si vybereš počasí.";
-        State = GameState.Challenge;
-        ShowChallenge();
+        BeginQuiz(true);
     }
 
     private void ShowWeatherChoice() => ui.WeatherChoice(world.Witch, SelectWeather);
@@ -41,11 +37,16 @@ public partial class GameUi
     {
         Clear();
         Text(witch.DisplayName, 30);
-        Text("Jaké počasí mám přičarovat?", 25);
-        Button("Déšť", () => select(WeatherKind.Rain)).GrabFocus();
-        Button("Vítr", () => select(WeatherKind.Wind));
-        Button("Bouřka", () => select(WeatherKind.Storm));
-        Button("Jasno", () => select(WeatherKind.Clear));
-        Button("Pokračovat v jízdě", () => CloseInteractionRequested?.Invoke());
+        var row = new Godot.HBoxContainer { Alignment = Godot.BoxContainer.AlignmentMode.Center };
+        row.AddThemeConstantOverride("separation", 12);
+        content.AddChild(row);
+        foreach (var (kind, icon, name) in new[] { (WeatherKind.Rain, "rain", "Déšť"), (WeatherKind.Wind, "wind", "Vítr"),
+            (WeatherKind.Storm, "storm", "Bouřka"), (WeatherKind.Clear, "clear", "Jasno") })
+        {
+            var button = IconButton(icon, () => select(kind), "Weather_" + kind, row);
+            button.AccessibilityName = name;
+            button.TooltipText = name;
+        }
+        BackButton();
     }
 }

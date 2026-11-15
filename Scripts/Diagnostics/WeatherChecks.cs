@@ -15,6 +15,7 @@ public partial class WeatherChecks(Game game, World world, Vehicle car) : Node
             var puddles = weather.GetChildren().OfType<Puddles>().Single();
             var rain = weather.GetChildren().OfType<MultiMeshInstance3D>().Single();
             var bolt = weather.GetChildren().OfType<MeshInstance3D>().Single();
+            Check(world.Plants.TreeBatchesShareWindRoots(), "trunks, foliage and small tree details share one wind origin per tree");
             weather.Tick(239);
             Check(weather.Current == WeatherKind.Clear && !rain.Visible && !puddles.Visible, "Clear for the first four minutes");
             weather.Tick(182);
@@ -29,9 +30,9 @@ public partial class WeatherChecks(Game game, World world, Vehicle car) : Node
             game._Process(.016);
             game._UnhandledInput(new InputEventAction { Action = "talk", Pressed = true });
             Check(game.CurrentChallenge is MathChallenge && game.State == GameState.Challenge, "Normal interaction opens a math challenge");
-            game.SubmitAnswer(game.CurrentChallenge!.Choices.First(a => a != game.CurrentChallenge.Answer));
+            game.SubmitAnswer(game.CurrentChallenge!.Choices.First(choice => !game.CurrentChallenge.Accepts(choice)));
             Check(game.State == GameState.Challenge && weather.Current == WeatherKind.Clear, "Wrong answer leaves the weather unchanged");
-            game.SubmitAnswer(game.CurrentChallenge.Answer);
+            ChallengeChecks.Solve(game);
             Check(game.State == GameState.WeatherChoice, "Correct answer unlocks weather choice");
             string path = ProjectSettings.GlobalizePath($"res://artifacts/weather-checks/{Settings.Seed}/progress.json");
             Check(SaveStore.Write(game.CaptureProgress(), path), "Weather choice can be saved");

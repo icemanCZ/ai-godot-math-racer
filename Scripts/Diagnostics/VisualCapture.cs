@@ -159,17 +159,21 @@ public partial class VisualCapture : Node
             camera.Position = focus + new Vector3(5, 3, 7);
             camera.LookAt(focus + Vector3.Up);
         }
-        else if (view == "tree-impact")
+        else if (view is "tree-impact" or "tree-wind")
         {
             camera.SetProcess(false);
             var focus = world.Plants.PreviewSpot;
             car.SetPose(world.Ground.At(focus.X, focus.Z + 2.7f, .15f), 0);
             camera.Position = focus + new Vector3(7, 4, 9);
             camera.LookAt(focus + Vector3.Up * 2.2f);
-            await ToSignal(GetTree().CreateTimer(2), SceneTreeTimer.SignalName.Timeout);
-            var trunk = GetTree().GetNodesInGroup("obstacle_trunks").Cast<StaticBody3D>()
-                .Where(body => body.GetParent() == world.Plants).OrderBy(body => body.Position.DistanceSquaredTo(focus)).First();
-            world.Plants.HitTree(trunk, Vector3.Forward * 12, Vector3.Back);
+            if (view == "tree-wind") ((Game)GetParent()).Weather.Begin(WeatherKind.Wind);
+            else
+            {
+                await ToSignal(GetTree().CreateTimer(2), SceneTreeTimer.SignalName.Timeout);
+                var trunk = GetTree().GetNodesInGroup("obstacle_trunks").Cast<StaticBody3D>()
+                    .Where(body => body.GetParent() == world.Plants).OrderBy(body => body.Position.DistanceSquaredTo(focus)).First();
+                world.Plants.HitTree(trunk, Vector3.Forward * 12, Vector3.Back);
+            }
         }
         else if (view == "vegetation" || view == "vegetation-detail")
         {
@@ -213,7 +217,7 @@ public partial class VisualCapture : Node
             car.SetPose(car.Position, Mathf.Atan2(-direction.X, -direction.Z));
             camera.Position = car.Position - direction * 12 + Vector3.Up * 7; camera.LookAt(car.Position + direction * 5);
         }
-        else if (view == "house-celebration" || view.StartsWith("postcard-")) { }
+        else if (view is "house-celebration" or "challenge-2" or "syllables" or "reading" || view.StartsWith("postcard-")) { }
         else if (!view.EndsWith("-reward") && !view.StartsWith("collection-") && !view.StartsWith("delivery-") && view != "gameplay" && view != "title" && view != "challenge" && view != "letters" && view != "reward" && view != "accessories")
         {
             camera.SetProcess(false);

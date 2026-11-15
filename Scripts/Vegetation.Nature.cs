@@ -120,7 +120,7 @@ public partial class Vegetation
         var moss = new System.Collections.Generic.List<(Vector3 Position, Vector3 Scale)>();
         foreach (var batch in batches)
             if (batch.Key.Shape == "leaf" && batch.Key.Color == "adaebf")
-                foreach (var transform in batch.Value) moss.Add((transform.Origin, transform.Basis.Scale));
+                foreach (var (transform, _) in batch.Value) moss.Add((transform.Origin, transform.Basis.Scale));
         foreach (var rock in moss)
         {
             Part(rock.Position + Vector3.Up * rock.Scale.Y * .78f, new Vector3(rock.Scale.X * .7f, .065f, rock.Scale.Z * .65f), "899b69", "detail");

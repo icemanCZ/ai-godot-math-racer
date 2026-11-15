@@ -22,7 +22,6 @@ public partial class Game : Node3D
     internal int RemainingAnimals => world.Animals.Count(animal => animal.RewardAvailable);
     private GameState beforePause;
     private readonly ChallengeGenerator challenges = new(Settings.Seed + 204);
-    private readonly LetterChallengeGenerator letterChallenges = new(Settings.Seed + 205);
     private readonly System.Collections.Generic.HashSet<int> rejectedAnswers = new();
     internal IChallenge? CurrentChallenge { get; private set; }
     internal System.Collections.Generic.IReadOnlyList<CarReward> CurrentRewards { get; private set; } = Array.Empty<CarReward>();
@@ -33,7 +32,6 @@ public partial class Game : Node3D
         new(CarLook.All[0].Id, false), new("classic", false, true)
     };
     private bool AtGarage => vehicle.Position.DistanceTo(world.Village.GarageEntrance) < Settings.InteractionRange;
-    private string feedback = "Nikam nespěcháme. Můžeš si to spočítat na prstech.";
     public override void _Ready()
     {
         GameControls.Setup();
@@ -61,6 +59,7 @@ public partial class Game : Node3D
         }
         world.AddChild(Events); Events.Generate(world);
         SetupPostcards();
+        SetupBandits();
         world.AddChild(world.Wildlife); world.Wildlife.Generate(world, vehicle);
         var camera = new FollowCamera { Target = vehicle, Ground = world.Ground, Fov = 62, Far = 1200, Current = true }; AddChild(camera); followCamera = camera; camera.Snap();
         world.AddChild(Weather); Weather.Setup(world, vehicle, camera);
@@ -74,6 +73,8 @@ public partial class Game : Node3D
         ui.VillageFruitRequested += BeginVillageCollection;
         ui.ExpeditionSelected += SelectExpedition;
         ui.GarageRewardSelected += ConfigureCar;
+        ui.QuizTypeSelected += ToggleQuizType;
+        ui.MathLevelSelected += SetMathLevel;
         ui.GolemToggleRequested += ToggleGolem;
         ui.CollectorPetToggleRequested += ToggleCollectorPet;
         ui.GolemQuestRequested += BeginGolemQuest;
@@ -81,10 +82,15 @@ public partial class Game : Node3D
         ui.AnimalCount(RemainingAnimals, world.Animals.Length);
         var args = OS.GetCmdlineUserArgs();
         persistenceReady = true;
-        if (newGamePending) { newGamePending = false; Start(); SaveProgress(); }
+        if (newGameQuizzes is { } quizSettings)
+        {
+            (enabledQuizzes, threeTermMath) = quizSettings;
+            newGameQuizzes = null; Start(); SaveProgress();
+        }
         else if ((args.Contains("--play") && !args.Contains("--view=title")) || args.Contains("--smoke-test") || args.Contains("--track-checks") || args.Contains("--collision-checks") || args.Contains("--weather-checks")) ContinueGame();
         if (args.Contains("--golem-checks")) { Start(); AddChild(new GolemChecks(this, world, vehicle)); }
         if (args.Contains("--weather-checks")) AddChild(new WeatherChecks(this, world, vehicle));
+        if (args.Contains("--bandit-checks")) { Start(); AddChild(new BanditChecks(this, world, vehicle)); }
         if (args.Contains("--collision-checks")) AddChild(new CollisionChecks(vehicle, world));
         if (args.Contains("--track-checks")) AddChild(new WheelTrackChecks(vehicle, world.Ground, world.Routes));
         if (args.Contains("--smoke-test")) AddChild(new SmokeTest(this, world, vehicle));
@@ -116,7 +122,7 @@ public partial class Game : Node3D
                 var owner = world.Village.Traders[trade];
                 vehicle.SetPose(owner.Position + Vector3.Right * 3, 0);
                 if (view.EndsWith("question") || view.EndsWith("delivery") || view.EndsWith("reward")) OpenChallenge(owner);
-                if (view.EndsWith("delivery") || view.EndsWith("reward")) SubmitAnswer(CurrentChallenge!.Answer);
+                if (view.EndsWith("delivery") || view.EndsWith("reward")) ChallengeChecks.Solve(this);
                 if (view.EndsWith("reward"))
                 {
                     vehicle.SetPose(Delivery!.Recipient.Position + Vector3.Right * 2, 0); BeginDeliveryQuestion();
@@ -129,21 +135,21 @@ public partial class Game : Node3D
                 if (view.EndsWith("full")) world.Village.RestoreCollection(toys, Village.CollectionNames(toys).Length);
                 vehicle.SetPose(owner.Position + Vector3.Right * 3, 0);
                 if (view.EndsWith("question") || view.EndsWith("expedition")) OpenChallenge(owner);
-                if (view.EndsWith("expedition")) SubmitAnswer(CurrentChallenge!.Answer);
+                if (view.EndsWith("expedition")) ChallengeChecks.Solve(this);
             }
             if (view is "garden" or "garden-full" or "garden-question" or "garden-expedition")
             {
                 if (view == "garden-full") world.Village.RestoreGarden(Village.FlowerNames.Length);
                 vehicle.SetPose(world.Village.Gardener.Position + Vector3.Right * 3, 0);
                 if (view is "garden-question" or "garden-expedition") OpenChallenge(world.Village.Gardener);
-                if (view == "garden-expedition") SubmitAnswer(CurrentChallenge!.Answer);
+                if (view == "garden-expedition") ChallengeChecks.Solve(this);
             }
             if (view is "farm" or "farm-full" or "farm-question" or "farm-expedition")
             {
                 if (view == "farm-full") world.Village.RestoreFarm(Village.FarmKinds.Length);
                 vehicle.SetPose(world.Village.Farmer.Position + Vector3.Right * 3, 0);
                 if (view is "farm-question" or "farm-expedition") OpenChallenge(world.Village.Farmer);
-                if (view == "farm-expedition") SubmitAnswer(CurrentChallenge!.Answer);
+                if (view == "farm-expedition") ChallengeChecks.Solve(this);
             }
             if (view == "house-celebration")
             {
@@ -161,11 +167,11 @@ public partial class Game : Node3D
                 if (view is "village-question" or "village-fruit-offer" or "village-fruit") OpenChallenge(world.Village.Residents[0]);
                 if (view == "village-fruit") BeginVillageCollection();
             }
-            if (view == "task-choice") { OpenChallenge(world.Animals[0]); SubmitAnswer(CurrentChallenge!.Answer); }
+            if (view == "task-choice") { OpenChallenge(world.Animals[0]); ChallengeChecks.Solve(this); }
             void PrepareExpedition(bool collection, bool start = true)
             {
                 var sender = world.Animals[collection ? 1 : 0];
-                OpenChallenge(sender); SubmitAnswer(CurrentChallenge!.Answer);
+                OpenChallenge(sender); ChallengeChecks.Solve(this);
                 if (start) SelectExpedition(collection);
             }
             void CompleteExpedition()
@@ -178,15 +184,21 @@ public partial class Game : Node3D
             {
                 PrepareExpedition(view.StartsWith("collection"), !view.EndsWith("offer"));
                 if (view.EndsWith("question") || view.EndsWith("reward")) CompleteExpedition();
-                if (view.EndsWith("reward")) SubmitAnswer(CurrentChallenge!.Answer);
+                if (view.EndsWith("reward")) ChallengeChecks.Solve(this);
             }
-            if (view is "challenge" or "letters" or "reward" or "accessories")
+            if (view is "challenge" or "challenge-2" or "letters" or "syllables" or "reading" or "reward" or "accessories")
             {
                 if (view is "reward" or "accessories")
                 {
-                    PrepareExpedition(false); CompleteExpedition(); SubmitAnswer(CurrentChallenge!.Answer);
+                    PrepareExpedition(false); CompleteExpedition(); ChallengeChecks.Solve(this);
                 }
-                else OpenChallenge(world.Animals[view == "letters" ? 1 : 0]);
+                else
+                {
+                    if (view == "letters") enabledQuizzes = QuizType.Math | QuizType.Letters;
+                    if (view == "reading") enabledQuizzes = QuizType.Reading;
+                    if (view == "challenge-2") threeTermMath = true;
+                    OpenChallenge(world.Animals[view is "letters" or "syllables" or "reading" ? 1 : 0]);
+                }
             }
             if (view == "decorated") foreach (var accessory in CarAccessory.All) vehicle.Appearance.ToggleAccessory(accessory.Id);
             if (CarBody.All.Any(body => body.Id == view))
@@ -204,6 +216,7 @@ public partial class Game : Node3D
     private void Start() { State = GameState.Exploring; vehicle.Active = true; ui.HideModal(); }
     private void CloseInteraction()
     {
+        DismissBandits();
         if (State == GameState.PostcardAlbum) CancelPostcardPhoto();
         if (State == GameState.Reward && deliveryReward && Delivery != null)
         {
@@ -212,6 +225,7 @@ public partial class Game : Node3D
             UpdateDeliveryGuides();
         }
         deliveryReward = false;
+        handoverQuiz = false;
         CurrentChallenge = null; rejectedAnswers.Clear(); Start();
     }
     private void Resume()
@@ -272,7 +286,7 @@ public partial class Game : Node3D
         else if (nearby != null) OpenChallenge(nearby);
     }
     private void ShowRewards() => ui.Reward(nearby!, vehicle.Appearance, CurrentRewards);
-    private void ShowGarage() => ui.Garage(vehicle.Appearance, OwnedRewards, GolemOwned, GolemActive, world.Village.CollectorPets);
+    private void ShowGarage() => ui.Garage(vehicle.Appearance, OwnedRewards, GolemOwned, GolemActive, world.Village.CollectorPets, enabledQuizzes, threeTermMath);
     internal void OpenGarage()
     {
         if (State != GameState.Exploring || !AtGarage) return;
@@ -340,8 +354,13 @@ public partial class Game : Node3D
             ShowCelebrationView();
             SaveProgress(); return;
         }
+        if (!enabledQuizzes.HasFlag(QuizType.Math))
+        {
+            BeginQuiz(false, handover: true);
+            return;
+        }
         CurrentChallenge = new DeliveryChallenge(Delivery.Cargo, Delivery.Amount); rejectedAnswers.Clear();
-        State = GameState.Challenge; feedback = ""; ShowChallenge();
+        State = GameState.Challenge; ShowChallenge();
     }
     internal void OpenChallenge(Animal animal)
     {
@@ -382,70 +401,80 @@ public partial class Game : Node3D
     private void BeginChallenge(Animal animal)
     {
         nearby = animal; vehicle.Active = false;
-        int taskIndex = animal.HouseIndex >= 0 ? world.Village.Level(animal.HouseIndex) : Array.IndexOf(world.Animals, animal);
-        bool math = animal.HouseIndex >= 0 ? world.Village.TaskAt(animal.HouseIndex) == VillageTaskKind.Math : taskIndex % 2 == 0;
-        CurrentChallenge = math ? challenges.Next() : letterChallenges.Next();
-        rejectedAnswers.Clear();
-        feedback = CurrentChallenge is LetterChallenge
-            ? "Pojmenuj obrázky. Které slovo začíná na toto písmenko?"
-            : "Nikam nespěcháme. Můžeš si to spočítat na prstech.";
-        if (animal.HouseIndex >= 0)
-            feedback = $"Domeček {taskIndex} / 10 · Odměna: {Village.Upgrades[taskIndex]}";
-        State = GameState.Challenge; ShowChallenge();
+        bool math = animal.HouseIndex >= 0 ? world.Village.TaskAt(animal.HouseIndex) == VillageTaskKind.Math : Array.IndexOf(world.Animals, animal) % 2 == 0;
+        BeginQuiz(math);
     }
+
     internal void SubmitAnswer(int answer)
     {
-        if (State != GameState.Challenge || CurrentChallenge == null || nearby == null || !CurrentChallenge.Choices.Contains(answer)) return;
-        if (answer == CurrentChallenge.Answer)
+        if (State != GameState.Challenge || banditArrival > 0 || CurrentChallenge == null || nearby == null || !CurrentChallenge.Choices.Contains(answer)) return;
+        if (CurrentChallenge is SyllableChallenge syllables)
         {
-            if (nearby.IsWitch)
-            {
-                CurrentChallenge = null; rejectedAnswers.Clear();
-                State = GameState.WeatherChoice; ShowWeatherChoice(); return;
-            }
-            if (nearby.IsTrader) { StartTrade(); return; }
-            if (nearby.IsFarmer || nearby.IsGardener || nearby.IsCollectionOwner)
-            {
-                int count = nearby.IsFarmer ? world.Village.FarmCount : nearby.IsGardener ? world.Village.GardenCount : world.Village.CollectionCount(nearby.IsToymaker);
-                int total = nearby.IsFarmer ? Village.FarmKinds.Length : nearby.IsGardener ? Village.FlowerNames.Length : Village.CollectionNames(nearby.IsToymaker).Length;
-                if (Delivery != null || count >= total) return;
-                Delivery = new Expedition(world, vehicle, nearby, true); AddChild(Delivery);
-                CurrentChallenge = null; rejectedAnswers.Clear(); lastCollected = Delivery.Collected;
-                ui.DeliveryHud(Delivery); Start(); UpdateDeliveryGuides(); SaveProgress(); return;
-            }
-            if (CurrentChallenge is DeliveryChallenge && Delivery?.Sender.HouseIndex >= 0)
-            {
-                var owner = Delivery.Sender;
-                CompleteHouseTask(owner);
-                Delivery.ReleaseCargo(); RemoveChild(Delivery); Delivery.QueueFree(); Delivery = null; ui.DeliveryHud(null); UpdateDeliveryGuides(); SaveProgress(); return;
-            }
-            if (nearby.HouseIndex >= 0 && CurrentChallenge is not DeliveryChallenge)
-            {
-                CompleteHouseTask(nearby); SaveProgress(); return;
-            }
-            deliveryReward = CurrentChallenge is DeliveryChallenge;
-            if (!deliveryReward)
-            {
-                var sender = nearby;
-                unlockedExpeditions.Add(sender); sender.Celebrate();
-                CurrentRewards = Array.Empty<CarReward>();
-                CloseInteraction(); UpdateDeliveryGuides(); OfferDelivery(sender);
-                return;
-            }
-            if (deliveryReward && Delivery != null)
-            {
-                completedDeliveries.Add(Delivery.Sender);
-                CelebrateCompletion(Delivery.Recipient, "Doručeno! Děkujeme za pomoc!", true);
-            }
-            CurrentRewards = CarReward.Draw(rewardRandom, previousRewards); previousRewards = CurrentRewards;
-            State = GameState.Reward; ShowRewards(); ShowCelebrationView();
+            var next = syllableSelection.Pick(syllables, answer);
+            if (next == syllableSelection) return;
+            syllableSelection = next;
+            if (!next.IsComplete(syllables)) { ShowChallenge(); SaveProgress(); return; }
         }
-        else
+        else if (!CurrentChallenge.Accepts(answer))
         {
             rejectedAnswers.Add(answer);
-            feedback = "Nevadí! Zkus jinou odpověď. Společně to zvládneme.";
             ShowChallenge();
+            return;
         }
+        CompleteChallenge();
+    }
+
+    private void CompleteChallenge()
+    {
+        if (nearby == null) return;
+        if (InBanditQuiz) { AdvanceBanditQuiz(); return; }
+        bool handover = handoverQuiz || CurrentChallenge is DeliveryChallenge;
+        if (handoverQuiz)
+        {
+            handoverQuiz = false;
+            CurrentChallenge = null; rejectedAnswers.Clear();
+        }
+        if (nearby.IsWitch)
+        {
+            CurrentChallenge = null; rejectedAnswers.Clear();
+            State = GameState.WeatherChoice; ShowWeatherChoice(); return;
+        }
+        if (nearby.IsTrader) { StartTrade(); return; }
+        if (nearby.IsFarmer || nearby.IsGardener || nearby.IsCollectionOwner)
+        {
+            int count = nearby.IsFarmer ? world.Village.FarmCount : nearby.IsGardener ? world.Village.GardenCount : world.Village.CollectionCount(nearby.IsToymaker);
+            int total = nearby.IsFarmer ? Village.FarmKinds.Length : nearby.IsGardener ? Village.FlowerNames.Length : Village.CollectionNames(nearby.IsToymaker).Length;
+            if (Delivery != null || count >= total) return;
+            Delivery = new Expedition(world, vehicle, nearby, true); AddChild(Delivery);
+            CurrentChallenge = null; rejectedAnswers.Clear(); lastCollected = Delivery.Collected;
+            ui.DeliveryHud(Delivery); Start(); UpdateDeliveryGuides(); SaveProgress(); return;
+        }
+        if (handover && Delivery?.Sender.HouseIndex >= 0)
+        {
+            var owner = Delivery.Sender;
+            CompleteHouseTask(owner);
+            Delivery.ReleaseCargo(); RemoveChild(Delivery); Delivery.QueueFree(); Delivery = null; ui.DeliveryHud(null); UpdateDeliveryGuides(); SaveProgress(); return;
+        }
+        if (nearby.HouseIndex >= 0 && !handover)
+        {
+            CompleteHouseTask(nearby); SaveProgress(); return;
+        }
+        deliveryReward = handover;
+        if (!deliveryReward)
+        {
+            var sender = nearby;
+            unlockedExpeditions.Add(sender); sender.Celebrate();
+            CurrentRewards = Array.Empty<CarReward>();
+            CloseInteraction(); UpdateDeliveryGuides(); OfferDelivery(sender);
+            return;
+        }
+        if (deliveryReward && Delivery != null)
+        {
+            completedDeliveries.Add(Delivery.Sender);
+            CelebrateCompletion(Delivery.Recipient, "Doručeno! Děkujeme za pomoc!", true);
+        }
+        CurrentRewards = CarReward.Draw(rewardRandom, previousRewards); previousRewards = CurrentRewards;
+        State = GameState.Reward; ShowRewards(); ShowCelebrationView();
     }
     internal void SelectLook(string id)
     {
@@ -506,10 +535,12 @@ public partial class Game : Node3D
             if (AtGarage) ui.GarageHint();
         }
         else ui.DeliveryHint(false);
+        TickCompanionStop((float)delta);
         TickGolem((float)delta);
         TickCollectorPets((float)delta);
         TickEvents(delta);
         TickPostcards(delta);
+        TickBandits((float)delta);
         saveTimer += delta;
         if (State != GameState.Title && (State != lastSavedState || saveTimer >= (State == GameState.Exploring ? 2 : .5))) SaveProgress();
     }

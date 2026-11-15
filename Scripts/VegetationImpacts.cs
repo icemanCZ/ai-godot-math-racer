@@ -5,7 +5,7 @@ namespace MathRacer;
 
 public partial class Vegetation
 {
-    private readonly record struct TreePart((string Shape, string Color, int X, int Z) Batch, int Index, Transform3D Rest);
+    private readonly record struct TreePart(BatchKey Batch, int Index, Transform3D Rest);
     private sealed class TreeVisual(Vector3 foot, float size)
     {
         internal readonly Vector3 Foot = foot;
@@ -25,12 +25,29 @@ public partial class Vegetation
     }
     private TreeVisual? buildingTree;
     private readonly Dictionary<ulong, TreeVisual> treeVisuals = new();
-    private readonly Dictionary<(string Shape, string Color, int X, int Z), MultiMesh> renderedBatches = new();
+    private readonly Dictionary<BatchKey, MultiMesh> renderedBatches = new();
     private readonly List<TreeVisual> shakingTrees = new();
     private readonly List<FallingLeaf> fallingLeaves = new();
     private readonly RandomNumberGenerator impactRng = new() { Seed = (ulong)Settings.Seed + 902 };
     internal int ShakingTreeCount => shakingTrees.Count;
     internal int FallingLeafCount => fallingLeaves.Count;
+
+    internal bool TreeBatchesShareWindRoots()
+    {
+        if (treeVisuals.Count == 0) return false;
+        bool rendered = DisplayServer.GetName() != "headless";
+        foreach (var tree in System.Linq.Enumerable.Take(treeVisuals.Values, 24))
+        foreach (var part in tree.Parts)
+        {
+            var batch = renderedBatches[part.Batch];
+            if (!batch.UseCustomData) return false;
+            if (!rendered) continue;
+            var wind = batch.GetInstanceCustomData(part.Index);
+            if (new Vector3(wind.R, wind.G, wind.B).DistanceTo(tree.Foot) > .5f || Mathf.Abs(wind.A - tree.Size) > .01f)
+                return false;
+        }
+        return true;
+    }
 
     internal void HitTree(StaticBody3D body, Vector3 movement, Vector3 normal)
     {

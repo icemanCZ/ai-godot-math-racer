@@ -25,6 +25,52 @@ public partial class WordPicture : Control
         DrawSetTransform((Size - new Vector2(220, 180) * scale) / 2, 0, Vector2.One * scale);
         switch (PictureId)
         {
+            case "forest":
+                foreach (var (x, y, color) in new[] { (69, 48, "7fb170"), (155, 55, "689b79"), (111, 29, "529966") })
+                {
+                    Shape("b78662", new(x - 6, y + 88), new(x + 6, y + 88), new(x + 6, y + 121), new(x - 6, y + 121));
+                    Shape(color, new(x, y), new(x + 40, y + 94), new(x - 40, y + 94));
+                    Line(x - 25, y + 61, x + 25, y + 61, 2);
+                }
+                break;
+            case "cheese":
+                Shape("f0ac52", new(40, 96), new(169, 88), new(177, 124), new(40, 143));
+                Shape("ffdb70", new(40, 96), new(131, 46), new(168, 58), new(187, 75), new(177, 97), new(40, 117));
+                DrawCircle(new(129, 68), 9, new Color("ecac50"), true, -1, true);
+                DrawCircle(new(93, 89), 7, new Color("ecac50"), true, -1, true);
+                DrawCircle(new(151, 110), 8, new Color("d79446"), true, -1, true);
+                break;
+            case "nose":
+                Shape("f5c6a6", new(104, 39), new(125, 41), new(129, 79), new(148, 106), new(147, 123),
+                    new(132, 137), new(117, 133), new(101, 140), new(82, 131), new(73, 117), new(80, 103));
+                DrawArc(new(94, 131), 8, 3.25f, 5.85f, 14, Ink, 4, true);
+                DrawArc(new(131, 130), 7, 3.5f, 6.05f, 14, Ink, 4, true);
+                break;
+            case "mouse":
+                DrawPolyline(new Vector2[] { new(149, 121), new(168, 134), new(184, 124), new(193, 105), new(185, 93) },
+                    new Color("c98282"), 4, true);
+                Oval(122, 106, 43, 29, "a6a3b3");
+                Oval(91, 72, 19, 22, "a6a3b3");
+                Oval(89, 72, 11, 14, "f1b5b3");
+                Shape("a6a3b3", new(104, 83), new(88, 128), new(46, 116), new(62, 100), new(83, 87));
+                DrawCircle(new(65, 107), 4, Ink, true, -1, true);
+                Oval(46, 117, 6, 5, "ed9b9b");
+                break;
+            case "honeyJar":
+                Shape("eaa84d", new(80, 68), new(142, 68), new(152, 83), new(152, 136), new(141, 148),
+                    new(78, 148), new(68, 136), new(68, 83));
+                Shape("f4cc71", new(75, 54), new(146, 54), new(146, 71), new(75, 71));
+                Oval(110, 109, 26, 21, "fff1bf");
+                Shape("e5a241", new(109, 94), new(120, 109), new(119, 118), new(111, 123), new(102, 117), new(102, 107));
+                break;
+            case "tea":
+                Oval(151, 98, 23, 19, "b2ddec");
+                Oval(151, 98, 12, 9, "fff5df");
+                Shape("b2ddec", new(65, 81), new(148, 81), new(143, 124), new(126, 141), new(87, 141), new(71, 124));
+                Oval(107, 82, 41, 11, "a86646");
+                Line(120, 78, 116, 117, 2);
+                Shape("fff3c6", new(106, 113), new(124, 113), new(124, 129), new(106, 129));
+                break;
             case "car":
                 Shape("ee786d", new(32, 113), new(40, 87), new(69, 84), new(89, 56), new(139, 56), new(163, 87), new(187, 95), new(187, 126), new(32, 126));
                 Shape("bde9f4", new(81, 83), new(96, 64), new(113, 64), new(113, 83));

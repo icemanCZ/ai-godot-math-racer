@@ -34,7 +34,7 @@ public partial class DeliveryChecks : Node
             await Frames();
             game.OfferDelivery(world.Animals[0]);
             Check(game.State == GameState.Exploring && game.Delivery == null, "expedition stays locked until the original question is solved");
-            game.OpenChallenge(world.Animals[0]); game.SubmitAnswer(game.CurrentChallenge!.Answer);
+            game.OpenChallenge(world.Animals[0]); ChallengeChecks.Solve(game);
             Check(game.State == GameState.ExpeditionChoice && game.CurrentRewards.Count == 0, "correct answer opens task choice before any reward");
             game.TogglePause(); game.TogglePause();
             Check(game.State == GameState.ExpeditionChoice, "pause preserves task choice");
@@ -47,8 +47,8 @@ public partial class DeliveryChecks : Node
                 if (sender.RewardAvailable)
                 {
                     game.OpenChallenge(sender);
-                    Check(game.CurrentChallenge is MathChallenge or LetterChallenge, "original arithmetic and picture tasks remain primary");
-                    game.SubmitAnswer(game.CurrentChallenge!.Answer);
+                    Check(game.CurrentChallenge is MathChallenge or SyllableChallenge or IPictureChallenge, "original arithmetic and picture tasks remain primary");
+                    ChallengeChecks.Solve(game);
                     Check(game.State == GameState.ExpeditionChoice && game.CurrentRewards.Count == 0,
                         "original question unlocks task choice without granting cosmetics");
                     game.TogglePause(); game.TogglePause();
@@ -111,7 +111,7 @@ public partial class DeliveryChecks : Node
                     }
                     car.SetPose(originalPose, originalHeading); delivery.Tick(.25);
                     var other = world.Animals.Last(a => a.RewardAvailable && a != delivery.Recipient);
-                    game.OpenChallenge(other); game.SubmitAnswer(game.CurrentChallenge!.Answer);
+                    game.OpenChallenge(other); ChallengeChecks.Solve(game);
                     Check(game.State == GameState.Exploring && game.CurrentRewards.Count == 0, "solving another question preserves active expedition and postpones its task choice");
                     game.TogglePause(); game.TogglePause();
                     Check(game.Delivery == delivery && delivery.CargoVisible && game.State == GameState.Exploring,
@@ -139,7 +139,7 @@ public partial class DeliveryChecks : Node
                     "arrival automatically opens picture counting task");
                 Check(Enumerable.Range(1, 3).All(n => (game.FindChild($"Answer{n}", true, false) as Button)?.Text == n.ToString()),
                     "three numbered answer choices");
-                int answer = game.CurrentChallenge!.Answer;
+                int answer = game.CurrentChallenge!.Choices.Single(game.CurrentChallenge.Accepts);
                 int wrong = game.CurrentChallenge.Choices.First(x => x != answer);
                 Press($"Answer{wrong}"); game.TogglePause(); game.TogglePause();
                 Check(game.State == GameState.Challenge && ((Button)game.FindChild($"Answer{wrong}", true, false)).Disabled,

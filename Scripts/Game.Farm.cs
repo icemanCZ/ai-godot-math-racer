@@ -12,8 +12,6 @@ public partial class Game
             State = GameState.FarmStatus; ui.FarmStatus(world.Village, Delivery); return;
         }
         // Every new trip requires a fresh quiz; an abandoned quiz never unlocks a departure.
-        CurrentChallenge = world.Village.FarmCount % 2 == 0 ? challenges.Next() : letterChallenges.Next();
-        feedback = $"Najdi {Village.FarmNames[world.Village.FarmCount]}. Nejdřív vyřeš úkol a pak vyrazíme!\n{world.Village.PetFor(nearby).RewardHint}";
-        State = GameState.Challenge; ShowChallenge();
+        BeginQuiz(world.Village.FarmCount % 2 == 0);
     }
 }

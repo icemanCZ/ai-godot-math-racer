@@ -45,7 +45,7 @@ internal sealed partial class CollectorPetChecks(Game game, World world, Vehicle
             {
                 car.SetPose(pet.Collector.Position + Vector3.Right * 2, 0);
                 game.OpenChallenge(pet.Collector);
-                game.SubmitAnswer(game.CurrentChallenge!.Answer);
+                ChallengeChecks.Solve(game);
                 car.SetPose(game.Delivery!.PickupPositions[0], 0);
                 game.Delivery.Tick(.25);
                 Check(game.Delivery.CanDeliver && !pet.IsOwned, $"{pet.Kind}: picking up the last item leaves the pet locked");
@@ -68,6 +68,25 @@ internal sealed partial class CollectorPetChecks(Game game, World world, Vehicle
             game._Process(.25);
             Check(pets.Select(p => p.Position).SequenceEqual(pausedPositions), "pets stop when paused");
             game.TogglePause();
+
+            car.SetPose(world.Ground.At(0, 8, .15f), 0);
+            for (int i = 0; i < 120; i++) game._Process(.05);
+            var last = pets.Select(p => p.Position).ToArray();
+            var moved = new bool[pets.Count];
+            var rested = new bool[pets.Count];
+            for (int frame = 0; frame < 120; frame++)
+            {
+                game._Process(.05);
+                for (int i = 0; i < pets.Count; i++)
+                {
+                    float distance = pets[i].Position.DistanceTo(last[i]);
+                    moved[i] |= distance > .05f;
+                    rested[i] |= distance < .001f;
+                    last[i] = pets[i].Position;
+                }
+            }
+            Check(moved.All(value => value) && rested.All(value => value) &&
+                pets.All(pet => pet.Position.DistanceTo(car.Position) < 8), "parked companions each move and pause while staying near the car");
 
             car.SetPose(world.Village.GarageEntrance, 0);
             game.OpenGarage();

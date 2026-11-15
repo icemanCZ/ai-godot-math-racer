@@ -56,13 +56,13 @@ public partial class CollectionChecks : Node
                 for (int i = 0; i < Village.CollectionNames(toys).Length; i++)
                 {
                     car.SetPose(owner.Position + Vector3.Right * 2, 0); game.OpenChallenge(owner);
-                    Check(game.State == GameState.Challenge && (i % 2 == 0 ? game.CurrentChallenge is MathChallenge : game.CurrentChallenge is LetterChallenge), "each departure requires math or letters");
-                    game.SubmitAnswer(game.CurrentChallenge!.Choices.First(a => a != game.CurrentChallenge.Answer));
+                    Check(game.State == GameState.Challenge && (i % 2 == 0 ? game.CurrentChallenge is MathChallenge : game.CurrentChallenge is SyllableChallenge or IPictureChallenge), "each departure requires arithmetic or a word quiz");
+                    game.SubmitAnswer(game.CurrentChallenge!.Choices.First(choice => !game.CurrentChallenge.Accepts(choice)));
                     Check(game.Delivery == null && village.CollectionCount(toys) == i, "wrong answer never starts a trip");
                     game.TogglePause(); RoundTrip();
                     game.FinishInteraction(); game.OpenChallenge(owner);
                     Check(game.CurrentChallenge != null && game.Delivery == null, "abandoned quiz never unlocks departure");
-                    game.SubmitAnswer(game.CurrentChallenge!.Answer);
+                    ChallengeChecks.Solve(game);
                     Check(game.State == GameState.Exploring && game.Delivery is { Collected: 0, Amount: 1 } && game.Delivery.Sender == owner, "correct answer starts one collection trip");
                     RoundTrip();
                     foreach (var other in new[] { village.Farmer, village.Gardener, village.GemCollector, village.Toymaker })

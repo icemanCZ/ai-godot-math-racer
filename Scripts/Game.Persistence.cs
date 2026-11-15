@@ -10,23 +10,26 @@ public partial class Game
     private double saveTimer;
     private string lastSave = "";
     private GameState lastSavedState = GameState.Title;
-    private static bool newGamePending;
+    private static (QuizType Types, bool ThreeTerms)? newGameQuizzes;
 
     internal void NewGame()
     {
-        if (newGamePending || State is not (GameState.Title or GameState.Paused)) return;
+        if (newGameQuizzes.HasValue || State is not (GameState.Title or GameState.Paused)) return;
         int oldSeed = Settings.Seed;
         int seed;
         do { seed = Random.Shared.Next(1, int.MaxValue - 4096); } while (seed == oldSeed);
         // Stop the old scene's exit save before switching the shared generators.
-        persistenceReady = false; newGamePending = true; vehicle.Active = false;
+        persistenceReady = false;
+        newGameQuizzes = State == GameState.Title && SaveStore.Initial is { } saved
+            ? (saved.QuizTypes, saved.ThreeTermMath) : (enabledQuizzes, threeTermMath);
+        vehicle.Active = false;
         ui.LoadingWorld();
         Callable.From(() =>
         {
             Settings.SetSeed(seed);
             var error = GetTree().ReloadCurrentScene();
             if (error == Error.Ok) return;
-            Settings.SetSeed(oldSeed); newGamePending = false; persistenceReady = true;
+            Settings.SetSeed(oldSeed); newGameQuizzes = null; persistenceReady = true;
             if (State == GameState.Title) ui.Title(SaveStore.Initial != null); else ui.Pause();
             GD.PushError($"Cannot start new game: {error}");
         }).CallDeferred();
@@ -35,6 +38,11 @@ public partial class Game
     internal SaveData CaptureProgress() => new()
     {
         GolemOwned = GolemOwned, GolemActive = GolemActive,
+        QuizTypes = enabledQuizzes, NextWordQuiz = nextWordQuiz, ThreeTermMath = threeTermMath, HandoverQuiz = handoverQuiz,
+        Reading = CurrentChallenge as ReadingChallenge,
+        BanditSite = banditSite, BanditSolved = banditSolved, BanditCooldown = banditCooldown,
+        Syllables = CurrentChallenge as SyllableChallenge,
+        SyllableSelection = CurrentChallenge is SyllableChallenge ? syllableSelection : default,
         DisabledCollectorPets = world.Village.CollectorPets.Where(p => p.IsOwned && p.Disabled).Select(p => p.Kind.ToString()).ToArray(),
         Postcards = (PostcardProgress?[])postcards.Clone(), PostcardPage = postcardPage,
         EventActive = Events.Active, EventNext = Events.Next, EventWins = (int[])Events.Wins.Clone(),
@@ -55,15 +63,20 @@ public partial class Game
         Sender = ActorId(Delivery?.Sender), Collection = Delivery?.Collection ?? false,
         Picked = Delivery?.Picked ?? Array.Empty<bool>(), Arrived = Delivery?.Arrived ?? false, DeliveryReward = deliveryReward,
         Math = CurrentChallenge as MathChallenge, Letters = CurrentChallenge as LetterChallenge,
-        DeliveryQuestion = CurrentChallenge as DeliveryChallenge, Rejected = rejectedAnswers.ToArray(), Feedback = feedback
+        DeliveryQuestion = CurrentChallenge as DeliveryChallenge, Rejected = rejectedAnswers.ToArray()
     };
 
     internal void RestoreProgress(SaveData data)
     {
         if (Delivery != null) { Delivery.ReleaseCargo(); RemoveChild(Delivery); Delivery.QueueFree(); Delivery = null; }
         CancelPostcardPhoto();
+        enabledQuizzes = data.QuizTypes; nextWordQuiz = data.NextWordQuiz; threeTermMath = data.ThreeTermMath;
+        handoverQuiz = data.HandoverQuiz;
+        companionStopTime = 0;
+        Array.Clear(companionWanders);
+        syllableSelection = data.SyllableSelection;
         Array.Copy(data.Postcards, postcards, postcards.Length);
-        postcardPage = data.PostcardPage; rejectedPostcardPictures = 0; postcardFeedback = "";
+        postcardPage = data.PostcardPage; rejectedPostcardAnswers = 0; postcardFeedback = "";
         for (int i = 0; i < postcards.Length; i++) viewpoints[i].Sign.Visible = postcards[i] == null;
         ClearHighlight();
         celebrationFx?.QueueFree(); celebrationFx = null; celebrationTime = 0; celebrationPanel = null; ui.CelebrationMessage("");
@@ -94,9 +107,12 @@ public partial class Game
         foreach (int i in data.Completed) completedDeliveries.Add(world.Animals[i]);
         OwnedRewards.Clear(); OwnedRewards.UnionWith(data.Owned);
         CurrentRewards = data.Rewards; previousRewards = data.PreviousRewards;
-        nearby = ActorAt(data.Nearby);
-        CurrentChallenge = (IChallenge?)data.Math ?? (IChallenge?)data.Letters ?? data.DeliveryQuestion;
-        rejectedAnswers.Clear(); rejectedAnswers.UnionWith(data.Rejected); feedback = data.Feedback;
+        bool validEncounter = RestoreBandits(data);
+        nearby = validEncounter ? ActorAt(data.Nearby) : null;
+        CurrentChallenge = (IChallenge?)data.Math ?? (IChallenge?)data.Letters ?? (IChallenge?)data.Syllables ??
+            (IChallenge?)data.Reading ?? data.DeliveryQuestion;
+        if (!validEncounter) { CurrentChallenge = null; banditSolved = 0; }
+        rejectedAnswers.Clear(); rejectedAnswers.UnionWith(data.Rejected);
         deliveryReward = data.DeliveryReward;
         if (data.Sender >= 0)
         {
@@ -107,7 +123,7 @@ public partial class Game
         }
         lastCollected = Delivery?.Collected ?? -1;
         ui.DeliveryHud(Delivery); ui.AnimalCount(RemainingAnimals, world.Animals.Length); UpdateDeliveryGuides();
-        beforePause = data.State; Resume();
+        beforePause = validEncounter ? data.State : GameState.Exploring; Resume();
         foreach (var camera in GetChildren().OfType<FollowCamera>()) camera.Snap();
     }
 

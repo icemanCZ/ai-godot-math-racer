@@ -2,7 +2,11 @@ namespace MathRacer;
 
 public partial class Game
 {
-    private void ShowChallenge() => ui.Challenge(nearby!, CurrentChallenge!, feedback, rejectedAnswers);
+    private void ShowChallenge()
+    {
+        if (InBanditQuiz && banditArrival > 0) { ui.HideModal(); return; }
+        ui.Challenge(CurrentChallenge!, rejectedAnswers, syllableSelection, InBanditQuiz ? banditSolved + 1 : 0);
+    }
 
     internal void BeginVillageCollection()
     {

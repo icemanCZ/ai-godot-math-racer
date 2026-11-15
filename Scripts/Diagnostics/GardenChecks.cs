@@ -44,24 +44,24 @@ public partial class GardenChecks : Node
             Check(village.Houses.Count == 4 && village.Residents.Count == 4 && village.Gardener.IsGardener, "garden adds a dedicated resident without replacing houses");
             Check(world.Animals.All(a => !village.IsNearVillage(a.Position)), "task animals leave garden and village clear");
             // An existing expedition must finish before the gardener can start another.
-            game.OpenChallenge(world.Animals[0]); game.SubmitAnswer(game.CurrentChallenge!.Answer); game.SelectExpedition(false);
+            game.OpenChallenge(world.Animals[0]); ChallengeChecks.Solve(game); game.SelectExpedition(false);
             var existing = game.Delivery;
             game.OpenChallenge(village.Gardener); game.SubmitAnswer(1);
             Check(game.State == GameState.GardenStatus && game.Delivery == existing, "gardener cannot replace an active expedition");
             RoundTrip(); game.FinishInteraction();
             car.SetPose(game.Delivery!.Recipient.Position + Vector3.Right * 2, 0); game.BeginDeliveryQuestion();
-            game.SubmitAnswer(game.CurrentChallenge!.Answer); game.FinishInteraction();
+            ChallengeChecks.Solve(game); game.FinishInteraction();
             int visits = game.RemainingAnimals, deliveries = game.RemainingDeliveries;
             for (int i = 0; i < Village.FlowerNames.Length; i++)
             {
                 car.SetPose(village.Gardener.Position + Vector3.Right * 2, 0); game.OpenChallenge(village.Gardener);
-                Check(game.State == GameState.Challenge && (i % 2 == 0 ? game.CurrentChallenge is MathChallenge : game.CurrentChallenge is LetterChallenge),
+                Check(game.State == GameState.Challenge && (i % 2 == 0 ? game.CurrentChallenge is MathChallenge : game.CurrentChallenge is SyllableChallenge or IPictureChallenge),
                     "each departure requires alternating math or letters");
-                game.SubmitAnswer(game.CurrentChallenge!.Choices.First(a => a != game.CurrentChallenge.Answer));
+                game.SubmitAnswer(game.CurrentChallenge!.Choices.First(choice => !game.CurrentChallenge.Accepts(choice)));
                 Check(game.Delivery == null && village.GardenCount == i, "wrong answer cannot start a trip or award an flower");
                 RoundTrip(); game.FinishInteraction(); game.OpenChallenge(village.Gardener);
                 Check(game.Delivery == null && game.CurrentChallenge != null, "postponing the quiz does not unlock departure");
-                game.SubmitAnswer(game.CurrentChallenge!.Answer);
+                ChallengeChecks.Solve(game);
                 Check(game.State == GameState.Exploring && game.Delivery is { Garden: true, Collected: 0, Amount: 1 }, "correct answer starts one flower expedition");
                 RoundTrip();
                 game.OpenChallenge(village.Gardener);

@@ -79,7 +79,7 @@ public partial class EventChecks(Game game, World world, Vehicle car) : Node
             int mathStep = world.Village.Tasks(0).ToList().IndexOf(VillageTaskKind.Math);
             world.Village.RestoreLevels(new[] { mathStep, 0, 0, 0 });
             car.SetPose(resident.Position + Vector3.Right * 2, 0);
-            game.OpenChallenge(resident); game.SubmitAnswer(game.CurrentChallenge!.Answer);
+            game.OpenChallenge(resident); ChallengeChecks.Solve(game);
             Check(game.CelebrationShowing && game.State == GameState.HouseReward, "house upgrade starts celebration before reward panel");
             game.TogglePause(); game._Process(4);
             Check(game.CelebrationShowing, "pause freezes celebration duration");

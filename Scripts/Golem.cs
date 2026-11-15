@@ -95,6 +95,7 @@ public partial class Game
     private void RestoreGolem(bool owned, bool active)
     {
         GolemOwned = owned; GolemActive = owned && active;
+        companionWanders[GolemWanderIndex] = default;
         golem.Visible = GolemActive;
         golem.Position = vehicle.Position + vehicle.Transform.Basis.Z * 5;
     }
@@ -102,6 +103,7 @@ public partial class Game
     {
         if (State != GameState.Garage || !GolemOwned) return;
         GolemActive = !GolemActive; golem.Visible = GolemActive;
+        companionWanders[GolemWanderIndex] = default;
         if (GolemActive) golem.Position = vehicle.Position + vehicle.Transform.Basis.Z * 5;
         ShowGarage(); SaveProgress();
     }
@@ -113,11 +115,16 @@ public partial class Game
     private void TickGolem(float delta)
     {
         if (!GolemActive || State != GameState.Exploring) return;
-        var target = vehicle.Position + vehicle.Transform.Basis.Z * 5;
+        var target = CompanionTarget(GolemWanderIndex, golem.Position, vehicle.Position + vehicle.Transform.Basis.Z * 5, delta);
         target.Y = CompanionSurface(target);
         var offset = target - golem.Position; offset.Y = 0;
-        if (offset.LengthSquared() > 80 * 80) { golem.Position = target; return; }
-        float speed = Mathf.Clamp(offset.Length() * 2.8f, 0, 35);
+        if (offset.LengthSquared() > 80 * 80)
+        {
+            companionWanders[GolemWanderIndex] = default;
+            golem.Position = target;
+            return;
+        }
+        float speed = Mathf.Clamp(offset.Length() * 2.8f, 0, companionStopTime >= .65f ? 5 : 35);
         if (offset.LengthSquared() > .25f)
         {
             var step = offset.Normalized() * Mathf.Min(offset.Length(), speed * delta);
@@ -156,10 +163,16 @@ public partial class GameUi
     internal void Sorcerer(Animal sorcerer, Expedition? delivery, bool owned)
     {
         Clear(); Text(sorcerer.DisplayName, 30);
-        if (owned) Text("Děkuji za všechny dílky! Malý golem je tvůj kamarád. V garáži v nabídce Peti ho můžeš vypnout nebo znovu zapnout.", 23);
-        else if (delivery?.Golem == true) Text($"Najdi všech šest dílků golema a přivez mi je. Nasbíráno: {delivery.Collected} / 6.", 23);
-        else if (delivery != null) Text("Až dokončíš svou výpravu, vrať se za mnou. Potřebuji šest dílků golema.", 23);
-        else { Text("Přivez mi šest dílků golema. Za odměnu ti dám malého golema, který poběží za tvým autem!", 23); Button("Vyrazit pro dílky", () => GolemQuestRequested?.Invoke()).GrabFocus(); }
-        Button("Pokračovat v jízdě", () => CloseInteractionRequested?.Invoke());
+        if (owned) Text("✓  6 / 6", 32);
+        else if (delivery?.Golem == true) Text($"{delivery.Collected} / 6", 32);
+        else if (delivery != null) Text("…", 32);
+        else
+        {
+            Text("0 / 6", 32);
+            var start = IconButton("play", () => GolemQuestRequested?.Invoke(), "StartGolemQuest");
+            start.AccessibilityName = "Vyrazit pro dílky";
+            start.GrabFocus();
+        }
+        BackButton();
     }
 }

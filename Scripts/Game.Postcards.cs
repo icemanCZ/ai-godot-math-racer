@@ -6,20 +6,24 @@ namespace MathRacer;
 
 public partial class Game
 {
-    private sealed record Postcard(string Name, string Clue, string Letter, string[] Pictures, int Correct);
+    private sealed record Postcard(string Name, string Clue, string Segmented, string[] Pictures, int Correct)
+    {
+        internal string Icon => Pictures[Correct];
+        internal string Word => Segmented.Replace("-", "");
+    }
     private static readonly Postcard[] Postcards =
     {
         new("Most a lekníny", "U příjezdu k mostu",
-            "M", new[] { "postcard-village", "postcard-bridge", "postcard-farm" }, 1),
+            "most", new[] { "postcard-village", "postcard-bridge", "postcard-farm" }, 1),
         new("Domečky pod kopcem", "Na silnici nad vesnicí",
-            "D", new[] { "postcard-bridge", "postcard-farm", "postcard-village" }, 2),
+            "do-meč-ky", new[] { "postcard-bridge", "postcard-farm", "postcard-village" }, 2),
         new("Farma mezi loukami", "Na silnici u farmy",
-            "F", new[] { "postcard-farm", "postcard-village", "postcard-bridge" }, 0),
-        new("Garáž u cesty", "Poblíž garáže", "G",
+            "far-ma", new[] { "postcard-farm", "postcard-village", "postcard-bridge" }, 0),
+        new("Garáž u cesty", "Poblíž garáže", "ga-ráž",
             new[] { "postcard-garden", "postcard-garage", "postcard-meadow" }, 1),
-        new("Zahrada plná květin", "U zahradnictví", "Z",
+        new("Zahrada plná květin", "U zahradnictví", "za-hra-da",
             new[] { "postcard-meadow", "postcard-garage", "postcard-garden" }, 2),
-        new("Louka u lesní cesty", "U lučních květin", "L",
+        new("Louka u lesní cesty", "U lučních květin", "lou-ka",
             new[] { "postcard-meadow", "postcard-garden", "postcard-garage" }, 0)
     };
     internal static int PostcardCount => Postcards.Length;
@@ -33,7 +37,7 @@ public partial class Game
     private int postcardPage = -1;
     private int pendingPhoto = -1;
     private double photoTime;
-    private int rejectedPostcardPictures;
+    private int rejectedPostcardAnswers;
     private string postcardFeedback = "";
     private Camera3D? photoCamera;
     private SubViewport? photoViewport;
@@ -85,7 +89,34 @@ public partial class Game
         return marker;
     }
 
-    private static int PostcardIndex(string icon) => Array.FindIndex(Postcards, card => card.Pictures[card.Correct] == icon);
+    private static int PostcardIndex(string icon) => Array.FindIndex(Postcards, card => card.Icon == icon);
+
+    private static SyllableChallenge PostcardSyllables(int index, int seed)
+    {
+        var card = Postcards[index];
+        return SyllableChallengeGenerator.Create(card.Icon, card.Segmented, new Random(seed + 260 + index));
+    }
+
+    internal static bool ValidPostcardSelection(int index, int seed, PostcardProgress card)
+    {
+        if (card.Selection == default) return true;
+        var question = PostcardSyllables(index, seed);
+        return card.Selection.IsValid(question) && (card.Stamped || !card.Selection.IsComplete(question));
+    }
+
+    internal IChallenge PostcardQuestion(int index)
+    {
+        var card = Postcards[index];
+        return SelectQuizType(preferMath: false, start: index) switch
+        {
+            QuizType.Letters => new LetterChallenge(card.Word[..1].ToUpperInvariant(),
+                card.Pictures.Select(icon => new PictureWord(icon, Postcards[PostcardIndex(icon)].Word)).ToArray()),
+            QuizType.Syllables => PostcardSyllables(index, Settings.Seed),
+            QuizType.Reading => new ReadingChallengeGenerator(Settings.Seed + 300 + index).Next(),
+            QuizType.Math => new ChallengeGenerator(Settings.Seed + 280 + index).Next(threeTermMath),
+            _ => throw new InvalidOperationException("At least one quiz type must be enabled.")
+        };
+    }
 
     internal Vector3 PostcardStop(int index) => viewpoints[index].Stop;
 
@@ -182,7 +213,7 @@ public partial class Game
     private void OpenPostcardPage(int index)
     {
         postcardPage = index;
-        rejectedPostcardPictures = 0;
+        rejectedPostcardAnswers = 0;
         postcardFeedback = "";
         ShowPostcards();
     }
@@ -193,12 +224,12 @@ public partial class Game
         if (postcardPage < 0)
         {
             ui.PostcardAlbum(count, Postcards.Select((card, i) =>
-                (card.Name, card.Clue, card.Pictures[card.Correct], postcards[i] != null, postcards[i]?.Stamped == true)).ToArray(), OpenPostcardPage);
+                (card.Name, card.Clue, card.Icon, postcards[i] != null, postcards[i]?.Stamped == true)).ToArray(), OpenPostcardPage);
             return;
         }
         var card = Postcards[postcardPage];
         var progress = postcards[postcardPage]!;
-        ui.PostcardDetail(card.Name, card.Letter, card.Pictures, progress, rejectedPostcardPictures, postcardFeedback,
+        ui.PostcardDetail(card.Name, progress.Stamped ? null : PostcardQuestion(postcardPage), progress, rejectedPostcardAnswers, postcardFeedback,
             AnswerPostcard, () => OpenPostcardPage(-1));
     }
 
@@ -206,20 +237,32 @@ public partial class Game
     {
         if (State != GameState.PostcardAlbum || postcardPage < 0 ||
             postcards[postcardPage] is not { Stamped: false } card) return;
-        if (answer == Postcards[postcardPage].Correct)
+        var question = PostcardQuestion(postcardPage);
+        if (!question.Choices.Contains(answer)) return;
+        if (question is SyllableChallenge syllables)
         {
-            postcards[postcardPage] = card with { Stamped = true };
-            postcardFeedback = "Správně! Pohlednice má razítko.";
-            if (postcards.Count(progress => progress?.Stamped == true) >= PostcardRewardStamps && OwnedRewards.Add(PostcardReward))
-            {
-                vehicle.Appearance.ToggleAccessory(PostcardReward.Id);
-                postcardFeedback = "V garáži máš samolepku Mapka údolí!";
-            }
+            var selection = card.Selection.Pick(syllables, answer);
+            if (selection == card.Selection) return;
+            card = card with { Selection = selection };
+            if (selection.IsComplete(syllables)) StampPostcard(card);
+            else postcards[postcardPage] = card;
             SaveProgress();
         }
-        else rejectedPostcardPictures |= 1 << answer;
+        else if (question.Accepts(answer)) { StampPostcard(card); SaveProgress(); }
+        else rejectedPostcardAnswers |= 1 << answer;
         ShowPostcards();
+    }
+
+    private void StampPostcard(PostcardProgress card)
+    {
+        postcards[postcardPage] = card with { Stamped = true };
+        postcardFeedback = "Pohlednice má razítko.";
+        if (postcards.Count(progress => progress?.Stamped == true) >= PostcardRewardStamps && OwnedRewards.Add(PostcardReward))
+        {
+            vehicle.Appearance.ToggleAccessory(PostcardReward.Id);
+            postcardFeedback = "V garáži máš samolepku Mapka údolí!";
+        }
     }
 }
 
-public sealed record PostcardProgress(byte[] Jpeg, bool Stamped);
+public sealed record PostcardProgress(byte[] Jpeg, bool Stamped, SyllableSelection Selection = default);

@@ -111,7 +111,7 @@ public partial class VillageChecks : Node
             Check(true, "512 schedules contain three tasks of each type plus one random type");
             car.SetPose(village.Residents[0].Position + Vector3.Right * 2, 0); game._Process(.016);
             Check(village.Residents[0].IsWaving, "resident waves at the passing player");
-            game.OpenChallenge(world.Animals[0]); game.SubmitAnswer(game.CurrentChallenge!.Answer); game.SelectExpedition(true);
+            game.OpenChallenge(world.Animals[0]); ChallengeChecks.Solve(game); game.SelectExpedition(true);
             var roadside = game.Delivery;
             int firstFruit = village.Tasks(0).ToList().IndexOf(VillageTaskKind.Fruit);
             village.RestoreLevels(new[] { firstFruit, 0, 0, 0 });
@@ -130,7 +130,7 @@ public partial class VillageChecks : Node
                     car.SetPose(owner.Position + Vector3.Right * 2, 0); game.OpenChallenge(owner);
                     var kind = schedule[level];
                     Check(kind == VillageTaskKind.Fruit ? game.State == GameState.HouseFruitOffer :
-                        game.State == GameState.Challenge && (kind == VillageTaskKind.Math ? game.CurrentChallenge is MathChallenge : game.CurrentChallenge is LetterChallenge),
+                        game.State == GameState.Challenge && (kind == VillageTaskKind.Math ? game.CurrentChallenge is MathChallenge : game.CurrentChallenge is SyllableChallenge or IPictureChallenge),
                         $"house {house} task {level + 1} follows its shuffled {kind} schedule");
                     game.FinishInteraction(); game.OpenChallenge(owner);
                     Check(village.Level(house) == level && village.TaskAt(house) == kind, "postponing a task preserves its order and level");
@@ -150,12 +150,12 @@ public partial class VillageChecks : Node
                         GatherAll();
                         Check(village.Level(house) == level && game.CurrentChallenge is DeliveryChallenge, "all fruit must be returned and counted before the upgrade");
                     }
-                    int answer = game.CurrentChallenge!.Answer;
-                    game.SubmitAnswer(game.CurrentChallenge.Choices.First(c => c != answer));
+                    int answer = game.CurrentChallenge!.Choices.First(game.CurrentChallenge.Accepts);
+                    game.SubmitAnswer(game.CurrentChallenge.Choices.First(choice => !game.CurrentChallenge.Accepts(choice)));
                     Check(game.State == GameState.Challenge && village.Level(house) == level, "wrong answer preserves the task without granting an upgrade");
                     RoundTrip(path);
                     var returning = game.Delivery;
-                    game.SubmitAnswer(answer);
+                    ChallengeChecks.Solve(game);
                     Check(game.State == GameState.HouseReward && village.Level(house) == level + 1 && game.Delivery == null,
                         "completed task grants exactly one house upgrade");
                     if (returning != null) Check(!returning.CargoVisible, "fruit handover removes cargo immediately");

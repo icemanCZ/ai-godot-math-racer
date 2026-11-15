@@ -44,12 +44,12 @@ public partial class TradeChecks : Node
                 var owner = world.Village.Traders[trip % 3];
                 car.SetPose(owner.Position + Vector3.Right * 2, 0); game.OpenChallenge(owner);
                 Check(game.CurrentChallenge is MathChallenge && game.State == GameState.Challenge, "every trade trip requires arithmetic");
-                game.SubmitAnswer(game.CurrentChallenge!.Choices.First(a => a != game.CurrentChallenge.Answer));
+                game.SubmitAnswer(game.CurrentChallenge!.Choices.First(choice => !game.CurrentChallenge.Accepts(choice)));
                 Check(game.Delivery == null, "wrong answer cannot load cargo");
                 game.TogglePause(); RoundTrip();
                 game.FinishInteraction(); game.OpenChallenge(owner);
                 Check(game.CurrentChallenge is MathChallenge && game.Delivery == null, "abandoned question cannot unlock departure");
-                game.SubmitAnswer(game.CurrentChallenge!.Answer);
+                ChallengeChecks.Solve(game);
                 Check(game.Delivery is { Collection: false, CargoVisible: true } && game.State == GameState.Exploring &&
                     game.Delivery.Cargo == Village.TradeCargo[owner.TradeIndex], "correct answer immediately loads the trade cargo");
                 var target = game.Delivery!.Recipient;

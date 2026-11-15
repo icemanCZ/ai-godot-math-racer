@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace MathRacer;
@@ -88,7 +89,7 @@ public partial class ControllerChecks : Node
             await Frames(40); // Allow the GUI's shared navigation repeat delay to expire.
             Axis(JoyAxis.LeftX, -1); await Frames(); Axis(JoyAxis.LeftX, 0); await Frames();
             Check(GetViewport().GuiGetFocusOwner() == focus, "left stick navigates menu");
-            int answer = game.CurrentChallenge!.Answer;
+            int answer = game.CurrentChallenge!.Choices.Single(game.CurrentChallenge.Accepts);
             ((Control)game.FindChild($"Answer{answer}", true, false)).GrabFocus();
             await Button(JoyButton.A);
             Check(game.State == GameState.ExpeditionChoice && game.CurrentRewards.Count == 0, "A solves example and opens task choice before rewards");
@@ -100,7 +101,7 @@ public partial class ControllerChecks : Node
             Check(game.State == GameState.Exploring && game.Delivery != null, "A selects delivery and immediately starts driving");
             car.SetPose(game.Delivery!.Recipient.Position + Vector3.Right * 2, 0); await Frames(5);
             Check(game.State == GameState.Challenge && game.CurrentChallenge is DeliveryChallenge, "arrival opens picture counting task");
-            ((Control)game.FindChild($"Answer{game.CurrentChallenge!.Answer}", true, false)).GrabFocus();
+            ((Control)game.FindChild($"Answer{game.CurrentChallenge!.Choices.Single(game.CurrentChallenge.Accepts)}", true, false)).GrabFocus();
             await Button(JoyButton.A);
             Check(game.State == GameState.Reward && game.CelebrationShowing, "correct answer shows cargo celebration before reward selection");
             await Button(JoyButton.Start); await Frames(20);
@@ -110,7 +111,13 @@ public partial class ControllerChecks : Node
             await Button(JoyButton.A);
             Check(game.State == GameState.Exploring, "controller selects reward and returns to driving");
             car.SetPose(world.Animals[1].Position + Vector3.Right * 2, 0); await Frames(); await Button(JoyButton.A);
-            Check(game.CurrentChallenge is LetterChallenge, "A opens original picture task at second animal");
+            Check(game.CurrentChallenge is SyllableChallenge, "A opens the syllable task at the second animal");
+            var syllable = (SyllableChallenge)game.CurrentChallenge!;
+            int wrongTile = syllable.Choices.First(choice => !syllable.Accepts(choice));
+            ((Control)game.FindChild($"Answer{wrongTile}", true, false)).GrabFocus();
+            await Button(JoyButton.A);
+            Check(game.State == GameState.Challenge && ((Button)game.FindChild($"Answer{wrongTile}", true, false)).Disabled,
+                "A selects a syllable and preserves the task after a wrong choice");
             await Button(JoyButton.B);
             Check(game.State == GameState.Exploring, "B leaves task");
             GD.Print("CONTROLLER_CHECKS_PASSED"); GetTree().Quit();

@@ -11,9 +11,7 @@ public partial class Game
         {
             State = GameState.TradeStatus; ui.TradeStatus(owner, Delivery); return;
         }
-        CurrentChallenge = challenges.Next();
-        feedback = "Vyřeš příklad a naložíme objednávku.\nZa rozvoz si vybereš doplněk, barvu nebo typ auta.";
-        State = GameState.Challenge; ShowChallenge();
+        BeginQuiz(true);
     }
 
     private void StartTrade()
@@ -45,11 +43,11 @@ public partial class Game
         State = GameState.Reward; ShowRewards(); ShowCelebrationView(); SaveProgress();
     }
 
-    private int ActorId(Animal? actor) => actor == null ? -1 : actor.IsSorcerer ? SorcererId : actor.IsWitch ? WitchId : actor.IsTrader ? 38 + actor.TradeIndex :
+    private int ActorId(Animal? actor) => actor == null ? -1 : actor == bandits[0] ? BanditActorId : actor.IsSorcerer ? SorcererId : actor.IsWitch ? WitchId : actor.IsTrader ? 38 + actor.TradeIndex :
         actor.IsToymaker ? 37 : actor.IsGemCollector ? 36 : actor.IsGardener ? 35 : actor.IsFarmer ? 34 :
         actor.HouseIndex >= 0 ? 30 + actor.HouseIndex : System.Array.IndexOf(world.Animals, actor);
 
-    private Animal? ActorAt(int id) => id < 0 ? null : id == SorcererId ? world.Sorcerer : id == WitchId ? world.Witch : id >= 38 ? world.Village.Traders[id - 38] :
+    private Animal? ActorAt(int id) => id < 0 ? null : id == BanditActorId ? bandits[0] : id == SorcererId ? world.Sorcerer : id == WitchId ? world.Witch : id >= 38 ? world.Village.Traders[id - 38] :
         id == 37 ? world.Village.Toymaker : id == 36 ? world.Village.GemCollector :
         id == 35 ? world.Village.Gardener : id == 34 ? world.Village.Farmer :
         id >= 30 ? world.Village.Residents[id - 30] : world.Animals[id];

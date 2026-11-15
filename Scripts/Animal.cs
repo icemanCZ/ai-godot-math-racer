@@ -34,6 +34,7 @@ public partial class Animal : Node3D
     private float time;
     private float celebration;
     internal bool AnimationPaused;
+    internal bool Running;
     public void Celebrate() => celebration = 2.5f;
     private TaskMarker taskMarker = null!;
     private Label3D nameLabel = null!;
@@ -91,6 +92,14 @@ public partial class Animal : Node3D
         return a;
     }
     internal void DressAsSorcerer() { DressAsWitch(); IsWitch = false; IsSorcerer = true; }
+    internal void DressAsBandit(string scarf)
+    {
+        nameLabel.Hide();
+        Art.Cylinder(model, new(0, 1.27f, 0), .45f, .47f, .18f, scarf);
+        Art.Ball(model, new(.38f, 1.13f, .12f), new(.16f, .25f, .12f), scarf).RotateZ(.42f);
+        Art.Block(model, new(0, 2.19f, .47f), new(.99f, .13f, .26f), "5a4f65");
+    }
+
     internal void DressAsWitch()
     {
         IsWitch = true;
@@ -105,7 +114,8 @@ public partial class Animal : Node3D
     {
         if (AnimationPaused) return;
         time += (float)delta;
-        wavingArm.Rotation = new(0, 0, (IsWaving || celebration > 0) ? .95f + Mathf.Sin(time * 9) * .48f : -.35f);
+        wavingArm.Rotation = Running ? new(Mathf.Sin(time * 17) * .7f, 0, -.35f)
+            : new(0, 0, (IsWaving || celebration > 0) ? .95f + Mathf.Sin(time * 9) * .48f : -.35f);
         markerBlend = Mathf.Lerp(markerBlend, markerDistanceBlend, 1 - Mathf.Exp(-(float)delta * 8));
         float markerSize = Mathf.Lerp(.5f, 1, markerBlend);
         taskMarker.PixelSize = .0011f * markerSize;
@@ -113,6 +123,7 @@ public partial class Animal : Node3D
         taskMarker.AnchorPosition = Vector3.Up * (Mathf.Lerp(4.7f, 7.5f, markerBlend) +
             Mathf.Sin(time * 2.4f) * Mathf.Lerp(.15f, .6f, markerBlend));
         model.Position = Vector3.Up * Mathf.Sin(time * 1.8f) * .045f;
+        if (Running) model.Position += Vector3.Up * Mathf.Abs(Mathf.Sin(time * 12)) * .24f;
         if (celebration > 0)
         {
             celebration = Mathf.Max(0, celebration - (float)delta);

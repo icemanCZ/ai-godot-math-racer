@@ -7,6 +7,13 @@ namespace MathRacer;
 /// <summary>Checks generated questions, single visits, the HUD and real reward UI signals.</summary>
 public static class ChallengeChecks
 {
+    internal static void Solve(Game game)
+    {
+        var question = game.CurrentChallenge!;
+        foreach (int choice in question.Choices.Where(question.Accepts))
+            game.SubmitAnswer(choice);
+    }
+
     public static void Run(Game game, World world, Vehicle car, Action<bool, string> check)
     {
         var generator = new ChallengeGenerator(53);
@@ -25,6 +32,16 @@ public static class ChallengeChecks
             slots.Add(q.Choices.ToList().IndexOf(q.Answer)); operations.Add(q.Operation);
         }
         check(slots.Count == 3 && operations.Count == 2, "1000 valid deterministic questions; both operations and all answer positions");
+        for (int i = 0; i < 1000; i++)
+        {
+            var q = generator.Next(threeTerms: true); var other = repeat.Next(threeTerms: true);
+            if (q.Operation != MathOperation.Addition || q.Left <= 0 || q.Right <= 0 || q.Third is not > 0 ||
+                q.Answer != q.Left + q.Right + q.Third || q.Answer > 10 ||
+                q.Choices.Count != 3 || q.Choices.Distinct().Count() != 3 || q.Choices.Any(v => v < 0 || v > 10) ||
+                q.Choices.Count(q.Accepts) != 1 || q.Expression != other.Expression || !q.Choices.SequenceEqual(other.Choices))
+                throw new InvalidOperationException("Invalid or nondeterministic three-term question.");
+        }
+        check(true, "1000 deterministic three-term additions have positive terms and sums and choices within 10");
 
         var letters = new LetterChallengeGenerator(53);
         var repeatLetters = new LetterChallengeGenerator(53);
@@ -48,6 +65,25 @@ public static class ChallengeChecks
         }
         check(letterSlots.Count == 3 && new[] { "Š", "Ž", "Č" }.All(initials.Contains),
             "1000 letter tasks have one matching picture despite shared initials, including Š, Ž and Č");
+        var syllables = new SyllableChallengeGenerator(53);
+        var repeatSyllables = new SyllableChallengeGenerator(53);
+        foreach (var _ in SyllableChallengeGenerator.Words)
+        {
+            var q = syllables.Next(); var other = repeatSyllables.Next();
+            var word = SyllableChallengeGenerator.Words.Single(word => word.Id == q.PictureId);
+            check(q.IsValid() && q.Tiles.Count == 6 && q.Tiles.Distinct().Count() == 6 &&
+                q.Expression == word.Word.ToUpperInvariant() && q.PictureId == other.PictureId && q.Tiles.SequenceEqual(other.Tiles),
+                "syllable task has the word's syllables and shuffled distractors in a deterministic six-tile grid");
+        }
+        var reading = new ReadingChallengeGenerator(53);
+        var readingWords = new System.Collections.Generic.HashSet<string>();
+        foreach (var _ in ReadingChallengeGenerator.Words)
+        {
+            var question = reading.Next();
+            if (!question.IsValid() || !readingWords.Add(question.Word))
+                throw new InvalidOperationException("Reading quiz has an invalid word, picture choice or repeated target.");
+        }
+        check(readingWords.Contains("LES") && readingWords.Contains("PES"), "the reading deck has distinct three-letter Czech words and one matching picture each");
 
         var rewardRandom = new Random(83);
         System.Collections.Generic.IReadOnlyList<CarReward> drawn = Array.Empty<CarReward>();
@@ -84,7 +120,8 @@ public static class ChallengeChecks
         game.SelectLook("blueberry");
         check(car.Appearance.CurrentLookId == originalLook, "reward unavailable before correct answer");
         int visits = 1;
-        int letterVisits = 0;
+        var wordTypes = new System.Collections.Generic.HashSet<Type>();
+        int wordVisits = 0;
         int mathVisits = 0;
         foreach (var animal in world.Animals.Skip(1))
         {
@@ -93,27 +130,43 @@ public static class ChallengeChecks
             visits++;
             var question = game.CurrentChallenge!;
             check((Array.IndexOf(world.Animals, animal) % 2 == 0) == (question is MathChallenge), "animal has its assigned task type");
-            if (question is LetterChallenge letter)
+            if (question is MathChallenge) mathVisits++;
+            else { wordVisits++; wordTypes.Add(question.GetType()); }
+            if (question is SyllableChallenge)
             {
-                letterVisits++;
-                check(game.FindChildren("*", "", true, false).OfType<WordPicture>().Count() == 3 &&
-                    letter.Pictures.Count(p => p.Initial == letter.Letter) == 1, "letter UI displays exactly three pictures with one correct initial");
+                check(game.FindChildren("*", "", true, false).OfType<WordPicture>().Count() == 1 &&
+                    question.Choices.All(choice => game.FindChild($"Answer{choice}", true, false) is Button),
+                    "syllable UI displays one picture and six tiles");
             }
-            else mathVisits++;
+            else if (question is IPictureChallenge)
+                check(game.FindChildren("*", "", true, false).OfType<WordPicture>().Count() == 3,
+                    "initial-letter and reading tasks display three illustrated choices");
             check(game.State == GameState.Challenge && !car.Active && !animal.RewardAvailable && game.RemainingAnimals == before - 1,
                 "opening a question consumes one visit and stops car");
             CheckCounter();
             game.SubmitAnswer(-1);
             check(game.State == GameState.Challenge && ReferenceEquals(question, game.CurrentChallenge), "invalid answer does not complete task");
-            int wrong = question.Choices.First(value => value != question.Answer);
+            int wrong = question.Choices.First(value => !question.Accepts(value));
             Press($"Answer{wrong}");
             game.TogglePause(); game.TogglePause();
             check(game.State == GameState.Challenge && ReferenceEquals(question, game.CurrentChallenge) && !car.Active &&
                 (game.FindChild($"Answer{wrong}", true, false) as Button)?.Disabled == true && game.RemainingAnimals == before - 1,
                 "wrong answer and pause preserve the visit, question and rejected choice");
-            int secondWrong = question.Choices.First(value => value != question.Answer && value != wrong);
+            int secondWrong = question.Choices.First(value => !question.Accepts(value) && value != wrong);
             Press($"Answer{secondWrong}");
-            Press($"Answer{question.Answer}");
+            var correct = question is SyllableChallenge wordQuestion
+                ? wordQuestion.Syllables.Reverse().Select(tile => wordQuestion.Choices.Single(choice => wordQuestion.Tiles[choice] == tile)).ToArray()
+                : question.Choices.Where(question.Accepts).ToArray();
+            for (int i = 0; i < correct.Length; i++)
+            {
+                Press($"Answer{correct[i]}");
+                if (i + 1 < correct.Length)
+                {
+                    game.TogglePause(); game.TogglePause();
+                    check(game.State == GameState.Challenge && (game.FindChild($"Answer{correct[i]}", true, false) as Button)?.Disabled == true,
+                        "partial syllable selection survives pause and waits for the rest of the word");
+                }
+            }
             check(game.State == GameState.ExpeditionChoice && !car.Active && game.CurrentRewards.Count == 0, "correct answer opens task choice before reward");
             game.TogglePause(); game.TogglePause();
             check(game.State == GameState.ExpeditionChoice, "pause preserves task choice");
@@ -122,7 +175,7 @@ public static class ChallengeChecks
             if (expedition.Collection)
                 foreach (var point in expedition.PickupPositions) { car.SetPose(point + Vector3.Up * .2f, 0); expedition.Tick(.25); }
             car.SetPose(expedition.Recipient.Position + Vector3.Right * 2, 0); game.BeginDeliveryQuestion();
-            Press($"Answer{game.CurrentChallenge!.Answer}");
+            Press($"Answer{game.CurrentChallenge!.Choices.Single(game.CurrentChallenge.Accepts)}");
             check(game.State == GameState.Reward && !car.Active, "completing chosen expedition opens reward");
             var rewards = game.CurrentRewards.ToArray();
             game.TogglePause(); game.TogglePause();
@@ -149,7 +202,8 @@ public static class ChallengeChecks
                 "all previous visits stay blocked after other rewards, reset and pause");
         }
         check(game.RemainingAnimals == 0 && world.Animals.All(a => !a.RewardAvailable) && car.Active, "all 10 visits complete and free driving remains available");
-        check(letterVisits == 5 && mathVisits == 4, "world has 5 letter and 5 math animals including the cancelled first math visit");
+        check(wordVisits == 5 && mathVisits == 4 && wordTypes.Count == 3,
+            "roadside tasks use all three enabled word modes and arithmetic");
         CheckCounter();
 
         // Verify the complete cosmetic catalogue independently of finite gameplay visits.

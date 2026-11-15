@@ -11,8 +11,6 @@ public partial class Game
         {
             State = GameState.GardenStatus; ui.GardenStatus(world.Village, Delivery); return;
         }
-        CurrentChallenge = world.Village.GardenCount % 2 == 0 ? challenges.Next() : letterChallenges.Next();
-        feedback = $"Přivez {Village.FlowerNames[world.Village.GardenCount]}. Nejdřív vyřeš úkol a pak vyrazíme!\n{world.Village.PetFor(nearby).RewardHint}";
-        State = GameState.Challenge; ShowChallenge();
+        BeginQuiz(world.Village.GardenCount % 2 == 0);
     }
 }

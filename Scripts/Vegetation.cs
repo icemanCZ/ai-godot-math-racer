@@ -10,8 +10,10 @@ public partial class Vegetation : Node3D
     // Art detail uses a separate random stream so tree placement stays identical.
     private readonly RandomNumberGenerator detailRng = new() { Seed = (ulong)Settings.Seed + 901 };
     // Chunked batches let the renderer cull distant groves instead of drawing the whole valley.
-    private readonly Dictionary<(string Shape, string Color, int X, int Z), List<Transform3D>> batches = new();
+    private readonly record struct BatchKey(string Shape, string Color, int X, int Z, bool Tree);
+    private readonly Dictionary<BatchKey, List<(Transform3D Transform, Color Wind)>> batches = new();
     private readonly Dictionary<Vector2I, List<Vector3>> treePositions = new();
+    internal IEnumerable<Vector3> TreePositions => treePositions.Values.SelectMany(trees => trees);
     private Terrain ground = null!;
     private readonly (Vector2 Center, int Type)[] GroveRegions = CreateGroveRegions();
     public Vector3 PreviewSpot { get; private set; }
@@ -21,10 +23,16 @@ public partial class Vegetation : Node3D
         => Part(p, scale, color, "leaf");
     private void Part(Vector3 p, Vector3 scale, string color, string shape, Basis? rotation = null)
     {
-        var key = (shape, color, Mathf.FloorToInt(p.X / 64), Mathf.FloorToInt(p.Z / 64));
+        var key = new BatchKey(shape, color, Mathf.FloorToInt(p.X / 64), Mathf.FloorToInt(p.Z / 64), buildingTree != null);
         if (!batches.TryGetValue(key, out var batch)) batches[key] = batch = new();
-        buildingTree?.Parts.Add(new TreePart(key, batch.Count, new Transform3D((rotation ?? Basis.Identity).ScaledLocal(scale), p)));
-        batch.Add(new Transform3D((rotation ?? Basis.Identity).ScaledLocal(scale), p));
+        var transform = new Transform3D((rotation ?? Basis.Identity).ScaledLocal(scale), p);
+        Color wind = default;
+        if (buildingTree is { } tree)
+        {
+            tree.Parts.Add(new TreePart(key, batch.Count, transform));
+            wind = new Color(tree.Foot.X, tree.Foot.Y, tree.Foot.Z, tree.Size);
+        }
+        batch.Add((transform, wind));
     }
     public void Generate(Terrain terrain, Roads roads, Village village, Animal[] animals, System.Func<Vector3, bool> pickupReserved)
     {
@@ -116,25 +124,34 @@ public partial class Vegetation : Node3D
             ["cone"] = ConiferMesh()
         };
         var foliageShader = GD.Load<Shader>("res://Shaders/Foliage.gdshader");
-        var foliageMaterials = new Dictionary<string, ShaderMaterial>();
+        var foliageMaterials = new Dictionary<(string Color, bool Tree, bool Leaves), ShaderMaterial>();
         foreach (var pair in batches)
         {
             var mm = new MultiMesh
             {
                 TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
+                UseCustomData = pair.Key.Tree,
                 Mesh = meshes[pair.Key.Shape],
                 InstanceCount = pair.Value.Count
             };
-            for (int i = 0; i < pair.Value.Count; i++) mm.SetInstanceTransform(i, pair.Value[i]);
+            for (int i = 0; i < pair.Value.Count; i++)
+            {
+                mm.SetInstanceTransform(i, pair.Value[i].Transform);
+                if (pair.Key.Tree) mm.SetInstanceCustomData(i, pair.Value[i].Wind);
+            }
             renderedBatches[pair.Key] = mm;
             Material material = Art.Mat(pair.Key.Color);
-            if (pair.Key.Shape is "canopy" or "sprig" or "cone")
+            bool leaves = pair.Key.Shape is "canopy" or "sprig" or "cone";
+            if (pair.Key.Tree || leaves)
             {
-                if (!foliageMaterials.TryGetValue(pair.Key.Color, out var foliage))
+                var materialKey = (pair.Key.Color, pair.Key.Tree, leaves);
+                if (!foliageMaterials.TryGetValue(materialKey, out var foliage))
                 {
                     foliage = new ShaderMaterial { Shader = foliageShader };
                     foliage.SetShaderParameter("leaf_color", new Color(pair.Key.Color).SrgbToLinear());
-                    foliageMaterials[pair.Key.Color] = foliage;
+                    foliage.SetShaderParameter("tree_motion", pair.Key.Tree);
+                    foliage.SetShaderParameter("painted_leaves", leaves);
+                    foliageMaterials[materialKey] = foliage;
                 }
                 material = foliage;
             }

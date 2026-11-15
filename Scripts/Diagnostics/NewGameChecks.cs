@@ -42,7 +42,7 @@ public partial class NewGameChecks : Node
             }
             else
             {
-                game.OpenChallenge(world.Animals[0]); game.SubmitAnswer(game.CurrentChallenge!.Answer); game.SelectExpedition(true);
+                game.OpenChallenge(world.Animals[0]); ChallengeChecks.Solve(game); game.SelectExpedition(true);
                 game.OwnedRewards.Add(new("buggy", false, true)); car.Appearance.ApplyModel("buggy");
                 game.TogglePause();
                 Check(game.State == GameState.Paused, "new game is available during a paused expedition");

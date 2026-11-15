@@ -174,6 +174,62 @@ public partial class DeliveryPicture : Control
             DrawLine(new(143, 103), new(143, 130), new Color("ffce38"), 7, true);
             DrawLine(new(130, 116), new(156, 116), new Color("ffce38"), 7, true);
         }
+        else if (Icon is "rain" or "storm")
+        {
+            Oval(new(90, 60), new(48, 22), Colors.White);
+            Oval(new(82, 48), new(24, 23), Colors.White);
+            if (Icon == "storm")
+                DrawColoredPolygon(new Vector2[] { new(94, 69), new(121, 69), new(100, 98), new(118, 98),
+                    new(77, 134), new(88, 102), new(69, 102) }, new Color("ffdb70"));
+            else
+                for (int i = 0; i < 3; i++) DrawLine(new(66 + i * 24, 93), new(56 + i * 24, 122), new Color("b7e8ff"), 8, true);
+        }
+        else if (Icon == "wind")
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                float x = 18 * (i % 2);
+                DrawLine(new(34 + x, 54 + i * 24), new(102 + x, 54 + i * 24), Colors.White, 8, true);
+                DrawArc(new(102 + x, 43 + i * 24), 11, -Mathf.Pi / 2, Mathf.Pi / 2, 16, Colors.White, 8, true);
+            }
+        }
+        else if (Icon == "clear")
+        {
+            DrawCircle(new(90, 75), 27, new Color("ffdb70"), true, -1, true);
+            for (int i = 0; i < 8; i++)
+            {
+                var direction = Vector2.Right.Rotated(i * Mathf.Tau / 8);
+                DrawLine(new Vector2(90, 75) + direction * 36, new Vector2(90, 75) + direction * 48, new Color("ffdb70"), 7, true);
+            }
+        }
+        else if (Icon == "quiz-letters")
+        {
+            DrawPolyline(new Vector2[] { new(53, 114), new(90, 34), new(127, 114) }, Colors.White, 12, true);
+            DrawLine(new(69, 84), new(111, 84), new Color("ffdc83"), 9, true);
+        }
+        else if (Icon == "quiz-syllables")
+        {
+            DrawRect(new(22, 47, 63, 57), new Color("fff2ce"));
+            DrawRect(new(94, 47, 63, 57), new Color("ffd687"));
+            DrawString(ThemeDB.FallbackFont, new(30, 84), "KO", fontSize: 24, modulate: ink);
+            DrawString(ThemeDB.FallbackFont, new(100, 84), "ČKA", fontSize: 23, modulate: ink);
+        }
+        else if (Icon == "quiz-reading")
+        {
+            DrawColoredPolygon(new Vector2[] { new(34, 41), new(62, 35), new(90, 48), new(118, 35), new(146, 41),
+                new(146, 104), new(118, 98), new(90, 112), new(62, 98), new(34, 104) }, new Color("fff2ce"));
+            DrawLine(new(90, 49), new(90, 109), ink, 4, true);
+            for (int line = 0; line < 3; line++)
+            {
+                float y = 52 + line * 14;
+                DrawLine(new(48, y), new(75, y + 4), ink, 3, true);
+                DrawLine(new(105, y + 4), new(132, y), ink, 3, true);
+            }
+        }
+        else if (Icon == "quiz-math")
+        {
+            DrawString(ThemeDB.FallbackFont, new(22, 94), "1 + 2", fontSize: 52, modulate: Colors.White);
+        }
         else if (Icon == "check") DrawPolyline(new Vector2[] { new(50, 76), new(77, 103), new(132, 45) }, Colors.White, 12, true);
         else if (Icon == "back")
         {

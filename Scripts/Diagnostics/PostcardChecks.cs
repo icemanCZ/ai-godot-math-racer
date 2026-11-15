@@ -11,14 +11,19 @@ public partial class PostcardChecks(Game game, World world, Vehicle car) : Node
         try
         {
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            var initial = game.CaptureProgress();
+            Require(game.PostcardQuestion(0) is SyllableChallenge && game.PostcardQuestion(1) is LetterChallenge &&
+                game.PostcardQuestion(2) is ReadingChallenge, "postcards use the available word activities by default");
+            initial.QuizTypes = QuizType.Math | QuizType.Syllables;
+            game.RestoreProgress(initial);
             var owner = world.Animals[0];
             game.OpenChallenge(owner);
-            game.SubmitAnswer(game.CurrentChallenge!.Answer);
+            ChallengeChecks.Solve(game);
             game.SelectExpedition(false);
             int sender = game.CaptureProgress().Sender;
             Require(sender >= 0, "normal expedition starts before the postcard trip");
 
-            int[] correct = { 1, 2, 0, 1, 2, 0 };
+            string path = ProjectSettings.GlobalizePath($"res://artifacts/postcard-checks/{Settings.Seed}/progress.json");
             for (int i = 0; i < Game.PostcardCount; i++)
             {
                 car.SetPose(game.PostcardStop(i) + Vector3.Up * .2f, 0);
@@ -31,12 +36,23 @@ public partial class PostcardChecks(Game game, World world, Vehicle car) : Node
                 game.TogglePause();
                 game._Process(2);
                 Require(game.CaptureProgress().Postcards[i] is { Stamped: false }, "camera adds an unstamped postcard");
-                string wrongChoice = $"PostcardAnswer{(correct[i] + 1) % 3}";
+                var question = (SyllableChallenge)game.PostcardQuestion(i)!;
+                string wrongChoice = $"Answer{question.Choices.First(choice => !question.Accepts(choice))}";
                 var choice = Find(wrongChoice);
-                Require(choice.Text == "" && choice.GetChild(0) is DeliveryPicture, "the answer uses a picture button without a text label");
+                Require(choice.Text.Length > 0 && question.Choices.All(index => Find($"Answer{index}") != null),
+                    "postcard has six syllable choices");
                 Press(wrongChoice);
-                Require(Find(wrongChoice).Disabled, "wrong picture is dimmed and disabled");
+                Require(Find(wrongChoice).Disabled, "wrong syllable is marked and disabled");
                 Require(game.CaptureProgress().Postcards[i] is { Stamped: false }, "wrong answer leaves the postcard unstamped");
+                if (question.Syllables.Count > 1)
+                {
+                    int correct = question.Choices.Last(question.Accepts);
+                    Press($"Answer{correct}");
+                    Require(game.CaptureProgress().Postcards[i] is { Stamped: false }, "a partial word does not grant a stamp");
+                    Require(SaveStore.Write(game.CaptureProgress(), path), "partial postcard saves to disk");
+                    game.RestoreProgress(SaveStore.Read(path) ?? throw new InvalidOperationException("Partial postcard save failed validation"));
+                    Require(Find($"Answer{correct}").Disabled && Find(wrongChoice).Disabled, "reload keeps the marked syllables");
+                }
                 game.FinishInteraction();
             }
 
@@ -46,16 +62,17 @@ public partial class PostcardChecks(Game game, World world, Vehicle car) : Node
             Talk();
             Require(game.State == GameState.PostcardAlbum, "album is accessible by the fountain");
             var reward = new CarReward(CarAccessory.ValleyMap.Id, true);
-            for (int i = 0; i < correct.Length; i++)
+            for (int i = 0; i < Game.PostcardCount; i++)
             {
                 Press($"Postcard{i}");
-                Press($"PostcardAnswer{correct[i]}");
+                var question = game.PostcardQuestion(i)!;
+                foreach (int choice in question.Choices.Where(question.Accepts).Reverse())
+                    if (!Find($"Answer{choice}").Disabled) Press($"Answer{choice}");
                 Require(game.CaptureProgress().Postcards[i] is { Stamped: true }, "right answer stamps the selected postcard");
                 Require(game.OwnedRewards.Contains(reward) == (i + 1 >= Game.PostcardRewardStamps), "sticker unlocks with the third stamp");
                 Press("PostcardBack");
             }
             var save = game.CaptureProgress();
-            string path = ProjectSettings.GlobalizePath($"res://artifacts/postcard-checks/{Settings.Seed}/progress.json");
             Require(SaveStore.Write(save, path), "album saves to disk");
             game.RestoreProgress(SaveStore.Read(path) ?? throw new InvalidOperationException("Postcard save failed validation"));
             Require(game.State == GameState.PostcardAlbum && game.CaptureProgress().Postcards.All(card => card?.Stamped == true),

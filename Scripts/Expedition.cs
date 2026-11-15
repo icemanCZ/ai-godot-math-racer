@@ -9,6 +9,7 @@ public sealed record DeliveryChallenge(string Cargo, int Answer) : IChallenge
 {
     public IReadOnlyList<int> Choices => new[] { 1, 2, 3 };
     public string Expression => "";
+    public bool Accepts(int choice) => choice == Answer;
 }
 
 /// <summary>A roadside delivery. Navigation follows the connected road samples, including the bridge.</summary>

@@ -9,12 +9,24 @@ public sealed class ChallengeGenerator
     private readonly Random random;
     public ChallengeGenerator(int seed) => random = new Random(seed);
 
-    public MathChallenge Next()
+    public MathChallenge Next(bool threeTerms = false)
     {
+        if (threeTerms)
+        {
+            int first = random.Next(1, 9);
+            int second = random.Next(1, 10 - first);
+            int third = random.Next(1, 11 - first - second);
+            return Create(first, second, MathOperation.Addition, third);
+        }
         var operation = random.Next(2) == 0 ? MathOperation.Addition : MathOperation.Subtraction;
         int left = operation == MathOperation.Addition ? random.Next(1, 10) : random.Next(2, 11);
         int right = operation == MathOperation.Addition ? random.Next(1, 11 - left) : random.Next(1, left + 1);
-        int answer = operation == MathOperation.Addition ? left + right : left - right;
+        return Create(left, right, operation);
+    }
+
+    private MathChallenge Create(int left, int right, MathOperation operation, int? third = null)
+    {
+        int answer = operation == MathOperation.Addition ? left + right + (third ?? 0) : left - right;
         var choices = new List<int> { answer };
         // Nearby distractors are plausible without introducing negative or out-of-range choices.
         int[] offsets = { -2, -1, 1, 2 };
@@ -27,7 +39,7 @@ public sealed class ChallengeGenerator
         }
         var answers = choices.ToArray();
         Shuffle(answers);
-        return new MathChallenge(left, right, operation, Array.AsReadOnly(answers));
+        return new MathChallenge(left, right, operation, Array.AsReadOnly(answers), third);
     }
 
     private void Shuffle(int[] values)

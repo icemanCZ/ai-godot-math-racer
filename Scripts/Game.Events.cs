@@ -79,13 +79,13 @@ public partial class Game
         if (Events.Active >= 0)
         {
             float distance = vehicle.Position.DistanceTo(Events.Points[Events.Active, Events.Next]);
-            ui.EventHud($"{DrivingEvents.Title(Events.Active)} · Brána {Events.Next + 1} / {DrivingEvents.GateCount} · {distance:0} m\nBez spěchu · Tlačítkem úkolu ukončíš jízdu");
+            ui.EventHud($"{Events.Next + 1} / {DrivingEvents.GateCount} · {distance:0} m");
             ui.EventHint("Ukončit jízdu");
         }
         else
         {
             int course = Events.Nearby(vehicle.Position);
-            ui.EventHud(course >= 0 ? $"{DrivingEvents.Title(course)}\nDobrovolná jízda bez časového limitu" : "");
+            ui.EventHud(course >= 0 ? DrivingEvents.Title(course) : "");
             if (course >= 0 && nearby == null && !AtGarage) ui.EventHint("Zahájit jízdu");
         }
     }

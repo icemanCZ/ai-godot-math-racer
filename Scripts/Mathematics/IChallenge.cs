@@ -4,7 +4,7 @@ namespace MathRacer;
 
 public interface IChallenge
 {
-    int Answer { get; }
+    bool Accepts(int choice);
     IReadOnlyList<int> Choices { get; }
     string Expression { get; }
 }

@@ -33,9 +33,9 @@ public partial class SaveChecks : Node
             }
             car.SetPose(world.Animals[0].Position + Vector3.Right * 2, .7f);
             game.OpenChallenge(world.Animals[0]);
-            game.SubmitAnswer(game.CurrentChallenge!.Choices.First(a => a != game.CurrentChallenge.Answer));
+            game.SubmitAnswer(game.CurrentChallenge!.Choices.First(choice => !game.CurrentChallenge.Accepts(choice)));
             RoundTrip();
-            game.SubmitAnswer(game.CurrentChallenge!.Answer); RoundTrip();
+            ChallengeChecks.Solve(game); RoundTrip();
             game.SelectExpedition(true);
             car.SetPose(game.Delivery!.PickupPositions[1], 1.2f); game.Delivery.Tick(.25);
             Check(game.Delivery.Collected >= 1, "collection in progress"); RoundTrip();
@@ -44,15 +44,35 @@ public partial class SaveChecks : Node
             foreach (var point in game.Delivery.PickupPositions) { car.SetPose(point, 0); game.Delivery.Tick(.25); }
             car.SetPose(game.Delivery.Recipient.Position + Vector3.Right * 2, .5f);
             game.BeginDeliveryQuestion(); RoundTrip();
-            game.SubmitAnswer(game.CurrentChallenge!.Answer); RoundTrip();
+            ChallengeChecks.Solve(game); RoundTrip();
             var reward = game.CurrentRewards.First(r => r.IsModel); game.SelectModel(reward.Id);
             game.OwnedRewards.Add(new("wheels", true)); car.Appearance.ToggleAccessory("wheels");
             RoundTrip();
             Check(game.OwnedRewards.Contains(reward) && car.Appearance.CurrentModelId == reward.Id && car.Appearance.BigWheels,
                 "earned rewards and equipped appearance restored");
             game.OpenChallenge(world.Animals[1]); RoundTrip();
+            var syllables = (SyllableChallenge)game.CurrentChallenge!;
+            game.SubmitAnswer(syllables.Choices.First(choice => !syllables.Accepts(choice)));
+            if (syllables.Syllables.Count > 1)
+                game.SubmitAnswer(syllables.Choices.Last(syllables.Accepts));
+            RoundTrip();
             game.TogglePause(); RoundTrip();
             Check(game.State == GameState.Challenge, "paused session restores the underlying question");
+            game.FinishInteraction(); car.SetPose(world.Village.GarageEntrance, .2f); game.OpenGarage(); RoundTrip();
+            ((Button)game.FindChild("GarageMathLevel2", true, false)).EmitSignal(Button.SignalName.Pressed);
+            ((Button)game.FindChild("GarageQuiz_Syllables", true, false)).EmitSignal(Button.SignalName.Pressed);
+            ((Button)game.FindChild("GarageQuiz_Reading", true, false)).EmitSignal(Button.SignalName.Pressed);
+            RoundTrip();
+            Check(game.CaptureProgress() is { QuizTypes: QuizType.Math | QuizType.Letters, ThreeTermMath: true },
+                "garage task settings and the arithmetic level survive reload");
+            game.FinishInteraction();
+            game.OpenChallenge(world.Animals[2]);
+            RoundTrip();
+            Check(game.CurrentChallenge is MathChallenge { Third: > 0 }, "the exact three-term example survives reload");
+            game.FinishInteraction();
+            game.OpenChallenge(world.Animals[3]);
+            RoundTrip();
+            Check(game.CurrentChallenge is LetterChallenge, "the original initial-letter question survives reload");
             game.FinishInteraction(); car.SetPose(world.Village.GarageEntrance, .2f); game.OpenGarage(); RoundTrip();
             var backup = File.ReadAllText(path + ".bak");
             File.WriteAllText(path, "{broken");

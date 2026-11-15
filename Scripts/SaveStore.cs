@@ -18,6 +18,13 @@ public sealed class SaveData
     public bool GolemActive { get; set; }
     public string[] DisabledCollectorPets { get; set; } = Array.Empty<string>();
     public int Version { get; set; } = 1;
+    public QuizType QuizTypes { get; set; } = QuizType.All;
+    public bool ThreeTermMath { get; set; }
+    public int NextWordQuiz { get; set; }
+    public bool HandoverQuiz { get; set; }
+    public int BanditSite { get; set; } = -1;
+    public int BanditSolved { get; set; }
+    public float BanditCooldown { get; set; }
     public int Seed { get; set; }
     public float[] Position { get; set; } = new float[3];
     public float Heading { get; set; }
@@ -45,9 +52,11 @@ public sealed class SaveData
     public bool DeliveryReward { get; set; }
     public MathChallenge? Math { get; set; }
     public LetterChallenge? Letters { get; set; }
+    public SyllableChallenge? Syllables { get; set; }
+    public ReadingChallenge? Reading { get; set; }
+    public SyllableSelection SyllableSelection { get; set; }
     public DeliveryChallenge? DeliveryQuestion { get; set; }
     public int[] Rejected { get; set; } = Array.Empty<int>();
-    public string Feedback { get; set; } = "";
 }
 
 public static class SaveStore
@@ -67,8 +76,20 @@ public static class SaveStore
                 if (!File.Exists(candidate)) continue;
                 var data = JsonSerializer.Deserialize<SaveData>(File.ReadAllText(candidate));
                 if (data == null || data.Version != 1 || data.Seed <= 0 || data.Seed >= int.MaxValue - 4096 ||
+                    data.QuizTypes == QuizType.None || (data.QuizTypes & ~QuizType.All) != 0 ||
+                    data.NextWordQuiz is < 0 or > 2 || (data.Reading != null && !data.Reading.IsValid()) ||
+                    data.BanditSite is < -1 or >= Game.MaxBanditSites || data.BanditSolved is < 0 or >= Game.BanditQuestionCount ||
+                    !float.IsFinite(data.BanditCooldown) || data.BanditCooldown is < 0 or > Game.BanditCooldownTime ||
+                    (data.Nearby == Game.BanditActorId ? data.State != GameState.Challenge || data.BanditSite < 0 ||
+                        data.BanditCooldown != 0 || data.HandoverQuiz || data.DeliveryQuestion != null : data.BanditSolved != 0) ||
+                    (data.HandoverQuiz && (data.State != GameState.Challenge || data.Sender < 0 || !data.Arrived ||
+                        data.DeliveryReward || data.Math != null || data.DeliveryQuestion != null ||
+                        (data.Letters == null && data.Syllables == null && data.Reading == null))) ||
+                    (data.Syllables == null ? data.SyllableSelection != default :
+                        !data.Syllables.IsValid() || !data.SyllableSelection.IsValid(data.Syllables) || data.SyllableSelection.IsComplete(data.Syllables)) ||
                     data.Postcards == null || (data.Postcards.Length != Game.PostcardCount && data.Postcards.Length != Game.OriginalPostcardCount) ||
-                    data.Postcards.Any(card => card != null && (card.Jpeg == null || card.Jpeg.Length > 300000)) ||
+                    data.Postcards.Where((card, i) => card != null &&
+                        (card.Jpeg == null || card.Jpeg.Length > 300000 || !Game.ValidPostcardSelection(i, data.Seed, card))).Any() ||
                     data.PostcardPage < -1 || data.PostcardPage >= data.Postcards.Length ||
                     (data.PostcardPage >= 0 && data.Postcards[data.PostcardPage] == null) ||
                     data.EventActive < -1 || data.EventActive > 1 || data.EventNext < 0 || data.EventNext >= DrivingEvents.GateCount ||
@@ -77,17 +98,17 @@ public static class SaveStore
                     !float.IsFinite(data.Heading) || !Enum.IsDefined(data.State) || data.State == GameState.Title || data.State == GameState.Paused ||
                     data.Animals == null || (data.Animals.Length != World.QuestAnimalCount && data.Animals.Length != 30) || data.Unlocked == null || data.Completed == null ||
                     data.Owned == null || data.Rewards == null || data.PreviousRewards == null || data.Accessories == null ||
-                    data.Picked == null || data.Rejected == null || data.Nearby < -1 || data.Nearby > Game.SorcererId || data.Sender < -1 || data.Sender > Game.SorcererId || data.Sender == Game.WitchId ||
+                    data.Picked == null || data.Rejected == null || data.Nearby < -1 || data.Nearby > Game.BanditActorId || data.Sender < -1 || data.Sender > Game.SorcererId || data.Sender == Game.WitchId ||
                     (data.GolemActive && !data.GolemOwned) ||
                     (data.Sender == Game.SorcererId && (!data.Collection || data.GolemOwned || data.DeliveryReward)) ||
                     (data.State == GameState.SorcererStatus && data.Nearby != Game.SorcererId) ||
                     (data.State == GameState.WeatherChoice && data.Nearby != Game.WitchId) ||
                     (data.Nearby == Game.WitchId && (data.State is not (GameState.Exploring or GameState.Challenge or GameState.WeatherChoice) ||
-                        (data.State == GameState.Challenge && data.Math == null))) ||
+                        (data.State == GameState.Challenge && data.DeliveryQuestion != null))) ||
                     data.TradeCounts == null || data.TradeCounts.Length != 3 || data.TradeCounts.Any(c => c < 0 || c > 1000000) ||
                     (data.Sender >= 38 && data.Sender < Game.WitchId && data.Collection) ||
                     (data.State == GameState.TradeStatus && (data.Nearby < 38 || data.Sender < 0)) ||
-                    (data.Nearby >= 38 && data.Nearby < Game.WitchId && data.State == GameState.Challenge && (data.Sender >= 0 || data.Math == null)) ||
+                    (data.Nearby >= 38 && data.Nearby < Game.WitchId && data.State == GameState.Challenge && (data.Sender >= 0 || data.DeliveryQuestion != null)) ||
                     (data.Sender >= 38 && data.Sender < Game.WitchId && data.DeliveryReward && (data.State != GameState.Reward || !data.Arrived)) ||
                     data.GemCount < 0 || data.GemCount > Village.GemNames.Length || data.ToyCount < 0 || data.ToyCount > Village.ToyNames.Length ||
                     (data.Sender == 36 && (data.GemCount == Village.GemNames.Length || !data.Collection || data.DeliveryReward)) ||
@@ -109,7 +130,7 @@ public static class SaveStore
                     (data.Nearby >= data.Animals.Length && data.Nearby < 30) ||
                     (data.Sender >= data.Animals.Length && data.Sender < 30) ||
                     (data.State is GameState.Challenge or GameState.Reward or GameState.ExpeditionChoice && data.Nearby < 0) ||
-                    (data.State == GameState.Challenge && data.Math == null && data.Letters == null && data.DeliveryQuestion == null) ||
+                    (data.State == GameState.Challenge && data.Math == null && data.Letters == null && data.Syllables == null && data.Reading == null && data.DeliveryQuestion == null) ||
                     (data.Nearby == 34 && data.State == GameState.Challenge && (data.Sender >= 0 || data.FarmCount == Village.FarmKinds.Length || data.DeliveryQuestion != null)) ||
                     (data.Nearby == 35 && data.State == GameState.Challenge && (data.Sender >= 0 || data.GardenCount == Village.FlowerNames.Length || data.DeliveryQuestion != null)) ||
                     (data.Nearby >= 36 && data.Nearby < 38 && data.State == GameState.Challenge && (data.Sender >= 0 || (data.Nearby == 36 ? data.GemCount : data.ToyCount) == Village.CollectionNames(data.Nearby == 37).Length || data.DeliveryQuestion != null)) ||
@@ -143,16 +164,22 @@ public static class SaveStore
             data.Sender = -1; data.Collection = false; data.Picked = Array.Empty<bool>();
             data.Arrived = false; data.DeliveryReward = false;
             data.State = GameState.Exploring;
-            data.Math = null; data.Letters = null; data.DeliveryQuestion = null; data.Rejected = Array.Empty<int>();
+            ClearQuestion(data);
         }
         if (Removed(data.Nearby))
         {
             data.Nearby = -1; data.State = GameState.Exploring;
-            data.Math = null; data.Letters = null; data.DeliveryQuestion = null; data.Rejected = Array.Empty<int>();
+            ClearQuestion(data);
             data.DeliveryReward = false;
             // A retained delivery may have been at a customer removed from this smaller world.
             data.Arrived = false;
         }
+    }
+
+    private static void ClearQuestion(SaveData data)
+    {
+        data.Math = null; data.Letters = null; data.Syllables = null; data.Reading = null; data.SyllableSelection = default;
+        data.DeliveryQuestion = null; data.Rejected = Array.Empty<int>(); data.HandoverQuiz = false;
     }
 
     internal static bool Write(SaveData data, string path)
