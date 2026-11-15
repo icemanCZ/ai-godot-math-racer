@@ -104,7 +104,8 @@ public partial class DeliveryChecks : Node
                     {
                         car.SetPose(world.Routes.Samples[Math.Min(start + step, world.Routes.Samples.Count - 1)], 0);
                         delivery.Tick(.25);
-                        var visible = delivery.GetChildren().OfType<MeshInstance3D>().Where(a => a.Visible).ToArray();
+                        var visible = delivery.GetChildren().OfType<MeshInstance3D>()
+                            .Where(a => a.Visible && a.Name != "DestinationArrow").ToArray();
                         Check(visible.All(a => world.Routes.NavigationAnchors.Any(anchor =>
                             new Vector2(a.Position.X - anchor.Position.X, a.Position.Z - anchor.Position.Z).LengthSquared() < .0001f)),
                             "road arrows use road-defined anchors while nearest route samples change");

@@ -18,10 +18,11 @@ public partial class Game
     private readonly LetterChallengeGenerator letterChallenges = new(Settings.Seed + 205);
     private readonly SyllableChallengeGenerator syllableChallenges = new(Settings.Seed + 206);
     private readonly ReadingChallengeGenerator readingChallenges = new(Settings.Seed + 207);
-    private static readonly QuizType[] WordQuizTypes = { QuizType.Syllables, QuizType.Letters, QuizType.Reading };
+    private static readonly QuizType[] QuizRotation = { QuizType.Math, QuizType.Syllables, QuizType.Letters, QuizType.Reading };
+    internal static int QuizRotationLength => QuizRotation.Length;
     private QuizType enabledQuizzes = QuizType.All;
     private bool threeTermMath;
-    private int nextWordQuiz;
+    private int nextQuiz;
     private bool handoverQuiz;
     private SyllableSelection syllableSelection;
 
@@ -41,21 +42,14 @@ public partial class Game
         SaveProgress();
     }
 
-    private QuizType SelectQuizType(bool preferMath, int start)
+    private void BeginQuiz(bool handover = false)
     {
-        if (preferMath && enabledQuizzes.HasFlag(QuizType.Math)) return QuizType.Math;
-        for (int i = 0; i < WordQuizTypes.Length; i++)
+        QuizType type;
+        do
         {
-            var type = WordQuizTypes[(start + i) % WordQuizTypes.Length];
-            if (enabledQuizzes.HasFlag(type)) return type;
-        }
-        return QuizType.Math;
-    }
-
-    private void BeginQuiz(bool preferMath, bool handover = false)
-    {
-        var type = SelectQuizType(preferMath, nextWordQuiz);
-        if (type != QuizType.Math) nextWordQuiz = (Array.IndexOf(WordQuizTypes, type) + 1) % WordQuizTypes.Length;
+            type = QuizRotation[nextQuiz];
+            nextQuiz = (nextQuiz + 1) % QuizRotation.Length;
+        } while (!enabledQuizzes.HasFlag(type));
         CurrentChallenge = type switch
         {
             QuizType.Math => challenges.Next(threeTermMath),

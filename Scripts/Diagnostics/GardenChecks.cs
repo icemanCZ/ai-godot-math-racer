@@ -41,6 +41,8 @@ public partial class GardenChecks : Node
                 Check(!world.Routes.Contains(spot) && world.Routes.Distance(spot) >= 7.5f, "animal and flower pickup spots are beyond road surfaces");
                 Check(Mathf.Abs(spot.Y - world.Ground.Height(spot.X, spot.Z)) < .01f && !world.Plants.NearTrunk(spot, 2.8f), "pickup is grounded and its approach is clear of trees");
             }
+            Check(world.PickupApproaches.Any(pair => pair.Road.DistanceTo(pair.Pickup) > 46),
+                "some terrain targets now use longer approaches");
             Check(village.Houses.Count == 4 && village.Residents.Count == 4 && village.Gardener.IsGardener, "garden adds a dedicated resident without replacing houses");
             Check(world.Animals.All(a => !village.IsNearVillage(a.Position)), "task animals leave garden and village clear");
             // An existing expedition must finish before the gardener can start another.
@@ -55,8 +57,7 @@ public partial class GardenChecks : Node
             for (int i = 0; i < Village.FlowerNames.Length; i++)
             {
                 car.SetPose(village.Gardener.Position + Vector3.Right * 2, 0); game.OpenChallenge(village.Gardener);
-                Check(game.State == GameState.Challenge && (i % 2 == 0 ? game.CurrentChallenge is MathChallenge : game.CurrentChallenge is SyllableChallenge or IPictureChallenge),
-                    "each departure requires alternating math or letters");
+                Check(game.State == GameState.Challenge && game.CurrentChallenge != null, "each departure requires a quiz");
                 game.SubmitAnswer(game.CurrentChallenge!.Choices.First(choice => !game.CurrentChallenge.Accepts(choice)));
                 Check(game.Delivery == null && village.GardenCount == i, "wrong answer cannot start a trip or award an flower");
                 RoundTrip(); game.FinishInteraction(); game.OpenChallenge(village.Gardener);
@@ -71,6 +72,18 @@ public partial class GardenChecks : Node
                 var closestRoad = world.Routes.Samples.OrderBy(p => p.DistanceSquaredTo(destination)).First();
                 car.SetPose(closestRoad, 0); game.Delivery.Tick(.25);
                 Check(game.Delivery.Collected == 0, "passing on the road does not collect an off-road flower");
+                var approach = world.PickupApproaches.Single(pair => Mathf.IsEqualApprox(pair.Pickup.X, destination.X) &&
+                    Mathf.IsEqualApprox(pair.Pickup.Z, destination.Z));
+                var exitArrow = game.Delivery.GetNode<MeshInstance3D>("DestinationArrow");
+                car.SetPose(approach.Road, 0); game.Delivery.Tick(.25);
+                Check(exitArrow.Visible && Mathf.IsEqualApprox(exitArrow.Position.X, approach.Road.X) &&
+                    Mathf.IsEqualApprox(exitArrow.Position.Z, approach.Road.Z), "final arrow marks the start of the clear approach");
+                var offRoad = approach.Road.Lerp(destination, .55f);
+                car.SetPose(offRoad, Mathf.Pi); game.Delivery.Tick(.01);
+                var toward = destination - car.Position; toward.Y = 0;
+                Check(exitArrow.Visible && exitArrow.Position.IsEqualApprox(car.Position + Vector3.Up * 4.2f) &&
+                    (-exitArrow.Basis.Z).Dot(toward.Normalized()) > .999f && game.Delivery.Waypoint == destination,
+                    "off-road arrow follows the car and points at the current target regardless of heading");
                 game.OpenChallenge(village.Farmer);
                 Check(game.State == GameState.FarmStatus && game.Delivery.Garden, "farm cannot replace the gardener expedition");
                 game.FinishInteraction();

@@ -130,7 +130,7 @@ public partial class VillageChecks : Node
                     car.SetPose(owner.Position + Vector3.Right * 2, 0); game.OpenChallenge(owner);
                     var kind = schedule[level];
                     Check(kind == VillageTaskKind.Fruit ? game.State == GameState.HouseFruitOffer :
-                        game.State == GameState.Challenge && (kind == VillageTaskKind.Math ? game.CurrentChallenge is MathChallenge : game.CurrentChallenge is SyllableChallenge or IPictureChallenge),
+                        game.State == GameState.Challenge && game.CurrentChallenge != null,
                         $"house {house} task {level + 1} follows its shuffled {kind} schedule");
                     game.FinishInteraction(); game.OpenChallenge(owner);
                     Check(village.Level(house) == level && village.TaskAt(house) == kind, "postponing a task preserves its order and level");

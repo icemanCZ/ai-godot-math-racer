@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Linq;
 
 namespace MathRacer;
 
@@ -10,6 +11,8 @@ public partial class GameUi : CanvasLayer
     public event Action? ResumeRequested;
     public event Action? CloseInteractionRequested;
     public event Action<int>? AnswerSelected;
+    internal event Action? SyllablesConfirmed;
+    internal event Action<string>? SpeechRequested;
     public event Action<string>? LookSelected;
     public event Action<string>? AccessorySelected;
     public event Action<string>? ModelSelected;
@@ -61,10 +64,43 @@ public partial class GameUi : CanvasLayer
                 if (direction.HasValue) MoveFocus(direction.Value);
             }
             GetViewport().SetInputAsHandled();
+            return;
+        }
+        if (!modal.Visible) return;
+        if (e.IsEcho() && e.IsAction("ui_accept"))
+        {
+            GetViewport().SetInputAsHandled();
+            return;
+        }
+        Side? arrow = e.IsActionPressed("ui_left", allowEcho: true) ? Side.Left :
+            e.IsActionPressed("ui_right", allowEcho: true) ? Side.Right :
+            e.IsActionPressed("ui_up", allowEcho: true) ? Side.Top :
+            e.IsActionPressed("ui_down", allowEcho: true) ? Side.Bottom : null;
+        if (arrow.HasValue)
+        {
+            MoveFocus(arrow.Value);
+            GetViewport().SetInputAsHandled();
         }
     }
     private void MoveFocus(Side direction)
-        => GetViewport().GuiGetFocusOwner()?.FindValidFocusNeighbor(direction)?.GrabFocus();
+    {
+        var buttons = content.FindChildren("*", "Button", true, false).OfType<Button>()
+            .Where(button => button.IsVisibleInTree() && !button.Disabled && button.FocusMode != Control.FocusModeEnum.None)
+            .ToArray();
+        if (buttons.Length == 0) return;
+        var focused = GetViewport().GuiGetFocusOwner();
+        int index = Array.IndexOf<Control>(buttons, focused);
+        if (index < 0) { buttons[0].GrabFocus(); return; }
+        if (direction is Side.Top or Side.Bottom &&
+            focused!.FindValidFocusNeighbor(direction) is Button neighbor && buttons.Contains(neighbor))
+        {
+            neighbor.GrabFocus();
+            return;
+        }
+        // The button order covers the entire menu, including rows clipped by a scroll container.
+        int step = direction is Side.Left or Side.Top ? -1 : 1;
+        buttons[(index + step + buttons.Length) % buttons.Length].GrabFocus();
+    }
     public override void _Process(double delta)
     {
         if (modal.Visible && garageCatalogue != null && garageStick != 0)
@@ -143,12 +179,27 @@ public partial class GameUi : CanvasLayer
     {
         var l = new Label { Text = text, HorizontalAlignment = HorizontalAlignment.Center }; l.AddThemeFontSizeOverride("font_size", size); content.AddChild(l);
     }
-    private Button Button(string text, Action action, Container? parent = null)
+    private Button Button(string text, Action action, Container? parent = null, bool narrate = true)
     {
         var b = new Button { Text = text, ActionMode = BaseButton.ActionModeEnum.Press, CustomMinimumSize = new Vector2(0, 62) };
         b.Pressed += () => { GetViewport().SetInputAsHandled(); action(); }; (parent ?? content).AddChild(b);
         if (root.GetViewport().GuiGetFocusOwner() == null) b.GrabFocus();
+        if (narrate) NarrateHighlight(b, () => string.IsNullOrEmpty(b.AccessibilityName) ? b.Text.TrimStart('✓', ' ') : b.AccessibilityName);
         return b;
+    }
+    private void NarrateHighlight(Button button, Func<string> label)
+    {
+        void ReadLabel()
+        {
+            if (button.Disabled || !button.IsVisibleInTree()) return;
+            string text = label();
+            if (!string.IsNullOrWhiteSpace(text)) SpeechRequested?.Invoke(text);
+        }
+        button.FocusEntered += () =>
+        {
+            if (!button.IsHovered()) ReadLabel();
+        };
+        button.MouseEntered += ReadLabel;
     }
     public void Title(bool saved = false)
     {
@@ -190,7 +241,7 @@ public partial class GameUi : CanvasLayer
         {
             int answer = choice;
             bool wrong = rejected.Contains(answer);
-            var button = Button(pictures != null ? "" : wrong ? $"× {answer}" : answer.ToString(), () => AnswerSelected?.Invoke(answer), row);
+            var button = Button(pictures != null ? "" : wrong ? $"× {answer}" : answer.ToString(), () => AnswerSelected?.Invoke(answer), row, narrate: false);
             button.Name = $"Answer{answer}";
             button.CustomMinimumSize = pictures != null ? new Vector2(220, 180) : new Vector2(140, 84);
             button.AddThemeFontSizeOverride("font_size", 40); button.Disabled = rejected.Contains(answer);
@@ -210,6 +261,18 @@ public partial class GameUi : CanvasLayer
         }
         BackButton("LeaveChallenge");
         first?.GrabFocus();
+        NarrateAnswerButtons(row, question);
+    }
+    private void NarrateAnswerButtons(Container row, IChallenge question)
+    {
+        for (int i = 0; i < question.Choices.Count; i++)
+        {
+            var button = row.GetChild<Button>(i);
+            if (button.Disabled) continue;
+            int choice = question.Choices[i];
+            string label = question is IPictureChallenge pictures ? pictures.Pictures[choice].Word : choice.ToString();
+            NarrateHighlight(button, () => label);
+        }
     }
     public void HouseReward(Animal animal, int level)
     {
@@ -268,9 +331,12 @@ public partial class GameUi : CanvasLayer
                 selectReward = () => LookSelected?.Invoke(reward.Id);
             }
             var select = IconButton(symbol, selectReward, reward.ButtonName, card);
+            select.AccessibilityName = reward.IsModel ? CarBody.All.First(body => body.Id == reward.Id).Name :
+                reward.IsAccessory ? CarAccessory.Catalogue.First(accessory => accessory.Id == reward.Id).Name :
+                CarLook.All.First(look => look.Id == reward.Id).Name;
             first ??= select;
         }
-        IconButton("back", () => CloseInteractionRequested?.Invoke(), "KeepLook");
+        BackButton("KeepLook");
         first?.GrabFocus();
     }
     public void ExpeditionChoice(Animal animal, VehicleAppearance appearance)
@@ -538,7 +604,7 @@ public partial class GameUi : CanvasLayer
         Button? first = null;
         foreach (int choice in question.Choices)
         {
-            var button = Button(rejected.Contains(choice) ? $"× {choice}" : choice.ToString(), () => AnswerSelected?.Invoke(choice), row);
+            var button = Button(rejected.Contains(choice) ? $"× {choice}" : choice.ToString(), () => AnswerSelected?.Invoke(choice), row, narrate: false);
             button.Name = $"Answer{choice}";
             button.CustomMinimumSize = new(180, 130); button.Disabled = rejected.Contains(choice);
             button.AddThemeFontSizeOverride("font_size", 40);
@@ -546,6 +612,7 @@ public partial class GameUi : CanvasLayer
         }
         BackButton("LeaveChallenge");
         first?.GrabFocus();
+        NarrateAnswerButtons(row, question);
     }
     public void DeliveryHud(Expedition? delivery)
     {

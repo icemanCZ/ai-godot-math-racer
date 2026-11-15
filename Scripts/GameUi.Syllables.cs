@@ -24,8 +24,9 @@ public partial class GameUi
             bool selected = selection.IsSelected(choice);
             bool rejected = selection.IsRejected(choice);
             string tile = question.Tiles[choice];
-            var button = Button(selected ? $"✓ {tile}" : rejected ? $"× {tile}" : tile, () => choose(choice), grid);
+            var button = Button(selected ? $"✓ {tile}" : rejected ? $"× {tile}" : tile, () => choose(choice), grid, narrate: false);
             button.Name = $"Answer{choice}";
+            button.ActionMode = BaseButton.ActionModeEnum.Release;
             button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
             button.CustomMinimumSize = new(124, 56);
             button.AddThemeFontSizeOverride("font_size", 30);
@@ -33,6 +34,10 @@ public partial class GameUi
             if (selected) button.AddThemeStyleboxOverride("disabled", Style("cde6cb", 20));
             if (!button.Disabled) first ??= button;
         }
-        first?.GrabFocus();
+        var confirm = Button("Potvrdit", () => SyllablesConfirmed?.Invoke(), group, narrate: false);
+        confirm.Name = "ConfirmSyllables";
+        confirm.ActionMode = BaseButton.ActionModeEnum.Release;
+        confirm.Disabled = !selection.IsComplete(question);
+        (confirm.Disabled ? first : confirm)?.GrabFocus();
     }
 }

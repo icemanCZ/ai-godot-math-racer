@@ -58,6 +58,11 @@ public partial class SaveChecks : Node
             RoundTrip();
             game.TogglePause(); RoundTrip();
             Check(game.State == GameState.Challenge, "paused session restores the underlying question");
+            foreach (int tile in syllables.Choices.Where(syllables.Accepts)) game.SubmitAnswer(tile);
+            RoundTrip();
+            Check(game.State == GameState.Challenge &&
+                game.FindChild("ConfirmSyllables", true, false) is Button { Disabled: false },
+                "all selected syllables survive reload and still require confirmation");
             game.FinishInteraction(); car.SetPose(world.Village.GarageEntrance, .2f); game.OpenGarage(); RoundTrip();
             ((Button)game.FindChild("GarageMathLevel2", true, false)).EmitSignal(Button.SignalName.Pressed);
             ((Button)game.FindChild("GarageQuiz_Syllables", true, false)).EmitSignal(Button.SignalName.Pressed);
@@ -68,11 +73,11 @@ public partial class SaveChecks : Node
             game.FinishInteraction();
             game.OpenChallenge(world.Animals[2]);
             RoundTrip();
-            Check(game.CurrentChallenge is MathChallenge { Third: > 0 }, "the exact three-term example survives reload");
+            Check(game.CurrentChallenge is LetterChallenge, "the original initial-letter question survives reload");
             game.FinishInteraction();
             game.OpenChallenge(world.Animals[3]);
             RoundTrip();
-            Check(game.CurrentChallenge is LetterChallenge, "the original initial-letter question survives reload");
+            Check(game.CurrentChallenge is MathChallenge { Third: > 0 }, "the exact three-term example survives reload");
             game.FinishInteraction(); car.SetPose(world.Village.GarageEntrance, .2f); game.OpenGarage(); RoundTrip();
             var backup = File.ReadAllText(path + ".bak");
             File.WriteAllText(path, "{broken");

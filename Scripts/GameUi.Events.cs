@@ -24,8 +24,10 @@ public partial class GameUi
     internal void EventHud(string text) => eventHud.Text = text;
     internal void SetEventVisible(bool visible) => eventHud.Visible = visible;
     internal void CelebrationMessage(string text) => celebrationMessage.Text = text;
-    internal void EventHint(string text)
+    internal void EventHint(string text, bool space = false)
     {
-        talkButton.Show(); talkButton.Text = controller ? $"A · {text}" : $"E · {text}";
+        talkButton.Show();
+        string key = controller ? "A" : space ? "E / mezerník" : "E";
+        talkButton.Text = $"{key} · {text}";
     }
 }

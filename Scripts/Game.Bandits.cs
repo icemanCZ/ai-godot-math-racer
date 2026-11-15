@@ -104,7 +104,11 @@ public partial class Game
         {
             banditArrival = Mathf.Max(0, banditArrival - delta);
             PositionBandits(1 - banditArrival / BanditRunTime, retreating: false);
-            if (banditArrival == 0) ShowChallenge();
+            if (banditArrival == 0)
+            {
+                ShowChallenge();
+                Speak("Stůj, pocestný! Vyřeš tři úkoly, nebo tě dál nepustíme!");
+            }
             return;
         }
         if (banditRetreat > 0)
@@ -125,7 +129,7 @@ public partial class Game
             nearby = bandits[0];
             vehicle.Active = false;
             PositionBandits(0, retreating: false);
-            BeginQuiz(preferMath: true);
+            BeginQuiz();
             SaveProgress();
             return;
         }
@@ -139,7 +143,7 @@ public partial class Game
             CloseInteraction();
             CelebrateAt(position, "✓  3 / 3");
         }
-        else BeginQuiz(preferMath: banditSolved % 2 == 0);
+        else BeginQuiz();
         SaveProgress();
     }
 

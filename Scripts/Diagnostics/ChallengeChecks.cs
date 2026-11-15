@@ -12,6 +12,7 @@ public static class ChallengeChecks
         var question = game.CurrentChallenge!;
         foreach (int choice in question.Choices.Where(question.Accepts))
             game.SubmitAnswer(choice);
+        if (question is SyllableChallenge) game.ConfirmSyllables();
     }
 
     public static void Run(Game game, World world, Vehicle car, Action<bool, string> check)
@@ -32,6 +33,7 @@ public static class ChallengeChecks
             slots.Add(q.Choices.ToList().IndexOf(q.Answer)); operations.Add(q.Operation);
         }
         check(slots.Count == 3 && operations.Count == 2, "1000 valid deterministic questions; both operations and all answer positions");
+        var sums = new int[11];
         for (int i = 0; i < 1000; i++)
         {
             var q = generator.Next(threeTerms: true); var other = repeat.Next(threeTerms: true);
@@ -40,8 +42,10 @@ public static class ChallengeChecks
                 q.Choices.Count != 3 || q.Choices.Distinct().Count() != 3 || q.Choices.Any(v => v < 0 || v > 10) ||
                 q.Choices.Count(q.Accepts) != 1 || q.Expression != other.Expression || !q.Choices.SequenceEqual(other.Choices))
                 throw new InvalidOperationException("Invalid or nondeterministic three-term question.");
+            sums[q.Answer]++;
         }
-        check(true, "1000 deterministic three-term additions have positive terms and sums and choices within 10");
+        check(sums.Skip(3).All(count => count is > 90 and < 160),
+            "1000 deterministic three-term additions distribute sums evenly from 3 to 10");
 
         var letters = new LetterChallengeGenerator(53);
         var repeatLetters = new LetterChallengeGenerator(53);
@@ -120,27 +124,39 @@ public static class ChallengeChecks
         game.SelectLook("blueberry");
         check(car.Appearance.CurrentLookId == originalLook, "reward unavailable before correct answer");
         int visits = 1;
-        var wordTypes = new System.Collections.Generic.HashSet<Type>();
-        int wordVisits = 0;
-        int mathVisits = 0;
+        Type[] rotation = { typeof(MathChallenge), typeof(SyllableChallenge), typeof(LetterChallenge), typeof(ReadingChallenge) };
+        var ui = game.GetChildren().OfType<GameUi>().Single();
+        string? spoken = null;
+        ui.SpeechRequested += RecordSpeech;
+        void RecordSpeech(string label) => spoken = label;
         foreach (var animal in world.Animals.Skip(1))
         {
             int before = game.RemainingAnimals;
             game.OpenChallenge(animal);
             visits++;
             var question = game.CurrentChallenge!;
-            check((Array.IndexOf(world.Animals, animal) % 2 == 0) == (question is MathChallenge), "animal has its assigned task type");
-            if (question is MathChallenge) mathVisits++;
-            else { wordVisits++; wordTypes.Add(question.GetType()); }
+            check(question.GetType() == rotation[(visits - 1) % rotation.Length], "visits rotate equally through all four quiz types");
             if (question is SyllableChallenge)
             {
                 check(game.FindChildren("*", "", true, false).OfType<WordPicture>().Count() == 1 &&
                     question.Choices.All(choice => game.FindChild($"Answer{choice}", true, false) is Button),
                     "syllable UI displays one picture and six tiles");
+                game.ConfirmSyllables();
+                check(game.State == GameState.Challenge && ((Button)game.FindChild("ConfirmSyllables", true, false)).Disabled,
+                    "a syllable word cannot be confirmed before all tiles are selected");
             }
             else if (question is IPictureChallenge)
                 check(game.FindChildren("*", "", true, false).OfType<WordPicture>().Count() == 3,
                     "initial-letter and reading tasks display three illustrated choices");
+            spoken = null;
+            int option = question.Choices[1];
+            ((Button)game.FindChild($"Answer{option}", true, false)).EmitSignal(Control.SignalName.MouseEntered);
+            check(spoken == (question switch
+                {
+                    SyllableChallenge => null,
+                    IPictureChallenge pictures => pictures.Pictures[option].Word,
+                    _ => option.ToString()
+                }), "answer buttons speak their own number or picture name, and syllable buttons stay silent");
             check(game.State == GameState.Challenge && !car.Active && !animal.RewardAvailable && game.RemainingAnimals == before - 1,
                 "opening a question consumes one visit and stops car");
             CheckCounter();
@@ -163,9 +179,15 @@ public static class ChallengeChecks
                 if (i + 1 < correct.Length)
                 {
                     game.TogglePause(); game.TogglePause();
+                    game.ConfirmSyllables();
                     check(game.State == GameState.Challenge && (game.FindChild($"Answer{correct[i]}", true, false) as Button)?.Disabled == true,
                         "partial syllable selection survives pause and waits for the rest of the word");
                 }
+            }
+            if (question is SyllableChallenge)
+            {
+                check(game.State == GameState.Challenge, "selecting the final tile leaves the confirmation open");
+                Press("ConfirmSyllables");
             }
             check(game.State == GameState.ExpeditionChoice && !car.Active && game.CurrentRewards.Count == 0, "correct answer opens task choice before reward");
             game.TogglePause(); game.TogglePause();
@@ -202,8 +224,7 @@ public static class ChallengeChecks
                 "all previous visits stay blocked after other rewards, reset and pause");
         }
         check(game.RemainingAnimals == 0 && world.Animals.All(a => !a.RewardAvailable) && car.Active, "all 10 visits complete and free driving remains available");
-        check(wordVisits == 5 && mathVisits == 4 && wordTypes.Count == 3,
-            "roadside tasks use all three enabled word modes and arithmetic");
+        ui.SpeechRequested -= RecordSpeech;
         CheckCounter();
 
         // Verify the complete cosmetic catalogue independently of finite gameplay visits.

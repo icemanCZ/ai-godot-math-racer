@@ -22,6 +22,7 @@ internal static class GameControls
         foreach (var action in new[] { "ui_accept", "ui_up", "ui_down", "ui_left", "ui_right" })
             foreach (var e in InputMap.ActionGetEvents(action))
                 if (e is InputEventJoypadButton or InputEventJoypadMotion) InputMap.ActionEraseEvent(action, e);
+        Keys("ui_accept", Key.E);
         Button("ui_accept", JoyButton.A);
         Button("ui_up", JoyButton.DpadUp); Button("ui_down", JoyButton.DpadDown);
         Button("ui_left", JoyButton.DpadLeft); Button("ui_right", JoyButton.DpadRight);

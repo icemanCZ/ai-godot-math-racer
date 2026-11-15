@@ -26,7 +26,7 @@ public partial class World
                 var forward = Routes.Samples[index + 1] - road; forward.Y = 0;
                 if (forward.LengthSquared() < .01f || forward.LengthSquared() > 9) continue;
                 var outward = forward.Normalized().Cross(Vector3.Up) * (random.Next(2) == 0 ? -1 : 1);
-                var p = road + outward * (18 + (float)random.NextDouble() * 27);
+                var p = road + outward * (18 + (float)random.NextDouble() * 37);
                 p = Ground.At(p.X, p.Z);
                 if (Routes.Distance(p) < 16 || friends.Any(a => FlatDistance(a.Position, p) < 28) ||
                     spots.Exists(other => FlatDistance(other, p) < 22)) continue;

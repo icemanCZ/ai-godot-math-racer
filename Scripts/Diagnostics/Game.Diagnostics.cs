@@ -152,7 +152,8 @@ public partial class Game
             }
             else
             {
-                if (view == "letters") enabledQuizzes = QuizType.Math | QuizType.Letters;
+                if (view == "letters") enabledQuizzes = QuizType.Letters;
+                if (view == "syllables") enabledQuizzes = QuizType.Syllables;
                 if (view == "reading") enabledQuizzes = QuizType.Reading;
                 if (view == "challenge-2") threeTermMath = true;
                 OpenChallenge(world.Animals[view is "letters" or "syllables" or "reading" ? 1 : 0]);

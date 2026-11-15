@@ -12,6 +12,6 @@ public partial class Game
         {
             State = GameState.CollectionStatus; ui.CollectionStatus(world.Village, owner, Delivery); return;
         }
-        BeginQuiz(count % 2 == 0);
+        BeginQuiz();
     }
 }

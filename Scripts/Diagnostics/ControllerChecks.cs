@@ -23,6 +23,13 @@ public partial class ControllerChecks : Node
         Input.ParseInputEvent(new InputEventJoypadButton { Device = 0, ButtonIndex = button, Pressed = false });
         Input.FlushBufferedEvents(); await Frames();
     }
+    private async Task KeyPress(Key key)
+    {
+        Input.ParseInputEvent(new InputEventKey { Keycode = key, PhysicalKeycode = key, Pressed = true });
+        Input.FlushBufferedEvents(); await Frames();
+        Input.ParseInputEvent(new InputEventKey { Keycode = key, PhysicalKeycode = key, Pressed = false });
+        Input.FlushBufferedEvents(); await Frames();
+    }
     private static void Axis(JoyAxis axis, float value)
     {
         Input.ParseInputEvent(new InputEventJoypadMotion { Device = 0, Axis = axis, AxisValue = value });
@@ -41,6 +48,9 @@ public partial class ControllerChecks : Node
             Check(game.State == GameState.Title, "controller starts at title");
             await Button(JoyButton.A);
             Check(game.State == GameState.Exploring, "A starts game through focused UI");
+            await KeyPress(Key.Escape);
+            await KeyPress(Key.Space);
+            Check(game.State == GameState.Exploring, "Space confirms the focused resume button");
             Axis(JoyAxis.LeftX, .1f); Axis(JoyAxis.TriggerRight, .03f);
             await Frames();
             Check(Input.GetAxis("left", "right") == 0 && Input.GetActionStrength("accelerate") == 0, "stick and trigger drift stays in deadzone");
@@ -91,8 +101,8 @@ public partial class ControllerChecks : Node
             Check(GetViewport().GuiGetFocusOwner() == focus, "left stick navigates menu");
             int answer = game.CurrentChallenge!.Choices.Single(game.CurrentChallenge.Accepts);
             ((Control)game.FindChild($"Answer{answer}", true, false)).GrabFocus();
-            await Button(JoyButton.A);
-            Check(game.State == GameState.ExpeditionChoice && game.CurrentRewards.Count == 0, "A solves example and opens task choice before rewards");
+            await KeyPress(Key.E);
+            Check(game.State == GameState.ExpeditionChoice && game.CurrentRewards.Count == 0, "E confirms the answer and opens task choice");
             focus = GetViewport().GuiGetFocusOwner();
             await Button(JoyButton.Start); await Button(JoyButton.Start);
             Check(game.State == GameState.ExpeditionChoice, "Menu restores task choice");
@@ -118,6 +128,17 @@ public partial class ControllerChecks : Node
             await Button(JoyButton.A);
             Check(game.State == GameState.Challenge && ((Button)game.FindChild($"Answer{wrongTile}", true, false)).Disabled,
                 "A selects a syllable and preserves the task after a wrong choice");
+            foreach (int tile in syllable.Choices.Where(syllable.Accepts))
+            {
+                ((Control)game.FindChild($"Answer{tile}", true, false)).GrabFocus();
+                await KeyPress(Key.Space);
+            }
+            Input.ParseInputEvent(new InputEventKey { Keycode = Key.Space, PhysicalKeycode = Key.Space, Pressed = true, Echo = true });
+            Input.FlushBufferedEvents(); await Frames();
+            Check(game.State == GameState.Challenge && GetViewport().GuiGetFocusOwner()?.Name == "ConfirmSyllables",
+                "the last tile and a held confirmation key leave the completed word available for review");
+            await KeyPress(Key.Space);
+            Check(game.State == GameState.ExpeditionChoice, "a fresh Space press confirms the completed word");
             await Button(JoyButton.B);
             Check(game.State == GameState.Exploring, "B leaves task");
             GD.Print("CONTROLLER_CHECKS_PASSED"); GetTree().Quit();

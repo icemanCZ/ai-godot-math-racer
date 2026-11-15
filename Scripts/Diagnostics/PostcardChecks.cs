@@ -27,9 +27,14 @@ public partial class PostcardChecks(Game game, World world, Vehicle car) : Node
             for (int i = 0; i < Game.PostcardCount; i++)
             {
                 car.SetPose(game.PostcardStop(i) + Vector3.Up * .2f, 0);
+                Input.ActionPress("accelerate");
+                for (int tick = 0; tick < 12; tick++) car._PhysicsProcess(1.0 / 60);
+                Input.ActionRelease("accelerate");
+                Require(car.Speed > 1, "car has not stopped at the viewpoint");
                 game._Process(.016);
-                Talk();
-                Require(game.State == GameState.PostcardAlbum && !car.Active, "E opens the camera and parks the car");
+                var key = i % 2 == 0 ? Key.E : Key.Space;
+                game._UnhandledInput(new InputEventKey { Keycode = key, PhysicalKeycode = key, Pressed = true });
+                Require(game.State == GameState.PostcardAlbum && !car.Active, "E and Space can open the camera while driving");
                 game.TogglePause();
                 game._Process(2);
                 Require(game.CaptureProgress().Postcards[i] == null, "pause holds the camera shot");
@@ -68,7 +73,12 @@ public partial class PostcardChecks(Game game, World world, Vehicle car) : Node
                 var question = game.PostcardQuestion(i)!;
                 foreach (int choice in question.Choices.Where(question.Accepts).Reverse())
                     if (!Find($"Answer{choice}").Disabled) Press($"Answer{choice}");
-                Require(game.CaptureProgress().Postcards[i] is { Stamped: true }, "right answer stamps the selected postcard");
+                Require(game.CaptureProgress().Postcards[i] is { Stamped: false } && !Find("ConfirmSyllables").Disabled,
+                    "selecting the last syllable leaves the card unstamped");
+                Require(SaveStore.Write(game.CaptureProgress(), path), "a complete unconfirmed word saves to disk");
+                game.RestoreProgress(SaveStore.Read(path) ?? throw new InvalidOperationException("Complete unconfirmed word failed validation"));
+                Press("ConfirmSyllables");
+                Require(game.CaptureProgress().Postcards[i] is { Stamped: true }, "confirming the completed word stamps the selected postcard");
                 Require(game.OwnedRewards.Contains(reward) == (i + 1 >= Game.PostcardRewardStamps), "sticker unlocks with the third stamp");
                 Press("PostcardBack");
             }

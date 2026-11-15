@@ -34,6 +34,7 @@ public partial class Expedition : Node3D
     public bool CanDeliver => !Collection || Collected == Amount;
     internal Vector3[] PickupPositions { get; }
     private readonly bool[] picked;
+    private readonly int specialPickupOffset;
     internal bool[] Picked => (bool[])picked.Clone();
     private Node3D[] pickupModels = Array.Empty<Node3D>();
     public Vector3 Destination => CanDeliver ? Recipient.Position : PickupPositions[Array.FindIndex(picked, p => !p)];
@@ -50,9 +51,14 @@ public partial class Expedition : Node3D
     private readonly List<MeshInstance3D> guidanceArrows = new();
     private Mesh arrowMesh = null!;
     private ShaderMaterial arrowMaterial = null!;
+    private MeshInstance3D destinationArrow = null!;
     private float arrowPhase;
     private float refresh;
-    public Vector3 Waypoint { get; private set; }
+    private Vector3 roadExit;
+    private Vector3 roadWaypoint;
+    private bool offRoad;
+    private bool showRoadExit;
+    public Vector3 Waypoint => offRoad ? Destination : roadWaypoint;
     internal bool CargoVisible => !cargoDetached && load != null && load.IsVisibleInTree();
     internal int RouteLength { get; private set; }
 
@@ -79,7 +85,8 @@ public partial class Expedition : Node3D
             int offset = Farm ? 0 : Village.FarmKinds.Length;
             if (Gems || Toys) offset += Village.FlowerNames.Length;
             if (Toys) offset += Village.GemNames.Length;
-            PickupPositions = new[] { world.SpecialPickupSpots[FarmIndex + offset] };
+            specialPickupOffset = FarmIndex + offset;
+            PickupPositions = new[] { world.SpecialPickupSpots[specialPickupOffset] };
         }
         picked = new bool[PickupPositions.Length];
         if (Collection && restoredPickups != null)
@@ -107,9 +114,13 @@ public partial class Expedition : Node3D
     {
         var samples = world.Routes.Samples;
         Array.Fill(next, -1);
-        int target = Nearest(Destination);
+        int routeTarget = SpecialCollection && !CanDeliver
+            ? Nearest(world.PickupApproaches[specialPickupOffset + Array.FindIndex(picked, collected => !collected)].Road)
+            : Nearest(Destination);
+        roadExit = samples[routeTarget];
+        roadExit.Y = ArrowRoadHeight(roadExit);
         var costs = Enumerable.Repeat(float.PositiveInfinity, samples.Count).ToArray();
-        var queue = new PriorityQueue<int, float>(); costs[target] = 0; queue.Enqueue(target, 0);
+        var queue = new PriorityQueue<int, float>(); costs[routeTarget] = 0; queue.Enqueue(routeTarget, 0);
         while (queue.TryDequeue(out int i, out float cost))
         {
             if (cost > costs[i]) continue;
@@ -204,6 +215,12 @@ public partial class Expedition : Node3D
         {
             Shader = GD.Load<Shader>("res://Shaders/RouteArrow.gdshader")
         };
+        destinationArrow = new MeshInstance3D
+        {
+            Name = "DestinationArrow", Mesh = arrowMesh, MaterialOverride = arrowMaterial,
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off, Visible = false
+        };
+        AddChild(destinationArrow);
         UpdateGuidance();
         UpdateArrowVisibility();
     }
@@ -309,13 +326,27 @@ public partial class Expedition : Node3D
     }
     private void UpdateArrowVisibility()
     {
+        offRoad = !OnRoad(car.Position);
         var forward = -car.Transform.Basis.Z;
         foreach (var arrow in guidanceArrows)
         {
             var offset = arrow.Position - car.Position;
             offset.Y = 0;
-            arrow.Visible = offset.Dot(forward) > 0 && offset.LengthSquared() >= 16f;
+            arrow.Visible = !offRoad && offset.Dot(forward) > 0 && offset.LengthSquared() >= 16f;
         }
+        var anchor = offRoad ? car.Position : roadExit;
+        var direction = Destination - anchor;
+        direction.Y = 0;
+        destinationArrow.Visible = (offRoad || showRoadExit) && direction.LengthSquared() > .5f;
+        if (!destinationArrow.Visible) return;
+        destinationArrow.Position = anchor + Vector3.Up * (offRoad ? 4.2f : 1.25f);
+        destinationArrow.Rotation = new Vector3(0, Mathf.Atan2(-direction.X, -direction.Z), 0);
+    }
+    private bool OnRoad(Vector3 point) => world.Routes.Contains(point) || River.OnBridge(point.X, point.Z);
+    private float ArrowRoadHeight(Vector3 point)
+    {
+        float surface = world.Routes.SurfaceHeight(point, world.Ground.Height(point.X, point.Z));
+        return River.OnBridge(point.X, point.Z) ? Mathf.Max(surface, River.BridgeSurfaceHeight(point.X)) : surface;
     }
     private static void AnimateFarmAnimal(WildAnimal? animal, float delta)
     {
@@ -333,7 +364,8 @@ public partial class Expedition : Node3D
         }
         points.Add(Destination);
         // Aim ahead along the road instead of across the river or through trees.
-        Waypoint = points[Math.Min(8, points.Count - 1)];
+        roadWaypoint = points[Math.Min(8, points.Count - 1)];
+        showRoadExit = nodes.Count <= 8 && !OnRoad(Destination);
         foreach (var arrow in guidanceArrows) arrow.Hide();
         guidanceArrows.Clear();
         var shownAnchors = new HashSet<int>();
@@ -349,13 +381,11 @@ public partial class Expedition : Node3D
                 var p = anchor.Position;
                 var forward = reverse ? -anchor.Forward : anchor.Forward;
                 if (forward.LengthSquared() < .001f) continue;
-                float y = world.Routes.SurfaceHeight(p, world.Ground.Height(p.X, p.Z));
-                if (River.OnBridge(p.X, p.Z)) y = Mathf.Max(y, River.BridgeSurfaceHeight(p.X));
                 arrow = new MeshInstance3D
                 {
                     Name = "RouteArrow" + routeArrows.Count, Mesh = arrowMesh, MaterialOverride = arrowMaterial,
                     CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
-                    Position = new Vector3(p.X, y + 1.25f, p.Z),
+                    Position = new Vector3(p.X, ArrowRoadHeight(p) + 1.25f, p.Z),
                     Rotation = new Vector3(0, Mathf.Atan2(-forward.X, -forward.Z), 0)
                 };
                 routeArrows.Add(key, arrow); AddChild(arrow);

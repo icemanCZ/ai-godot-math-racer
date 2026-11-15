@@ -12,6 +12,6 @@ public partial class Game
             State = GameState.FarmStatus; ui.FarmStatus(world.Village, Delivery); return;
         }
         // Every new trip requires a fresh quiz; an abandoned quiz never unlocks a departure.
-        BeginQuiz(world.Village.FarmCount % 2 == 0);
+        BeginQuiz();
     }
 }

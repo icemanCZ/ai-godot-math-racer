@@ -26,7 +26,7 @@ On Windows, `run.cmd` and `build.cmd` also work when PowerShell script execution
 | Return to the starting road | R | Y |
 | Orbit the camera | Hold the right mouse button and move | Right stick |
 | Interact | E or click the on-screen button | A |
-| Choose a menu item | Mouse or arrow keys and Enter | D-pad or left stick, then A |
+| Choose a menu item | Mouse or arrow keys, then E, Space or Enter | D-pad or left stick, then A |
 | Pause or resume | Esc | Menu |
 | Back or leave an activity | Back arrow on screen | B |
 
@@ -43,7 +43,7 @@ Open the garage near the village entrance with **E / A**. Each quiz type has its
 | Reading (*Čtení*) | Match a three-letter uppercase Czech word, such as **LES**, **PES** or **DŮM**, to one of three pictures. |
 | Arithmetic (*Příklady*) | Level 1 uses two-number addition and subtraction within 10. Level 2 uses three-number addition with sums up to 10, such as `2 + 3 + 4`. |
 
-Roadside animals, village residents, shops, postcards and forest bandits use the enabled question types. Scheduled arithmetic and word slots use an enabled replacement when their usual type is off. If arithmetic is off, a word quiz replaces cargo counting at handover. Wrong choices leave the current question open for another try.
+Roadside animals, village residents, shops and forest bandits cycle evenly through the enabled quiz types. Postcards have their own word questions, with arithmetic as a fallback. If arithmetic is off, a word quiz replaces cargo counting at handover. Wrong choices leave the current question open for another try. In a syllable quiz, select every syllable to enable **Potvrdit**.
 
 ## Exploring the valley
 
@@ -52,7 +52,7 @@ Roadside animals, village residents, shops, postcards and forest bandits use the
 - **Village houses.** Vojtík, Róza, Hugo and Fialka each offer ten tasks with a shuffled mix of quizzes and apple collections. Each success adds a visible improvement such as shutters, a balcony or party decorations. The task order is stable for the saved valley.
 - **Collectors and companions.** Farmer Tonda, gardener Vítek, gem collector Jáchym and toymaker Pepa each have twelve off-road expeditions. Deliveries fill the farm pen, flower beds, museum pedestals and playground. Completing a collection earns a companion. Baltazar’s tower has a separate six-piece expedition for the golem. Enabled companions follow the car as it drives and wander nearby with short pauses when it stops.
 - **Village shops.** František the baker, Kamil the shopkeeper and Oliver the confectioner offer repeatable deliveries of bread, parcels and pastries. Answer a quiz, follow the road arrows and deliver the order to earn a choice of rewards.
-- **Postcards.** The fountain square has an album with six illustrated clues. Stop at an envelope on the road and take a picture of the valley and the car. Solve the card’s quiz to earn a stamp. Three stamps unlock the Valley Map garage sticker.
+- **Postcards.** The fountain square has an album with six illustrated clues. Near a roadside envelope, press E, Space or A to take a picture of the valley and the car while driving or stopped. Solve the card’s quiz to earn a stamp. Three stamps unlock the Valley Map garage sticker.
 - **Driving courses.** The Rainbow Gates and Hay Bale Slalom courses each have six gates on outlying road loops. Run either course at your own pace and repeat it from the starting marker. An active delivery stays loaded while driving a course.
 - **Forest bandits.** A group of three can run out from cover when the player drives past a suitable forest road. Solve three questions to send them back. After a short break, they can appear beside a different road. The encounter preserves any cargo on the car.
 - **Weather and wildlife.** The valley hosts 240 butterflies, birds, rabbits, foxes and deer. Animals move away from the car and eventually return to their home area. Weather cycles between clear skies, wind, rain and storms. The village witch offers weather selection. Tree trunks, branches, crowns, leaves and fruit bend together in wind.
@@ -75,4 +75,4 @@ Pass `--seed=NUMBER` after Godot’s `--` separator to reproduce a valley during
 
 The meshes, pictures and environments are generated in code. See the [architecture guide](docs/ARCHITECTURE.md), [algorithms](docs/ALGORITHMS.md) and [validation notes](docs/VALIDATION.md) for implementation details and recorded checks.
 
-The game reads short quiz and task instructions aloud when a Czech system voice is available. The camera clears the ground, while buildings can still block its view. The 1080p performance target and the simplified prompts still need real player testing.
+When a Czech system voice is available, the game reads short instructions, highlighted menu choices and some activity announcements aloud. Syllable tiles stay silent. The camera clears the ground, while buildings can still block its view. The 1080p performance target and the simplified prompts still need real player testing.

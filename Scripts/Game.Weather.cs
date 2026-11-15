@@ -10,7 +10,7 @@ public partial class Game
     {
         nearby = world.Witch;
         vehicle.Active = false;
-        BeginQuiz(true);
+        BeginQuiz();
     }
 
     private void ShowWeatherChoice() => ui.WeatherChoice(world.Witch, SelectWeather);

@@ -30,6 +30,7 @@ public partial class Game
     internal const int PostcardRewardStamps = 3;
     internal const int OriginalPostcardCount = 3;
     private static readonly CarReward PostcardReward = new(CarAccessory.ValleyMap.Id, true);
+    private static readonly QuizType[] PostcardQuizTypes = { QuizType.Syllables, QuizType.Letters, QuizType.Reading };
     private readonly PostcardProgress?[] postcards = new PostcardProgress?[PostcardCount];
     private readonly (Vector3 Stop, Vector3 Subject, Label3D Sign)[] viewpoints =
         new (Vector3, Vector3, Label3D)[PostcardCount];
@@ -99,13 +100,16 @@ public partial class Game
     {
         if (card.Selection == default) return true;
         var question = PostcardSyllables(index, seed);
-        return card.Selection.IsValid(question) && (card.Stamped || !card.Selection.IsComplete(question));
+        return card.Selection.IsValid(question);
     }
 
     internal IChallenge PostcardQuestion(int index)
     {
         var card = Postcards[index];
-        return SelectQuizType(preferMath: false, start: index) switch
+        var type = Enumerable.Range(0, PostcardQuizTypes.Length)
+            .Select(offset => PostcardQuizTypes[(index + offset) % PostcardQuizTypes.Length])
+            .FirstOrDefault(candidate => enabledQuizzes.HasFlag(candidate), QuizType.Math);
+        return type switch
         {
             QuizType.Letters => new LetterChallenge(card.Word[..1].ToUpperInvariant(),
                 card.Pictures.Select(icon => new PictureWord(icon, Postcards[PostcardIndex(icon)].Word)).ToArray()),
@@ -133,7 +137,7 @@ public partial class Game
         }
 
         int index = NearbyPostcard();
-        if (index < 0 || Mathf.Abs(vehicle.Speed) > 1) return false;
+        if (index < 0) return false;
         nearby = null;
         vehicle.Active = false;
         State = GameState.PostcardAlbum;
@@ -142,6 +146,7 @@ public partial class Game
         photoTime = 1.5;
         ui.HideModal();
         ui.DeliveryHint(false);
+        Speak("Vyfotíme pohlednici.");
 
         var subject = viewpoints[index].Subject;
         var car = vehicle.GlobalPosition;
@@ -189,12 +194,7 @@ public partial class Game
         }
         if (State != GameState.Exploring || AtGarage || nearby != null) return;
         if (vehicle.Position.DistanceTo(albumStop) < 4.5f) ui.EventHint("Album");
-        else if (NearbyPostcard() >= 0)
-        {
-            bool stopped = Mathf.Abs(vehicle.Speed) <= 1;
-            if (stopped) ui.EventHint("Vyfotit");
-            else if (Events.Active < 0) ui.EventHud("Zastav na vyhlídce a vyfoť pohlednici.");
-        }
+        else if (NearbyPostcard() >= 0) ui.EventHint("Vyfotit", space: true);
     }
 
     private void CancelPostcardPhoto()
@@ -241,13 +241,20 @@ public partial class Game
         {
             var selection = card.Selection.Pick(syllables, answer);
             if (selection == card.Selection) return;
-            card = card with { Selection = selection };
-            if (selection.IsComplete(syllables)) StampPostcard(card);
-            else postcards[postcardPage] = card;
+            postcards[postcardPage] = card with { Selection = selection };
             SaveProgress();
         }
         else if (question.Accepts(answer)) { StampPostcard(card); SaveProgress(); }
         else rejectedPostcardAnswers |= 1 << answer;
+        ShowPostcards();
+    }
+
+    private void ConfirmPostcardSyllables()
+    {
+        if (postcardPage < 0 || postcards[postcardPage] is not { Stamped: false } card ||
+            PostcardQuestion(postcardPage) is not SyllableChallenge syllables || !card.Selection.IsComplete(syllables)) return;
+        StampPostcard(card);
+        SaveProgress();
         ShowPostcards();
     }
 
@@ -260,6 +267,7 @@ public partial class Game
             vehicle.Appearance.ToggleAccessory(PostcardReward.Id);
             postcardFeedback = "V garáži máš samolepku Mapka údolí!";
         }
+        Speak(postcardFeedback);
     }
 }
 

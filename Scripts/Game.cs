@@ -114,6 +114,8 @@ public partial class Game : Node3D
         ui.Title(SaveStore.Initial != null);
         ui.NewGameRequested += NewGame;
         ui.AnswerSelected += SubmitAnswer;
+        ui.SyllablesConfirmed += ConfirmSyllables;
+        ui.SpeechRequested += Speak;
         ui.LookSelected += SelectLook;
         ui.AccessorySelected += SelectAccessory;
         ui.ModelSelected += SelectModel;
@@ -190,6 +192,9 @@ public partial class Game : Node3D
                 if (pet.IsActive) PlaceCollectorPet(pet);
         }
         if (e.IsActionPressed("talk")) Interact();
+        else if (e is InputEventKey { PhysicalKeycode: Key.Space, Pressed: true } &&
+            !AtGarage && nearby == null && NearbyPostcard() >= 0)
+            InteractWithPostcards();
     }
     private void Interact()
     {
@@ -280,7 +285,7 @@ public partial class Game : Node3D
         }
         if (!enabledQuizzes.HasFlag(QuizType.Math))
         {
-            BeginQuiz(false, handover: true);
+            BeginQuiz(handover: true);
             return;
         }
         CurrentChallenge = new DeliveryChallenge(Delivery.Cargo, Delivery.Amount); rejectedAnswers.Clear();
@@ -326,8 +331,7 @@ public partial class Game : Node3D
     private void BeginChallenge(Animal animal)
     {
         nearby = animal; vehicle.Active = false;
-        bool math = animal.HouseIndex >= 0 ? world.Village.TaskAt(animal.HouseIndex) == VillageTaskKind.Math : Array.IndexOf(world.Animals, animal) % 2 == 0;
-        BeginQuiz(math);
+        BeginQuiz();
     }
 
     internal void SubmitAnswer(int answer)
@@ -338,7 +342,9 @@ public partial class Game : Node3D
             var next = syllableSelection.Pick(syllables, answer);
             if (next == syllableSelection) return;
             syllableSelection = next;
-            if (!next.IsComplete(syllables)) { ShowChallenge(); SaveProgress(); return; }
+            ShowChallenge();
+            SaveProgress();
+            return;
         }
         else if (!CurrentChallenge.Accepts(answer))
         {
@@ -347,6 +353,14 @@ public partial class Game : Node3D
             return;
         }
         CompleteChallenge();
+    }
+
+    internal void ConfirmSyllables()
+    {
+        if (State == GameState.PostcardAlbum) { ConfirmPostcardSyllables(); return; }
+        if (State == GameState.Challenge && banditArrival <= 0 && CurrentChallenge is SyllableChallenge syllables &&
+            syllableSelection.IsComplete(syllables))
+            CompleteChallenge();
     }
 
     private void CompleteChallenge()
@@ -444,6 +458,7 @@ public partial class Game : Node3D
                 if (lastCollected != Delivery.Collected)
                 {
                     lastCollected = Delivery.Collected; ui.DeliveryHud(Delivery); UpdateDeliveryGuides();
+                    if (Delivery.CanDeliver) Speak("Náklad je na autě. Teď ho dovez zpátky.");
                     SaveProgress();
                 }
                 bool atRecipient = Delivery.CanDeliver && vehicle.Position.DistanceTo(Delivery.Recipient.Position) < Settings.InteractionRange;

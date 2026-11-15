@@ -11,7 +11,7 @@ public partial class Game
         {
             State = GameState.TradeStatus; ui.TradeStatus(owner, Delivery); return;
         }
-        BeginQuiz(true);
+        BeginQuiz();
     }
 
     private void StartTrade()

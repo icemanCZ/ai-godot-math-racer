@@ -42,7 +42,7 @@ public partial class Game
     internal SaveData CaptureProgress() => new()
     {
         GolemOwned = GolemOwned, GolemActive = GolemActive,
-        QuizTypes = enabledQuizzes, NextWordQuiz = nextWordQuiz, ThreeTermMath = threeTermMath, HandoverQuiz = handoverQuiz,
+        QuizTypes = enabledQuizzes, NextQuiz = nextQuiz, ThreeTermMath = threeTermMath, HandoverQuiz = handoverQuiz,
         Reading = CurrentChallenge as ReadingChallenge,
         BanditSite = banditSite, BanditSolved = banditSolved, BanditCooldown = banditCooldown,
         Syllables = CurrentChallenge as SyllableChallenge,
@@ -74,7 +74,7 @@ public partial class Game
     {
         if (Delivery != null) { Delivery.ReleaseCargo(); RemoveChild(Delivery); Delivery.QueueFree(); Delivery = null; }
         CancelPostcardPhoto();
-        enabledQuizzes = data.QuizTypes; nextWordQuiz = data.NextWordQuiz; threeTermMath = data.ThreeTermMath;
+        enabledQuizzes = data.QuizTypes; nextQuiz = data.NextQuiz; threeTermMath = data.ThreeTermMath;
         handoverQuiz = data.HandoverQuiz;
         companionStopTime = 0;
         Array.Clear(companionWanders);

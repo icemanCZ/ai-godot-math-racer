@@ -20,7 +20,7 @@ public sealed class SaveData
     public int Version { get; set; } = 1;
     public QuizType QuizTypes { get; set; } = QuizType.All;
     public bool ThreeTermMath { get; set; }
-    public int NextWordQuiz { get; set; }
+    public int NextQuiz { get; set; }
     public bool HandoverQuiz { get; set; }
     public int BanditSite { get; set; } = -1;
     public int BanditSolved { get; set; }
@@ -124,7 +124,7 @@ public static class SaveStore
 
     private static bool HasInvalidQuizState(SaveData data) =>
         data.QuizTypes == QuizType.None || (data.QuizTypes & ~QuizType.All) != 0 ||
-        data.NextWordQuiz is < 0 or > 2 || (data.Reading != null && !data.Reading.IsValid()) ||
+        data.NextQuiz < 0 || data.NextQuiz >= Game.QuizRotationLength || (data.Reading != null && !data.Reading.IsValid()) ||
         data.BanditSite is < -1 or >= Game.MaxBanditSites || data.BanditSolved is < 0 or >= Game.BanditQuestionCount ||
         !float.IsFinite(data.BanditCooldown) || data.BanditCooldown is < 0 or > Game.BanditCooldownTime ||
         (data.Nearby == Game.BanditActorId ? data.State != GameState.Challenge || data.BanditSite < 0 ||
@@ -133,7 +133,7 @@ public static class SaveStore
             data.DeliveryReward || data.Math != null || data.DeliveryQuestion != null ||
             (data.Letters == null && data.Syllables == null && data.Reading == null))) ||
         (data.Syllables == null ? data.SyllableSelection != default :
-            !data.Syllables.IsValid() || !data.SyllableSelection.IsValid(data.Syllables) || data.SyllableSelection.IsComplete(data.Syllables)) ||
+            !data.Syllables.IsValid() || !data.SyllableSelection.IsValid(data.Syllables)) ||
         (data.State is GameState.Challenge or GameState.Reward or GameState.ExpeditionChoice && data.Nearby < 0) ||
         (data.State == GameState.Challenge && data.Math == null && data.Letters == null && data.Syllables == null && data.Reading == null && data.DeliveryQuestion == null);
 

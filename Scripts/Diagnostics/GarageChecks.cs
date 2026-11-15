@@ -53,9 +53,22 @@ public partial class GarageChecks : Node
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             var ui = game.GetChildren().OfType<GameUi>().Single();
+            var selectable = game.FindChildren("*", "Button", true, false).OfType<Button>()
+                .Where(button => button.IsVisibleInTree() && !button.Disabled).ToHashSet();
+            var buttonsSeen = new System.Collections.Generic.HashSet<Button>();
+            var scroll = (ScrollContainer)game.FindChild("GarageScroll", true, false);
+            bool reachedBelowFold = false;
+            for (int i = 0; i < selectable.Count; i++)
+            {
+                ui._Input(new InputEventKey { Keycode = Key.Right, PhysicalKeycode = Key.Right, Pressed = true });
+                reachedBelowFold |= scroll.ScrollVertical > 0;
+                if (GetViewport().GuiGetFocusOwner() is Button button) buttonsSeen.Add(button);
+            }
+            Check(buttonsSeen.SetEquals(selectable) && reachedBelowFold,
+                "arrow keys reach every enabled garage button, including scrolled items and Back");
             ui._Input(new InputEventJoypadMotion { Axis = JoyAxis.RightY, AxisValue = 1 }); ui._Process(.4);
             ui._Input(new InputEventJoypadMotion { Axis = JoyAxis.RightY, AxisValue = 0 });
-            Check(((ScrollContainer)game.FindChild("GarageScroll", true, false)).ScrollVertical > 0,
+            Check(scroll.ScrollVertical > 0,
                 "right stick scrolls the catalogue even when rewards are locked");
             game.ConfigureCar(new("buggy", false, true));
             Check(car.Appearance.CurrentModelId == "classic", "locked model cannot be equipped");

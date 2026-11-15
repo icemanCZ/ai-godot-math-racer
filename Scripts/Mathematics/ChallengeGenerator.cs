@@ -13,9 +13,13 @@ public sealed class ChallengeGenerator
     {
         if (threeTerms)
         {
-            int first = random.Next(1, 9);
-            int second = random.Next(1, 10 - first);
-            int third = random.Next(1, 11 - first - second);
+            int sum = random.Next(3, 11);
+            int firstCut = random.Next(1, sum);
+            int secondCut = random.Next(1, sum - 1);
+            if (secondCut >= firstCut) secondCut++;
+            int first = Math.Min(firstCut, secondCut);
+            int second = Math.Abs(firstCut - secondCut);
+            int third = sum - first - second;
             return Create(first, second, MathOperation.Addition, third);
         }
         var operation = random.Next(2) == 0 ? MathOperation.Addition : MathOperation.Subtraction;

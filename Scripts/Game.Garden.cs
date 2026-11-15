@@ -11,6 +11,6 @@ public partial class Game
         {
             State = GameState.GardenStatus; ui.GardenStatus(world.Village, Delivery); return;
         }
-        BeginQuiz(world.Village.GardenCount % 2 == 0);
+        BeginQuiz();
     }
 }

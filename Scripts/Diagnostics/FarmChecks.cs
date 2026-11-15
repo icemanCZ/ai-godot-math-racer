@@ -46,8 +46,7 @@ public partial class FarmChecks : Node
             for (int i = 0; i < Village.FarmKinds.Length; i++)
             {
                 car.SetPose(village.Farmer.Position + Vector3.Right * 2, 0); game.OpenChallenge(village.Farmer);
-                Check(game.State == GameState.Challenge && (i % 2 == 0 ? game.CurrentChallenge is MathChallenge : game.CurrentChallenge is SyllableChallenge or IPictureChallenge),
-                    "each departure requires alternating math or letters");
+                Check(game.State == GameState.Challenge && game.CurrentChallenge != null, "each departure requires a quiz");
                 game.SubmitAnswer(game.CurrentChallenge!.Choices.First(choice => !game.CurrentChallenge.Accepts(choice)));
                 Check(game.Delivery == null && village.FarmCount == i, "wrong answer cannot start a trip or award an animal");
                 RoundTrip(); game.FinishInteraction(); game.OpenChallenge(village.Farmer);

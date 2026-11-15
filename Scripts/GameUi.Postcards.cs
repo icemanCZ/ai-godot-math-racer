@@ -71,7 +71,7 @@ public partial class GameUi
             Button? firstChoice = null;
             foreach (int choice in question.Choices)
             {
-                var button = Button(question is IPictureChallenge ? "" : choice.ToString(), () => answer(choice), row);
+                var button = Button(question is IPictureChallenge ? "" : choice.ToString(), () => answer(choice), row, narrate: false);
                 button.Name = $"Answer{choice}";
                 button.Disabled = (rejected & (1 << choice)) != 0;
                 button.CustomMinimumSize = new(112, 76);
@@ -88,6 +88,7 @@ public partial class GameUi
                 if (!button.Disabled) firstChoice ??= button;
             }
             firstChoice?.GrabFocus();
+            NarrateAnswerButtons(row, question);
         }
         var actions = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         content.AddChild(actions);
