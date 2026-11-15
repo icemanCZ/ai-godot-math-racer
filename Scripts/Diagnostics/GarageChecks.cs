@@ -90,7 +90,7 @@ public partial class GarageChecks : Node
             game.BeginDeliveryQuestion();
             Check(game.State == GameState.Challenge && game.CurrentChallenge is SyllableChallenge,
                 "the enabled quiz type replaces cargo counting when arithmetic is off");
-            string path = ProjectSettings.GlobalizePath("res://artifacts/save-checks/handover.json");
+            string path = DiagnosticArtifacts.PathFor("save-checks/handover.json");
             Check(SaveStore.Write(game.CaptureProgress(), path), "replacement handover quiz saves to disk");
             game.RestoreProgress(SaveStore.Read(path) ?? throw new InvalidOperationException("Handover save failed validation"));
             ChallengeChecks.Solve(game);

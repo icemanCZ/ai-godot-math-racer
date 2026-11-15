@@ -4,6 +4,9 @@ config_version=5
 config/name="MathRacer – Kouzelné údolí"
 run/main_scene="res://Main.tscn"
 
+[audio]
+general/text_to_speech=true
+
 [display]
 window/size/viewport_width=1600
 window/size/viewport_height=900

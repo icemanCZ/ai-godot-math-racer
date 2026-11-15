@@ -23,7 +23,7 @@ public partial class PostcardChecks(Game game, World world, Vehicle car) : Node
             int sender = game.CaptureProgress().Sender;
             Require(sender >= 0, "normal expedition starts before the postcard trip");
 
-            string path = ProjectSettings.GlobalizePath($"res://artifacts/postcard-checks/{Settings.Seed}/progress.json");
+            string path = DiagnosticArtifacts.PathFor($"postcard-checks/{Settings.Seed}/progress.json");
             for (int i = 0; i < Game.PostcardCount; i++)
             {
                 car.SetPose(game.PostcardStop(i) + Vector3.Up * .2f, 0);

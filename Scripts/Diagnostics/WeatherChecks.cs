@@ -34,7 +34,7 @@ public partial class WeatherChecks(Game game, World world, Vehicle car) : Node
             Check(game.State == GameState.Challenge && weather.Current == WeatherKind.Clear, "Wrong answer leaves the weather unchanged");
             ChallengeChecks.Solve(game);
             Check(game.State == GameState.WeatherChoice, "Correct answer unlocks weather choice");
-            string path = ProjectSettings.GlobalizePath($"res://artifacts/weather-checks/{Settings.Seed}/progress.json");
+            string path = DiagnosticArtifacts.PathFor($"weather-checks/{Settings.Seed}/progress.json");
             Check(SaveStore.Write(game.CaptureProgress(), path), "Weather choice can be saved");
             var progress = SaveStore.Read(path);
             Check(progress?.State == GameState.WeatherChoice, "Weather choice passes save validation");

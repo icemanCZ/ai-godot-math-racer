@@ -30,10 +30,9 @@ public partial class DrivingEvents : Node3D
 
     internal void Generate(World world)
     {
+        var actors = world.InteractionActors.Where(actor => !actor.IsWitch && !actor.IsSorcerer).ToArray();
         for (int course = 0; course < 2; course++)
         {
-            var actors = world.Animals.Concat(world.Village.Residents).Concat(world.Village.Traders)
-                .Append(world.Village.Farmer).Append(world.Village.Gardener).Append(world.Village.GemCollector).Append(world.Village.Toymaker).ToArray();
             // Use the outer countryside loops, with the entire course clear of the village.
             courses[course] = WorldPlan.CreateCurve(WorldLayout.Plan.Routes[course + 2]);
             float DistanceFromVillage(Vector3 p) => world.Village.BuildingFoundations

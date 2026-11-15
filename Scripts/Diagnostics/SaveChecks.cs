@@ -20,7 +20,7 @@ public partial class SaveChecks : Node
     {
         try
         {
-            string path = ProjectSettings.GlobalizePath("res://artifacts/save-checks/progress.json");
+            string path = DiagnosticArtifacts.PathFor("save-checks/progress.json");
             void RoundTrip()
             {
                 var expected = game.CaptureProgress();

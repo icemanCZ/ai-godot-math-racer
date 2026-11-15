@@ -95,7 +95,7 @@ public partial class VillageChecks : Node
                     building.Name + " sits above terrain across its entire foundation");
                 Check(streetsClear, building.Name + " leaves the village streets clear");
             }
-            string path = ProjectSettings.GlobalizePath("res://artifacts/village-checks/progress.json");
+            string path = DiagnosticArtifacts.PathFor("village-checks/progress.json");
             Check(village.Residents.Count == 4 && village.Houses.Count == 4, "each house has a dedicated resident");
             Check(world.Animals.Length == 10 && Village.TaskAnimalClearance == 100 && world.Animals.All(a => !village.IsNearVillage(a.Position)), "ten standard task animals stand at least 100 metres from every village plot");
             for (int seed = 1; seed <= 128; seed++)

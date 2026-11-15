@@ -20,7 +20,7 @@ public partial class GardenChecks : Node
         try
         {
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-            string path = ProjectSettings.GlobalizePath("res://artifacts/garden-checks/progress.json");
+            string path = DiagnosticArtifacts.PathFor("garden-checks/progress.json");
             void RoundTrip()
             {
                 var expected = game.CaptureProgress();

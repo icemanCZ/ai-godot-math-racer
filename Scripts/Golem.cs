@@ -86,7 +86,6 @@ internal static class GolemModel
 
 public partial class Game
 {
-    internal const int SorcererId = 42;
     internal bool GolemOwned { get; private set; }
     internal bool GolemActive { get; private set; }
     private Node3D golem = null!;
@@ -145,8 +144,8 @@ public partial class Game
     internal void BeginGolemQuest()
     {
         if (State != GameState.SorcererStatus || Delivery != null || GolemOwned) return;
-        Delivery = new Expedition(world, vehicle, world.Sorcerer, true); AddChild(Delivery);
-        lastCollected = 0; ui.DeliveryHud(Delivery); Start(); UpdateDeliveryGuides(); SaveProgress();
+        StartExpedition(world.Sorcerer, true);
+        SaveProgress();
     }
     private void CompleteGolemQuest()
     {

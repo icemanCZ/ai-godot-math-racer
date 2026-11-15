@@ -4,7 +4,6 @@ namespace MathRacer;
 
 public partial class Game
 {
-    internal const int WitchId = 41;
     internal Weather Weather { get; } = new();
 
     private void OpenWeatherChallenge()

@@ -69,5 +69,6 @@ public partial class Game
         rejectedAnswers.Clear();
         State = GameState.Challenge;
         ShowChallenge();
+        if (nearby != null && !InBanditQuiz) Speak(QuizInstruction(nearby, CurrentChallenge));
     }
 }

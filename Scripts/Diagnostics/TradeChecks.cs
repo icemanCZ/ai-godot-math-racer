@@ -23,7 +23,7 @@ public partial class TradeChecks : Node
         try
         {
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-            string path = ProjectSettings.GlobalizePath("res://artifacts/trade-checks/progress.json");
+            string path = DiagnosticArtifacts.PathFor("trade-checks/progress.json");
             void RoundTrip()
             {
                 var saved = game.CaptureProgress();

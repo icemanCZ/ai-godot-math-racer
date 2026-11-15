@@ -101,7 +101,7 @@ internal sealed partial class CollectorPetChecks(Game game, World world, Vehicle
             PetButton(pets[0]).EmitSignal(Button.SignalName.Pressed);
             Check(pets[0].Visible && pets.Skip(1).All(p => !p.Visible), "reactivating a pet leaves the other choices intact");
 
-            string path = ProjectSettings.GlobalizePath("res://artifacts/collector-pet-checks/progress.json");
+            string path = DiagnosticArtifacts.PathFor("collector-pet-checks/progress.json");
             var saved = game.CaptureProgress();
             Check(SaveStore.Write(saved, path), "pet preferences are written");
             game.RestoreProgress(SaveStore.Read(path) ?? throw new InvalidOperationException("Pet save was rejected."));

@@ -33,7 +33,7 @@ public partial class BanditChecks(Game game, World world, Vehicle car) : Node
             game.SubmitAnswer(reading!.Choices.First(choice => !reading.Accepts(choice)));
             Check(IsQuestionAt(0, 1), "wrong answer leaves the same question open");
             game.TogglePause();
-            string path = ProjectSettings.GlobalizePath($"res://artifacts/bandit-checks/{Settings.Seed}/progress.json");
+            string path = DiagnosticArtifacts.PathFor($"bandit-checks/{Settings.Seed}/progress.json");
             Check(SaveStore.Write(game.CaptureProgress(), path), "paused encounter saves to disk");
             game.RestoreProgress(SaveStore.Read(path) ?? throw new InvalidOperationException("Bandit save failed validation."));
             Check(IsQuestionAt(0, 1) && game.CurrentChallenge is ReadingChallenge restored &&

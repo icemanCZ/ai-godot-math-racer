@@ -12,6 +12,10 @@ public partial class Game
     private GameState lastSavedState = GameState.Title;
     private static (QuizType Types, bool ThreeTerms)? newGameQuizzes;
 
+    private int ActorId(Animal? actor) => actor == null ? -1 : actor == bandits[0] ? BanditActorId : world.ActorId(actor);
+
+    private Animal? ActorAt(int id) => id == BanditActorId ? bandits[0] : world.ActorAt(id);
+
     internal void NewGame()
     {
         if (newGameQuizzes.HasValue || State is not (GameState.Title or GameState.Paused)) return;

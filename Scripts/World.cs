@@ -6,6 +6,16 @@ namespace MathRacer;
 public partial class World : Node3D
 {
     public const int QuestAnimalCount = 10;
+    // World actor IDs are persisted. The gap before residents covers legacy roadside animals.
+    internal const int FirstResidentId = 30;
+    internal const int FarmerId = 34;
+    internal const int GardenerId = 35;
+    internal const int GemCollectorId = 36;
+    internal const int ToymakerId = 37;
+    internal const int FirstTraderId = 38;
+    internal const int WitchId = 41;
+    internal const int SorcererId = 42;
+    private readonly SortedList<int, Animal> actors = new();
     public Terrain Ground { get; } = new();
     public Roads Routes { get; private set; } = new();
     public Village Village { get; private set; } = new();
@@ -17,6 +27,7 @@ public partial class World : Node3D
     internal Animal Sorcerer { get; private set; } = null!;
     internal Node3D Tower { get; private set; } = null!;
     public Animal[] Animals { get; private set; } = System.Array.Empty<Animal>();
+    internal IEnumerable<Animal> InteractionActors => actors.Values;
     internal Vector3[] SpecialPickupSpots { get; private set; } = System.Array.Empty<Vector3>();
     public void Generate()
     {
@@ -56,11 +67,35 @@ public partial class World : Node3D
             AddChild(animal); animals.Add(animal);
         }
         Animals = animals.ToArray();
+        RegisterActors();
         PlaceAnimalsBesideRoads();
         SpecialPickupSpots = CreateSpecialPickupSpots();
         AddChild(Plants); Plants.Generate(Ground, Routes, Village, Animals,
             p => p.DistanceSquaredTo(Witch.Position) < 7 * 7 || p.DistanceSquaredTo(Tower.Position) < 18 * 18 || p.DistanceSquaredTo(Sorcerer.Position) < 8 * 8 || IsPickupApproachReserved(p));
     }
+
+    private void RegisterActors()
+    {
+        for (int i = 0; i < Animals.Length; i++) actors.Add(i, Animals[i]);
+        foreach (var resident in Village.Residents) actors.Add(FirstResidentId + resident.HouseIndex, resident);
+        actors.Add(FarmerId, Village.Farmer);
+        actors.Add(GardenerId, Village.Gardener);
+        actors.Add(GemCollectorId, Village.GemCollector);
+        actors.Add(ToymakerId, Village.Toymaker);
+        foreach (var trader in Village.Traders) actors.Add(FirstTraderId + trader.TradeIndex, trader);
+        actors.Add(WitchId, Witch);
+        actors.Add(SorcererId, Sorcerer);
+    }
+
+    internal int ActorId(Animal actor)
+    {
+        foreach (var (id, registered) in actors)
+            if (registered == actor) return id;
+        return -1;
+    }
+
+    internal Animal? ActorAt(int id) => actors.TryGetValue(id, out var actor) ? actor : null;
+
     internal void GenerateVillage()
     {
         AddChild(Ground); Ground.Generate();

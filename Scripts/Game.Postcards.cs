@@ -57,9 +57,7 @@ public partial class Game
             bridge, village, farm, world.Village.GarageBuilding.GlobalPosition,
             world.Village.GardenBuilding.GlobalPosition, world.Plants.MeadowPreview
         };
-        var actors = world.Animals.Concat(world.Village.Residents).Concat(world.Village.Traders)
-            .Append(world.Village.Farmer).Append(world.Village.Gardener)
-            .Append(world.Village.GemCollector).Append(world.Village.Toymaker).Append(world.Witch).ToArray();
+        var actors = world.InteractionActors.Where(actor => !actor.IsSorcerer).ToArray();
         var candidates = world.Routes.Samples.Select(point =>
         {
             point.Y = world.Routes.SurfaceHeight(point, world.Ground.Height(point.X, point.Z));

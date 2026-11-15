@@ -12,11 +12,9 @@ public partial class Game
     {
         if (State != GameState.HouseFruitOffer || nearby == null || nearby.HouseIndex < 0 ||
             !nearby.RewardAvailable || Delivery != null || world.Village.TaskAt(nearby.HouseIndex) != VillageTaskKind.Fruit) return;
-        Delivery = new Expedition(world, vehicle, nearby, true);
-        AddChild(Delivery);
-        CurrentChallenge = null; rejectedAnswers.Clear(); deliveryReward = false;
-        lastCollected = Delivery.Collected;
-        ui.DeliveryHud(Delivery); Start(); UpdateDeliveryGuides(); SaveProgress();
+        deliveryReward = false;
+        StartExpedition(nearby, true);
+        SaveProgress();
     }
 
     private void CompleteHouseTask(Animal owner)

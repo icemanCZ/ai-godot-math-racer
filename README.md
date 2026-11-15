@@ -69,10 +69,10 @@ Pass `--seed=NUMBER` after Godot’s `--` separator to reproduce a valley during
 
 ## Development and previews
 
-`./build.ps1 -Test` runs gameplay, save, world generation, course, physics and simulated controller checks. The road audits verify connected loops, gradients and bridge clearance. The road-driving tests drive routes in both directions using the car physics.
+`./build.ps1 -Test` runs gameplay, save, world generation, course, physics and simulated controller checks in up to four Godot processes. Use `-TestJobs 1` to run them in sequence or set a different concurrency limit with `-TestJobs`. Each scenario keeps its log and any test saves in its own folder under `artifacts/game-tests/`. The road audits verify connected loops, gradients and bridge clearance. The road-driving tests drive routes in both directions using the car physics.
 
 `./run.ps1 -Capture -View reading` writes `artifacts/reading.png`. Other useful views include `syllables`, `letters`, `challenge-2`, `garage`, `task-choice`, `delivery`, `square`, `slalom`, `museum-full`, `toys-full`, `garden-full`, `farm-full`, `wildlife`, `tree-impact`, `tree-wind`, `vegetation-detail` and `grass`.
 
 The meshes, pictures and environments are generated in code. See the [architecture guide](docs/ARCHITECTURE.md), [algorithms](docs/ALGORITHMS.md) and [validation notes](docs/VALIDATION.md) for implementation details and recorded checks.
 
-The prototype currently has no audio. The camera clears the ground, while buildings can still block its view. The 1080p performance target and the simplified prompts still need real player testing.
+The game reads short quiz and task instructions aloud when a Czech system voice is available. The camera clears the ground, while buildings can still block its view. The 1080p performance target and the simplified prompts still need real player testing.

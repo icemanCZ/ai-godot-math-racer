@@ -37,7 +37,7 @@ public partial class EventChecks(Game game, World world, Vehicle car) : Node
                 events.Tick(events.Points[course, 0]);
                 Check(events.Next == 1, "start gate advances event");
                 var saved = game.CaptureProgress();
-                string path = ProjectSettings.GlobalizePath($"res://artifacts/event-checks/{Settings.Seed}/progress.json");
+                string path = DiagnosticArtifacts.PathFor($"event-checks/{Settings.Seed}/progress.json");
                 Check(SaveStore.Write(saved, path), "event checkpoint written to disk");
                 var restored = SaveStore.Read(path)!;
                 Check(restored != null, "event checkpoint passes save validation");

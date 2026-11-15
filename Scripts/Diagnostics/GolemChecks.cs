@@ -13,7 +13,7 @@ public partial class GolemChecks : Node
         try
         {
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-            string path = ProjectSettings.GlobalizePath("res://artifacts/golem-checks/progress.json");
+            string path = DiagnosticArtifacts.PathFor("golem-checks/progress.json");
             void RoundTrip()
             {
                 var saved = game.CaptureProgress(); Check(SaveStore.Write(saved, path), "save written");

@@ -24,7 +24,7 @@ public partial class CollectionChecks : Node
         {
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             var village = world.Village;
-            string path = ProjectSettings.GlobalizePath("res://artifacts/collection-checks/progress.json");
+            string path = DiagnosticArtifacts.PathFor("collection-checks/progress.json");
             void RoundTrip()
             {
                 var expected = game.CaptureProgress();
