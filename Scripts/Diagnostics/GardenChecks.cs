@@ -149,6 +149,19 @@ public partial class GardenChecks : Node
                 car.SetPose(farOffRoad, 0);
                 game.Delivery.Tick(.01);
                 Check(!exitArrow.Visible, "off-road arrow stays hidden far from the target");
+                game.Delivery.Tick(.25);
+                var roadArrows = game.Delivery.GetChildren()
+                    .OfType<MeshInstance3D>()
+                    .Where(a => a != exitArrow && a.Name.ToString().StartsWith("RouteArrow"))
+                    .ToArray();
+                bool roadArrowsVisible = false;
+                for (int turn = 0; turn < 8 && !roadArrowsVisible; turn++)
+                {
+                    car.SetPose(farOffRoad, turn * Mathf.Tau / 8);
+                    game.Delivery.Tick(.01);
+                    roadArrowsVisible = roadArrows.Any(a => a.Visible);
+                }
+                Check(roadArrowsVisible, "road arrows stay visible after leaving the road far from the target");
                 var offRoad = approach.Road.Lerp(destination, .55f);
                 car.SetPose(offRoad, Mathf.Pi);
                 game.Delivery.Tick(.01);

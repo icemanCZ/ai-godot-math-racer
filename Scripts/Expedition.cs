@@ -472,18 +472,20 @@ public partial class Expedition : Node3D
     private void UpdateArrowVisibility()
     {
         offRoad = !OnRoad(car.Position);
-        var forward = -car.Transform.Basis.Z;
-        foreach (var arrow in guidanceArrows)
-        {
-            var offset = arrow.Position - car.Position;
-            offset.Y = 0;
-            arrow.Visible = !offRoad && offset.Dot(forward) > 0 && offset.LengthSquared() >= 16f;
-        }
         var anchor = offRoad ? car.Position : roadExit;
         var direction = Destination - anchor;
         direction.Y = 0;
         destinationArrow.Visible =
             direction.LengthSquared() > .5f && (offRoad ? direction.Length() <= destinationRoadDistance : showRoadExit);
+        // Off the road, road arrows keep guiding back to the route until the direct target arrow takes over.
+        bool directToTarget = offRoad && destinationArrow.Visible;
+        var forward = -car.Transform.Basis.Z;
+        foreach (var arrow in guidanceArrows)
+        {
+            var offset = arrow.Position - car.Position;
+            offset.Y = 0;
+            arrow.Visible = !directToTarget && offset.Dot(forward) > 0 && offset.LengthSquared() >= 16f;
+        }
         if (!destinationArrow.Visible)
             return;
         destinationArrow.Position = anchor + Vector3.Up * (offRoad ? 4.2f : 1.25f);
