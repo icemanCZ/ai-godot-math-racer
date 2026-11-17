@@ -71,6 +71,11 @@ public partial class Game
             Start();
             AddChild(new GolemChecks(this, world, vehicle));
         }
+        if (args.Contains("--ford-checks"))
+        {
+            Start();
+            AddChild(new FordChecks(this, world, vehicle));
+        }
         if (args.Contains("--weather-checks"))
             AddChild(new WeatherChecks(this, world, vehicle));
         if (args.Contains("--bandit-checks"))
@@ -308,6 +313,34 @@ public partial class Game
                 if (view == "challenge-2")
                     threeTermMath = true;
                 OpenChallenge(world.Animals[view is "letters" or "syllables" or "reading" ? 1 : 0]);
+            }
+        }
+        if (view.StartsWith("ford-") && int.TryParse(view["ford-".Length..], out int stage) && world.Ford is { } ford)
+        {
+            ford.SetStage(stage);
+            var site = ford.Site;
+            vehicle.SetPose(
+                world.Ground.At(site.NearDump.X, site.Z, .15f),
+                site.Side > 0 ? -Mathf.Pi / 2 : Mathf.Pi / 2
+            );
+            trailer.Attach(true);
+            trailer.SetLoad(stage < 3 ? HaulLoad.Stones : HaulLoad.Soil);
+        }
+        if (view == "trailer")
+        {
+            trailer.Attach(true);
+            trailer.SetLoad(HaulLoad.Stones);
+        }
+        if (view is "beaver" or "load-question" && world.Beaver != null)
+        {
+            vehicle.SetPose(world.Beaver.Position + Vector3.Right * 3, 0);
+            OpenBeaver();
+            if (view == "load-question")
+            {
+                BeginFordTrip();
+                enabledQuizzes = QuizType.Math;
+                vehicle.SetPose(world.Ground.At(Haul!.Source.Position.X, Haul.Source.Position.Z, .15f), 0);
+                BeginLoading();
             }
         }
         if (view == "decorated")

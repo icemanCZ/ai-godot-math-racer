@@ -389,6 +389,11 @@ public partial class GameUi : CanvasLayer
             DeliveryQuestion(delivery, rejected);
             return;
         }
+        if (question is LoadChallenge load)
+        {
+            LoadQuestion(load, rejected);
+            return;
+        }
         Clear();
         if (banditStage > 0)
             Text($"?  {banditStage} / {Game.BanditQuestionCount}", 27);
@@ -553,7 +558,8 @@ public partial class GameUi : CanvasLayer
         System.Collections.Generic.IReadOnlyList<CollectorPet> collectorPets,
         QuizType quizzes,
         bool threeTermMath,
-        int coins
+        int coins,
+        GarageTrailer? trailer = null
     )
     {
         Clear();
@@ -860,6 +866,8 @@ public partial class GameUi : CanvasLayer
         PetButton("Golem", "Malý golem", golemPreview, golemOwned, golemActive, "Černokněžník Baltazar", () =>
             GolemToggleRequested?.Invoke()
         );
+        if (trailer is { } towing)
+            GarageTrailerRow(catalogue, scroll, towing, ref selectedFocus);
         Category("Laky", System.Linq.Enumerable.Select(CarLook.All, l => (new CarReward(l.Id, false), l.Name)));
         Category("Modely", System.Linq.Enumerable.Select(CarBody.All, b => (new CarReward(b.Id, false, true), b.Name)));
         Category(

@@ -30,7 +30,8 @@ public partial class Game
         SaveProgress();
     }
 
-    private Vector3 CollectorPetTarget(CollectorPet pet) => vehicle.Position + vehicle.Basis * pet.TrailOffset;
+    private Vector3 CollectorPetTarget(CollectorPet pet) =>
+        vehicle.Position + vehicle.Basis * (pet.TrailOffset + Vector3.Back * TrailerTrailShift);
 
     private void PlaceCollectorPet(CollectorPet pet)
     {
@@ -118,6 +119,8 @@ public partial class Game
             var target = vehicle.Position + new Vector3(Mathf.Sin(angle), 0, Mathf.Cos(angle)) * radius;
             if (River.OnBridge(vehicle.Position.X, vehicle.Position.Z))
                 target.Z = Mathf.Clamp(target.Z, River.BridgeZ - 2.1f, River.BridgeZ + 2.1f);
+            else if (world.OnCrossing(vehicle.Position.X, vehicle.Position.Z) && world.Ford is { } ford)
+                target.Z = Mathf.Clamp(target.Z, ford.Site.Z - 2.1f, ford.Site.Z + 2.1f);
             if (FlatDistanceSquared(current, target) < 2 || !ClearCompanionPath(current, target))
                 continue;
             wander.Goal = target;
@@ -135,7 +138,7 @@ public partial class Game
             var p = from.Lerp(to, step / 8f);
             if (FlatDistanceSquared(p, vehicle.Position) < 5.3f || world.Plants.NearTrunk(p, .95f))
                 return false;
-            if (!River.OnBridge(p.X, p.Z) && River.Distance(p.X, p.Z) < River.HalfWidth(p.Z) + .55f)
+            if (!world.OnCrossing(p.X, p.Z) && River.Distance(p.X, p.Z) < River.HalfWidth(p.Z) + .55f)
                 return false;
         }
         return true;
