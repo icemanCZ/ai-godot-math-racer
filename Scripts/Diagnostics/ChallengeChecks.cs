@@ -145,27 +145,12 @@ public static class ChallengeChecks
             "the reading deck has distinct three-letter Czech words and one matching picture each"
         );
 
-        var rewardRandom = new Random(83);
-        System.Collections.Generic.IReadOnlyList<CarReward> drawn = Array.Empty<CarReward>();
-        var seen = new System.Collections.Generic.HashSet<CarReward>();
-        for (int i = 0; i < 1000; i++)
-        {
-            var next = CarReward.Draw(rewardRandom, drawn);
-            if (
-                next.Count != 4
-                || next.Distinct().Count() != 4
-                || next.Count(r => r.IsAccessory) != 2
-                || !next.Any(r => !r.IsAccessory && !r.IsModel)
-                || !next.Any(r => r.IsModel)
-                || next.ToHashSet().SetEquals(drawn)
-            )
-                throw new InvalidOperationException("Invalid mixed reward set.");
-            seen.UnionWith(next);
-            drawn = next;
-        }
         check(
-            seen.Count == CarLook.All.Count + CarAccessory.All.Count + CarBody.All.Count,
-            "1000 mixed reward sets can offer every paint, accessory and model"
+            CarLook.All.All(l => new CarReward(l.Id, false).Price == CarReward.PaintPrice)
+                && CarAccessory.All.All(a => new CarReward(a.Id, true).Price == CarReward.AccessoryPrice)
+                && CarBody.All.All(b => new CarReward(b.Id, false, true).Price == CarReward.ModelPrice)
+                && new CarReward(CarAccessory.ValleyMap.Id, true).Price == null,
+            "every standard paint, accessory and model has a garage price; special stickers have none"
         );
 
         void Press(string name)
@@ -200,8 +185,12 @@ public static class ChallengeChecks
         );
         CheckCounter();
         string originalLook = car.Appearance.CurrentLookId;
-        game.SelectLook("blueberry");
-        check(car.Appearance.CurrentLookId == originalLook, "reward unavailable before correct answer");
+        int startCoins = game.Coins;
+        game.ConfigureCar(new CarReward("blueberry", false));
+        check(
+            car.Appearance.CurrentLookId == originalLook && game.Coins == startCoins,
+            "car items cannot be bought outside the garage"
+        );
         int visits = 1;
         Type[] rotation =
         {
@@ -312,7 +301,7 @@ public static class ChallengeChecks
                 Press("ConfirmSyllables");
             }
             check(
-                game.State == GameState.ExpeditionChoice && !car.Active && game.CurrentRewards.Count == 0,
+                game.State == GameState.ExpeditionChoice && !car.Active,
                 "correct answer opens task choice before reward"
             );
             game.TogglePause();
@@ -328,45 +317,33 @@ public static class ChallengeChecks
                 }
             car.SetPose(expedition.Recipient.Position + Vector3.Right * 2, 0);
             game.BeginDeliveryQuestion();
+            int coinsBefore = game.Coins;
+            int ownedBefore = game.OwnedRewards.Count;
             Press($"Answer{game.CurrentChallenge!.Choices.Single(game.CurrentChallenge.Accepts)}");
             check(game.State == GameState.Reward && !car.Active, "completing chosen expedition opens reward");
-            var rewards = game.CurrentRewards.ToArray();
+            check(
+                game.Coins == coinsBefore + Game.RoadsideDeliveryCoins && game.OwnedRewards.Count == ownedBefore,
+                "a finished delivery pays coins instead of a car item"
+            );
+            check(
+                game.FindChild("RewardCoins", true, false) is Label { Text: var paid }
+                    && paid == $"+{Game.RoadsideDeliveryCoins}"
+                    && game.FindChild("CoinCount", true, false) is Label { Text: var total }
+                    && total == game.Coins.ToString(),
+                "reward panel and HUD show the coins"
+            );
             game.TogglePause();
             game.TogglePause();
             check(
-                game.State == GameState.Reward && game.CurrentRewards.SequenceEqual(rewards),
-                "pause preserves exact reward choices"
+                game.State == GameState.Reward && game.Coins == coinsBefore + Game.RoadsideDeliveryCoins,
+                "pause preserves the reward panel without paying twice"
             );
             check(
                 game.FindChild("NewChallenge", true, false) == null,
                 "reward cannot start another example at the same animal"
             );
-            var absent = CarAccessory.All.First(a => !rewards.Contains(new CarReward(a.Id, true)));
-            bool wasEquipped = car.Appearance.HasAccessory(absent.Id);
-            game.SelectAccessory(absent.Id);
-            check(
-                game.State == GameState.Reward && car.Appearance.HasAccessory(absent.Id) == wasEquipped,
-                "cannot select an unoffered reward"
-            );
-            if (visits % 4 == 0)
-                Press("KeepLook");
-            else
-            {
-                var reward = rewards.First(r =>
-                    visits % 4 == 1 ? r.IsModel
-                    : visits % 4 == 2 ? !r.IsModel && !r.IsAccessory
-                    : r.IsAccessory
-                );
-                bool hadAccessory = car.Appearance.HasAccessory(reward.Id);
-                Press(reward.ButtonName);
-                check(
-                    reward.IsModel ? car.Appearance.CurrentModelId == reward.Id
-                        : reward.IsAccessory ? car.Appearance.HasAccessory(reward.Id) != hadAccessory
-                        : car.Appearance.CurrentLookId == reward.Id,
-                    "offered reward UI applies selected model, paint or accessory"
-                );
-            }
-            check(game.State == GameState.Exploring && car.Active, "reward choice resumes driving");
+            Press("TakeCoins");
+            check(game.State == GameState.Exploring && car.Active, "reward panel resumes driving");
             car.Reset();
             game.TogglePause();
             game.TogglePause();

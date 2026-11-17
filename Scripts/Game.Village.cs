@@ -69,6 +69,7 @@ public partial class Game
     {
         int house = owner.HouseIndex;
         world.Village.Upgrade(house);
+        AddCoins(HouseTaskCoins);
         nearby = owner;
         string upgrade = Village.Upgrades[world.Village.Level(house) - 1];
         CelebrateCompletion(

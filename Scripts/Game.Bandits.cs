@@ -175,6 +175,7 @@ public partial class Game
             var position = bandits[0].Position;
             CloseInteraction();
             CelebrateAt(position, "✓  3 / 3");
+            AddCoins(BanditCoins);
         }
         else
             BeginQuiz();

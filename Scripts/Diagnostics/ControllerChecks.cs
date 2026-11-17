@@ -197,10 +197,7 @@ public partial class ControllerChecks : Node
             int answer = game.CurrentChallenge!.Choices.Single(game.CurrentChallenge.Accepts);
             ((Control)game.FindChild($"Answer{answer}", true, false)).GrabFocus();
             await KeyPress(Key.E);
-            Check(
-                game.State == GameState.ExpeditionChoice && game.CurrentRewards.Count == 0,
-                "E confirms the answer and opens task choice"
-            );
+            Check(game.State == GameState.ExpeditionChoice, "E confirms the answer and opens task choice");
             focus = GetViewport().GuiGetFocusOwner();
             await Button(JoyButton.Start);
             await Button(JoyButton.Start);
@@ -228,7 +225,7 @@ public partial class ControllerChecks : Node
             await Button(JoyButton.A);
             Check(
                 game.State == GameState.Reward && game.CelebrationShowing,
-                "correct answer shows cargo celebration before reward selection"
+                "correct answer shows cargo celebration before the coin reward"
             );
             await Button(JoyButton.Start);
             await Frames(20);
@@ -237,10 +234,10 @@ public partial class ControllerChecks : Node
             await Frames(185);
             Check(
                 game.State == GameState.Reward && !game.CelebrationShowing,
-                "celebration returns focus to reward choices"
+                "celebration returns focus to the coin reward"
             );
             await Button(JoyButton.A);
-            Check(game.State == GameState.Exploring, "controller selects reward and returns to driving");
+            Check(game.State == GameState.Exploring, "controller takes the coins and returns to driving");
             car.SetPose(world.Animals[1].Position + Vector3.Right * 2, 0);
             await Frames();
             await Button(JoyButton.A);
