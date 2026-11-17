@@ -24,7 +24,17 @@ internal sealed record WorksSpec(
     int Kind,
     string Fur,
     string Hat
-);
+)
+{
+    /// <summary>The works' own task-marker icon: a saw blade, a brick wall or a hopper of gravel.</summary>
+    public string Icon =>
+        Product switch
+        {
+            Product.Planks => "sawmill",
+            Product.Bricks => "brickworks",
+            _ => "gravelworks",
+        };
+}
 
 internal static class WorksCatalog
 {
@@ -99,6 +109,40 @@ internal static class SourceCatalog
     };
 
     public static int IndexOf(HaulLoad load) => Array.FindIndex(All, spec => spec.Load == load);
+
+    /// <summary>
+    /// The workers at the second site of each raw material, in <see cref="ExtraLoads"/> order. The sand pit's worker
+    /// has no works to send the trailer to: he loads the sand for the bridge and asks the loading question.
+    /// </summary>
+    public static readonly SourceSpec[] Extra =
+    {
+        new(HaulLoad.Stones, "Zajíc lomař Zdeněk", "Tady je druhý lom. Naložím ti kamení.", 0, "c9c4d0", "7f7f7a"),
+        new(HaulLoad.Soil, "Liška hlinař Honza", "Tady je druhé hliniště. Naložím ti hlínu.", 1, "d6925f", "b46a3a"),
+        new(HaulLoad.Sand, "Medvěd písečník Pepík", "Naložím ti písek na stavbu mostu.", 2, "c9a96a", "e0c46a"),
+        new(
+            HaulLoad.Logs,
+            "Králík dřevorubec Dušan",
+            "Tady je druhá skládka. Naložím ti klády.",
+            0,
+            "b89a76",
+            "3f7f4a"
+        ),
+    };
+
+    /// <summary>The raw loads that have a second site, in the order of <see cref="Extra"/>.</summary>
+    public static readonly HaulLoad[] ExtraLoads = { HaulLoad.Stones, HaulLoad.Soil, HaulLoad.Sand, HaulLoad.Logs };
+
+    public static int ExtraIndexOf(HaulLoad load) => Array.IndexOf(ExtraLoads, load);
+
+    /// <summary>The task-marker icon of a raw-material site; the sand pit has one too, though it has no worker.</summary>
+    public static string IconOf(HaulLoad load) =>
+        load switch
+        {
+            HaulLoad.Stones => "quarry",
+            HaulLoad.Soil => "clay",
+            HaulLoad.Sand => "sand",
+            _ => "logs",
+        };
 }
 
 /// <summary>

@@ -156,9 +156,12 @@ public partial class Game
         foreach (var project in world.Projects)
             project.Builder.Guide(Haul == null && !project.Complete);
         foreach (var works in world.Industry)
-            works.Worker.Guide(false);
-        for (int i = 0; i < SourceCatalog.Count; i++)
-            world.SourceWorkers[i]?.Guide(Haul == null && WorksOfSource(world.SourceWorkers[i]) is { Full: false });
+            works.Worker.Guide(true);
+        foreach (var worker in world.AllSourceWorkers)
+            worker.Guide(
+                worker.Role is SourceRole { Load: HaulLoad.Sand }
+                    || Haul == null && WorksOfSource(worker) is { Full: false }
+            );
     }
 
     private void TickHaul(double delta)

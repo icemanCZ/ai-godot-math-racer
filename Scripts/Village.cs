@@ -247,6 +247,15 @@ public partial class Village : Node3D
     private readonly InverseCache collectionInverses = new();
     private readonly InverseCache plotInverses = new();
 
+    /// <summary>How far a point lies from the nearest house, shop, yard or the garage, in metres.</summary>
+    internal float PlotDistance(Vector3 point)
+    {
+        float nearest = float.PositiveInfinity;
+        foreach (var plot in plots)
+            nearest = Mathf.Min(nearest, new Vector2(point.X - plot.Origin.X, point.Z - plot.Origin.Z).Length());
+        return nearest;
+    }
+
     public bool IsReserved(Vector3 point)
     {
         if (Square != null)

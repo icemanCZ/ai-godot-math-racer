@@ -16,9 +16,9 @@ public partial class Game
     /// <summary>The works that a source worker supplies.</summary>
     private Works? WorksOfSource(Animal? actor)
     {
-        if (actor?.Role is not SourceRole role || role.Index >= SourceCatalog.Count)
+        if (actor?.Role is not SourceRole role)
             return null;
-        int index = WorksCatalog.ForInput(SourceCatalog.All[role.Index].Load);
+        int index = WorksCatalog.ForInput(role.Load);
         return index >= 0 && index < world.Industry.Length ? world.Industry[index] : null;
     }
 
@@ -40,6 +40,12 @@ public partial class Game
 
     internal void OpenSource(Animal worker)
     {
+        // The sand pit's worker has no works to supply: he only greets the driver.
+        if (worker.Role is SourceRole { Load: HaulLoad.Sand })
+        {
+            Speak(worker.Greeting, worker);
+            return;
+        }
         if (WorksOfSource(worker) is not { } works)
             return;
         ClearChallenge();

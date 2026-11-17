@@ -59,7 +59,10 @@ public partial class World
             var found =
                 project == BuildPlans.Jetty
                     ? FindJettySite(random, friends, ford)
-                    : FindBuildSite(project, random, friends, ford);
+                    : (
+                        FindBuildSite(project, random, friends, ford, LandmarkBand)
+                        ?? FindBuildSite(project, random, friends, ford)
+                    );
             if (found == null)
             {
                 GD.Print(
@@ -175,23 +178,15 @@ public partial class World
         int project,
         Random random,
         Animal[] friends,
-        FordSite ford
+        FordSite ford,
+        VillageBand? band = null
     )
     {
-        var bank = Enumerable
-            .Range(0, Routes.Samples.Count - 1)
-            .Where(i =>
-            {
-                var forward = Routes.Samples[i + 1] - Routes.Samples[i];
-                forward.Y = 0;
-                return !ford.OnFarBank(Routes.Samples[i])
-                    && forward.LengthSquared() is > .01f and <= 9
-                    && !River.OnBridge(Routes.Samples[i].X, Routes.Samples[i].Z);
-            })
-            .ToArray();
-        for (int pass = 0; pass < SpurPasses.Length; pass++)
+        var bank = BankSamples(ford, band, 100);
+        var passes = band == null ? SpurPasses : EdgePasses;
+        for (int pass = 0; pass < passes.Length; pass++)
         {
-            var rules = SpurPasses[pass];
+            var rules = passes[pass];
             float cut = CutPasses[pass];
             (BuildSite Site, List<Terrain.GradedPiece> Grading)? best = null;
             float bestScore = float.NegativeInfinity;
@@ -206,11 +201,11 @@ public partial class World
                 float distance = rules.MinOffset + (float)random.NextDouble() * (rules.MaxOffset - rules.MinOffset);
                 var point = Ground.At(road.X + outward.X * distance, road.Z + outward.Z * distance);
                 int reason =
-                    ford.OnFarBank(point) ? 0
+                    ford.OnFarBank(point) || !InBand(point, band) ? 0
                     : River.Distance(point.X, point.Z) < River.HalfWidth(point.Z) + rules.RiverMargin ? 1
                     : haulClearings.Any(other => FlatDistance(other, point) < rules.Spacing) ? 2
-                    : !FreeHaulSpot(point, friends, rules.RoadClearance) ? 3
-                    : !WorksFootprintFits(point, outward, friends, rules with { Slope = rules.Slope + cut }) ? 4
+                    : !FreeHaulSpot(point, friends, rules.RoadClearance, band) ? 3
+                    : !WorksFootprintFits(point, outward, friends, rules with { Slope = rules.Slope + cut }, band) ? 4
                     : !ClearHaulPath(road, point, friends, toWater: false, checkSlope: false) ? 5
                     : -1;
                 if (reason >= 0)
@@ -227,6 +222,9 @@ public partial class World
                 // The tower wants the highest ground, the mill likes a hill too but cares more about a short way.
                 float height = pieces.Count > 0 ? pieces[^1].HeightB : point.Y;
                 float score = height * (project == BuildPlans.Tower ? 1f : .5f) - FlatDistance(road, point) * .05f;
+                // At the village the nearer, the better: the landmark should stand in sight of the houses.
+                if (band != null)
+                    score -= Village.PlotDistance(point) * .35f;
                 if (score <= bestScore)
                     continue;
                 bestScore = score;

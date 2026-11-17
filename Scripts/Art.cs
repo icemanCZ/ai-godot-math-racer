@@ -35,6 +35,33 @@ public static class Art
                     "M14 40 H96 V82 H14 Z M96 70 H122 M24 96 A12 12 0 1 1 48 96 A12 12 0 1 1 24 96 Z M62 96 A12 12 0 1 1 86 96 A12 12 0 1 1 62 96 Z",
                 "sorcerer" =>
                     "M23 99 Q66 112 109 99 L97 91 H35 Z M35 91 L62 23 Q66 14 71 23 L97 91 M52 75 L80 75 M66 45 V62 M58 53 H74",
+                // Driving courses: the Rainbow Gates (nested arches) and the Hay Bale Slalom (cones and a winding line).
+                "gates" =>
+                    "M16 112 V70 A50 50 0 0 1 116 70 V112 M34 112 V72 A32 32 0 0 1 98 72 V112 M52 112 V74 A14 14 0 0 1 80 74 V112",
+                "slalom" =>
+                    "M14 114 H118 M24 114 L34 62 L44 114 M56 114 L66 62 L76 114 M88 114 L98 62 L108 114 M12 40 Q34 16 50 40 T82 40 T114 40",
+                // Building sites: the bridge, the windmill, the lookout tower and the jetty.
+                "bridge" =>
+                    "M12 76 H120 M12 76 Q66 14 120 76 M30 55 V76 M48 41 V76 M66 36 V76 M84 41 V76 M102 55 V76 M12 104 Q30 94 48 104 T84 104 T120 104",
+                "mill" =>
+                    "M48 114 L56 62 H76 L84 114 Z M54 62 L66 46 L78 62 M66 46 L36 20 M66 46 L98 28 M66 46 L96 74 M66 46 L34 72 M62 114 V96 H70 V114",
+                "tower" =>
+                    "M46 114 L55 54 H77 L86 114 Z M48 54 H84 M54 54 V38 H78 V54 M50 38 L66 18 L82 38 Z M62 84 H70 V100 H62 Z",
+                "jetty" =>
+                    "M12 56 H120 M22 56 V98 M52 56 V98 M82 56 V98 M112 56 V98 M10 112 Q24 102 38 112 T66 112 T94 112 T122 112",
+                // Raw material sources: the quarry, the clay pit, the sand pit and the log yard.
+                "quarry" => "M12 106 L38 52 L58 80 L82 34 L120 106 Z M38 52 L46 106 M82 34 L72 106 M58 80 L64 106",
+                "clay" => "M90 14 L56 82 M50 70 L76 86 L62 114 Q42 114 38 92 Z M12 118 Q32 108 52 118",
+                "sand" => "M10 108 Q44 30 66 66 Q88 30 122 108 Z M30 92 Q42 80 54 92 M76 92 Q88 80 100 92",
+                "logs" =>
+                    "M21 96 A15 15 0 1 1 51 96 A15 15 0 1 1 21 96 Z M51 96 A15 15 0 1 1 81 96 A15 15 0 1 1 51 96 Z M81 96 A15 15 0 1 1 111 96 A15 15 0 1 1 81 96 Z M36 66 A15 15 0 1 1 66 66 A15 15 0 1 1 36 66 Z M66 66 A15 15 0 1 1 96 66 A15 15 0 1 1 66 66 Z M51 36 A15 15 0 1 1 81 36 A15 15 0 1 1 51 36 Z",
+                // Works: the sawmill's blade, the brickworks' wall and the gravel works' hopper.
+                "sawmill" =>
+                    "M66 20 L75 33 L89 26 L90 42 L106 43 L99 57 L112 66 L99 75 L106 89 L90 90 L89 106 L75 99 L66 112 L57 99 L43 106 L42 90 L26 89 L33 75 L20 66 L33 57 L26 43 L42 42 L43 26 L57 33 Z M76 66 A10 10 0 1 1 56 66 A10 10 0 1 1 76 66 Z",
+                "brickworks" =>
+                    "M16 34 H116 V100 H16 Z M16 56 H116 M16 78 H116 M46 34 V56 M86 34 V56 M31 56 V78 M66 56 V78 M101 56 V78 M46 78 V100 M86 78 V100",
+                "gravelworks" =>
+                    "M22 22 H110 L84 70 H48 Z M48 70 V90 H84 V70 M20 118 A8 6 0 1 1 36 118 A8 6 0 1 1 20 118 Z M50 118 A8 6 0 1 1 66 118 A8 6 0 1 1 50 118 Z M80 118 A8 6 0 1 1 96 118 A8 6 0 1 1 80 118 Z",
                 _ =>
                     "M81 29 A15 15 0 1 1 51 29 A15 15 0 1 1 81 29 Z M44 111 V77 L31 88 L22 77 L46 53 H86 L110 77 L101 88 L88 77 V111 H73 V88 H59 V111 Z",
             };

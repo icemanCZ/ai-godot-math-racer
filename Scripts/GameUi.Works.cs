@@ -13,16 +13,17 @@ public partial class GameUi
         talkButton.Text = (controller ? "A · " : "E · ") + WorksCatalog.All[index].Name;
     }
 
-    internal void SourceHint(int index)
+    internal void SourceHint(HaulLoad load)
     {
         talkButton.Visible = !modal.Visible;
         talkButton.Text =
             (controller ? "A · " : "E · ")
             + (
-                SourceCatalog.All[index].Load switch
+                load switch
                 {
                     HaulLoad.Stones => "Lom",
                     HaulLoad.Soil => "Hliniště",
+                    HaulLoad.Sand => "Pískovna",
                     _ => "Klády",
                 }
             );

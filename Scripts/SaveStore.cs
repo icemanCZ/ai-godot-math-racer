@@ -442,21 +442,21 @@ public static class SaveStore
         || HasInvalidAsker(data);
 
     /// <summary>The cargo and the character who asks about it for the active trailer trip, or (-1, -1) without one.</summary>
-    private static (HaulLoad Cargo, int Asker, bool Loaded) ActiveTripAsker(SaveData data)
+    private static (HaulLoad Cargo, int[] Askers, bool Loaded) ActiveTripAsker(SaveData data)
     {
         if (data.BuildTrip is >= 0 and < BuildPlans.Count && data.BuildStages![data.BuildTrip] < BuildPlans.Trips)
         {
             var cargo = BuildPlans.For(data.BuildTrip)[data.BuildStages![data.BuildTrip]].Cargo;
-            return (cargo, World.AskerId(cargo, data.BuildTrip), data.BuildTripLoaded);
+            return (cargo, World.AskerIds(cargo, data.BuildTrip), data.BuildTripLoaded);
         }
         if (data.SupplyTrip is >= 0 and < WorksCatalog.Count)
         {
             var cargo = WorksCatalog.All[data.SupplyTrip].Input;
-            return (cargo, World.AskerId(cargo, 0), data.SupplyTripLoaded);
+            return (cargo, World.AskerIds(cargo, 0), data.SupplyTripLoaded);
         }
         if (data.HouseTrip >= 0 && SavedTask(data, data.HouseTrip) is { } kind && Village.MaterialOf(kind) is { } goods)
-            return (goods, World.AskerId(goods, 0), data.HouseTripLoaded);
-        return (default, -1, false);
+            return (goods, World.AskerIds(goods, 0), data.HouseTripLoaded);
+        return (default, Array.Empty<int>(), false);
     }
 
     /// <summary>The task of a house's next improvement in a saved valley; null for a finished house or damaged levels.</summary>
@@ -526,13 +526,13 @@ public static class SaveStore
         }
         if (data.State is not (GameState.Exploring or GameState.Challenge) && data.State != panel)
             return true;
-        var (cargo, asker, loaded) = ActiveTripAsker(data);
+        var (cargo, askers, loaded) = ActiveTripAsker(data);
         if (data.State == GameState.Challenge)
         {
-            if (asker != data.Nearby || loaded || data.HandoverQuiz || data.Challenge is DeliveryChallenge)
+            if (!askers.Contains(data.Nearby) || loaded || data.HandoverQuiz || data.Challenge is DeliveryChallenge)
                 return true;
         }
-        return data.Challenge is LoadChallenge load && (!load.IsValid() || asker < 0 || load.Cargo != cargo);
+        return data.Challenge is LoadChallenge load && (!load.IsValid() || askers.Length == 0 || load.Cargo != cargo);
     }
 
     /// <summary>

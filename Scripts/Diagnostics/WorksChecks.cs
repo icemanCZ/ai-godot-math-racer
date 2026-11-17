@@ -151,6 +151,51 @@ public partial class WorksChecks : Node
                     "the approach to the log yard is clear of trees"
                 );
 
+            // ---- The works stand at the edge of the village ----
+            foreach (var works in world.Industry)
+                Check(
+                    world.Village.PlotDistance(works.Site.Position) <= World.WorksBand.Max + 20,
+                    $"{works.Spec.Name} stands at the edge of the village"
+                );
+
+            // ---- Every source, works and building has an icon of its own ----
+            var icons = new System.Collections.Generic.List<string>();
+            icons.AddRange(world.Industry.Select(w => w.Worker.Role.Icon));
+            icons.AddRange(SourceCatalog.All.Select(s => SourceCatalog.IconOf(s.Load)));
+            icons.Add(SourceCatalog.IconOf(HaulLoad.Sand));
+            icons.AddRange(world.Projects.Select(p => p.Builder.Role.Icon));
+            icons.AddRange(new[] { "gates", "slalom" });
+            Check(
+                icons.All(icon => icon != "" && icon != "trailer" && icon != "basket")
+                    && icons.Distinct().Count() == icons.Count,
+                $"every source, works, building and driving course has its own icon ({string.Join(", ", icons)})"
+            );
+
+            // ---- Every raw material has a second site, far from the first and out in the countryside ----
+            foreach (var load in new[] { HaulLoad.Stones, HaulLoad.Soil, HaulLoad.Sand, HaulLoad.Logs })
+            {
+                var sites = world.SourceSites(load).ToArray();
+                Check(sites.Length == 2, $"{load} has a second site");
+                if (sites.Length != 2)
+                    continue;
+                Check(Flat(sites[0].Position, sites[1].Position) >= 100, $"the two {load} sites lie far apart");
+                Check(!site.OnFarBank(sites[1].Position), $"the second {load} site lies on the village bank");
+                Check(
+                    tracks.Contains(sites[1].Position) && tracks.Contains(sites[1].Road),
+                    $"a field path leads to the second {load} site"
+                );
+                Check(
+                    world.NearestSource(load, sites[1].Position).Position == sites[1].Position
+                        && world.NearestSource(load, sites[0].Position).Position == sites[0].Position,
+                    $"a trip starts at the {load} site nearest to the car"
+                );
+                for (int step = 0; step <= 20; step++)
+                    Check(
+                        !world.Plants.NearTrunk(sites[1].Road.Lerp(sites[1].Position, step / 20f), 1.4f),
+                        $"the approach to the second {load} site is clear of trees"
+                    );
+            }
+
             // ---- The works are open from the start: the trailer is lent for every trip ----
             Check(
                 !game.TrailerOwned && world.Industry.All(w => w.Stock == 0),
@@ -247,6 +292,66 @@ public partial class WorksChecks : Node
                 "more than the stock cannot be taken"
             );
             RoundTrip("stock partly used");
+
+            // ---- The second sites have workers of their own ----
+            foreach (var load in SourceCatalog.ExtraLoads)
+            {
+                var extraSite = world.SourceSites(load).Last();
+                var extraWorker = world.ExtraSourceWorker(load);
+                int extraId = World.FirstExtraSourceId + SourceCatalog.ExtraIndexOf(load);
+                Check(
+                    extraWorker?.Role is SourceRole { Load: var roleLoad }
+                        && roleLoad == load
+                        && world.ActorId(extraWorker) == extraId
+                        && world.ActorAt(extraId) == extraWorker,
+                    $"the second {load} site has a registered worker"
+                );
+                Check(
+                    Flat(extraWorker!.Position, extraSite.Position) is > 1.5f and < 6,
+                    $"the worker stands by the loading spot of the second {load} site"
+                );
+                Check(
+                    world.PickupActor(load, extraSite) == extraWorker && world.PickupActor(load) != extraWorker,
+                    $"the second {load} worker asks the loading question for his own site"
+                );
+                Check(
+                    extraWorker.Role.Icon == SourceCatalog.IconOf(load),
+                    $"the second {load} worker shows the site's icon"
+                );
+            }
+            Check(
+                world.AllSourceWorkers.Select(w => w.DisplayName).Distinct().Count() == 7,
+                "the seven source workers are different characters"
+            );
+            var secondQuarry = world.SourceSites(HaulLoad.Stones).Last();
+            var quarryWorker = world.ExtraSourceWorker(HaulLoad.Stones)!;
+            car.SetPose(world.Ground.At(quarryWorker.Position.X + 2, quarryWorker.Position.Z, .15f), 0);
+            game.OpenSource(quarryWorker);
+            Check(
+                game.State == GameState.SourceStatus && HasStartButton(),
+                "the second quarry's worker offers the trip"
+            );
+            game.BeginSupplyTrip();
+            Check(
+                game.Haul is SupplyTrip { Loaded: false } second
+                    && second.Source == secondQuarry
+                    && second.Asker == quarryWorker
+                    && game.State == GameState.Challenge,
+                "the second quarry's worker asks the loading question"
+            );
+            Check(
+                SaveStore.Write(game.CaptureProgress(), path) && SaveStore.Read(path) != null,
+                "a loading question of the second quarry's worker is saved"
+            );
+            ChallengeChecks.Solve(game);
+            Check(
+                game.Haul is { Loaded: true } && trailer.Load == HaulLoad.Stones,
+                "the load of the second quarry is aboard"
+            );
+            game.FinishInteraction();
+            game.OpenChallenge(world.Village.Farmer);
+            ChallengeChecks.Solve(game);
+            Check(game.Haul == null, "another task replaces the trip from the second quarry");
 
             // ---- One task slot ----
             var bricks = world.Industry[(int)Product.Bricks];

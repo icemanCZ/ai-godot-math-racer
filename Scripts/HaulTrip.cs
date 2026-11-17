@@ -1,3 +1,4 @@
+using System.Linq;
 using Godot;
 
 namespace MathRacer;
@@ -19,12 +20,14 @@ public abstract partial class HaulTrip : Node3D
     internal Animal Contractor { get; }
 
     /// <summary>The character who loads the cargo and asks the loading question: the source worker, else the contractor.</summary>
-    internal Animal Asker => world.PickupActor(Load) ?? Contractor;
+    internal Animal Asker => world.PickupActor(Load, Source) ?? Contractor;
     internal bool Loaded { get; private set; }
 
     /// <summary>Set on reaching the current target; cleared when the car leaves it again.</summary>
     internal bool Arrived { get; set; }
-    internal HaulSource Source => world.SourceFor(Load);
+
+    /// <summary>The pickup site the trip was sent to: the nearest one when the trip began (a raw material has two).</summary>
+    internal HaulSource Source { get; private set; }
     internal Vector3 Destination => Loaded ? dropPoint : Source.Position;
     internal Vector3 Waypoint => guide.Waypoint;
 
@@ -50,6 +53,7 @@ public abstract partial class HaulTrip : Node3D
         this.dropPoint = dropPoint;
         this.dropRoad = dropRoad;
         Load = load;
+        Source = world.NearestSource(load, car.Position);
         Contractor = contractor;
         Loaded = loaded;
         guide = new RouteGuide(world, car, this, () => Destination);
@@ -77,13 +81,29 @@ public abstract partial class HaulTrip : Node3D
 
     internal void Tick(double delta) => guide.Tick(delta);
 
-    internal bool Reached(Vector3 car) =>
-        new Vector2(car.X - Destination.X, car.Z - Destination.Z).Length()
-        < (
-            Loaded ? 4.5f
-            : HaulLoads.IsSpecial(Load) ? Settings.InteractionRange
-            : 6
-        );
+    internal bool Reached(Vector3 car) => Loaded ? Near(car, Destination, 4.5f) : AnySource(car);
+
+    private static bool Near(Vector3 car, Vector3 point, float range) =>
+        new Vector2(car.X - point.X, car.Z - point.Z).Length() < range;
+
+    /// <summary>An empty trailer is loaded at whichever site of the material it reaches first.</summary>
+    private bool AnySource(Vector3 car)
+    {
+        float range = HaulLoads.IsSpecial(Load) ? Settings.InteractionRange : 6;
+        foreach (var site in world.SourceSites(Load))
+        {
+            if (!Near(car, site.Position, range))
+                continue;
+            // The worker of the site that was reached asks the loading question, wherever the trip was sent.
+            if (site != Source)
+            {
+                Source = site;
+                PlaceTarget();
+            }
+            return true;
+        }
+        return false;
+    }
 
     private void PlaceTarget()
     {

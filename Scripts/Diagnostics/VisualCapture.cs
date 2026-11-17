@@ -299,11 +299,12 @@ public partial class VisualCapture : Node
             camera.Position = focus + new Vector3(0, 55, 28);
             camera.LookAt(focus);
         }
-        else if (view == "quarry" && world.HaulSources.Length > 0)
+        else if (view is "quarry" or "second-quarry" && world.HaulSources.Length > 0)
         {
             // The field path from the road to the quarry's loading yard.
             camera.SetProcess(false);
-            var source = world.HaulSources[(int)HaulLoad.Stones];
+            var source =
+                view == "quarry" ? world.HaulSources[(int)HaulLoad.Stones] : world.SourceSites(HaulLoad.Stones).Last();
             var along = source.Position - source.Road;
             along.Y = 0;
             along = along.Normalized();
