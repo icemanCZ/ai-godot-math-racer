@@ -10,8 +10,11 @@ namespace MathRacer;
 // Plain data only: scene nodes are regenerated from the saved world seed.
 public sealed class SaveData
 {
-    /// <summary>Version 2 stores the open question in <see cref="Challenge"/>; version 1 used one field per kind.</summary>
-    public const int CurrentVersion = 2;
+    /// <summary>
+    /// Version 3 pays coins instead of offering car rewards. Version 2 stores the open question in
+    /// <see cref="Challenge"/>; version 1 used one field per kind.
+    /// </summary>
+    public const int CurrentVersion = 3;
 
     public PostcardProgress?[] Postcards { get; set; } = new PostcardProgress?[Game.PostcardCount];
     public int PostcardPage { get; set; } = -1;
@@ -44,8 +47,10 @@ public sealed class SaveData
     public int[] Unlocked { get; set; } = Array.Empty<int>();
     public int[] Completed { get; set; } = Array.Empty<int>();
     public CarReward[] Owned { get; set; } = Array.Empty<CarReward>();
-    public CarReward[] Rewards { get; set; } = Array.Empty<CarReward>();
-    public CarReward[] PreviousRewards { get; set; } = Array.Empty<CarReward>();
+    public int Coins { get; set; }
+
+    /// <summary>The coins shown on the open reward panel; they are already counted in <see cref="Coins"/>.</summary>
+    public int RewardCoins { get; set; }
     public string Look { get; set; } = "";
     public string Model { get; set; } = "classic";
     public string[] Accessories { get; set; } = Array.Empty<string>();
@@ -97,6 +102,7 @@ public static class SaveStore
                 var data = JsonSerializer.Deserialize<SaveData>(File.ReadAllText(candidate))
                     ?? throw new JsonException("Empty save data.");
                 MigrateLegacyQuestion(data);
+                MigrateRewardOffer(data);
                 Validate(data);
                 if (data.Postcards.Length == Game.OriginalPostcardCount)
                 {
@@ -170,8 +176,9 @@ public static class SaveStore
         || data.Unlocked == null
         || data.Completed == null
         || data.Owned == null
-        || data.Rewards == null
-        || data.PreviousRewards == null
+        || data.Coins < 0
+        || data.RewardCoins < 0
+        || (data.RewardCoins > 0 && data.State != GameState.Reward)
         || data.Accessories == null
         || data.Picked == null
         || data.Rejected == null
@@ -393,7 +400,23 @@ public static class SaveStore
         data.Reading = null;
         data.DeliveryQuestion = null;
         if (data.Version == 1)
-            data.Version = SaveData.CurrentVersion;
+            data.Version = 2;
+    }
+
+    /// <summary>
+    /// Version 2 offered a choice of car items on the reward panel. A save made there pays the coins of the
+    /// new reward instead, so the finished task is not lost.
+    /// </summary>
+    private static void MigrateRewardOffer(SaveData data)
+    {
+        if (data.Version != 2)
+            return;
+        data.Version = SaveData.CurrentVersion;
+        if (data.State != GameState.Reward || !data.DeliveryReward)
+            return;
+        bool trade = data.Sender >= World.FirstTraderId && data.Sender < World.WitchId;
+        data.RewardCoins = trade ? Game.TradeCoins : Game.RoadsideDeliveryCoins;
+        data.Coins += data.RewardCoins;
     }
 
     private static void ClearQuestion(SaveData data)

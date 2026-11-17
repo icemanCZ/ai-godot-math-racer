@@ -360,6 +360,7 @@ public partial class Game
     {
         postcards[postcardPage] = card with { Stamped = true };
         postcardFeedback = "Pohlednice má razítko.";
+        AddCoins(PostcardCoins);
         if (
             postcards.Count(progress => progress?.Stamped == true) >= PostcardRewardStamps
             && OwnedRewards.Add(PostcardReward)

@@ -13,9 +13,6 @@ public partial class GameUi : CanvasLayer
     public event Action<int>? AnswerSelected;
     internal event Action? SyllablesConfirmed;
     internal event Action<string>? SpeechRequested;
-    public event Action<string>? LookSelected;
-    public event Action<string>? AccessorySelected;
-    public event Action<string>? ModelSelected;
     public event Action? TalkRequested;
     public event Action? VillageFruitRequested;
     public event Action<bool>? ExpeditionSelected;
@@ -269,6 +266,7 @@ public partial class GameUi : CanvasLayer
         talkButton.OffsetBottom = -130;
         talkButton.Name = "PrimaryTask";
         SetupEvents();
+        SetupCoins();
     }
 
     private static StyleBoxFlat Style(string color, int radius) =>
@@ -512,63 +510,6 @@ public partial class GameUi : CanvasLayer
         BackButton();
     }
 
-    public void Reward(
-        Animal animal,
-        VehicleAppearance appearance,
-        System.Collections.Generic.IReadOnlyList<CarReward> rewards
-    )
-    {
-        Clear();
-        Text("✓", 38);
-        var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
-        row.AddThemeConstantOverride("separation", 12);
-        content.AddChild(row);
-        Button? first = null;
-        var currentLook = System.Linq.Enumerable.First(CarLook.All, look => look.Id == appearance.CurrentLookId);
-        foreach (var reward in rewards)
-        {
-            var card = new VBoxContainer();
-            card.AddThemeConstantOverride("separation", 10);
-            row.AddChild(card);
-            Action selectReward;
-            string symbol;
-            if (reward.IsModel)
-            {
-                card.AddChild(new CarLookPreview { Look = currentLook, ModelId = reward.Id });
-                symbol = "vehicle";
-                selectReward = () => ModelSelected?.Invoke(reward.Id);
-            }
-            else if (reward.IsAccessory)
-            {
-                card.AddChild(
-                    new CarLookPreview
-                    {
-                        Look = currentLook,
-                        ModelId = appearance.CurrentModelId,
-                        AccessoryId = reward.Id,
-                    }
-                );
-                symbol = "upgrade";
-                selectReward = () => AccessorySelected?.Invoke(reward.Id);
-            }
-            else
-            {
-                var look = System.Linq.Enumerable.First(CarLook.All, option => option.Id == reward.Id);
-                card.AddChild(new CarLookPreview { Look = look, ModelId = appearance.CurrentModelId });
-                symbol = "paint";
-                selectReward = () => LookSelected?.Invoke(reward.Id);
-            }
-            var select = IconButton(symbol, selectReward, reward.ButtonName, card);
-            select.AccessibilityName =
-                reward.IsModel ? CarBody.All.First(body => body.Id == reward.Id).Name
-                : reward.IsAccessory ? CarAccessory.Catalogue.First(accessory => accessory.Id == reward.Id).Name
-                : CarLook.All.First(look => look.Id == reward.Id).Name;
-            first ??= select;
-        }
-        BackButton("KeepLook");
-        first?.GrabFocus();
-    }
-
     public void ExpeditionChoice(Animal animal, VehicleAppearance appearance)
     {
         Clear();
@@ -611,12 +552,23 @@ public partial class GameUi : CanvasLayer
         bool golemActive,
         System.Collections.Generic.IReadOnlyList<CollectorPet> collectorPets,
         QuizType quizzes,
-        bool threeTermMath
+        bool threeTermMath,
+        int coins
     )
     {
         Clear();
         Text("Garáž", 32);
-        Text($"{owned.Count} / {CarLook.All.Count + CarBody.All.Count + CarAccessory.Catalogue.Count}", 20);
+        var header = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
+        header.AddThemeConstantOverride("separation", 10);
+        content.AddChild(header);
+        header.AddChild(
+            new Label
+            {
+                Text = $"{owned.Count} / {CarLook.All.Count + CarBody.All.Count + CarAccessory.Catalogue.Count}   ·",
+            }
+        );
+        header.AddChild(new DeliveryPicture { Icon = "coin", CustomMinimumSize = new(40, 36) });
+        header.AddChild(new Label { Name = "GarageCoins", Text = coins.ToString() });
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 22);
         content.AddChild(row);
@@ -777,6 +729,8 @@ public partial class GameUi : CanvasLayer
                 if (!unlocked)
                     sample.Material = gray;
                 card.AddChild(sample);
+                int? price = unlocked ? null : reward.Price;
+                bool affordable = price <= coins;
                 var button = Button(
                     (active ? "✓ " : "") + name,
                     () =>
@@ -788,18 +742,70 @@ public partial class GameUi : CanvasLayer
                     card
                 );
                 button.Name = "Garage_" + reward.ButtonName;
-                button.Disabled = !unlocked;
+                button.Disabled = !unlocked && !affordable;
                 button.CustomMinimumSize = new(205, 48);
                 button.AddThemeFontSizeOverride("font_size", 17);
-                if (!unlocked)
+                if (price is int cost)
+                {
+                    // A price tag between the preview and the button.
+                    button.AccessibilityName = $"Koupit {name} za {cost} penízků";
+                    button.TooltipText = affordable
+                        ? $"Koupit za {cost} penízků"
+                        : $"Stojí {cost} penízků. Sbírej penízky ve světě a plň úkoly.";
+                    var tag = new HBoxContainer
+                    {
+                        Name = "Price_" + reward.ButtonName,
+                        Alignment = BoxContainer.AlignmentMode.Center,
+                        MouseFilter = Control.MouseFilterEnum.Ignore,
+                    };
+                    tag.AddThemeConstantOverride("separation", 4);
+                    card.AddChild(tag);
+                    card.MoveChild(tag, button.GetIndex());
+                    tag.AddChild(
+                        new DeliveryPicture
+                        {
+                            Icon = "coin",
+                            CustomMinimumSize = new(26, 26),
+                            MouseFilter = Control.MouseFilterEnum.Ignore,
+                        }
+                    );
+                    var priceLabel = new Label
+                    {
+                        Text = cost.ToString(),
+                        VerticalAlignment = VerticalAlignment.Center,
+                        MouseFilter = Control.MouseFilterEnum.Ignore,
+                    };
+                    priceLabel.AddThemeFontSizeOverride("font_size", 17);
+                    priceLabel.AddThemeColorOverride("font_color", new Color(affordable ? "b07812" : "8a8a8a"));
+                    tag.AddChild(priceLabel);
+                    if (affordable)
+                    {
+                        button.AddThemeStyleboxOverride("normal", Style("d9a02a", 16));
+                        button.AddThemeStyleboxOverride("hover", Style("e8b23a", 16));
+                        button.AddThemeStyleboxOverride("pressed", Style("c08a1e", 16));
+                    }
+                }
+                else
+                {
+                    // Keeps the buttons of a grid row aligned with the price tags beside them.
+                    var spacer = new Control
+                    {
+                        CustomMinimumSize = new(0, 26),
+                        MouseFilter = Control.MouseFilterEnum.Ignore,
+                    };
+                    card.AddChild(spacer);
+                    card.MoveChild(spacer, button.GetIndex());
+                }
+                if (button.Disabled)
                 {
                     button.AddThemeStyleboxOverride("disabled", Style("d5d5d5", 16));
                     button.AddThemeColorOverride("font_disabled_color", new Color("777777"));
-                    button.TooltipText = "Tuto odměnu ještě nemáš.";
+                    if (price == null)
+                        button.TooltipText = "Tuto odměnu získáš za zvláštní úkol.";
                 }
                 else
                     first ??= button;
-                if (unlocked && garageFocus == reward.ButtonName)
+                if (!button.Disabled && garageFocus == reward.ButtonName)
                     selectedFocus = button;
             }
         }

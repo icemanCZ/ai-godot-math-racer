@@ -45,7 +45,6 @@ public partial class Game : Node3D
     private readonly ChallengeGenerator challenges = new(Settings.Seed + 204);
     private readonly HashSet<int> rejectedAnswers = new();
     internal IChallenge? CurrentChallenge { get; private set; }
-    internal IReadOnlyList<CarReward> CurrentRewards => rewards.Offered;
     internal HashSet<CarReward> OwnedRewards => rewards.Owned;
     private bool AtGarage => vehicle.Position.DistanceTo(world.Village.GarageEntrance) < Settings.InteractionRange;
 
@@ -69,6 +68,7 @@ public partial class Game : Node3D
         Events.Generate(world);
         SetupPostcards();
         SetupBandits();
+        SetupCoins();
         world.AddChild(world.Wildlife);
         world.Wildlife.Generate(world, vehicle);
         var camera = new FollowCamera
@@ -87,6 +87,7 @@ public partial class Game : Node3D
         world.AddChild(world.Grass);
         world.Grass.Setup(world, vehicle);
         SetupUi();
+        ui.CoinCount(Coins, 0);
         SetupGolem();
         ui.AnimalCount(RemainingAnimals, world.Animals.Length);
 
@@ -131,9 +132,6 @@ public partial class Game : Node3D
         ui.AnswerSelected += SubmitAnswer;
         ui.SyllablesConfirmed += ConfirmSyllables;
         ui.SpeechRequested += Speak;
-        ui.LookSelected += SelectLook;
-        ui.AccessorySelected += SelectAccessory;
-        ui.ModelSelected += SelectModel;
         ui.TalkRequested += Interact;
         ui.VillageFruitRequested += BeginVillageCollection;
         ui.ExpeditionSelected += SelectExpedition;
@@ -199,6 +197,7 @@ public partial class Game : Node3D
             EndExpedition();
         }
         deliveryReward = false;
+        rewardCoins = 0;
         handoverQuiz = false;
         ClearChallenge();
         Start();
@@ -342,7 +341,7 @@ public partial class Game : Node3D
             OpenChallenge(nearby);
     }
 
-    private void ShowRewards() => ui.Reward(nearby!, vehicle.Appearance, CurrentRewards);
+    private void ShowRewards() => ui.CoinReward(rewardCoins);
 
     private void ShowGarage() =>
         ui.Garage(
@@ -352,7 +351,8 @@ public partial class Game : Node3D
             GolemActive,
             world.Village.CollectorPets,
             enabledQuizzes,
-            threeTermMath
+            threeTermMath,
+            Coins
         );
 
     internal void OpenGarage()
@@ -365,7 +365,10 @@ public partial class Game : Node3D
 
     internal void ConfigureCar(CarReward reward)
     {
-        if (State != GameState.Garage || !OwnedRewards.Contains(reward))
+        if (State != GameState.Garage)
+            return;
+        // An item not owned yet is bought first and then equipped like an owned one.
+        if (!OwnedRewards.Contains(reward) && !BuyCarItem(reward))
             return;
         if (reward.IsModel)
             vehicle.Appearance.ApplyModel(reward.Id);
@@ -560,7 +563,6 @@ public partial class Game : Node3D
             var sender = nearby;
             roadside.Unlock(sender);
             sender.Celebrate();
-            rewards.ClearOffer();
             CloseInteraction();
             UpdateDeliveryGuides();
             OfferDelivery(sender);
@@ -571,36 +573,18 @@ public partial class Game : Node3D
             roadside.Complete(Delivery.Sender);
             CelebrateCompletion(Delivery.Recipient, "Doručeno! Děkujeme za pomoc!", true);
         }
-        rewards.OfferRandom();
+        PayReward(RoadsideDeliveryCoins);
+    }
+
+    /// <summary>Pays a finished delivery's coins and opens the reward panel that shows them.</summary>
+    private void PayReward(int coins)
+    {
+        rewardCoins = coins;
+        AddCoins(coins);
         State = GameState.Reward;
         ShowRewards();
         ShowCelebrationView();
-    }
-
-    internal void SelectLook(string id)
-    {
-        var look = CarLook.All.FirstOrDefault(option => option.Id == id);
-        if (State != GameState.Reward || look == null || !rewards.Claim(new CarReward(id, false)))
-            return;
-        vehicle.Appearance.Apply(look);
-        CloseInteraction();
-    }
-
-    internal void SelectModel(string id)
-    {
-        bool known = CarBody.All.Any(body => body.Id == id);
-        if (State != GameState.Reward || !known || !rewards.Claim(new CarReward(id, false, true)))
-            return;
-        vehicle.Appearance.ApplyModel(id);
-        CloseInteraction();
-    }
-
-    internal void SelectAccessory(string id)
-    {
-        if (State != GameState.Reward || !rewards.Claim(new CarReward(id, true)))
-            return;
-        vehicle.Appearance.ToggleAccessory(id);
-        CloseInteraction();
+        SaveProgress();
     }
 
     internal void TogglePause()
@@ -636,6 +620,7 @@ public partial class Game : Node3D
         TickEvents(delta);
         TickPostcards(delta);
         TickBandits((float)delta);
+        TickCoins(delta);
         saveTimer += delta;
         double saveInterval = State == GameState.Exploring ? 2 : .5;
         if (State != GameState.Title && (State != lastSavedState || saveTimer >= saveInterval))

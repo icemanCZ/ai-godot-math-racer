@@ -69,18 +69,47 @@ public partial class SaveChecks : Node
             car.SetPose(game.Delivery.Recipient.Position + Vector3.Right * 2, .5f);
             game.BeginDeliveryQuestion();
             RoundTrip();
+            int coins = game.Coins;
             ChallengeChecks.Solve(game);
             RoundTrip();
-            var reward = game.CurrentRewards.First(r => r.IsModel);
-            game.SelectModel(reward.Id);
+            Check(
+                game.State == GameState.Reward && game.Coins == coins + Game.RoadsideDeliveryCoins,
+                "a restored reward panel keeps the paid coins without paying again"
+            );
+            var legacyReward = game.CaptureProgress();
+            legacyReward.Version = 2;
+            legacyReward.Coins = coins;
+            legacyReward.RewardCoins = 0;
+            string legacyPath = DiagnosticArtifacts.PathFor("save-checks/legacy-reward.json");
+            Check(SaveStore.Write(legacyReward, legacyPath), "version 2 reward save written");
+            var migratedReward = SaveStore.Read(legacyPath);
+            Check(
+                migratedReward is { Version: SaveData.CurrentVersion, State: GameState.Reward }
+                    && migratedReward.Coins == coins + Game.RoadsideDeliveryCoins
+                    && migratedReward.RewardCoins == Game.RoadsideDeliveryCoins,
+                "an open version 2 reward choice migrates to the delivery's coins"
+            );
+            game.FinishInteraction();
+            game.AddCoins(CarReward.ModelPrice);
+            int beforePurchase = game.Coins;
+            var reward = new CarReward("buggy", false, true);
+            car.SetPose(world.Village.GarageEntrance, 0);
+            game.OpenGarage();
+            game.ConfigureCar(reward);
+            Check(
+                game.Coins == beforePurchase - CarReward.ModelPrice && game.OwnedRewards.Contains(reward),
+                "the garage sells a model for coins"
+            );
+            game.FinishInteraction();
             game.OwnedRewards.Add(new("wheels", true));
             car.Appearance.ToggleAccessory("wheels");
             RoundTrip();
             Check(
                 game.OwnedRewards.Contains(reward)
                     && car.Appearance.CurrentModelId == reward.Id
-                    && car.Appearance.BigWheels,
-                "earned rewards and equipped appearance restored"
+                    && car.Appearance.BigWheels
+                    && game.Coins == beforePurchase - CarReward.ModelPrice,
+                "bought items, coins and equipped appearance restored"
             );
             game.OpenChallenge(world.Animals[1]);
             RoundTrip();

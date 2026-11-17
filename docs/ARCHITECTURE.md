@@ -8,7 +8,7 @@ MathRacer is a code-only Godot 4.7.2 .NET project. The root node in `Main.tscn` 
 | --- | --- |
 | `Game` and its feature partials | Compose the scene, handle input and state transitions, coordinate activities and restore the active panel. |
 | `ActorRole` and its subclasses (`ActorRoles.cs`) | Give each character one role: roadside friend, house resident, trader, witch, sorcerer or collector (farmer, gardener, gem collector, toymaker). A role picks the `Game` flow for talking to the character and for its solved quiz, and supplies its marker icon and talk hint. New character types add a role instead of new `Is…` checks in `Game`. |
-| `CarRewards` and `RoadsideProgress` | Hold the garage's earned items with the reward choice on offer, and which roadside friends have unlocked or finished their expedition. `Game` owns one of each and saves them. |
+| `CarRewards` and `RoadsideProgress` | Hold the owned garage items and the player's coins that buy them (prices live on `CarReward`), and which roadside friends have unlocked or finished their expedition. `WorldCoins` scatters collectible coins along the roads; their positions are not saved. `Game` owns one of each and saves them. |
 | `GameUi` and its feature partials | Build panels and HUD elements, manage menu focus and emit player intents. |
 | `World`, `WorldLayout` and `Village` | Generate seeded routes, plots and interactive actors. `World` registers actors under stable save IDs and exposes them for proximity checks and placement. Names, greetings and colours of recurring characters live in `CharacterCatalog`; its order assigns actor IDs. |
 | `LaunchOptions` and `Settings` | `LaunchOptions` is the only reader of the command line. `Settings` holds tuning constants and the only state that outlives a scene reload: the world seed and the quiz settings carried into a new game. |
@@ -16,7 +16,7 @@ MathRacer is a code-only Godot 4.7.2 .NET project. The root node in `Main.tscn` 
 | `Vehicle`, `FollowCamera` and `VehicleAppearance` | Handle movement, camera and cosmetic state. `VehicleModel` shares geometry between gameplay and garage previews. |
 | `Expedition` and `DrivingEvents` | Handle cargo, route guidance and vehicle courses. |
 | `IChallenge` and generators in `Mathematics` and `Letters` | Provide question data, seeded generation and answer validation. |
-| `SaveData`, `SaveStore` and `Game.Persistence.cs` | Define the JSON data, validate and migrate it, and translate between data and live scene state. Save version 2 stores the open question in one `Challenge` field tagged with `$type`; version 1 saves are migrated on load. |
+| `SaveData`, `SaveStore` and `Game.Persistence.cs` | Define the JSON data, validate and migrate it, and translate between data and live scene state. Save version 3 stores coins; version 2 saves with an open reward choice are migrated to the delivery's coins. Version 2 introduced the single `Challenge` field tagged with `$type`; version 1 saves are migrated on load. |
 | `Scripts/Diagnostics` | Launch headless checks, prepare screenshot views and exercise game entry points. `Game` reaches them only through `partial` hooks, and release exports (`ExportRelease`) leave the folder out of the build. |
 
 ## Start and game state

@@ -35,8 +35,14 @@ public partial class GarageChecks : Node
             var buttons = game.FindChildren("Garage_*", "Button", true, false).Cast<Button>().ToArray();
             Check(
                 buttons.Length == CarLook.All.Count + CarBody.All.Count + CarAccessory.Catalogue.Count
-                    && buttons.Count(b => !b.Disabled) == 2,
+                    && buttons.Count(b => !b.Disabled) == 2
+                    && game.Coins == 0,
                 "entire catalogue contains all rewards with only starting paint and model unlocked"
+            );
+            Check(
+                game.FindChildren("Price_*", "HBoxContainer", true, false).Count
+                    == CarLook.All.Count + CarBody.All.Count + CarAccessory.All.Count - 2,
+                "every standard item not owned shows its price; the special sticker has none"
             );
             var defaults = game.CaptureProgress();
             void Press(string name) =>
@@ -115,7 +121,10 @@ public partial class GarageChecks : Node
             ui._Input(new InputEventJoypadMotion { Axis = JoyAxis.RightY, AxisValue = 0 });
             Check(scroll.ScrollVertical > 0, "right stick scrolls the catalogue even when rewards are locked");
             game.ConfigureCar(new("buggy", false, true));
-            Check(car.Appearance.CurrentModelId == "classic", "locked model cannot be equipped");
+            Check(
+                car.Appearance.CurrentModelId == "classic" && game.Coins == 0,
+                "a model the player cannot afford cannot be bought or equipped"
+            );
             game.TogglePause();
             game.TogglePause();
             Check(game.State == GameState.Garage, "pause resumes garage");
@@ -127,21 +136,40 @@ public partial class GarageChecks : Node
             car.SetPose(delivery.Recipient.Position + Vector3.Right * 2, 0);
             game.BeginDeliveryQuestion();
             ChallengeChecks.Solve(game);
-            var reward = game.CurrentRewards.First(r => r.IsAccessory);
-            game.SelectAccessory(reward.Id);
             Check(
-                game.OwnedRewards.Contains(reward) && car.Appearance.HasAccessory(reward.Id),
-                "chosen expedition reward is owned and equipped"
+                game.Coins == Game.RoadsideDeliveryCoins && game.OwnedRewards.Count == 2,
+                "a finished expedition pays coins and no car item"
             );
+            game.FinishInteraction();
+            game.AddCoins(CarReward.AccessoryPrice);
+            int coins = game.Coins;
+            var reward = new CarReward(CarAccessory.All[0].Id, true);
             car.SetPose(world.Village.GarageEntrance, 0);
             game.OpenGarage();
+            Check(
+                game.FindChild("Garage_" + reward.ButtonName, true, false) is Button { Disabled: false }
+                    && game.FindChild("Garage_Model_buggy", true, false) is Button { Disabled: true },
+                "items the player can afford are offered for sale; dearer ones stay locked"
+            );
+            Press("Garage_" + reward.ButtonName);
+            Check(
+                game.OwnedRewards.Contains(reward)
+                    && car.Appearance.HasAccessory(reward.Id)
+                    && game.Coins == coins - CarReward.AccessoryPrice
+                    && game.FindChild("CoinCount", true, false) is Label { Text: var shown }
+                    && shown == game.Coins.ToString(),
+                "buying an accessory spends its price, equips it and updates the coin HUD"
+            );
             game.ConfigureCar(reward);
             Check(
                 !car.Appearance.HasAccessory(reward.Id) && game.OwnedRewards.Contains(reward),
                 "garage removes accessories without losing ownership"
             );
             game.ConfigureCar(reward);
-            Check(car.Appearance.HasAccessory(reward.Id), "owned accessory can be equipped again");
+            Check(
+                car.Appearance.HasAccessory(reward.Id) && game.Coins == coins - CarReward.AccessoryPrice,
+                "owned accessory can be equipped again without paying"
+            );
             game.FinishInteraction();
             game.OpenChallenge(world.Animals[1]);
             ChallengeChecks.Solve(game);
@@ -203,6 +231,22 @@ public partial class GarageChecks : Node
                 world.Village.IsReserved(world.Village.GarageEntrance),
                 "garage plot excludes plants and animal placement"
             );
+            game.FinishInteraction();
+            var coinSpots = game.WorldCoins.ActivePositions.ToArray();
+            Check(
+                coinSpots.Length == WorldCoins.Count && coinSpots.All(p => world.Routes.Distance(p) < 1.5f),
+                "coins are scattered along the roads of the valley"
+            );
+            game.WorldCoins.PickupEnabled = true;
+            int beforeCoin = game.Coins;
+            car.SetPose(coinSpots[0], 0);
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            Check(
+                game.Coins > beforeCoin && game.WorldCoins.ActiveCount < WorldCoins.Count,
+                "driving over a coin collects it and adds it to the counter"
+            );
+            game.WorldCoins.PickupEnabled = false;
             GD.Print("GARAGE_CHECKS_PASSED");
             GetTree().Quit();
         }

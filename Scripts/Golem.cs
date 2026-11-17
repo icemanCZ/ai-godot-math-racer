@@ -226,6 +226,7 @@ public partial class Game
             return;
         EndExpedition(refreshUi: false);
         RestoreGolem(true, true);
+        AddCoins(GolemCoins);
         world.Sorcerer.Celebrate();
         world.Sorcerer.Guide(false);
         ui.DeliveryHud(null);

@@ -369,6 +369,15 @@ public partial class DeliveryPicture : Control
             DrawRect(new(60, 40, 20, 70), Colors.White);
             DrawRect(new(100, 40, 20, 70), Colors.White);
         }
+        else if (Icon == "coin")
+        {
+            DrawCircle(new(90, 79), 54, new Color("c98a16"));
+            DrawCircle(new(90, 75), 54, new Color("f3c23c"));
+            DrawArc(new(90, 75), 40, 0, Mathf.Tau, 48, new Color("d99a1e"), 7, true);
+            DrawArc(new(90, 75), 46, Mathf.Pi * 1.1f, Mathf.Pi * 1.45f, 12, new Color("fff3bf"), 6, true);
+            Oval(new(90, 75), new(11, 21), new Color("d99a1e"));
+            Oval(new(87, 72), new(6, 14), new Color("ffe58a"));
+        }
         else if (Icon == "search")
         {
             DrawArc(new(78, 63), 32, 0, Mathf.Tau, 40, ink, 9, true);
