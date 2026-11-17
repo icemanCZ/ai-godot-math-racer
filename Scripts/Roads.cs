@@ -11,12 +11,39 @@ public partial class Roads : Node3D
     private const float MeshStep = .75f;
     private const int NavigationAnchorStep = 12;
 
-    private readonly record struct Segment(Vector2 A, Vector2 B, float Width, float Along);
+    /// <summary><see cref="Middle"/> and <see cref="HalfLength"/> bound the distance to the segment from below.</summary>
+    private readonly record struct Segment(
+        Vector2 A,
+        Vector2 B,
+        float Width,
+        float Along,
+        Vector2 Middle,
+        float HalfLength
+    );
 
     private readonly record struct FieldPoint(Vector2 Position, float Distance, Vector2 Uv, float Marks);
 
     private readonly Dictionary<Vector2I, List<Segment>> segments = new();
-    private readonly Dictionary<Vector2I, List<Vector3[]>> surfaceTriangles = new();
+    private readonly List<Segment> allSegments = new();
+
+    /// <summary>
+    /// A drivable surface triangle. <see cref="MinBucket"/> and <see cref="MaxBucket"/> are the coarse buckets its
+    /// footprint touches: a point only sees the triangles of its own bucket, as it always has.
+    /// </summary>
+    private readonly record struct SurfaceTriangle(
+        Vector3 A,
+        Vector3 B,
+        Vector3 C,
+        Vector2I MinBucket,
+        Vector2I MaxBucket
+    );
+
+    /// <summary>Cell size of the grid that finds the triangles near a point; the triangles are under a metre wide.</summary>
+    private const float TriangleCell = 1.5f;
+
+    private const float TriangleCellMargin = .05f;
+
+    private readonly Dictionary<Vector2I, List<SurfaceTriangle>> surfaceTriangles = new();
     private Curve3D mainRoute = null!;
     private Vector2[] junctions = System.Array.Empty<Vector2>();
     private readonly ShaderMaterial roadMaterial = new()
@@ -63,12 +90,17 @@ public partial class Roads : Node3D
                     1 - Mathf.SmoothStep(0, 10, distance),
                     1 - Mathf.SmoothStep(0, 10, length - distance)
                 );
+                var segmentStart = new Vector2(p.X, p.Z);
+                var segmentEnd = new Vector2(q.X, q.Z);
                 var segment = new Segment(
-                    new Vector2(p.X, p.Z),
-                    new Vector2(q.X, q.Z),
+                    segmentStart,
+                    segmentEnd,
                     baseWidth + mouth * 2.5f,
-                    distance
+                    distance,
+                    (segmentStart + segmentEnd) / 2,
+                    segmentStart.DistanceTo(segmentEnd) / 2
                 );
+                allSegments.Add(segment);
                 foreach (
                     var bucket in Buckets(
                         segment.A.Min(segment.B) - Vector2.One * 8,
@@ -101,6 +133,80 @@ public partial class Roads : Node3D
         BuildSurface(terrain);
     }
 
+    private bool[] roadCells = System.Array.Empty<bool>();
+    private int roadCellsX,
+        roadCellsZ,
+        roadCellColumns,
+        roadCellRows;
+
+    /// <summary>
+    /// Marks every mesh cell that can contain road: a corner of such a cell lies within a segment's width of the
+    /// segment, or within the junction radius of a junction. Any other cell has no corner inside the road, so it
+    /// produces no triangles and its corners need not be sampled.
+    /// </summary>
+    private void MarkCellsNearRoads()
+    {
+        const float junctionRadius = 7;
+        const float slack = .05f;
+        var low = new Vector2(float.MaxValue, float.MaxValue);
+        var high = new Vector2(float.MinValue, float.MinValue);
+        foreach (var segment in allSegments)
+        {
+            low = low.Min(segment.A.Min(segment.B) - Vector2.One * (segment.Width + slack));
+            high = high.Max(segment.A.Max(segment.B) + Vector2.One * (segment.Width + slack));
+        }
+        foreach (var junction in junctions)
+        {
+            low = low.Min(junction - Vector2.One * (junctionRadius + slack));
+            high = high.Max(junction + Vector2.One * (junctionRadius + slack));
+        }
+        if (low.X > high.X)
+            return;
+        roadCellsX = Mathf.FloorToInt(low.X / MeshStep) - 1;
+        roadCellsZ = Mathf.FloorToInt(low.Y / MeshStep) - 1;
+        roadCellColumns = Mathf.CeilToInt(high.X / MeshStep) - roadCellsX + 2;
+        roadCellRows = Mathf.CeilToInt(high.Y / MeshStep) - roadCellsZ + 2;
+        roadCells = new bool[roadCellColumns * roadCellRows];
+        void Mark(Vector2 from, Vector2 to, float reach)
+        {
+            // A corner inside the reach belongs to the cell on either side of it, hence one cell more on each side.
+            var min = from.Min(to) - Vector2.One * (reach + slack);
+            var max = from.Max(to) + Vector2.One * (reach + slack);
+            int firstX = Mathf.FloorToInt(min.X / MeshStep) - 1,
+                lastX = Mathf.CeilToInt(max.X / MeshStep);
+            int firstZ = Mathf.FloorToInt(min.Y / MeshStep) - 1,
+                lastZ = Mathf.CeilToInt(max.Y / MeshStep);
+            for (int z = firstZ; z <= lastZ; z++)
+            for (int x = firstX; x <= lastX; x++)
+                roadCells[(z - roadCellsZ) * roadCellColumns + x - roadCellsX] = true;
+        }
+        foreach (var segment in allSegments)
+            Mark(segment.A, segment.B, segment.Width);
+        foreach (var junction in junctions)
+            Mark(junction, junction, junctionRadius);
+    }
+
+    private bool MayHoldRoad(int x, int z)
+    {
+        int column = x - roadCellsX,
+            row = z - roadCellsZ;
+        return column >= 0
+            && column < roadCellColumns
+            && row >= 0
+            && row < roadCellRows
+            && roadCells[row * roadCellColumns + column];
+    }
+
+    private static WorldPlan? cachedFieldPlan;
+    private static Dictionary<Vector2I, FieldPoint>? cachedField;
+
+    /// <summary>Drops the sampled field once the valley is generated; a new valley would not match it anyway.</summary>
+    internal static void ReleaseFieldCache()
+    {
+        cachedField = null;
+        cachedFieldPlan = null;
+    }
+
     private FieldPoint SampleField(Vector2 point)
     {
         float best = 1000;
@@ -109,6 +215,11 @@ public partial class Roads : Node3D
         if (segments.TryGetValue(key, out var entries))
             foreach (var segment in entries)
             {
+                // The segment cannot be nearer than its middle minus its half length. When even that is further than
+                // the best so far (with a centimetre to spare for rounding), the full test would skip it as well.
+                float reach = best + segment.Width + segment.HalfLength + .01f;
+                if (reach > 0 && (point - segment.Middle).LengthSquared() >= reach * reach)
+                    continue;
                 var delta = segment.B - segment.A;
                 float lengthSquared = delta.LengthSquared();
                 float t =
@@ -128,7 +239,8 @@ public partial class Roads : Node3D
         {
             float distance = point.DistanceTo(junction);
             best = Mathf.Min(best, distance - 7);
-            marks = Mathf.Min(marks, Mathf.SmoothStep(7, 14, distance));
+            if (distance < 14)
+                marks = Mathf.Min(marks, Mathf.SmoothStep(7, 14, distance));
         }
         // A rectangular opening meets the wooden deck; ramps cover its ends.
         float deck = Mathf.Max(
@@ -143,7 +255,15 @@ public partial class Roads : Node3D
     {
         // Sample the UNION once. Adjacent triangles share field values and contour edges,
         // so intersecting routes cannot cut holes out of one another.
-        var cache = new Dictionary<Vector2I, FieldPoint>();
+        // The field depends on the road plan alone, not on the terrain, so the second generation of a valley
+        // (after the village is levelled) reuses every point the first one sampled.
+        var plan = WorldLayout.Plan;
+        if (cachedFieldPlan != plan || cachedField == null)
+        {
+            cachedField = new Dictionary<Vector2I, FieldPoint>();
+            cachedFieldPlan = plan;
+        }
+        var cache = cachedField;
         FieldPoint Sample(int x, int z)
         {
             var key = new Vector2I(x, z);
@@ -151,6 +271,7 @@ public partial class Roads : Node3D
                 cache[key] = point = SampleField(new Vector2(x * MeshStep, z * MeshStep));
             return point;
         }
+        MarkCellsNearRoads();
         const int cellsPerBucket = 16;
         foreach (
             var chunk in segments.Keys.GroupBy(key => new Vector2I(
@@ -166,6 +287,8 @@ public partial class Roads : Node3D
                 for (int z = bucket.Y * cellsPerBucket; z < (bucket.Y + 1) * cellsPerBucket; z++)
                 for (int x = bucket.X * cellsPerBucket; x < (bucket.X + 1) * cellsPerBucket; x++)
                 {
+                    if (!MayHoldRoad(x, z))
+                        continue;
                     var a = Sample(x, z);
                     var b = Sample(x + 1, z);
                     var c = Sample(x, z + 1);
@@ -218,11 +341,22 @@ public partial class Roads : Node3D
                     count++;
                     var min = points[0].Position.Min(points[1].Position).Min(points[2].Position);
                     var max = points[0].Position.Max(points[1].Position).Max(points[2].Position);
-                    foreach (var key in Buckets(min, max))
+                    var entry = new SurfaceTriangle(
+                        triangle[0],
+                        triangle[1],
+                        triangle[2],
+                        BucketOf(min.X, min.Y),
+                        BucketOf(max.X, max.Y)
+                    );
+                    var cellLow = TriangleCellOf(min.X - TriangleCellMargin, min.Y - TriangleCellMargin);
+                    var cellHigh = TriangleCellOf(max.X + TriangleCellMargin, max.Y + TriangleCellMargin);
+                    for (int cellZ = cellLow.Y; cellZ <= cellHigh.Y; cellZ++)
+                    for (int cellX = cellLow.X; cellX <= cellHigh.X; cellX++)
                     {
+                        var key = new Vector2I(cellX, cellZ);
                         if (!surfaceTriangles.TryGetValue(key, out var entries))
                             surfaceTriangles[key] = entries = new();
-                        entries.Add(triangle);
+                        entries.Add(entry);
                     }
                 }
             }
@@ -249,18 +383,31 @@ public partial class Roads : Node3D
 
     public bool Contains(Vector3 p) => !float.IsNegativeInfinity(SurfaceHeight(p, float.NegativeInfinity));
 
+    private static Vector2I BucketOf(float x, float z) =>
+        new(Mathf.FloorToInt(x / BucketSize), Mathf.FloorToInt(z / BucketSize));
+
+    private static Vector2I TriangleCellOf(float x, float z) =>
+        new(Mathf.FloorToInt(x / TriangleCell), Mathf.FloorToInt(z / TriangleCell));
+
     public float SurfaceHeight(Vector3 p, float groundHeight)
     {
         float height = groundHeight;
         var flat = new Vector2(p.X, p.Z);
-        var bucket = new Vector2I(Mathf.FloorToInt(p.X / BucketSize), Mathf.FloorToInt(p.Z / BucketSize));
-        if (!surfaceTriangles.TryGetValue(bucket, out var entries))
+        var bucket = BucketOf(p.X, p.Z);
+        if (!surfaceTriangles.TryGetValue(TriangleCellOf(p.X, p.Z), out var entries))
             return height;
         foreach (var triangle in entries)
         {
-            var a = new Vector2(triangle[0].X, triangle[0].Z);
-            var b = new Vector2(triangle[1].X, triangle[1].Z);
-            var c = new Vector2(triangle[2].X, triangle[2].Z);
+            if (
+                bucket.X < triangle.MinBucket.X
+                || bucket.X > triangle.MaxBucket.X
+                || bucket.Y < triangle.MinBucket.Y
+                || bucket.Y > triangle.MaxBucket.Y
+            )
+                continue;
+            var a = new Vector2(triangle.A.X, triangle.A.Z);
+            var b = new Vector2(triangle.B.X, triangle.B.Z);
+            var c = new Vector2(triangle.C.X, triangle.C.Z);
             float area = (b - a).Cross(c - a);
             if (Mathf.Abs(area) < .000001f)
                 continue;
@@ -269,37 +416,63 @@ public partial class Roads : Node3D
             if (u >= -.0001f && v >= -.0001f && u + v <= 1.0001f)
                 height = Mathf.Max(
                     height,
-                    triangle[0].Y + u * (triangle[1].Y - triangle[0].Y) + v * (triangle[2].Y - triangle[0].Y)
+                    triangle.A.Y + u * (triangle.B.Y - triangle.A.Y) + v * (triangle.C.Y - triangle.A.Y)
                 );
         }
         return height;
     }
 
-    // Grid of sample indices for Distance(); rebuilt whenever Samples has grown.
+    // Grid of sample indices for Distance(), kept as flat arrays; rebuilt whenever Samples has grown.
     private const float SampleCellSize = 16;
-    private readonly Dictionary<Vector2I, List<int>> sampleCells = new();
+    private int[] cellStarts = System.Array.Empty<int>();
+    private int[] cellSamples = System.Array.Empty<int>();
+    private float[] sampleX = System.Array.Empty<float>();
+    private float[] sampleZ = System.Array.Empty<float>();
     private int indexedSamples = -1;
     private Vector2I sampleCellMin,
         sampleCellMax;
+    private int sampleColumns;
 
     private static Vector2I SampleCell(float x, float z) =>
         new(Mathf.FloorToInt(x / SampleCellSize), Mathf.FloorToInt(z / SampleCellSize));
 
     private void IndexSamples()
     {
-        sampleCells.Clear();
         sampleCellMin = new Vector2I(int.MaxValue, int.MaxValue);
         sampleCellMax = new Vector2I(int.MinValue, int.MinValue);
         for (int i = 0; i < Samples.Count; i++)
         {
             var cell = SampleCell(Samples[i].X, Samples[i].Z);
-            if (!sampleCells.TryGetValue(cell, out var entries))
-                sampleCells[cell] = entries = new();
-            entries.Add(i);
             sampleCellMin = sampleCellMin.Min(cell);
             sampleCellMax = sampleCellMax.Max(cell);
         }
         indexedSamples = Samples.Count;
+        sampleX = new float[Samples.Count];
+        sampleZ = new float[Samples.Count];
+        if (Samples.Count == 0)
+        {
+            cellStarts = System.Array.Empty<int>();
+            cellSamples = System.Array.Empty<int>();
+            return;
+        }
+        sampleColumns = sampleCellMax.X - sampleCellMin.X + 1;
+        int rows = sampleCellMax.Y - sampleCellMin.Y + 1;
+        cellStarts = new int[sampleColumns * rows + 1];
+        var cellOf = new int[Samples.Count];
+        for (int i = 0; i < Samples.Count; i++)
+        {
+            sampleX[i] = Samples[i].X;
+            sampleZ[i] = Samples[i].Z;
+            var cell = SampleCell(sampleX[i], sampleZ[i]);
+            cellOf[i] = (cell.Y - sampleCellMin.Y) * sampleColumns + cell.X - sampleCellMin.X;
+            cellStarts[cellOf[i] + 1]++;
+        }
+        for (int cell = 0; cell < sampleColumns * rows; cell++)
+            cellStarts[cell + 1] += cellStarts[cell];
+        cellSamples = new int[Samples.Count];
+        var fill = (int[])cellStarts.Clone();
+        for (int i = 0; i < Samples.Count; i++)
+            cellSamples[fill[cellOf[i]]++] = i;
     }
 
     /// <summary>
@@ -310,9 +483,10 @@ public partial class Roads : Node3D
     {
         if (indexedSamples != Samples.Count)
             IndexSamples();
-        float nearest = float.MaxValue;
         if (Samples.Count == 0)
-            return nearest;
+            return float.MaxValue;
+        // The squares are compared and the root taken once: the root of the smallest square is the smallest root.
+        float nearestSquared = float.MaxValue;
         var center = SampleCell(p.X, p.Z);
         int lastRing = Mathf.Max(
             Mathf.Max(Mathf.Abs(center.X - sampleCellMin.X), Mathf.Abs(center.X - sampleCellMax.X)),
@@ -324,21 +498,28 @@ public partial class Roads : Node3D
             {
                 // Inner rows of a ring only contribute their two edge cells.
                 int step = z == center.Y - ring || z == center.Y + ring ? 1 : Mathf.Max(1, 2 * ring);
+                if (z < sampleCellMin.Y || z > sampleCellMax.Y)
+                    continue;
                 for (int x = center.X - ring; x <= center.X + ring; x += step)
                 {
-                    if (!sampleCells.TryGetValue(new Vector2I(x, z), out var entries))
+                    if (x < sampleCellMin.X || x > sampleCellMax.X)
                         continue;
-                    foreach (int i in entries)
+                    int cell = (z - sampleCellMin.Y) * sampleColumns + x - sampleCellMin.X;
+                    for (int k = cellStarts[cell]; k < cellStarts[cell + 1]; k++)
                     {
-                        var sample = Samples[i];
-                        nearest = Mathf.Min(nearest, new Vector2(p.X - sample.X, p.Z - sample.Z).Length());
+                        int i = cellSamples[k];
+                        float dx = p.X - sampleX[i],
+                            dz = p.Z - sampleZ[i];
+                        float squared = dx * dx + dz * dz;
+                        if (squared < nearestSquared)
+                            nearestSquared = squared;
                     }
                 }
             }
             // Every unvisited cell is at least `ring` whole cells away from p along X or Z.
-            if (nearest <= ring * SampleCellSize)
+            if (nearestSquared != float.MaxValue && Mathf.Sqrt(nearestSquared) <= ring * SampleCellSize)
                 break;
         }
-        return nearest;
+        return nearestSquared == float.MaxValue ? float.MaxValue : Mathf.Sqrt(nearestSquared);
     }
 }

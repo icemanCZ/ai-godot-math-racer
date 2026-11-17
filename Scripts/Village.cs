@@ -216,29 +216,60 @@ public partial class Village : Node3D
         return false;
     }
 
+    /// <summary>
+    /// Inverse transforms of the plots, kept because <see cref="IsReserved"/> runs thousands of times while the world
+    /// is planned. An entry is worked out again whenever its transform is not the one it was made from.
+    /// </summary>
+    private sealed class InverseCache
+    {
+        private readonly List<(Transform3D Source, Transform3D Inverse)> entries = new();
+
+        public Transform3D Of(int slot, Transform3D source)
+        {
+            if (slot < entries.Count)
+            {
+                var entry = entries[slot];
+                if (entry.Source == source)
+                    return entry.Inverse;
+                var replaced = source.AffineInverse();
+                entries[slot] = (source, replaced);
+                return replaced;
+            }
+            while (entries.Count < slot)
+                entries.Add((default, default));
+            var created = source.AffineInverse();
+            entries.Add((source, created));
+            return created;
+        }
+    }
+
+    private readonly InverseCache buildingInverses = new();
+    private readonly InverseCache collectionInverses = new();
+    private readonly InverseCache plotInverses = new();
+
     public bool IsReserved(Vector3 point)
     {
         if (Square != null)
         {
-            var local = Square.Transform.AffineInverse() * point;
+            var local = buildingInverses.Of(0, Square.Transform) * point;
             if (Mathf.Abs(local.X) < 11.5f && Mathf.Abs(local.Z) < 7.5f)
                 return true;
         }
-        foreach (var plot in collectionPlots)
+        for (int i = 0; i < collectionPlots.Count; i++)
         {
-            var local = plot.AffineInverse() * point;
+            var local = collectionInverses.Of(i, collectionPlots[i]) * point;
             if (local.X > -5 && local.X < 17 && Mathf.Abs(local.Z) < 8)
                 return true;
         }
         if (GardenBuilding != null)
         {
-            var gardenLocal = gardenPlot.AffineInverse() * point;
+            var gardenLocal = buildingInverses.Of(1, gardenPlot) * point;
             if (gardenLocal.X > -5 && gardenLocal.X < 17 && Mathf.Abs(gardenLocal.Z) < 8)
                 return true;
         }
         if (FarmBuilding != null)
         {
-            var farmLocal = farmPlot.AffineInverse() * point;
+            var farmLocal = buildingInverses.Of(2, farmPlot) * point;
             if (farmLocal.X > -6 && farmLocal.X < 19 && Mathf.Abs(farmLocal.Z) < 8)
                 return true;
         }
@@ -252,9 +283,9 @@ public partial class Village : Node3D
             if (p.DistanceTo(a + delta * t) < path.HalfWidth + .35f)
                 return true;
         }
-        foreach (var plot in plots)
+        for (int i = 0; i < plots.Count; i++)
         {
-            var local = plot.AffineInverse() * point;
+            var local = plotInverses.Of(i, plots[i]) * point;
             if (Mathf.Abs(local.X) < 6.5f && Mathf.Abs(local.Z) < 7.7f)
                 return true;
         }

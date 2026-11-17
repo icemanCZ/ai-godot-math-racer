@@ -103,9 +103,34 @@ public partial class Tracks : Node3D
         var surface = new SurfaceTool();
         surface.Begin(Mesh.PrimitiveType.Triangles);
         int count = 0;
-        for (int z = Mathf.FloorToInt(min.Y / MeshStep); z <= Mathf.CeilToInt(max.Y / MeshStep); z++)
-        for (int x = Mathf.FloorToInt(min.X / MeshStep); x <= Mathf.CeilToInt(max.X / MeshStep); x++)
+        int firstX = Mathf.FloorToInt(min.X / MeshStep),
+            lastX = Mathf.CeilToInt(max.X / MeshStep);
+        int firstZ = Mathf.FloorToInt(min.Y / MeshStep),
+            lastZ = Mathf.CeilToInt(max.Y / MeshStep);
+        // A cell only produces triangles when one of its corners lies inside a piece, and the pieces cover a small part
+        // of their bounding box. Mark the cells around each piece and leave the rest of the box alone.
+        int columns = lastX - firstX + 1;
+        var near = new bool[columns * (lastZ - firstZ + 1)];
+        foreach (var piece in pieces)
         {
+            if (piece.Kind != kind)
+                continue;
+            var low = piece.A.Min(piece.B) - Vector2.One * piece.Width;
+            var high = piece.A.Max(piece.B) + Vector2.One * piece.Width;
+            // A corner inside the piece belongs to the cell on either side of it, hence one cell more on every side.
+            int fromX = Mathf.Max(firstX, Mathf.FloorToInt(low.X / MeshStep) - 2),
+                toX = Mathf.Min(lastX, Mathf.CeilToInt(high.X / MeshStep) + 1);
+            int fromZ = Mathf.Max(firstZ, Mathf.FloorToInt(low.Y / MeshStep) - 2),
+                toZ = Mathf.Min(lastZ, Mathf.CeilToInt(high.Y / MeshStep) + 1);
+            for (int markZ = fromZ; markZ <= toZ; markZ++)
+            for (int markX = fromX; markX <= toX; markX++)
+                near[(markZ - firstZ) * columns + markX - firstX] = true;
+        }
+        for (int z = firstZ; z <= lastZ; z++)
+        for (int x = firstX; x <= lastX; x++)
+        {
+            if (!near[(z - firstZ) * columns + x - firstX])
+                continue;
             var a = Sample(x, z);
             var b = Sample(x + 1, z);
             var c = Sample(x, z + 1);

@@ -66,13 +66,19 @@ public partial class World : Node3D
         SpecialPickupSpots = CreateSpecialPickupSpots();
         PlanFord(river);
         AddChild(Plants);
+        // The actors stand still while the plants are placed, so their positions are read once.
+        var witch = Witch.Position;
+        var tower = Tower.Position;
+        var sorcerer = Sorcerer.Position;
         Plants.Generate(Ground, Routes, Village, Animals, p =>
-            p.DistanceSquaredTo(Witch.Position) < 7 * 7
-            || p.DistanceSquaredTo(Tower.Position) < 18 * 18
-            || p.DistanceSquaredTo(Sorcerer.Position) < 8 * 8
+            p.DistanceSquaredTo(witch) < 7 * 7
+            || p.DistanceSquaredTo(tower) < 18 * 18
+            || p.DistanceSquaredTo(sorcerer) < 8 * 8
             || IsPickupApproachReserved(p)
             || IsHaulReserved(p)
         );
+        Ground.BuildMeshes();
+        Roads.ReleaseFieldCache();
     }
 
     private void RegisterActors()

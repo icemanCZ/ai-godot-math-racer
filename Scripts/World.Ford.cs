@@ -47,7 +47,43 @@ public partial class World
     /// <summary>The quarry, clay pit and sand pit, indexed by <see cref="HaulLoad"/>.</summary>
     internal HaulSource[] HaulSources { get; private set; } = Array.Empty<HaulSource>();
 
-    private readonly List<(Vector3 Road, Vector3 Spot)> haulApproaches = new();
+    private readonly SegmentList haulApproaches = new();
+
+    /// <summary>
+    /// Approaches that points are tested against thousands of times. Every change bumps <see cref="Version"/>, so
+    /// the bounds the tests use are only worked out again when the list changed.
+    /// </summary>
+    private sealed class SegmentList : IEnumerable<(Vector3 Road, Vector3 Spot)>
+    {
+        private readonly List<(Vector3 Road, Vector3 Spot)> items = new();
+
+        public int Version { get; private set; }
+
+        public int Count => items.Count;
+
+        public void Add((Vector3 Road, Vector3 Spot) item)
+        {
+            items.Add(item);
+            Version++;
+        }
+
+        public void Clear()
+        {
+            items.Clear();
+            Version++;
+        }
+
+        public void RemoveRange(int index, int count)
+        {
+            items.RemoveRange(index, count);
+            Version++;
+        }
+
+        public IEnumerator<(Vector3 Road, Vector3 Spot)> GetEnumerator() => items.GetEnumerator();
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+
     private readonly List<Vector3> haulClearings = new();
 
     /// <summary>Why crossing candidates failed, in search order; printed when a valley has no ford.</summary>
@@ -277,17 +313,61 @@ public partial class World
         return null;
     }
 
+    // The actors' positions are read once: Position is a call into the engine, and the searches below test every
+    // actor thousands of times. The actors do not move while the world is planned.
+    private Animal[]? spotsOf;
+    private Vector2[] actorSpots = Array.Empty<Vector2>();
+    private Vector2? towerSpot;
+
+    private Vector2[] ActorSpots(Animal[] friends)
+    {
+        if (!ReferenceEquals(spotsOf, friends))
+        {
+            actorSpots = friends.Select(a => new Vector2(a.Position.X, a.Position.Z)).ToArray();
+            spotsOf = friends;
+        }
+        return actorSpots;
+    }
+
+    private Vector2 TowerSpot => towerSpot ??= new Vector2(Tower.Position.X, Tower.Position.Z);
+
+    /// <summary>Whether any spot is nearer to (x, z) than <paramref name="distance"/> (or exactly that near).</summary>
+    private static bool AnyCloserThan(Vector2[] spots, float x, float z, float distance, bool inclusive = false)
+    {
+        foreach (var spot in spots)
+        {
+            float flat = new Vector2(spot.X - x, spot.Y - z).Length();
+            if (inclusive ? flat <= distance : flat < distance)
+                return true;
+        }
+        return false;
+    }
+
+    private static bool AnyCloserThan(Vector3[] spots, float x, float z, float distance)
+    {
+        foreach (var spot in spots)
+            if (new Vector2(spot.X - x, spot.Z - z).Length() < distance)
+                return true;
+        return false;
+    }
+
+    private static bool CloserThan(Vector2 spot, float x, float z, float distance) =>
+        new Vector2(spot.X - x, spot.Y - z).Length() < distance;
+
+    // Every test below is a pure predicate, so the cheap ones come first and the answer stays the same.
     private bool FreeHaulSpot(Vector3 spot, Animal[] friends, float roadClearance) =>
         new Vector2(spot.X, spot.Z).Length() < Settings.PlayableRadius - 15
-        && Routes.Distance(spot) >= roadClearance
+        && !River.OnBridge(spot.X, spot.Z)
+        && Mathf.Abs(spot.Z - River.BridgeZ) > 14
+        && !CloserThan(TowerSpot, spot.X, spot.Z, 24)
+        && !AnyCloserThan(ActorSpots(friends), spot.X, spot.Z, 24)
+        && !AnyCloserThan(SpecialPickupSpots, spot.X, spot.Z, 22)
         && !Village.IsNearVillage(spot)
         && !Village.IsReserved(spot)
         && !IsPickupApproachReserved(spot)
-        && friends.All(a => FlatDistance(a.Position, spot) >= 24)
-        && SpecialPickupSpots.All(p => FlatDistance(p, spot) >= 22)
-        && FlatDistance(Tower.Position, spot) >= 24
-        && !River.OnBridge(spot.X, spot.Z)
-        && Mathf.Abs(spot.Z - River.BridgeZ) > 14;
+        && Routes.Distance(spot) >= roadClearance;
+
+    private static readonly float[] Laterals = { -3.5f, 0, 3.5f };
 
     /// <summary>A car-wide path without steep ground, buildings, other approaches or (unless entering it) water.</summary>
     private bool ClearHaulPath(Vector3 from, Vector3 to, Animal[] friends, bool toWater, bool checkSlope = true)
@@ -298,22 +378,24 @@ public partial class World
             return true;
         var across = edge.Normalized().Cross(Vector3.Up);
         int steps = Mathf.CeilToInt(edge.Length() / 2);
+        var friendSpots = ActorSpots(friends);
+        var tower = TowerSpot;
         for (int step = 0; step <= steps; step++)
         {
             var center = from.Lerp(to, step / (float)steps);
-            foreach (float lateral in new[] { -3.5f, 0, 3.5f })
+            foreach (float lateral in Laterals)
             {
                 var q = center + across * lateral;
                 bool water = River.Distance(q.X, q.Z) < River.HalfWidth(q.Z) + 6;
                 if (
                     new Vector2(q.X, q.Z).Length() > Settings.PlayableRadius - 10
-                    || Village.IsReserved(q)
                     || River.OnBridge(q.X, q.Z)
                     || (water && !toWater)
+                    || CloserThan(tower, q.X, q.Z, 14)
+                    || AnyCloserThan(friendSpots, q.X, q.Z, 7)
+                    || AnyCloserThan(SpecialPickupSpots, q.X, q.Z, 12)
+                    || Village.IsReserved(q)
                     || IsPickupApproachReserved(q)
-                    || friends.Any(a => FlatDistance(a.Position, q) < 7)
-                    || SpecialPickupSpots.Any(p => FlatDistance(p, q) < 12)
-                    || FlatDistance(Tower.Position, q) < 14
                 )
                     return false;
                 if (water || !checkSlope)
@@ -386,12 +468,17 @@ public partial class World
         return false;
     }
 
+    private ApproachIndex? haulIndex;
+    private int haulIndexVersion = -1;
+
     private bool IsHaulApproachReserved(Vector3 point)
     {
-        foreach (var (road, spot) in haulApproaches)
-            if (SegmentDistance(point, road, spot) < 4.5f)
-                return true;
-        return false;
+        if (haulIndex == null || haulIndexVersion != haulApproaches.Version)
+        {
+            haulIndex = new ApproachIndex(haulApproaches, 4.5f);
+            haulIndexVersion = haulApproaches.Version;
+        }
+        return haulIndex.NearSegmentDistance(point);
     }
 
     private static float SegmentDistance(Vector3 point, Vector3 from, Vector3 to)

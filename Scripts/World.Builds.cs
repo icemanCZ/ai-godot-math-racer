@@ -301,11 +301,11 @@ public partial class World
                 {
                     var q = ring + new Vector3(inward.X * along, 0, lateral);
                     free &=
-                        !Village.IsReserved(q)
+                        !AnyCloserThan(ActorSpots(friends), q.X, q.Z, 9, inclusive: true)
+                        && new Vector2(TowerSpot.X - q.X, TowerSpot.Y - q.Z).Length() > 18
+                        && !Village.IsReserved(q)
                         && !Village.IsNearVillage(q)
-                        && friends.All(a => FlatDistance(a.Position, q) > 9)
-                        && !IsPickupApproachReserved(q)
-                        && FlatDistance(Tower.Position, q) > 18;
+                        && !IsPickupApproachReserved(q);
                 }
                 if (!free)
                 {

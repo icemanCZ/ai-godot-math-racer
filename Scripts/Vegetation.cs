@@ -55,8 +55,14 @@ public partial class Vegetation : Node3D
     )
     {
         ground = terrain;
-        bool Reserved(Vector3 p) =>
-            village.IsReserved(p) || animals.Any(a => a.Position.DistanceTo(p) < 6) || pickupReserved(p);
+        var animalSpots = animals.Select(a => a.Position).ToArray();
+        bool Reserved(Vector3 p)
+        {
+            foreach (var spot in animalSpots)
+                if (spot.DistanceTo(p) < 6)
+                    return true;
+            return village.IsReserved(p) || pickupReserved(p);
+        }
         // Dense groves with open clearings between them.
         for (int grove = 0; grove < 14; grove++)
         {

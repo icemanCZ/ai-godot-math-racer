@@ -194,25 +194,30 @@ public partial class World
         return false;
     }
 
+    private static readonly float[] FootprintAcross = { -12f, -6f, 0, 6f, 12f };
+    private static readonly float[] FootprintAlong = { -5f, 0, 6f, 12f, 18f };
+
     /// <summary>The buildings, stock yard and raw heap stand on gently sloping, dry, otherwise empty ground.</summary>
     private bool WorksFootprintFits(Vector3 ring, Vector3 inward, Animal[] friends, SpurRules rules)
     {
         var right = Vector3.Up.Cross(inward);
-        foreach (float x in new[] { -12f, -6f, 0, 6f, 12f })
-        foreach (float z in new[] { -5f, 0, 6f, 12f, 18f })
+        var friendSpots = ActorSpots(friends);
+        var tower = TowerSpot;
+        foreach (float x in FootprintAcross)
+        foreach (float z in FootprintAlong)
         {
             var q = ring + right * x + inward * z;
             q = Ground.At(q.X, q.Z);
             if (
                 Mathf.Abs(q.Y - ring.Y) > rules.Slope
                 || River.Distance(q.X, q.Z) < River.HalfWidth(q.Z) + rules.RiverMargin - 5
+                || AnyCloserThan(friendSpots, q.X, q.Z, 9)
+                || AnyCloserThan(SpecialPickupSpots, q.X, q.Z, 10)
+                || CloserThan(tower, q.X, q.Z, 18)
                 || Village.IsReserved(q)
                 || Village.IsNearVillage(q)
                 || IsPickupApproachReserved(q)
                 || Routes.Distance(q) < Mathf.Min(8, rules.RoadClearance - 4)
-                || friends.Any(a => FlatDistance(a.Position, q) < 9)
-                || SpecialPickupSpots.Any(p => FlatDistance(p, q) < 10)
-                || FlatDistance(Tower.Position, q) < 18
             )
                 return false;
         }
