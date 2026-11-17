@@ -43,6 +43,7 @@ public partial class Game
         );
         EndExpedition(refreshUi: false);
         role.Restore(world.Village, count);
+        AddCoins(CollectorDeliveryCoins);
         ClearChallenge();
         ui.DeliveryHud(null);
         UpdateDeliveryGuides();

@@ -63,6 +63,9 @@ public partial class Game
     partial void AttachDiagnostics(FollowCamera camera)
     {
         var args = LaunchOptions.Args;
+        // Checks expect exact coin totals, so the scattered coins only pay out where a check turns them on.
+        if (args.Any(arg => arg.EndsWith("-checks") || arg == "--smoke-test"))
+            WorldCoins.PickupEnabled = false;
         if (args.Contains("--golem-checks"))
         {
             Start();
@@ -217,10 +220,23 @@ public partial class Game
             vehicle.SetPose(owner.Position + Vector3.Right * 3, 0);
             CompleteHouseTask(owner);
         }
-        if (view == "garage")
+        if (view is "garage" or "garage-shop")
         {
             vehicle.SetPose(world.Village.GarageEntrance, 0);
+            // Enough coins for a paint or an accessory, but not a model, shows both price states.
+            AddCoins(23);
             OpenGarage();
+            if (view == "garage-shop" && FindChild("GarageScroll", true, false) is ScrollContainer scroll)
+                scroll.SetDeferred(ScrollContainer.PropertyName.ScrollVertical, 290);
+        }
+        if (view == "coins")
+        {
+            // Park just short of the nearest coin so that it spins in front of the car.
+            var coin = WorldCoins.ActivePositions.MinBy(p => p.DistanceSquaredTo(vehicle.Position));
+            var toward = (coin - vehicle.Position) with { Y = 0 };
+            var spot = coin - toward.Normalized() * 7;
+            vehicle.SetPose(world.Ground.At(spot.X, spot.Z, .15f), Mathf.Atan2(-toward.X, -toward.Z));
+            WorldCoins.PickupEnabled = false;
         }
         if (view is "village" or "village-upgraded" or "village-question" or "village-fruit-offer" or "village-fruit")
         {

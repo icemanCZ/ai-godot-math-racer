@@ -113,6 +113,7 @@ public partial class Game
         if (finished >= 0)
         {
             CelebrateAt(vehicle.Position, $"{DrivingEvents.Title(finished)} — krásná jízda!");
+            AddCoins(CourseCoins);
             SaveProgress();
         }
         if (Events.Active >= 0)

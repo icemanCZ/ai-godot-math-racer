@@ -32,10 +32,6 @@ public partial class Game
         ClearChallenge();
         CelebrateCompletion(Delivery.Recipient, "Objednávka doručena! Děkujeme!", true);
         Delivery.Sender.Celebrate();
-        rewards.OfferOnePerCategory();
-        State = GameState.Reward;
-        ShowRewards();
-        ShowCelebrationView();
-        SaveProgress();
+        PayReward(TradeCoins);
     }
 }

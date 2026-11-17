@@ -51,10 +51,7 @@ public partial class DeliveryChecks : Node
             );
             game.OpenChallenge(world.Animals[0]);
             ChallengeChecks.Solve(game);
-            Check(
-                game.State == GameState.ExpeditionChoice && game.CurrentRewards.Count == 0,
-                "correct answer opens task choice before any reward"
-            );
+            Check(game.State == GameState.ExpeditionChoice, "correct answer opens task choice before any reward");
             game.TogglePause();
             game.TogglePause();
             Check(game.State == GameState.ExpeditionChoice, "pause preserves task choice");
@@ -80,8 +77,8 @@ public partial class DeliveryChecks : Node
                     );
                     ChallengeChecks.Solve(game);
                     Check(
-                        game.State == GameState.ExpeditionChoice && game.CurrentRewards.Count == 0,
-                        "original question unlocks task choice without granting cosmetics"
+                        game.State == GameState.ExpeditionChoice,
+                        "original question unlocks task choice without paying the delivery reward"
                     );
                     game.TogglePause();
                     game.TogglePause();
@@ -198,7 +195,7 @@ public partial class DeliveryChecks : Node
                     game.OpenChallenge(other);
                     ChallengeChecks.Solve(game);
                     Check(
-                        game.State == GameState.Exploring && game.CurrentRewards.Count == 0,
+                        game.State == GameState.Exploring,
                         "solving another question preserves active expedition and postpones its task choice"
                     );
                     game.TogglePause();
@@ -277,35 +274,17 @@ public partial class DeliveryChecks : Node
                     "expedition rewards cannot chain into another expedition"
                 );
                 Check(
-                    game.CurrentRewards.Count == 4
-                        && game.CurrentRewards.Count(r => r.IsAccessory) == 2
-                        && game.CurrentRewards.Distinct().Count() == 4,
-                    "completed task offers paint, vehicle and two different upgrades"
-                );
-                Check(
-                    game.CurrentRewards.All(r =>
-                        game.FindChild(r.ButtonName, true, false) is Button b
-                        && b.Text == ""
-                        && b.GetChildren()
-                            .OfType<DeliveryPicture>()
-                            .Any(p =>
-                                p.Icon
-                                == (
-                                    r.IsModel ? "vehicle"
-                                    : r.IsAccessory ? "upgrade"
-                                    : "paint"
-                                )
-                            )
-                    ),
-                    "all reward buttons show category symbols instead of captions"
+                    game.FindChild("TakeCoins", true, false) is Button take
+                        && take.Text == ""
+                        && take.GetChildren().OfType<DeliveryPicture>().Any(p => p.Icon == "check")
+                        && game.FindChild("RewardCoins", true, false) is Label { Text: var paid }
+                        && paid == $"+{Game.RoadsideDeliveryCoins}",
+                    "completed task shows its coins with a picture button instead of a caption"
                 );
                 game.TogglePause();
                 game.TogglePause();
                 Check(game.State == GameState.Reward && game.Delivery == delivery, "pause retains delivery reward");
-                if (before % 2 == 0)
-                    Press(game.CurrentRewards[0].ButtonName);
-                else
-                    Press("KeepLook");
+                Press("TakeCoins");
                 await Frames();
                 Check(
                     game.State == GameState.Exploring

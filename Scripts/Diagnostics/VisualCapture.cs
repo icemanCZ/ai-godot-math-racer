@@ -149,7 +149,15 @@ public partial class VisualCapture : Node
             camera.Position = focus + building.GlobalBasis * new Vector3(12, 8, 19);
             camera.LookAt(focus);
         }
-        else if (view == "garage") { }
+        else if (view is "garage" or "garage-shop") { }
+        else if (view == "coins" && world.GetNodeOrNull<WorldCoins>("WorldCoins") is { } coins)
+        {
+            camera.SetProcess(false);
+            car.Active = false;
+            var coin = coins.ActivePositions.MinBy(p => p.DistanceSquaredTo(car.Position));
+            camera.Position = coin + new Vector3(4, 2.6f, 5);
+            camera.LookAt(coin + Vector3.Up * 1.1f);
+        }
         else if (view == "grass")
         {
             // A drive through the generated meadow exposes bending and the recovering wake.

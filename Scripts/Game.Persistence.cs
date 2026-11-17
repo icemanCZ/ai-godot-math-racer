@@ -97,8 +97,11 @@ public partial class Game
             Unlocked = roadside.UnlockedIndices(world.Animals),
             Completed = roadside.CompletedIndices(world.Animals),
             Owned = rewards.Owned.ToArray(),
-            Rewards = rewards.Offered.ToArray(),
-            PreviousRewards = rewards.Previous.ToArray(),
+            Coins = Coins,
+            RewardCoins =
+                State is GameState.Reward || (State == GameState.Paused && beforePause == GameState.Reward)
+                    ? rewardCoins
+                    : 0,
             Look = vehicle.Appearance.CurrentLookId,
             Model = vehicle.Appearance.CurrentModelId,
             Accessories = CarAccessory
@@ -134,7 +137,9 @@ public partial class Game
         RestoreCarLook(data);
         RestoreVillage(data);
         roadside.Restore(world.Animals, data.Unlocked, data.Completed);
-        rewards.Restore(data.Owned, data.Rewards, data.PreviousRewards);
+        rewards.Restore(data.Owned, data.Coins);
+        rewardCoins = data.RewardCoins;
+        ui.CoinCount(Coins, 0);
         bool validEncounter = RestoreBandits(data);
         nearby = validEncounter ? ActorAt(data.Nearby) : null;
         CurrentChallenge = data.Challenge;

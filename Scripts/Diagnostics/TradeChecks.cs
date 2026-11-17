@@ -104,34 +104,28 @@ public partial class TradeChecks : Node
                     game.FinishInteraction();
                 }
                 car.SetPose(owner.Position, 0);
+                int coins = game.Coins;
                 game.BeginDeliveryQuestion();
-                Check(
-                    game.State == GameState.Exploring && game.OwnedRewards.Count == owned,
-                    "no reward before reaching customer"
-                );
+                Check(game.State == GameState.Exploring && game.Coins == coins, "no reward before reaching customer");
                 car.SetPose(target.Position + Vector3.Right * 2, 0);
                 game.BeginDeliveryQuestion();
                 Check(
                     game.State == GameState.Reward
                         && game.OwnedRewards.Count == owned
-                        && game.CurrentRewards.Count == 3
-                        && game.CurrentRewards.Count(r => r.IsAccessory) == 1
-                        && game.CurrentRewards.Count(r => r.IsModel) == 1,
-                    "arrival offers one upgrade, paint and vehicle without granting early"
+                        && game.Coins == coins + Game.TradeCoins,
+                    "arrival pays the trade coins instead of car items"
                 );
                 game.TogglePause();
                 RoundTrip();
                 game.BeginDeliveryQuestion();
-                var reward = game.CurrentRewards[trip % 3];
-                if (reward.IsModel)
-                    game.SelectModel(reward.Id);
-                else if (reward.IsAccessory)
-                    game.SelectAccessory(reward.Id);
-                else
-                    game.SelectLook(reward.Id);
                 Check(
-                    game.Delivery == null && game.OwnedRewards.Contains(reward) && game.State == GameState.Exploring,
-                    "chosen reward enters garage and unloads cargo"
+                    game.State == GameState.Reward && game.Coins == coins + Game.TradeCoins,
+                    "a reloaded reward panel keeps the coins without paying twice"
+                );
+                game.FinishInteraction();
+                Check(
+                    game.Delivery == null && game.State == GameState.Exploring && game.OwnedRewards.Count == owned,
+                    "taking the coins unloads the cargo"
                 );
                 Check(
                     world.Village.TradeCounts[owner.TradeIndex] == trip / 3 + 1,
