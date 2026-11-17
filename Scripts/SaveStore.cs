@@ -21,6 +21,13 @@ public sealed class SaveData
     public int EventActive { get; set; } = -1;
     public int EventNext { get; set; }
     public int[] EventWins { get; set; } = new int[2];
+
+    /// <summary>Gate times of the player's record per course; empty while the pace ghost is still unbeaten.</summary>
+    public float[][] EventBest { get; set; } = new[] { Array.Empty<float>(), Array.Empty<float>() };
+
+    /// <summary>Seconds on the clock of the active run, which has one gate time in <see cref="EventSplits"/> per gate passed.</summary>
+    public float EventTime { get; set; }
+    public float[] EventSplits { get; set; } = Array.Empty<float>();
     public bool GolemOwned { get; set; }
     public bool GolemActive { get; set; }
 
@@ -127,6 +134,7 @@ public static class SaveStore
                 MigrateLegacyQuestion(data);
                 MigrateRewardOffer(data);
                 MigrateBuilds(data);
+                MigrateEventRun(data);
                 Validate(data);
                 if (data.Postcards.Length == Game.OriginalPostcardCount)
                 {
@@ -188,6 +196,16 @@ public static class SaveStore
         || data.EventWins == null
         || data.EventWins.Length != 2
         || data.EventWins.Any(w => w < 0 || w > 9999)
+        || data.EventBest == null
+        || data.EventBest.Length != 2
+        || data.EventBest.Any(best => best.Length != 0 && !DrivingEvents.ValidSplits(best))
+        || data.EventSplits == null
+        || data.EventSplits.Length != data.EventNext
+        || (data.EventActive < 0 && (data.EventNext != 0 || data.EventTime != 0))
+        || !float.IsFinite(data.EventTime)
+        || data.EventTime < 0
+        || data.EventTime > 3600
+        || data.EventSplits.Any(t => !float.IsFinite(t) || t < 0 || t > data.EventTime)
         || data.Position == null
         || data.Position.Length != 3
         || data.Position.Any(p => !float.IsFinite(p))
@@ -554,6 +572,34 @@ public static class SaveStore
         data.FordStage = 0;
         data.FordTrip = -1;
         data.FordTripLoaded = false;
+    }
+
+    /// <summary>
+    /// Saves from before the ghost race have no clock or gate times. A run that was under way is dropped, and a
+    /// damaged record falls back to the pace ghost, so neither costs the player the rest of the save.
+    /// </summary>
+    private static void MigrateEventRun(SaveData data)
+    {
+        if (data.EventBest is not { Length: 2 })
+            data.EventBest = new[] { Array.Empty<float>(), Array.Empty<float>() };
+        for (int i = 0; i < 2; i++)
+            if (data.EventBest[i] == null || !DrivingEvents.ValidSplits(data.EventBest[i]))
+                data.EventBest[i] = Array.Empty<float>();
+        bool consistent =
+            data.EventSplits != null
+            && data.EventSplits.Length == data.EventNext
+            && data.EventActive >= 0
+            && float.IsFinite(data.EventTime)
+            && data.EventTime >= 0;
+        if (consistent)
+            return;
+        data.EventSplits = Array.Empty<float>();
+        data.EventTime = 0;
+        if (data.EventActive >= 0 || data.EventNext != 0)
+        {
+            data.EventActive = -1;
+            data.EventNext = 0;
+        }
     }
 
     private static void ClearQuestion(SaveData data)
