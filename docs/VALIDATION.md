@@ -300,3 +300,9 @@ Event placement update: both courses now use the outer country loops; continuous
 - Saves: `HouseTrip` and `HouseTripLoaded`, validated against the schedule of the saved seed; a save waiting at a house whose task changed (an apple offer, or a quiz where goods are now asked) goes back to driving.
 - `dotnet build` clean; `csharpier check` clean; `build.ps1 -Test` passed all 50 scenarios. `--village-checks` now drives every goods task of all four houses (with an empty works for the first of each house), saves in every trip state and the damaged and migrated saves.
 - Captures `village-material-offer` and `village-material-missing` (seed 42) inspected.
+
+## Six building plots (2026-11-17)
+
+- Added six building plots (`HousePlot`, `PlotPlans`, `Village.Plots.cs`) with a newcomer on each (`PlotResidentRole`, actor IDs 58–63). Six deliveries of goods (gravel, two of bricks, three of planks) raise a little house in six stages; the sixth lets the newcomer walk to the doorstep and move in, and pays 10 coins. A `PlotTrip` shares the single task slot, sends the player for raw material when a works is empty and is saved (`PlotStages`, `PlotTrip`, `PlotTripLoaded`; older saves load with empty plots).
+- `--plot-checks` (seeds 1, 42, 7421) covers the plots' places, the newcomers, driving each way to its ring with the car's physics, all six deliveries of every plot with loading questions and goods leaving the stock, several plots under way at once, the walk to the doorstep, rejected damaged saves and round trips in every trip state.
+- The plots are reserved ground but are kept out of the village's shared `plots` list: adding them there moved the mill and tower sites and cut a way into the levelled platform, which `--village-checks` rightly rejected. They also prefer ground inside the existing platform. Village generation (`--road-audit`) was swept over seeds 2–61 without a missing plot.

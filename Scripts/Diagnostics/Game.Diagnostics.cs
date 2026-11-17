@@ -81,6 +81,11 @@ public partial class Game
             Start();
             AddChild(new BuildChecks(this, world, vehicle));
         }
+        if (args.Contains("--plot-checks"))
+        {
+            Start();
+            AddChild(new PlotChecks(this, world, vehicle));
+        }
         if (args.Contains("--works-checks"))
         {
             Start();
@@ -408,6 +413,12 @@ public partial class Game
             var drop = project.DropFor(0);
             vehicle.SetPose(world.Ground.At(drop.X, drop.Z, .15f), 0);
         }
+        if (ParsePlotView(view) is var (plotIndex, plotStage) && plotIndex < world.Village.BuildPlots.Count)
+        {
+            var plot = world.Village.BuildPlots[plotIndex];
+            plot.SetStage(plotStage);
+            vehicle.SetPose(world.Ground.At(plot.Drop.X, plot.Drop.Z, .15f), 0);
+        }
         if (view == "log-yard" && world.LogYard is { } logYard)
             vehicle.SetPose(world.Ground.At(logYard.Position.X, logYard.Position.Z, .15f), 0);
         if (view is "beaver" or "load-question" && world.Beaver != null)
@@ -443,6 +454,20 @@ public partial class Game
 public partial class Game
 {
     /// <summary>A view such as <c>mill-5</c> or <c>tower-10</c>: the building and how many deliveries are shown.</summary>
+    /// <summary>"plot-N" shows plot N with all its stages delivered, "plot-N-S" with S of them.</summary>
+    internal static (int Plot, int Stage)? ParsePlotView(string view)
+    {
+        if (!view.StartsWith("plot-"))
+            return null;
+        var parts = view["plot-".Length..].Split('-');
+        if (parts.Length is < 1 or > 2 || !int.TryParse(parts[0], out int plot) || plot is < 0 or >= PlotPlans.Count)
+            return null;
+        int stage = PlotPlans.Trips;
+        if (parts.Length == 2 && (!int.TryParse(parts[1], out stage) || stage is < 0 or > PlotPlans.Trips))
+            return null;
+        return (plot, stage);
+    }
+
     internal static (int Project, int Stage)? ParseBuildView(string view)
     {
         foreach (

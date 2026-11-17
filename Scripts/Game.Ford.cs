@@ -46,6 +46,7 @@ public partial class Game
         ui.SupplyQuestRequested += BeginSupplyTrip;
         ui.MissingSupplyRequested += BeginMissingSupply;
         ui.HouseTripRequested += BeginHouseTrip;
+        ui.PlotTripRequested += BeginPlotTrip;
         ui.LookoutRequested += BeginLookout;
         ui.TrailerToggleRequested += ToggleTrailer;
         ui.TrailerPaintSelected += SelectTrailerPaint;
@@ -155,6 +156,8 @@ public partial class Game
     {
         foreach (var project in world.Projects)
             project.Builder.Guide(Haul == null && !project.Complete);
+        foreach (var plot in world.Village.BuildPlots)
+            plot.Resident.Guide(Haul == null && !plot.Complete);
         foreach (var works in world.Industry)
             works.Worker.Guide(true);
         foreach (var worker in world.AllSourceWorkers)
@@ -246,6 +249,9 @@ public partial class Game
             case HouseTrip houseTrip:
                 FinishHouseDump(houseTrip);
                 break;
+            case PlotTrip plotTrip:
+                FinishPlotDump(plotTrip);
+                break;
         }
     }
 
@@ -327,6 +333,7 @@ public partial class Game
         }
         foreach (var works in world.Industry)
             works.SetStock(data.WorksStock[works.Site.Index]);
+        world.Village.RestorePlots(data.PlotStages!);
         if (data.BuildTrip >= 0 && data.BuildTrip < world.Projects.Length && !world.Projects[data.BuildTrip].Complete)
         {
             var project = world.Projects[data.BuildTrip];
@@ -338,6 +345,17 @@ public partial class Game
         {
             trailer.SetLoad(null);
             StartHaul(new SupplyTrip(world, vehicle, world.Industry[data.SupplyTrip], data.SupplyTripLoaded));
+            trailer.Snap();
+        }
+        else if (
+            data.PlotTrip >= 0
+            && data.PlotTrip < world.Village.BuildPlots.Count
+            && !world.Village.BuildPlots[data.PlotTrip].Complete
+        )
+        {
+            var plot = world.Village.BuildPlots[data.PlotTrip];
+            trailer.SetLoad(null);
+            StartHaul(new PlotTrip(world, vehicle, plot, plot.Stage, data.PlotTripLoaded));
             trailer.Snap();
         }
         else if (
@@ -372,6 +390,7 @@ public partial class Game
             BuildTrip { Loaded: true, FarBank: true } => "Teď odvez náklad na druhý břeh řeky. Přejeď po velkém mostě.",
             BuildTrip { Loaded: true } => "Teď odvez náklad na stavbu a vysyp ho do žlutého kruhu.",
             HouseTrip { Loaded: true } => "Teď odvez náklad před domeček a vysyp ho do žlutého kruhu.",
+            PlotTrip { Loaded: true } => "Teď odvez náklad na parcelu a vysyp ho do žlutého kruhu.",
             { Loaded: true } => "Teď odvez náklad do žlutého kruhu před závodem.",
             _ => trip.Load switch
             {

@@ -13,6 +13,7 @@ internal static class CharacterCatalog
 {
     // Static fields initialize in file order, so the name and colour tables stay above the lists built from them.
     private const string ResidentGreeting = "Pomůžeš mi zkrášlit domeček?";
+    private const string PlotGreeting = "Chtěl bych tady bydlet! Přivezeš mi materiál na domeček?";
     private const string TraderGreeting =
         "Vyřeš příklad a rozvez mou objednávku.\nZa doručení si vybereš odměnu pro auto!";
 
@@ -41,6 +42,21 @@ internal static class CharacterCatalog
             new("Liška zahradnice Róza", ResidentGreeting, 1, "df92ac"),
             new("Medvídek kutil Hugo", ResidentGreeting, 2, "97c9b0"),
             new("Králíček malíř Fialka", ResidentGreeting, 0, "c5b4e3"),
+        };
+
+    /// <summary>
+    /// The newcomers who wait on the village's building plots and move into the house that is built for them.
+    /// The list order gives their actor IDs (<see cref="World.FirstPlotResidentId"/> onwards).
+    /// </summary>
+    public static IReadOnlyList<CharacterSpec> PlotResidents { get; } =
+        new CharacterSpec[]
+        {
+            new("Králíček Ondra", PlotGreeting, 0, "f3e8d5"),
+            new("Liška Alenka", PlotGreeting, 1, "e8bf73"),
+            new("Medvěd Bořek", PlotGreeting, 2, "b98d71"),
+            new("Králíček Standa", PlotGreeting, 0, "d9c7f0"),
+            new("Liška Dana", PlotGreeting, 1, "f0b58a"),
+            new("Medvídek Jarda", PlotGreeting, 2, "a8c9a0"),
         };
 
     /// <summary>Baker, shopkeeper and confectioner, matching <see cref="Village.TradeCargo"/>.</summary>

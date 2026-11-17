@@ -16,6 +16,13 @@ public partial class World : Node3D
     internal const int FirstTraderId = 38;
     internal const int WitchId = 41;
     internal const int SorcererId = 42;
+
+    // The newcomers of the building plots take the IDs after the last source worker.
+    internal const int FirstPlotResidentId = LastSourceId + 1;
+    internal const int LastPlotResidentId = FirstPlotResidentId + PlotPlans.Count - 1;
+
+    internal static bool IsPlotResident(int id) => id is >= FirstPlotResidentId and <= LastPlotResidentId;
+
     private readonly SortedList<int, Animal> actors = new();
     public Terrain Ground { get; } = new();
     public Roads Routes { get; private set; } = new();
@@ -95,6 +102,8 @@ public partial class World : Node3D
             actors.Add(FirstTraderId + trader.TradeIndex, trader);
         actors.Add(WitchId, Witch);
         actors.Add(SorcererId, Sorcerer);
+        foreach (var plot in Village.BuildPlots)
+            actors.Add(FirstPlotResidentId + plot.Index, plot.Resident);
     }
 
     internal int ActorId(Animal actor)

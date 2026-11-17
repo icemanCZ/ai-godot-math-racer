@@ -174,6 +174,7 @@ public partial class Village : Node3D
         GenerateCollections();
         GenerateTrades();
         GenerateSquare();
+        GeneratePlots();
         AddVillageDetails();
         foreach (var trader in Traders)
             trader.Position = ApproachSpot(trader.Position);
@@ -246,6 +247,7 @@ public partial class Village : Node3D
     private readonly InverseCache buildingInverses = new();
     private readonly InverseCache collectionInverses = new();
     private readonly InverseCache plotInverses = new();
+    private readonly InverseCache lotInverses = new();
 
     /// <summary>How far a point lies from the nearest house, shop, yard or the garage, in metres.</summary>
     internal float PlotDistance(Vector3 point)
@@ -295,6 +297,14 @@ public partial class Village : Node3D
         for (int i = 0; i < plots.Count; i++)
         {
             var local = plotInverses.Of(i, plots[i]) * point;
+            if (Mathf.Abs(local.X) < 6.5f && Mathf.Abs(local.Z) < 7.7f)
+                return true;
+        }
+        // The building plots are reserved too, but stay out of `plots`, which also shapes the terrain and the search
+        // for the works and landmarks.
+        for (int i = 0; i < buildPlots.Count; i++)
+        {
+            var local = lotInverses.Of(i, buildPlots[i].Transform) * point;
             if (Mathf.Abs(local.X) < 6.5f && Mathf.Abs(local.Z) < 7.7f)
                 return true;
         }

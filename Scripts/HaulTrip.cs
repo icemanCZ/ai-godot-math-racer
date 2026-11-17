@@ -162,6 +162,23 @@ public partial class HouseTrip : HaulTrip
     }
 }
 
+/// <summary>One of the six deliveries of goods to a building plot, tipped out on the ring in front of its lot.</summary>
+public partial class PlotTrip : HaulTrip
+{
+    internal HousePlot Plot { get; }
+    internal int Step { get; }
+
+    internal override string Counter => $"{Step + 1} / {HousePlot.Trips}";
+
+    internal PlotTrip(World world, Vehicle car, HousePlot plot, int step, bool loaded)
+        : base(world, car, PlotPlans.CargoOf(step), plot.Drop, plot.Road, plot.Resident, loaded)
+    {
+        Plot = plot;
+        Step = step;
+        Name = "PlotTrip";
+    }
+}
+
 /// <summary>Raw material for a works: logs, soil or stones, hauled to its ring and turned into stock.</summary>
 public partial class SupplyTrip : HaulTrip
 {

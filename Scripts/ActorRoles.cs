@@ -137,6 +137,33 @@ internal sealed class BuilderRole : ActorRole
 }
 
 /// <summary>
+/// The newcomer of a building plot. Talking to them offers the next delivery of material for their house; once the
+/// house is finished they live in it. They send the trailer and run their own task marker, like a builder.
+/// </summary>
+internal sealed class PlotResidentRole : ActorRole
+{
+    public HousePlot Plot { get; }
+
+    public PlotResidentRole(HousePlot plot) => Plot = plot;
+
+    public override string Icon => "plot";
+    public override bool UsesDeliveryGuide => false;
+
+    public override bool InvitesTalk(bool expeditionActive) => true;
+
+    public override void ShowHint(GameUi ui, Animal actor) => ui.PlotHint(Plot.Complete);
+
+    public override void Open(Game game, Animal actor) => game.OpenPlot(actor);
+
+    /// <summary>A newcomer asks no quiz of their own: the loading questions come from the works' workers.</summary>
+    public override bool CompleteQuiz(Game game, Animal actor, bool handover)
+    {
+        game.CompleteHaulLoading();
+        return true;
+    }
+}
+
+/// <summary>
 /// The worker at the sawmill, brickworks or gravel works. They show the stock and, for building trips, load the
 /// goods and ask the loading question from afar. Raw-material trips are started by the worker at the source.
 /// </summary>

@@ -54,6 +54,13 @@ public sealed class SaveData
     /// <summary>The house whose planks or bricks the active trailer trip fetches, or -1. Its task is the house's next one.</summary>
     public int HouseTrip { get; set; } = -1;
     public bool HouseTripLoaded { get; set; }
+
+    /// <summary>Deliveries made to each of the six building plots, 0–6; zeros in saves from before the plots.</summary>
+    public int[] PlotStages { get; set; } = new int[PlotPlans.Count];
+
+    /// <summary>The plot whose next delivery the active trailer trip fetches, or -1. Never set together with another trip.</summary>
+    public int PlotTrip { get; set; } = -1;
+    public bool PlotTripLoaded { get; set; }
     public bool TrailerOwned { get; set; }
     public bool TrailerAttached { get; set; }
     public string TrailerPaint { get; set; } = "red";
@@ -171,6 +178,7 @@ public static class SaveStore
             || HasInvalidTradeProgress(data)
             || HasInvalidVillageProgress(data)
             || HasInvalidSpecialActorState(data)
+            || HasInvalidPlotState(data)
             || HasInvalidBuildState(data)
             || HasInvalidWorksState(data)
             || HasInvalidHouseTrip(data)
@@ -233,7 +241,7 @@ public static class SaveStore
         || data.Picked == null
         || data.Rejected == null
         || data.Nearby < -1
-        || data.Nearby > Math.Max(Game.BanditActorId, World.LastSourceId)
+        || data.Nearby > Math.Max(Game.BanditActorId, World.LastPlotResidentId)
         || data.Sender < -1
         || data.Sender > World.SorcererId
         || data.Sender == World.WitchId
@@ -289,7 +297,13 @@ public static class SaveStore
             data.State == GameState.TradeStatus
             && (
                 data.Nearby < World.FirstTraderId
-                || (data.Sender < 0 && data.BuildTrip < 0 && data.SupplyTrip < 0 && data.HouseTrip < 0)
+                || (
+                    data.Sender < 0
+                    && data.BuildTrip < 0
+                    && data.SupplyTrip < 0
+                    && data.HouseTrip < 0
+                    && data.PlotTrip < 0
+                )
             )
         )
         || (
@@ -441,6 +455,28 @@ public static class SaveStore
         || !Array.Exists(TrailerModel.Paints, paint => paint.Id == data.TrailerPaint)
         || HasInvalidAsker(data);
 
+    /// <summary>
+    /// The progress of the six building plots and the trailer trip for one of them. A trip fetches the plot's next
+    /// delivery, so that plot must be unfinished, and it never runs together with an expedition or another trip.
+    /// </summary>
+    private static bool HasInvalidPlotState(SaveData data) =>
+        data.PlotStages == null
+        || data.PlotStages.Length != PlotPlans.Count
+        || data.PlotStages.Any(stage => stage < 0 || stage > PlotPlans.Trips)
+        || data.PlotTrip < -1
+        || data.PlotTrip >= PlotPlans.Count
+        || (data.PlotTripLoaded && data.PlotTrip < 0)
+        || (
+            data.PlotTrip >= 0
+            && (
+                data.PlotStages[data.PlotTrip] >= PlotPlans.Trips
+                || data.Sender >= 0
+                || data.BuildTrip >= 0
+                || data.SupplyTrip >= 0
+                || data.HouseTrip >= 0
+            )
+        );
+
     /// <summary>The cargo and the character who asks about it for the active trailer trip, or (-1, -1) without one.</summary>
     private static (HaulLoad Cargo, int[] Askers, bool Loaded) ActiveTripAsker(SaveData data)
     {
@@ -453,6 +489,15 @@ public static class SaveStore
         {
             var cargo = WorksCatalog.All[data.SupplyTrip].Input;
             return (cargo, World.AskerIds(cargo, 0), data.SupplyTripLoaded);
+        }
+        if (
+            data.PlotTrip is >= 0 and < PlotPlans.Count
+            && data.PlotStages is { Length: PlotPlans.Count } plotStages
+            && plotStages[data.PlotTrip] is >= 0 and < PlotPlans.Trips
+        )
+        {
+            var cargo = PlotPlans.CargoOf(plotStages[data.PlotTrip]);
+            return (cargo, World.AskerIds(cargo, 0), data.PlotTripLoaded);
         }
         if (data.HouseTrip >= 0 && SavedTask(data, data.HouseTrip) is { } kind && Village.MaterialOf(kind) is { } goods)
             return (goods, World.AskerIds(goods, 0), data.HouseTripLoaded);
@@ -517,11 +562,16 @@ public static class SaveStore
             World.IsBuilder(data.Nearby) ? GameState.BuildStatus
             : data.Nearby is >= World.FirstWorksId and <= World.LastWorksId ? GameState.WorksStatus
             : data.Nearby is >= World.FirstSourceId and <= World.LastSourceId ? GameState.SourceStatus
+            : World.IsPlotResident(data.Nearby) ? GameState.PlotStatus
             : null;
         if (panel == null)
         {
             // The panels belong to their characters, and a loading question needs one of them to ask it.
-            return data.State is GameState.BuildStatus or GameState.WorksStatus or GameState.SourceStatus
+            return data.State
+                    is GameState.BuildStatus
+                        or GameState.WorksStatus
+                        or GameState.SourceStatus
+                        or GameState.PlotStatus
                 || data.Challenge is LoadChallenge;
         }
         if (data.State is not (GameState.Exploring or GameState.Challenge) && data.State != panel)

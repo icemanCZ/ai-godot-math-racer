@@ -326,6 +326,18 @@ public partial class VisualCapture : Node
             camera.Position = ring - inward * back + right * 14 + Vector3.Up * (project == BuildPlans.Tower ? 16 : 9);
             camera.LookAt(build.Focus);
         }
+        else if (Game.ParsePlotView(view) is var (plotIndex, _) && plotIndex < world.Village.BuildPlots.Count)
+        {
+            // The lot, its ring and the street, seen from the road side and from above.
+            camera.SetProcess(false);
+            var plot = world.Village.BuildPlots[plotIndex];
+            var toStreet = plot.Road - plot.Position;
+            toStreet.Y = 0;
+            toStreet = toStreet.Normalized();
+            var right = Vector3.Up.Cross(toStreet);
+            camera.Position = plot.Position + toStreet * 11 + right * 7 + Vector3.Up * 6;
+            camera.LookAt(plot.Position + Vector3.Up * 2 + toStreet * 1.5f);
+        }
         else if (view is "sawmill" or "brickworks" or "gravel-works" or "works-full" && world.Industry.Length > 0)
         {
             // The ring, the buildings and the stock yard seen from the approach side, from above.

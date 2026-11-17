@@ -29,6 +29,7 @@ public enum GameState
     WorksStatus = 18,
     SourceStatus = 19,
     HouseMaterialOffer = 20,
+    PlotStatus = 21,
 }
 
 public partial class Game : Node3D
@@ -274,6 +275,9 @@ public partial class Game : Node3D
                 return true;
             case GameState.BuildStatus when nearby?.Role is BuilderRole:
                 ShowBuilder();
+                return true;
+            case GameState.PlotStatus when nearby?.Role is PlotResidentRole:
+                ShowPlot();
                 return true;
             case GameState.SourceStatus when nearby?.Role is SourceRole:
                 ShowSource();

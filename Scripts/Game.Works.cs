@@ -95,6 +95,18 @@ public partial class Game
                 return;
             (works, asker) = (missing, project.Builder);
         }
+        else if (State == GameState.PlotStatus)
+        {
+            // A newcomer who waits for goods that the works has not made sends the player for the raw material too.
+            if (
+                PlotOf(nearby) is not { Complete: false } plot
+                || Haul != null
+                || PlotStepReady(plot)
+                || GoodsWorks(PlotPlans.CargoOf(plot.Stage)) is not { Full: false } missing
+            )
+                return;
+            (works, asker) = (missing, plot.Resident);
+        }
         else if (State == GameState.HouseMaterialOffer)
         {
             // A resident who wants goods that the works has not made does the same: the way to the raw material.
