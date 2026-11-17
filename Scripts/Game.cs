@@ -25,6 +25,7 @@ public enum GameState
     PostcardAlbum = 14,
     WeatherChoice = 15,
     SorcererStatus = 16,
+    FordStatus = 17,
 }
 
 public partial class Game : Node3D
@@ -59,7 +60,7 @@ public partial class Game : Node3D
         AddChild(world);
         world.Generate();
         AddChild(vehicle);
-        vehicle.Setup(world.Ground, world.Routes);
+        vehicle.Setup(world.Ground, world.Routes, world.Ford);
         RunDiagnosticsWithVehicle(ref diagnosticOnly);
         if (diagnosticOnly)
             return;
@@ -89,6 +90,7 @@ public partial class Game : Node3D
         SetupUi();
         ui.CoinCount(Coins, 0);
         SetupGolem();
+        SetupTrailer();
         ui.AnimalCount(RemainingAnimals, world.Animals.Length);
 
         persistenceReady = true;
@@ -245,7 +247,7 @@ public partial class Game : Node3D
                 ui.HouseCollection(Delivery.Sender, Delivery.Collected);
                 return true;
             case GameState.HouseFruitOffer when nearby != null:
-                ui.HouseFruitOffer(nearby, world.Village.Level(nearby.HouseIndex), Delivery == null);
+                ui.HouseFruitOffer(nearby, world.Village.Level(nearby.HouseIndex), !TaskActive);
                 return true;
             case GameState.FarmStatus:
                 ui.FarmStatus(world.Village, Delivery, returned);
@@ -264,6 +266,9 @@ public partial class Game : Node3D
                 return true;
             case GameState.SorcererStatus:
                 ShowSorcerer();
+                return true;
+            case GameState.FordStatus when world.Beaver != null:
+                ShowBeaver();
                 return true;
             case GameState.PostcardAlbum when pendingPhoto < 0:
                 ShowPostcards();
@@ -331,7 +336,9 @@ public partial class Game : Node3D
             return;
         if (InteractWithEvent())
             return;
-        if (
+        if (Haul is { Loaded: false, Arrived: true } && Haul.Reached(vehicle.Position))
+            BeginLoading();
+        else if (
             Delivery != null
             && Delivery.Arrived
             && vehicle.Position.DistanceTo(Delivery.Recipient.Position) < Settings.InteractionRange
@@ -352,7 +359,8 @@ public partial class Game : Node3D
             world.Village.CollectorPets,
             enabledQuizzes,
             threeTermMath,
-            Coins
+            Coins,
+            world.Ford == null ? null : new GarageTrailer(TrailerOwned, trailerParade, trailer.PaintId)
         );
 
     internal void OpenGarage()
@@ -381,7 +389,7 @@ public partial class Game : Node3D
 
     internal void OfferDelivery(Animal sender)
     {
-        if (State != GameState.Exploring || Delivery != null || !roadside.CanStart(sender, Delivery))
+        if (State != GameState.Exploring || TaskActive || !roadside.CanStart(sender, Delivery))
             return;
         CurrentChallenge = null;
         EnterInteraction(GameState.ExpeditionChoice, sender);
@@ -391,7 +399,7 @@ public partial class Game : Node3D
 
     internal void SelectExpedition(bool collection)
     {
-        if (State != GameState.ExpeditionChoice || nearby == null || Delivery != null)
+        if (State != GameState.ExpeditionChoice || nearby == null || TaskActive)
             return;
         StartExpedition(nearby, collection);
     }
@@ -408,12 +416,13 @@ public partial class Game : Node3D
         Speak(ExpeditionInstruction(Delivery), sender);
     }
 
-    private bool CanChooseExpedition(Animal animal) => roadside.CanStart(animal, Delivery);
+    private bool CanChooseExpedition(Animal animal) => Haul == null && roadside.CanStart(animal, Delivery);
 
     private void UpdateDeliveryGuides()
     {
         bool golemReturning = Delivery?.Golem == true && Delivery.CanDeliver;
         world.Sorcerer.Guide(!GolemOwned || golemReturning, golemReturning);
+        UpdateBeaverGuide();
         foreach (var animal in world.InteractionActors)
         {
             if (!animal.Role.UsesDeliveryGuide)
@@ -614,6 +623,9 @@ public partial class Game : Node3D
             UpdateExploring(delta);
         else
             ui.DeliveryHint(false);
+        if (State is not (GameState.Paused or GameState.Title))
+            trailer.Tick((float)delta);
+        TickFordSplash();
         TickCompanionStop((float)delta);
         TickGolem((float)delta);
         TickCollectorPets((float)delta);
@@ -659,15 +671,19 @@ public partial class Game : Node3D
         }
         else
         {
+            TickHaul(delta);
             ui.DeliveryHint(
                 nearby != null
                     && (
                         nearby.RewardAvailable
-                        || nearby.Role.InvitesTalk(expeditionActive: false)
+                        || nearby.Role.InvitesTalk(expeditionActive: Haul != null)
                         || CanChooseExpedition(nearby)
                     )
+                    || Haul is { Loaded: false, Arrived: true }
             );
         }
+        if (State != GameState.Exploring)
+            return;
         nearby?.Role.ShowHint(ui, nearby);
         if (AtGarage)
             ui.GarageHint();

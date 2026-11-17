@@ -275,6 +275,21 @@ public partial class VisualCapture : Node
             camera.Position = point + new Vector3(7, 6, 14);
             camera.LookAt(point + Vector3.Up);
         }
+        else if (view.StartsWith("ford-") && world.Ford is { } ford)
+        {
+            camera.SetProcess(false);
+            var focus = new Vector3(ford.Site.CenterX, ford.Site.DeckHeight + 1, ford.Site.Z);
+            camera.Position = focus + new Vector3(-ford.Site.Side * 9, 11, 20);
+            camera.LookAt(focus);
+        }
+        else if (view == "trailer")
+        {
+            camera.SetProcess(false);
+            var focus = car.Position + car.Transform.Basis.Z * 2.4f + Vector3.Up * 1.1f;
+            camera.Position = focus + car.Transform.Basis.X * 6.5f + car.Transform.Basis.Z * 3 + Vector3.Up * 2.6f;
+            camera.LookAt(focus);
+        }
+        else if (view is "beaver" or "load-question") { }
         else if (view == "delivery" || view.EndsWith("-delivery"))
         {
             camera.SetProcess(false);

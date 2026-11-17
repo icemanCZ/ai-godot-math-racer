@@ -134,6 +134,19 @@ public partial class Animal : Node3D
 
     internal void DressAsSorcerer() => DressAsWitch();
 
+    /// <summary>A flat paddle tail, two front teeth and a builder's cap.</summary>
+    internal void DressAsBeaver()
+    {
+        var tail = Art.Ball(model, new(0, .25f, -.95f), new(.42f, .1f, .75f), "5b4636");
+        tail.RotationDegrees = new(-12, 0, 0);
+        for (int i = 0; i < 3; i++)
+            Art.Block(model, new(0, .27f, -.7f - i * .3f), new(.6f, .02f, .03f), "47362a");
+        foreach (float x in new[] { -.06f, .06f })
+            Art.Block(model, new(x, 1.39f, .76f), new(.1f, .16f, .04f), "fffaf0");
+        Art.Cylinder(model, new(0, 2.38f, 0), .62f, .5f, .3f, "f2b33d");
+        Art.Block(model, new(0, 2.27f, .55f), new(.7f, .06f, .35f), "e09a2c");
+    }
+
     internal void DressAsBandit(string scarf)
     {
         nameLabel.Hide();

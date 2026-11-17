@@ -95,10 +95,15 @@ public partial class River : Node3D
             }
         );
         Bridge();
+    }
+
+    /// <summary>Reed clumps with stones along both banks, leaving the crossings clear.</summary>
+    public void AddBankRocks(Terrain terrain, float? fordZ)
+    {
         for (int i = 0; i < 48; i++)
         {
             float z = -150 + i * 6.2f;
-            if (Mathf.Abs(z - BridgeZ) < 9)
+            if (Mathf.Abs(z - BridgeZ) < 9 || (fordZ is float ford && Mathf.Abs(z - ford) < Ford.ClearHalfWidth))
                 continue;
             float x = CenterX(z) + (i % 2 == 0 ? -1 : 1) * (HalfWidth(z) + 5.5f);
             var p = terrain.At(x, z);

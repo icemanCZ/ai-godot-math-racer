@@ -23,6 +23,16 @@ public sealed class SaveData
     public int[] EventWins { get; set; } = new int[2];
     public bool GolemOwned { get; set; }
     public bool GolemActive { get; set; }
+
+    /// <summary>Loads already built into the beaver's ford, 0–6.</summary>
+    public int FordStage { get; set; }
+
+    /// <summary>The active ford trip, which equals <see cref="FordStage"/>, or -1.</summary>
+    public int FordTrip { get; set; } = -1;
+    public bool FordTripLoaded { get; set; }
+    public bool TrailerOwned { get; set; }
+    public bool TrailerAttached { get; set; }
+    public string TrailerPaint { get; set; } = "red";
     public string[] DisabledCollectorPets { get; set; } = Array.Empty<string>();
     public int Version { get; set; } = CurrentVersion;
     public QuizType QuizTypes { get; set; } = QuizType.All;
@@ -134,6 +144,7 @@ public static class SaveStore
             || HasInvalidTradeProgress(data)
             || HasInvalidVillageProgress(data)
             || HasInvalidSpecialActorState(data)
+            || HasInvalidFordState(data)
             || HasInvalidPickupCount(data)
         )
             throw new JsonException("Invalid save data.");
@@ -183,7 +194,7 @@ public static class SaveStore
         || data.Picked == null
         || data.Rejected == null
         || data.Nearby < -1
-        || data.Nearby > Game.BanditActorId
+        || data.Nearby > Math.Max(Game.BanditActorId, World.BeaverId)
         || data.Sender < -1
         || data.Sender > World.SorcererId
         || data.Sender == World.WitchId
@@ -234,7 +245,11 @@ public static class SaveStore
         || data.TradeCounts.Length != 3
         || data.TradeCounts.Any(c => c < 0 || c > 1000000)
         || (data.Sender >= World.FirstTraderId && data.Sender < World.WitchId && data.Collection)
-        || (data.State == GameState.TradeStatus && (data.Nearby < World.FirstTraderId || data.Sender < 0))
+        // A shop shows its status while another task is under way: an expedition or a ford trip.
+        || (
+            data.State == GameState.TradeStatus
+            && (data.Nearby < World.FirstTraderId || (data.Sender < 0 && data.FordTrip < 0))
+        )
         || (
             data.Nearby >= World.FirstTraderId
             && data.Nearby < World.WitchId
@@ -341,6 +356,42 @@ public static class SaveStore
             && (
                 data.State is not (GameState.Exploring or GameState.Challenge or GameState.WeatherChoice)
                 || (data.State == GameState.Challenge && data.Challenge is DeliveryChallenge)
+            )
+        );
+
+    private static bool HasInvalidFordState(SaveData data) =>
+        data.FordStage is < 0 or > Ford.Trips
+        || data.FordTrip < -1
+        || data.FordTrip >= Ford.Trips
+        || (data.FordTrip >= 0 && (data.FordTrip != data.FordStage || data.Sender >= 0))
+        || (data.FordTripLoaded && data.FordTrip < 0)
+        || (data.TrailerOwned && data.FordStage < Ford.Trips)
+        || (data.TrailerAttached && !data.TrailerOwned)
+        || data.TrailerPaint == null
+        || !Array.Exists(TrailerModel.Paints, paint => paint.Id == data.TrailerPaint)
+        || (data.State == GameState.FordStatus && data.Nearby != World.BeaverId)
+        || (
+            data.Nearby == World.BeaverId
+            && (
+                data.State is not (GameState.Exploring or GameState.FordStatus or GameState.Challenge)
+                || (
+                    data.State == GameState.Challenge
+                    && (
+                        data.FordTrip < 0
+                        || data.FordTripLoaded
+                        || data.HandoverQuiz
+                        || data.Challenge is DeliveryChallenge
+                    )
+                )
+            )
+        )
+        || (
+            data.Challenge is LoadChallenge load
+            && (
+                !load.IsValid()
+                || data.Nearby != World.BeaverId
+                || data.FordTrip < 0
+                || load.Cargo != Ford.TripLoads[data.FordTrip]
             )
         );
 

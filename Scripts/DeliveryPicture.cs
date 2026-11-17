@@ -124,6 +124,53 @@ public partial class DeliveryPicture : Control
                 }
             }
         }
+        else if (Icon is "trailer" or "trailer-load")
+        {
+            // A side view of the trailer; the loading question fills it with stones and empty places.
+            var body = new Color(Icon == "trailer" ? "c0573e" : "c39770");
+            DrawRect(new Rect2(26, 52, 128, 58), body);
+            DrawRect(new Rect2(26, 52, 128, 7), new Color("e2bb8b"));
+            DrawLine(new(26, 100), new(4, 104), ink, 6, true);
+            DrawCircle(new(66, 116), 17, ink);
+            DrawCircle(new(66, 116), 7, new Color("d8d2c4"));
+            DrawCircle(new(116, 116), 17, ink);
+            DrawCircle(new(116, 116), 7, new Color("d8d2c4"));
+            if (Icon == "trailer-load")
+                for (int i = 0; i < Count; i++)
+                {
+                    var p = new Vector2(42 + (i % 5) * 24, 71 + (i / 5) * 23);
+                    if (i < FilledCount)
+                    {
+                        Oval(p, new(11, 9), new("8f8f8a"));
+                        Oval(p + new Vector2(-3, -3), new(4, 3), new("b4b3ab"));
+                    }
+                    else
+                        DrawArc(p, 10, 0, Mathf.Tau, 24, ink, 2.5f, true);
+                }
+        }
+        else if (Icon is "stones" or "soil" or "sand")
+        {
+            var (main, shade) = Icon switch
+            {
+                "stones" => (new Color("8f8f8a"), new Color("b4b3ab")),
+                "soil" => (new Color("8a6142"), new Color("6f4b33")),
+                _ => (new Color("e3c98a"), new Color("c9aa66")),
+            };
+            if (Icon == "stones")
+                for (int i = 0; i < 6; i++)
+                {
+                    var p = new Vector2(55 + (i % 3) * 35 + (i / 3) * 17, 112 - (i / 3) * 27);
+                    Oval(p, new(21, 16), main);
+                    Oval(p + new Vector2(-6, -6), new(7, 5), shade);
+                }
+            else
+            {
+                DrawColoredPolygon(new Vector2[] { new(22, 124), new(70, 58), new(104, 52), new(158, 124) }, main);
+                Oval(new(92, 60), new(24, 12), main);
+                for (int i = 0; i < 7; i++)
+                    DrawCircle(new(52 + i * 15, 104 - (i % 3) * 12), 3.5f, shade);
+            }
+        }
         else if (Icon.StartsWith("postcard-"))
         {
             DrawRect(new Rect2(9, 12, 162, 125), new Color("ffedce"));

@@ -10,6 +10,13 @@ public partial class Vehicle : CharacterBody3D
     public VehicleAppearance Appearance { get; } = new();
     private Terrain terrain = null!;
     private Roads roads = null!;
+    private Ford? ford;
+
+    /// <summary>Raised when the car is placed without driving there, so towed parts can follow at once.</summary>
+    internal event System.Action? PoseReset;
+
+    /// <summary>1 for an empty car; a loaded trailer lowers top speed and acceleration a little.</summary>
+    internal float LoadFactor { get; set; } = 1;
     internal WheelTracks Tracks { get; } = new();
     private readonly Node3D model = new();
     private CollisionShape3D chassis = null!;
@@ -18,9 +25,10 @@ public partial class Vehicle : CharacterBody3D
     private float stuckTime;
     private Vector3 lastPosition;
 
-    public void Setup(Terrain ground, Roads routes)
+    public void Setup(Terrain ground, Roads routes, Ford? crossing = null)
     {
         roads = routes;
+        ford = crossing;
         AddChild(Tracks);
         terrain = ground;
         FloorSnapLength = 1.2f;
@@ -61,6 +69,7 @@ public partial class Vehicle : CharacterBody3D
         stuckTime = 0;
         lastPosition = position;
         Tracks.Break();
+        PoseReset?.Invoke();
     }
 
     public override void _PhysicsProcess(double delta)
@@ -77,7 +86,7 @@ public partial class Vehicle : CharacterBody3D
             Mathf.Max(Input.GetActionStrength("accelerate"), Input.GetActionStrength("stick_forward"))
             - Mathf.Max(Input.GetActionStrength("reverse"), Input.GetActionStrength("stick_reverse"));
         float steer = Input.GetAxis("left", "right");
-        float target = throttle >= 0 ? throttle * Settings.MaxSpeed : throttle * Settings.ReverseSpeed;
+        float target = (throttle >= 0 ? throttle * Settings.MaxSpeed : throttle * Settings.ReverseSpeed) * LoadFactor;
         bool braking = Input.IsActionPressed("brake");
         if (braking)
             target = 0;
@@ -87,7 +96,7 @@ public partial class Vehicle : CharacterBody3D
             (
                 braking ? 25
                 : throttle == 0 ? 4
-                : Settings.Acceleration
+                : Settings.Acceleration * LoadFactor
             ) * dt
         );
         Heading -=
@@ -100,7 +109,9 @@ public partial class Vehicle : CharacterBody3D
         Rotation = new Vector3(0, Heading, 0);
         var forward = -Transform.Basis.Z;
         float Surface(float x, float z) =>
-            River.OnBridge(x, z) ? Mathf.Max(terrain.Height(x, z), River.BridgeSurfaceHeight(x)) : terrain.Height(x, z);
+            River.OnBridge(x, z) ? Mathf.Max(terrain.Height(x, z), River.BridgeSurfaceHeight(x))
+            : ford != null ? ford.Surface(x, z, terrain.Height(x, z))
+            : terrain.Height(x, z);
         float Slope(Vector3 direction) =>
             (
                 Surface(Position.X + direction.X * 1.6f, Position.Z + direction.Z * 1.6f)
@@ -132,6 +143,7 @@ public partial class Vehicle : CharacterBody3D
         bool blockedByWater =
             !movingAwayFromWater
             && !River.OnBridge(Position.X, Position.Z)
+            && !(ford is { Passable: true } && ford.Contains(Position.X, Position.Z))
             && River.Distance(Position.X, Position.Z) < River.HalfWidth(Position.Z) + 1
             && Position.Y < River.Level(Position.Z) - .35f;
         if (blockedByWater)

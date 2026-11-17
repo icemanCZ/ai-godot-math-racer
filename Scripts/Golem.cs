@@ -163,11 +163,12 @@ public partial class Game
         SaveProgress();
     }
 
-    private float CompanionSurface(Vector3 point)
-    {
-        float height = world.Routes.SurfaceHeight(point, world.Ground.Height(point.X, point.Z));
-        return River.OnBridge(point.X, point.Z) ? Mathf.Max(height, River.BridgeSurfaceHeight(point.X)) : height;
-    }
+    private float CompanionSurface(Vector3 point) =>
+        world.CrossingSurface(
+            point.X,
+            point.Z,
+            world.Routes.SurfaceHeight(point, world.Ground.Height(point.X, point.Z))
+        );
 
     private void TickGolem(float delta)
     {
@@ -176,7 +177,7 @@ public partial class Game
         var target = CompanionTarget(
             GolemWanderIndex,
             golem.Position,
-            vehicle.Position + vehicle.Transform.Basis.Z * 5,
+            vehicle.Position + vehicle.Transform.Basis.Z * (5 + TrailerTrailShift),
             delta
         );
         target.Y = CompanionSurface(target);
@@ -210,11 +211,11 @@ public partial class Game
         ShowSorcerer();
     }
 
-    private void ShowSorcerer() => ui.Sorcerer(world.Sorcerer, Delivery, GolemOwned);
+    private void ShowSorcerer() => ui.Sorcerer(world.Sorcerer, Delivery, GolemOwned, busy: Haul != null);
 
     internal void BeginGolemQuest()
     {
-        if (State != GameState.SorcererStatus || Delivery != null || GolemOwned)
+        if (State != GameState.SorcererStatus || TaskActive || GolemOwned)
             return;
         StartExpedition(world.Sorcerer, true);
         SaveProgress();
@@ -245,7 +246,7 @@ public partial class GameUi
         talkButton.Text = controller ? "A · Černokněžník" : "E · Černokněžník";
     }
 
-    internal void Sorcerer(Animal sorcerer, Expedition? delivery, bool owned)
+    internal void Sorcerer(Animal sorcerer, Expedition? delivery, bool owned, bool busy = false)
     {
         Clear();
         Text(sorcerer.DisplayName, 30);
@@ -253,7 +254,7 @@ public partial class GameUi
             Text("✓  6 / 6", 32);
         else if (delivery?.Golem == true)
             Text($"{delivery.Collected} / 6", 32);
-        else if (delivery != null)
+        else if (delivery != null || busy)
             Text("…", 32);
         else
         {

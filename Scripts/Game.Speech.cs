@@ -48,6 +48,7 @@ public partial class Game
             LetterChallenge => "nejprve vybrala obrázek podle prvního písmene",
             ReadingChallenge => "nejprve přečetla slovo a vybrala obrázek",
             DeliveryChallenge => "spočítala náklad",
+            LoadChallenge => "spočítala, kolik se toho ještě vejde do vozíku",
             _ => "nejprve vyřešila příklad",
         };
         return $"{actor.DisplayName} chce, abys {instruction}.";
