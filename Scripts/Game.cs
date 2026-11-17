@@ -25,7 +25,9 @@ public enum GameState
     PostcardAlbum = 14,
     WeatherChoice = 15,
     SorcererStatus = 16,
-    FordStatus = 17,
+    BuildStatus = 17,
+    WorksStatus = 18,
+    SourceStatus = 19,
 }
 
 public partial class Game : Node3D
@@ -267,8 +269,14 @@ public partial class Game : Node3D
             case GameState.SorcererStatus:
                 ShowSorcerer();
                 return true;
-            case GameState.FordStatus when world.Beaver != null:
-                ShowBeaver();
+            case GameState.BuildStatus when nearby?.Role is BuilderRole:
+                ShowBuilder();
+                return true;
+            case GameState.SourceStatus when nearby?.Role is SourceRole:
+                ShowSource();
+                return true;
+            case GameState.WorksStatus when nearby?.Role is WorksRole:
+                ShowWorks();
                 return true;
             case GameState.PostcardAlbum when pendingPhoto < 0:
                 ShowPostcards();
@@ -308,7 +316,7 @@ public partial class Game : Node3D
         if (e.IsActionPressed("reset"))
         {
             vehicle.Reset();
-            foreach (var pet in world.Village.CollectorPets)
+            foreach (var pet in world.AllPets)
                 if (pet.IsActive)
                     PlaceCollectorPet(pet);
         }
@@ -349,7 +357,7 @@ public partial class Game : Node3D
             OwnedRewards,
             GolemOwned,
             GolemActive,
-            world.Village.CollectorPets,
+            world.AllPets,
             enabledQuizzes,
             threeTermMath,
             Coins,
@@ -376,7 +384,7 @@ public partial class Game : Node3D
         else if (reward.IsAccessory)
             vehicle.Appearance.ToggleAccessory(reward.Id);
         else
-            vehicle.Appearance.Apply(CarLook.All.First(look => look.Id == reward.Id));
+            vehicle.Appearance.Apply(CarLook.Catalogue.First(look => look.Id == reward.Id));
         ShowGarage();
     }
 
@@ -416,7 +424,7 @@ public partial class Game : Node3D
     {
         bool golemReturning = Delivery?.Golem == true && Delivery.CanDeliver;
         world.Sorcerer.Guide(!GolemOwned || golemReturning, golemReturning);
-        UpdateBeaverGuide();
+        UpdateHaulGuides();
         foreach (var animal in world.InteractionActors)
         {
             if (!animal.Role.UsesDeliveryGuide)
@@ -550,6 +558,12 @@ public partial class Game : Node3D
             handoverQuiz = false;
             ClearChallenge();
         }
+        // A solved quiz with the collector who holds the special load of the trip under way hands the load over.
+        if (Haul is { Loaded: false } pickup && HaulLoads.IsSpecial(pickup.Load) && pickup.Asker == nearby)
+        {
+            CompleteHaulLoading();
+            return;
+        }
         if (nearby.Role.CompleteQuiz(this, nearby, handover))
             return;
         if (handover && Delivery?.Sender.HouseIndex >= 0)
@@ -627,6 +641,8 @@ public partial class Game : Node3D
         TickPostcards(delta);
         TickBandits((float)delta);
         TickCoins(delta);
+        TickMill();
+        TickLookout((float)delta);
         saveTimer += delta;
         double saveInterval = State == GameState.Exploring ? 2 : .5;
         if (State != GameState.Title && (State != lastSavedState || saveTimer >= saveInterval))

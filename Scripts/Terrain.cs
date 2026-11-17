@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Godot;
 
 namespace MathRacer;
@@ -19,6 +21,27 @@ public partial class Terrain : Node3D
         Shader = GD.Load<Shader>("res://Shaders/MeadowGround.gdshader"),
     };
 
+    /// <summary>
+    /// A straight cut or fill that gives a way a gentle, even slope: the ground is pulled to the height that runs
+    /// from <see cref="HeightA"/> at <see cref="A"/> to <see cref="HeightB"/> at <see cref="B"/> within
+    /// <see cref="HalfWidth"/> and eases back to the natural ground over <see cref="Shoulder"/>. With
+    /// <see cref="A"/> equal to <see cref="B"/> it is a level round platform.
+    /// </summary>
+    internal readonly record struct GradedPiece(
+        Vector2 A,
+        Vector2 B,
+        float HeightA,
+        float HeightB,
+        float HalfWidth,
+        float Shoulder
+    );
+
+    private readonly List<GradedPiece> graded = new();
+    private Func<float, float, float>? roadDistance;
+
+    /// <summary>Graded pieces leave the ground this close to a road alone.</summary>
+    private const float RoadMargin = 7;
+
     private float RawHeight(float x, float z)
     {
         float landscape = WorldLayout.Plan.NaturalHeight(x, z);
@@ -30,7 +53,61 @@ public partial class Terrain : Node3D
             float blend = 1 - Mathf.SmoothStep(0, 80, new Vector2(dx, dz).Length());
             height = Mathf.Lerp(height, villageHeight, blend);
         }
-        return River.ShapeTerrain(x, z, height);
+        return River.ShapeTerrain(x, z, GradedHeight(x, z, height));
+    }
+
+    private float GradedHeight(float x, float z, float height)
+    {
+        if (graded.Count == 0)
+            return height;
+        var point = new Vector2(x, z);
+        // Only the piece nearest to the point shapes it: pieces that lie next to each other along a way would otherwise
+        // pull the centre line towards the heights of their neighbours.
+        float nearest = float.MaxValue;
+        float design = 0;
+        float blend = 0;
+        foreach (var piece in graded)
+        {
+            float reach = piece.HalfWidth + piece.Shoulder;
+            var middle = (piece.A + piece.B) / 2;
+            float far = piece.A.DistanceTo(piece.B) / 2 + reach;
+            if (point.DistanceSquaredTo(middle) >= far * far)
+                continue;
+            var delta = piece.B - piece.A;
+            float lengthSquared = delta.LengthSquared();
+            float t = lengthSquared < .000001f ? 0 : Mathf.Clamp((point - piece.A).Dot(delta) / lengthSquared, 0, 1);
+            float distance = point.DistanceTo(piece.A + delta * t);
+            if (distance >= reach || distance >= nearest)
+                continue;
+            nearest = distance;
+            design = Mathf.Lerp(piece.HeightA, piece.HeightB, t);
+            blend = 1 - Mathf.SmoothStep(piece.HalfWidth, reach, distance);
+        }
+        if (blend <= 0)
+            return height;
+        // The roads were laid on the ground as it was: it stays untouched beside them and where a way crosses one.
+        if (roadDistance != null)
+            blend *= Mathf.SmoothStep(RoadMargin, RoadMargin + 4, roadDistance(x, z));
+        return Mathf.Lerp(height, design, blend);
+    }
+
+    /// <summary>
+    /// Cuts the given ways and platforms into the terrain, then rebuilds the visuals and collision from the same
+    /// final heights. Call it before anything is placed on the ground the pieces change.
+    /// </summary>
+    internal void Grade(IEnumerable<GradedPiece> pieces, Func<float, float, float> roadDistance)
+    {
+        this.roadDistance = roadDistance;
+        int before = graded.Count;
+        graded.AddRange(pieces);
+        if (graded.Count == before)
+            return;
+        foreach (var child in GetChildren())
+        {
+            RemoveChild(child);
+            child.Free();
+        }
+        Generate();
     }
 
     internal void LevelVillage(Rect2 area, float height)

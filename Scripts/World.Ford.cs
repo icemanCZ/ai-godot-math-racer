@@ -10,6 +10,27 @@ public partial class World
     // 43 is the bandit representative's save ID in Game.
     internal const int BeaverId = 44;
 
+    /// <summary>The actor ID of the character who gives the work for a building (the beaver for the bridge).</summary>
+    internal static int BuilderId(int project) =>
+        project == BuildPlans.Bridge ? BeaverId : FirstBuilderId + project - 1;
+
+    internal const int FirstBuilderId = 48;
+    internal const int LastBuilderId = FirstBuilderId + BuildPlans.Count - 2;
+
+    internal static bool IsBuilder(int id) => id == BeaverId || id is >= FirstBuilderId and <= LastBuilderId;
+
+    internal static int BuilderProject(int id) => id == BeaverId ? BuildPlans.Bridge : id - FirstBuilderId + 1;
+
+    /// <summary>The buildings that exist in this valley, indexed by project; the bridge is first.</summary>
+    internal BuildProject[] Projects { get; private set; } = Array.Empty<BuildProject>();
+
+    /// <summary>The jetty's duck: a companion owned once the jetty is finished; null without a jetty.</summary>
+    internal CollectorPet? Duck { get; private set; }
+
+    /// <summary>The collectors' pets and the duck.</summary>
+    internal IReadOnlyList<CollectorPet> AllPets =>
+        Duck == null ? Village.CollectorPets : Village.CollectorPets.Append(Duck).ToList();
+
     /// <summary>The beaver's bridge, or null when the seeded valley has no suitable crossing.</summary>
     internal Ford? Ford { get; private set; }
     internal Animal? Beaver { get; private set; }
@@ -70,24 +91,56 @@ public partial class World
             $"FORD_READY z={site.Z:0} length={site.HalfLength * 2:0.0} "
                 + $"near={FlatDistance(site.NearRoad, site.NearDump):0} far={FlatDistance(site.FarRoad, site.FarDump):0}"
         );
+        // Everything is planned first: the ways to the buildings may be cut into the ground, and that has to happen
+        // before anything is put on the terrain.
+        var industry = PlanIndustry(site);
+        var builds = PlanBuilds(site);
+        if (builds != null)
+            Ground.Grade(builds.Grading, (x, z) => Routes.Distance(new Vector3(x, 0, z)));
         river.AddBankRocks(Ground, site.Z);
         HaulSources = sources;
         Ford = new Ford(site, Ground);
         AddChild(Ford);
         foreach (var source in sources)
+        {
             BuildHaulSource(source);
-        BuildTracks(site, sources);
-        Beaver = Animal.Create("Bobr Bóďa", "Postavíme most přes řeku? Přivez mi kamení, hlínu a písek.", 2, "9a6a46");
-        Beaver.Role = new BeaverRole();
+            BuildSourceWorker(source);
+        }
+        BuildTracks(site, sources, industry, builds);
+        BuildIndustry(industry);
+        Beaver = Animal.Create("Bobr Bóďa", "Postavíme most přes řeku? Přivez mi štěrk, cihly a prkna.", 2, "9a6a46");
+        Beaver.Role = new BuilderRole(BuildPlans.Bridge);
+        Ford.Builder = Beaver;
+        Projects = new BuildProject[] { Ford };
         Beaver.DressAsBeaver();
         Beaver.Position = site.BeaverSpot;
         var facing = site.NearDump - site.BeaverSpot;
         Beaver.Rotation = new(0, Mathf.Atan2(facing.X, facing.Z), 0);
         AddChild(Beaver);
         actors.Add(BeaverId, Beaver);
+        BuildProjects(builds);
     }
 
+    /// <summary>Looser rules for the later passes of the ford search, so every valley gets its bridge.</summary>
+    private readonly record struct FordRules(float Clearance, float NearRoad, float FarRoad, int Tries);
+
+    private static readonly FordRules[] FordPasses =
+    {
+        new(20, 220, 120, 16),
+        new(14, 320, 220, 30),
+        new(10, 480, 380, 60),
+        new(8, 700, 700, 120),
+    };
+
     private FordSite? FindFordSite()
+    {
+        foreach (var rules in FordPasses)
+            if (FindFordSite(rules) is { } site)
+                return site;
+        return null;
+    }
+
+    private FordSite? FindFordSite(FordRules rules)
     {
         var friends = InteractionActors.ToArray();
         FordSite? best = null;
@@ -129,7 +182,7 @@ public partial class World
                 fordRejections[1]++;
                 continue;
             }
-            if (!FreeHaulSpot(near, friends, 20) || !FreeHaulSpot(far, friends, 20))
+            if (!FreeHaulSpot(near, friends, rules.Clearance) || !FreeHaulSpot(far, friends, rules.Clearance))
             {
                 fordRejections[2]++;
                 continue;
@@ -142,13 +195,13 @@ public partial class World
                 fordRejections[3]++;
                 continue;
             }
-            var nearRoad = BankRoad(near, farBank: false, side, friends, 220);
+            var nearRoad = BankRoad(near, farBank: false, side, friends, rules.NearRoad, rules.Tries);
             if (nearRoad is not Vector3 nearStart)
             {
                 fordRejections[4]++;
                 continue;
             }
-            var farRoad = BankRoad(far, farBank: true, side, friends, 120);
+            var farRoad = BankRoad(far, farBank: true, side, friends, rules.FarRoad, rules.Tries);
             if (farRoad is not Vector3 farStart)
             {
                 fordRejections[5]++;
@@ -158,7 +211,10 @@ public partial class World
             foreach (float offset in new[] { 6.5f, -6.5f })
             {
                 var spot = Ground.At(near.X, z + offset);
-                if (FreeHaulSpot(spot, friends, 16) && SegmentDistance(spot, nearStart, near) > 4.5f)
+                if (
+                    FreeHaulSpot(spot, friends, Mathf.Min(16, rules.Clearance))
+                    && SegmentDistance(spot, nearStart, near) > 4.5f
+                )
                 {
                     beaver = spot;
                     break;
@@ -188,7 +244,15 @@ public partial class World
     }
 
     /// <summary>The closest road point on the given bank with a clear approach to <paramref name="spot"/>.</summary>
-    private Vector3? BankRoad(Vector3 spot, bool farBank, float side, Animal[] friends, float maxDistance)
+    private Vector3? BankRoad(
+        Vector3 spot,
+        bool farBank,
+        float side,
+        Animal[] friends,
+        float maxDistance,
+        int maxTries,
+        bool checkSlope = true
+    )
     {
         var candidates = Routes
             .Samples.Where(road =>
@@ -202,12 +266,12 @@ public partial class World
         var tried = new List<Vector3>();
         foreach (var road in candidates)
         {
-            if (tried.Count >= 16)
+            if (tried.Count >= maxTries)
                 break;
             if (tried.Exists(other => FlatDistance(other, road) < 8))
                 continue;
             tried.Add(road);
-            if (ClearHaulPath(road, spot, friends, toWater: false))
+            if (ClearHaulPath(road, spot, friends, toWater: false, checkSlope))
                 return road;
         }
         return null;
@@ -226,7 +290,7 @@ public partial class World
         && Mathf.Abs(spot.Z - River.BridgeZ) > 14;
 
     /// <summary>A car-wide path without steep ground, buildings, other approaches or (unless entering it) water.</summary>
-    private bool ClearHaulPath(Vector3 from, Vector3 to, Animal[] friends, bool toWater)
+    private bool ClearHaulPath(Vector3 from, Vector3 to, Animal[] friends, bool toWater, bool checkSlope = true)
     {
         var edge = to - from;
         edge.Y = 0;
@@ -252,7 +316,7 @@ public partial class World
                     || FlatDistance(Tower.Position, q) < 14
                 )
                     return false;
-                if (water)
+                if (water || !checkSlope)
                     continue;
                 if (
                     Mathf.Abs(Ground.Height(q.X + 1, q.Z) - Ground.Height(q.X - 1, q.Z)) > 1
@@ -343,7 +407,7 @@ public partial class World
     /// Draws the already cleared approaches: a road from the network to each bridge end through its
     /// dump, and a field path ending in a loading yard at each source.
     /// </summary>
-    private void BuildTracks(FordSite site, HaulSource[] sources)
+    private void BuildTracks(FordSite site, HaulSource[] sources, IndustryPlan? industry, BuildPlan? builds)
     {
         Tracks = new Tracks { Name = "Tracks" };
         foreach (
@@ -369,8 +433,55 @@ public partial class World
             Tracks.Line(source.Road, source.Position, FieldPathHalfWidth, Tracks.Kind.Path);
             Tracks.Pad(source.Position, 4.5f, Tracks.Kind.Path);
         }
+        if (industry != null)
+        {
+            Tracks.Line(industry.LogYard.Road, industry.LogYard.Position, FieldPathHalfWidth, Tracks.Kind.Path);
+            Tracks.Pad(industry.LogYard.Position, 4.5f, Tracks.Kind.Path);
+            foreach (var works in industry.Sites)
+            {
+                Tracks.Line(works.Road, works.Position, WorksPathHalfWidth, Tracks.Kind.Path);
+                Tracks.Pad(works.Position, 6, Tracks.Kind.Path);
+            }
+        }
+        if (builds != null)
+            foreach (var build in builds.Sites)
+            {
+                Tracks.Line(build.Road, build.Position, WorksPathHalfWidth, Tracks.Kind.Path);
+                Tracks.Pad(build.Position, 6, Tracks.Kind.Path);
+            }
         AddChild(Tracks);
         Tracks.Build(Ground);
+    }
+
+    /// <summary>Three stacks of logs lie behind the loading spot, their rows stepped like pyramids.</summary>
+    private static void BuildLogStacks(
+        Node3D site,
+        string[] colors,
+        Vector3 inward,
+        Vector3 across,
+        Func<Vector3, Vector3> floor
+    )
+    {
+        for (int stack = 0; stack < 3; stack++)
+        {
+            var center = floor(inward * 6 + across * ((stack - 1) * 4.2f));
+            for (int row = 0; row < 3; row++)
+            for (int i = 0; i < 3 - row; i++)
+                Art.Log(
+                    site,
+                    center + inward * ((i - (2 - row) / 2f) * .8f) + Vector3.Up * (.4f + row * .68f),
+                    across,
+                    .38f,
+                    3.4f,
+                    colors[(i + row + stack) % colors.Length]
+                );
+            Obstacles.Box(
+                site,
+                center + Vector3.Up,
+                new Vector3(3.6f, 2, 2.6f),
+                new Basis(across, Vector3.Up, -inward)
+            );
+        }
     }
 
     private void BuildHaulSource(HaulSource source)
@@ -388,8 +499,15 @@ public partial class World
         {
             HaulLoad.Stones => new[] { "8f8f8a", "a7a6a0", "77756f" },
             HaulLoad.Soil => new[] { "8a6142", "6f4b33", "9c7150" },
+            HaulLoad.Logs => new[] { "8a5f3f", "a77a59", "7a4f33" },
             _ => new[] { "e3c98a", "d6b873", "efd9a2" },
         };
+        if (source.Load == HaulLoad.Logs)
+        {
+            BuildLogStacks(site, colors, inward, across, Floor);
+            Art.Sign(site, Floor(across * -4.5f + inward * 2) + Vector3.Up * 3.2f, "KLÁDY", 36);
+            return;
+        }
         for (int i = 0; i < 5; i++)
         {
             float lateral = (i - 2) * 2.6f;

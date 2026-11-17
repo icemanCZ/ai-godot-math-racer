@@ -303,6 +303,47 @@ public partial class VisualCapture : Node
             camera.Position = source.Road - along * 10 + along.Cross(Vector3.Up) * 8 + Vector3.Up * 12;
             camera.LookAt(focus);
         }
+        else if (Game.ParseBuildView(view) is var (project, _) && project < world.Projects.Length)
+        {
+            camera.SetProcess(false);
+            var build = world.Projects[project];
+            var ring = build.DropFor(0);
+            var inward =
+                project == BuildPlans.Jetty
+                    ? new Vector3(world.Ford!.Site.Side, 0, 0)
+                    : (((SitedProject)build).Site.Inward);
+            var right = Vector3.Up.Cross(inward);
+            float back = project == BuildPlans.Tower ? 26 : 18;
+            camera.Position = ring - inward * back + right * 14 + Vector3.Up * (project == BuildPlans.Tower ? 16 : 9);
+            camera.LookAt(build.Focus);
+        }
+        else if (view is "sawmill" or "brickworks" or "gravel-works" or "works-full" && world.Industry.Length > 0)
+        {
+            // The ring, the buildings and the stock yard seen from the approach side, from above.
+            camera.SetProcess(false);
+            var works = world.Industry[
+                view switch
+                {
+                    "brickworks" => 1,
+                    "gravel-works" => 2,
+                    _ => 0,
+                }
+            ];
+            var site = works.Site;
+            var right = Vector3.Up.Cross(site.Inward);
+            camera.Position = site.Position - site.Inward * 15 + right * 13 + Vector3.Up * 11;
+            camera.LookAt(site.Position + site.Inward * 8 + right * 2 + Vector3.Up * 1.5f);
+        }
+        else if (view == "log-yard" && world.LogYard is { } yard)
+        {
+            camera.SetProcess(false);
+            var along = yard.Position - yard.Road;
+            along.Y = 0;
+            along = along.Normalized();
+            camera.Position = yard.Position - along * 12 + along.Cross(Vector3.Up) * 7 + Vector3.Up * 8;
+            camera.LookAt(yard.Position + along * 4 + Vector3.Up);
+        }
+        else if (view == "works-panel") { }
         else if (view == "trailer")
         {
             camera.SetProcess(false);

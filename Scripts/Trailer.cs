@@ -20,7 +20,7 @@ internal static class TrailerModel
     {
         internal Node3D Bed = null!;
         internal Node3D Load = null!;
-        internal readonly Node3D[] Piles = new Node3D[3];
+        internal readonly Node3D[] Piles = new Node3D[Enum.GetValues<HaulLoad>().Length];
         internal readonly List<Node3D> Wheels = new();
         internal readonly List<MeshInstance3D> Painted = new();
     }
@@ -65,12 +65,99 @@ internal static class TrailerModel
         parts.Piles[(int)HaulLoad.Stones] = stones;
         parts.Piles[(int)HaulLoad.Soil] = Mound("Soil", "8a6142", "6f4b33");
         parts.Piles[(int)HaulLoad.Sand] = Mound("Sand", "e3c98a", "d6b873");
+        parts.Piles[(int)HaulLoad.Logs] = LogStack();
+        parts.Piles[(int)HaulLoad.Planks] = PlankBundles();
+        parts.Piles[(int)HaulLoad.Bricks] = BrickStacks();
+        parts.Piles[(int)HaulLoad.Gravel] = Mound("Gravel", "b9b4a5", "8f8a7d");
+        parts.Piles[(int)HaulLoad.Fabric] = FabricRolls();
+        parts.Piles[(int)HaulLoad.Capstone] = Capstone();
+        parts.Piles[(int)HaulLoad.Flag] = FlagPole();
         foreach (var pile in parts.Piles)
         {
             pile.Visible = false;
             parts.Load.AddChild(pile);
         }
         return parts;
+    }
+
+    /// <summary>Six logs lie along the bed in a pyramid, with their pale ends towards the back.</summary>
+    private static Node3D LogStack()
+    {
+        var stack = new Node3D { Name = "Logs" };
+        string[] browns = { "8a5f3f", "a77a59", "7a4f33" };
+        int index = 0;
+        for (int row = 0; row < 3; row++)
+        for (int i = 0; i < 3 - row; i++)
+        {
+            float x = (i - (2 - row) / 2f) * .42f;
+            Art.Log(stack, new(x, .22f + row * .36f, 0), Vector3.Back, .2f, 1.7f, browns[index++ % 3]);
+        }
+        return stack;
+    }
+
+    /// <summary>Two bundles of boards tied with straps lie along the bed.</summary>
+    private static Node3D PlankBundles()
+    {
+        var pile = new Node3D { Name = "Planks" };
+        string[] tones = { "d9b27a", "c99d63", "e0bd88" };
+        foreach (float x in new[] { -.4f, .4f })
+        {
+            for (int i = 0; i < 3; i++)
+                Art.Block(pile, new(x, .12f + i * .14f, 0), new(.7f, .12f, 1.8f), tones[i]);
+            foreach (float strap in new[] { -.55f, .55f })
+                Art.Block(pile, new(x, .27f, strap), new(.74f, .46f, .07f), "6f5a46");
+        }
+        Art.Block(pile, new(0, .45f, 0), new(.7f, .12f, 1.8f), "d9b27a");
+        return pile;
+    }
+
+    /// <summary>A pallet of bricks with a lighter top row.</summary>
+    private static Node3D BrickStacks()
+    {
+        var pile = new Node3D { Name = "Bricks" };
+        foreach (float z in new[] { -.55f, .55f })
+        {
+            Art.Block(pile, new(0, .08f, z), new(1.4f, .12f, .9f), "a77a59");
+            Art.Block(pile, new(0, .36f, z), new(1.25f, .44f, .75f), "c4623f");
+            foreach (float band in new[] { .24f, .4f, .54f })
+                Art.Block(pile, new(0, band, z), new(1.29f, .03f, .79f), "e0a384");
+        }
+        return pile;
+    }
+
+    /// <summary>Rolls of cloth for the mill's sails.</summary>
+    private static Node3D FabricRolls()
+    {
+        var pile = new Node3D { Name = "Fabric" };
+        string[] colors = { "f1e9d6", "e8dcc0", "f4efe0" };
+        for (int i = 0; i < 3; i++)
+        {
+            var roll = Art.Cylinder(pile, new(-.45f + i * .45f, .3f, 0), .22f, .22f, 1.4f, colors[i]);
+            roll.RotationDegrees = new(0, 0, 90);
+            roll.Rotation = new(Mathf.Pi / 2, 0, 0);
+            Art.Cylinder(roll, new(0, .72f, 0), .12f, .12f, .02f, "c9b896");
+        }
+        return pile;
+    }
+
+    /// <summary>The stone tip of the lookout tower.</summary>
+    private static Node3D Capstone()
+    {
+        var pile = new Node3D { Name = "Capstone" };
+        Art.Block(pile, new(0, .12f, 0), new(1.1f, .24f, 1.1f), "9d9c95");
+        Art.Cylinder(pile, new(0, .72f, 0), .04f, .62f, .95f, "b4b3ab");
+        Art.Ball(pile, new(0, 1.2f, 0), new(.1f, .1f, .1f), "dcd9c8");
+        return pile;
+    }
+
+    /// <summary>A flag on a pole, lying along the bed.</summary>
+    private static Node3D FlagPole()
+    {
+        var pile = new Node3D { Name = "Flag" };
+        Art.Log(pile, new(0, .2f, 0), Vector3.Back, .05f, 2, "a77a59");
+        Art.Block(pile, new(0, .32f, -.6f), new(.04f, .5f, .9f), "e2563b");
+        Art.Block(pile, new(0, .32f, -.6f), new(.045f, .16f, .9f), "fff1b8");
+        return pile;
     }
 
     private static Node3D Mound(string name, string color, string shade)

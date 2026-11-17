@@ -28,8 +28,15 @@ public sealed record CarAccessory(string Id, string Name)
         );
 
     public static CarAccessory ValleyMap { get; } = new("valley-map", "Mapka údolí");
+
+    /// <summary>The sack of flour that the finished mill brings.</summary>
+    public static CarAccessory FlourSack { get; } = new("flour-sack", "Pytel mouky");
+
+    /// <summary>The binoculars that the finished lookout tower brings.</summary>
+    public static CarAccessory Binoculars { get; } = new("binoculars", "Dalekohled");
+
     public static IReadOnlyList<CarAccessory> Catalogue { get; } =
-        System.Array.AsReadOnly(All.Append(ValleyMap).ToArray());
+        System.Array.AsReadOnly(All.Concat(new[] { ValleyMap, FlourSack, Binoculars }).ToArray());
 
     internal static void PlaceValleyMap(Node3D sticker, string model)
     {
@@ -57,6 +64,24 @@ public sealed record CarAccessory(string Id, string Name)
                 river.RotateZ(-.35f);
                 Art.Block(root, new(0, .014f, .018f), new(.095f, .025f, .006f), "c28a50");
                 Art.Ball(root, new(-.088f, -.024f, .016f), new(.025f, .025f, .004f), "ee805e");
+                break;
+            case "flour-sack":
+                // A plump sack tied at the neck, standing behind the roof.
+                Art.Ball(root, new(.34f, 2.2f, 1.05f), new(.34f, .4f, .3f), "f1e9d6");
+                Art.Ball(root, new(.34f, 2.5f, 1.05f), new(.13f, .1f, .12f), "e0d3b4");
+                Art.Block(root, new(.34f, 2.4f, 1.05f), new(.2f, .04f, .18f), "b8895f");
+                Art.Block(root, new(.34f, 2.28f, .89f), new(.16f, .06f, .02f), "c4623f");
+                break;
+            case "binoculars":
+                // Two lenses and a bridge, pinned to the bonnet like the flower on the other side.
+                root.Position = new Vector3(.43f, 1.32f, -1.02f);
+                foreach (float side in new[] { -1f, 1f })
+                {
+                    var tube = Art.Cylinder(root, new(side * .09f, 0, 0), .075f, .075f, .3f, "344555");
+                    tube.Rotation = new(Mathf.Pi / 2, 0, 0);
+                    Art.Ball(root, new(side * .09f, 0, -.16f), new(.065f, .065f, .02f), "9ed5df");
+                }
+                Art.Block(root, new(0, .01f, .0f), new(.1f, .04f, .12f), "5e493d");
                 break;
             case "spoiler":
                 foreach (float side in new[] { -1f, 1f })

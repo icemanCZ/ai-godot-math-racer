@@ -24,12 +24,25 @@ public sealed class SaveData
     public bool GolemOwned { get; set; }
     public bool GolemActive { get; set; }
 
-    /// <summary>Loads already built into the beaver's ford, 0–6.</summary>
+    // Before the buildings had ten deliveries each, only the bridge existed with six. These fields are read only
+    // to migrate older saves into BuildStages.
     public int FordStage { get; set; }
-
-    /// <summary>The active ford trip, which equals <see cref="FordStage"/>, or -1.</summary>
     public int FordTrip { get; set; } = -1;
     public bool FordTripLoaded { get; set; }
+
+    /// <summary>Deliveries made to the bridge, the mill, the tower and the jetty, 0–10 each; null in older saves.</summary>
+    public int[]? BuildStages { get; set; }
+
+    /// <summary>The building of the active trailer trip, whose step is its stage, or -1.</summary>
+    public int BuildTrip { get; set; } = -1;
+    public bool BuildTripLoaded { get; set; }
+
+    /// <summary>Goods stored at the sawmill, brickworks and gravel works (<see cref="Product"/> order), 0–12 each.</summary>
+    public int[] WorksStock { get; set; } = new int[3];
+
+    /// <summary>The works the active supply trip brings raw material to, or -1. Never set together with a building trip.</summary>
+    public int SupplyTrip { get; set; } = -1;
+    public bool SupplyTripLoaded { get; set; }
     public bool TrailerOwned { get; set; }
     public bool TrailerAttached { get; set; }
     public string TrailerPaint { get; set; } = "red";
@@ -113,6 +126,7 @@ public static class SaveStore
                     ?? throw new JsonException("Empty save data.");
                 MigrateLegacyQuestion(data);
                 MigrateRewardOffer(data);
+                MigrateBuilds(data);
                 Validate(data);
                 if (data.Postcards.Length == Game.OriginalPostcardCount)
                 {
@@ -144,7 +158,8 @@ public static class SaveStore
             || HasInvalidTradeProgress(data)
             || HasInvalidVillageProgress(data)
             || HasInvalidSpecialActorState(data)
-            || HasInvalidFordState(data)
+            || HasInvalidBuildState(data)
+            || HasInvalidWorksState(data)
             || HasInvalidPickupCount(data)
         )
             throw new JsonException("Invalid save data.");
@@ -194,7 +209,7 @@ public static class SaveStore
         || data.Picked == null
         || data.Rejected == null
         || data.Nearby < -1
-        || data.Nearby > Math.Max(Game.BanditActorId, World.BeaverId)
+        || data.Nearby > Math.Max(Game.BanditActorId, World.LastSourceId)
         || data.Sender < -1
         || data.Sender > World.SorcererId
         || data.Sender == World.WitchId
@@ -248,7 +263,7 @@ public static class SaveStore
         // A shop shows its status while another task is under way: an expedition or a ford trip.
         || (
             data.State == GameState.TradeStatus
-            && (data.Nearby < World.FirstTraderId || (data.Sender < 0 && data.FordTrip < 0))
+            && (data.Nearby < World.FirstTraderId || (data.Sender < 0 && data.BuildTrip < 0 && data.SupplyTrip < 0))
         )
         || (
             data.Nearby >= World.FirstTraderId
@@ -364,41 +379,84 @@ public static class SaveStore
             )
         );
 
-    private static bool HasInvalidFordState(SaveData data) =>
-        data.FordStage is < 0 or > Ford.Trips
-        || data.FordTrip < -1
-        || data.FordTrip >= Ford.Trips
-        || (data.FordTrip >= 0 && (data.FordTrip != data.FordStage || data.Sender >= 0))
-        || (data.FordTripLoaded && data.FordTrip < 0)
-        || (data.TrailerOwned && data.FordStage < Ford.Trips)
+    /// <summary>
+    /// The progress of the four buildings, the trailer trip for one of them and the character met at the moment.
+    /// The trailer is the bridge's reward; a trip is never set together with an expedition or a supply trip.
+    /// </summary>
+    private static bool HasInvalidBuildState(SaveData data) =>
+        data.BuildStages == null
+        || data.BuildStages.Length != BuildPlans.Count
+        || data.BuildStages.Any(stage => stage < 0 || stage > BuildPlans.Trips)
+        || data.BuildTrip < -1
+        || data.BuildTrip >= BuildPlans.Count
+        || (
+            data.BuildTrip >= 0
+            && (data.BuildStages[data.BuildTrip] >= BuildPlans.Trips || data.Sender >= 0 || data.SupplyTrip >= 0)
+        )
+        || (data.BuildTripLoaded && data.BuildTrip < 0)
+        || (data.TrailerOwned && data.BuildStages[BuildPlans.Bridge] < BuildPlans.Trips)
         || (data.TrailerAttached && !data.TrailerOwned)
         || data.TrailerPaint == null
         || !Array.Exists(TrailerModel.Paints, paint => paint.Id == data.TrailerPaint)
-        || (data.State == GameState.FordStatus && data.Nearby != World.BeaverId)
-        || (
-            data.Nearby == World.BeaverId
-            && (
-                data.State is not (GameState.Exploring or GameState.FordStatus or GameState.Challenge)
-                || (
-                    data.State == GameState.Challenge
-                    && (
-                        data.FordTrip < 0
-                        || data.FordTripLoaded
-                        || data.HandoverQuiz
-                        || data.Challenge is DeliveryChallenge
-                    )
-                )
-            )
-        )
-        || (
-            data.Challenge is LoadChallenge load
-            && (
-                !load.IsValid()
-                || data.Nearby != World.BeaverId
-                || data.FordTrip < 0
-                || load.Cargo != Ford.TripLoads[data.FordTrip]
-            )
-        );
+        || HasInvalidAsker(data);
+
+    /// <summary>The cargo and the character who asks about it for the active trailer trip, or (-1, -1) without one.</summary>
+    private static (HaulLoad Cargo, int Asker, bool Loaded) ActiveTripAsker(SaveData data)
+    {
+        if (data.BuildTrip is >= 0 and < BuildPlans.Count && data.BuildStages![data.BuildTrip] < BuildPlans.Trips)
+        {
+            var cargo = BuildPlans.For(data.BuildTrip)[data.BuildStages![data.BuildTrip]].Cargo;
+            return (cargo, World.AskerId(cargo, data.BuildTrip), data.BuildTripLoaded);
+        }
+        if (data.SupplyTrip is >= 0 and < WorksCatalog.Count)
+        {
+            var cargo = WorksCatalog.All[data.SupplyTrip].Input;
+            return (cargo, World.AskerId(cargo, 0), data.SupplyTripLoaded);
+        }
+        return (default, -1, false);
+    }
+
+    /// <summary>
+    /// Builders, works workers and source workers show a panel of their own and, during a trailer trip, ask the
+    /// loading question. A question can only be open for the trip's own asker, and only before the load is aboard.
+    /// </summary>
+    private static bool HasInvalidAsker(SaveData data)
+    {
+        GameState? panel =
+            World.IsBuilder(data.Nearby) ? GameState.BuildStatus
+            : data.Nearby is >= World.FirstWorksId and <= World.LastWorksId ? GameState.WorksStatus
+            : data.Nearby is >= World.FirstSourceId and <= World.LastSourceId ? GameState.SourceStatus
+            : null;
+        if (panel == null)
+        {
+            // The panels belong to their characters, and a loading question needs one of them to ask it.
+            return data.State is GameState.BuildStatus or GameState.WorksStatus or GameState.SourceStatus
+                || data.Challenge is LoadChallenge;
+        }
+        if (data.State is not (GameState.Exploring or GameState.Challenge) && data.State != panel)
+            return true;
+        var (cargo, asker, loaded) = ActiveTripAsker(data);
+        if (data.State == GameState.Challenge)
+        {
+            if (asker != data.Nearby || loaded || data.HandoverQuiz || data.Challenge is DeliveryChallenge)
+                return true;
+        }
+        return data.Challenge is LoadChallenge load && (!load.IsValid() || asker < 0 || load.Cargo != cargo);
+    }
+
+    /// <summary>
+    /// The stock of the three works, the trailer trip one of them sent and the worker met at the moment.
+    /// The stock never exceeds the yard. A supply trip is started by, and its question asked by, the worker at the source.
+    /// </summary>
+    private static bool HasInvalidWorksState(SaveData data) =>
+        data.WorksStock == null
+        || data.WorksStock.Length != WorksCatalog.Count
+        || data.WorksStock.Any(stock => stock < 0 || stock > Works.Capacity)
+        || data.SupplyTrip < -1
+        || data.SupplyTrip >= WorksCatalog.Count
+        || (data.SupplyTrip >= 0 && (data.BuildTrip >= 0 || data.Sender >= 0))
+        || (data.SupplyTrip >= 0 && data.WorksStock[data.SupplyTrip] >= Works.Capacity)
+        || (data.SupplyTripLoaded && data.SupplyTrip < 0);
 
     private static bool HasInvalidPickupCount(SaveData data) =>
         (
@@ -475,6 +533,29 @@ public static class SaveStore
         data.Coins += data.RewardCoins;
     }
 
+    /// <summary>
+    /// Older saves have only the bridge, with six deliveries. A finished bridge stays finished, an unfinished one
+    /// keeps its share of the work and a trip under way is dropped, since the loads have changed.
+    /// </summary>
+    private static void MigrateBuilds(SaveData data)
+    {
+        if (data.BuildStages != null)
+            return;
+        int old = Math.Clamp(data.FordStage, 0, 6);
+        int stage = old >= 6 ? BuildPlans.Trips : old * BuildPlans.Trips / 6;
+        data.BuildStages = new int[BuildPlans.Count];
+        data.BuildStages[BuildPlans.Bridge] = stage;
+        if (data.FordTrip >= 0 && data.Challenge is LoadChallenge)
+        {
+            ClearQuestion(data);
+            data.State = GameState.Exploring;
+            data.Nearby = -1;
+        }
+        data.FordStage = 0;
+        data.FordTrip = -1;
+        data.FordTripLoaded = false;
+    }
+
     private static void ClearQuestion(SaveData data)
     {
         data.Challenge = null;
@@ -495,10 +576,22 @@ public static class SaveStore
                 JsonSerializer.Serialize(stream, data);
                 stream.Flush(true);
             }
-            if (File.Exists(path))
-                File.Replace(path + ".tmp", path, path + ".bak");
-            else
-                File.Move(path + ".tmp", path);
+            // Another program (a virus scanner, a backup) can hold the old file for a moment: try a few times.
+            for (int attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    if (File.Exists(path))
+                        File.Replace(path + ".tmp", path, path + ".bak");
+                    else
+                        File.Move(path + ".tmp", path);
+                    break;
+                }
+                catch (IOException) when (attempt < 5)
+                {
+                    System.Threading.Thread.Sleep(60 * attempt);
+                }
+            }
             return true;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Godot;
 
@@ -9,11 +10,15 @@ internal enum CollectorPetKind
     Garden,
     Gems,
     Toys,
+
+    /// <summary>The jetty's duck: owned once the jetty is finished, not by a collection.</summary>
+    Duck,
 }
 
 internal sealed partial class CollectorPet : Node3D
 {
     private readonly Village village;
+    private readonly Func<int>? externalCount;
     private readonly Node3D model = new();
     private readonly List<(Node3D Foot, int Swing)> feet = new();
     private Vector3 home;
@@ -31,16 +36,22 @@ internal sealed partial class CollectorPet : Node3D
             CollectorPetKind.Farm => village.FarmCount,
             CollectorPetKind.Garden => village.GardenCount,
             CollectorPetKind.Gems => village.GemCount,
-            _ => village.ToyCount,
+            CollectorPetKind.Toys => village.ToyCount,
+            _ => externalCount!(),
         };
     internal bool IsOwned => Count >= Goal;
     internal bool IsActive => IsOwned && !Disabled;
     internal bool Disabled { get; set; }
     internal Vector3 TrailOffset { get; }
 
-    internal CollectorPet(CollectorPetKind kind, Village village)
+    /// <summary>
+    /// A collector's pet counts the collector's collection. The duck instead counts the deliveries made to the jetty
+    /// through <paramref name="count"/> and belongs to <paramref name="owner"/>, the fisherman.
+    /// </summary>
+    internal CollectorPet(CollectorPetKind kind, Village village, Func<int>? count = null, Animal? owner = null)
     {
         this.village = village;
+        externalCount = count;
         Kind = kind;
         Name = $"CollectorPet_{kind}";
         (Collector, DisplayName, Goal, TrailOffset) = kind switch
@@ -63,7 +74,13 @@ internal sealed partial class CollectorPet : Node3D
                 Village.GemNames.Length,
                 new Vector3(-1.8f, 0, 7.3f)
             ),
-            _ => (village.Toymaker, "Plyšový medvídek", Village.ToyNames.Length, new Vector3(1.8f, 0, 7.3f)),
+            CollectorPetKind.Toys => (
+                village.Toymaker,
+                "Plyšový medvídek",
+                Village.ToyNames.Length,
+                new Vector3(1.8f, 0, 7.3f)
+            ),
+            _ => (owner!, "Kachna z mola", BuildProject.Trips, new Vector3(0, 0, 10.4f)),
         };
         AddChild(model);
         switch (kind)
@@ -79,6 +96,9 @@ internal sealed partial class CollectorPet : Node3D
                 break;
             case CollectorPetKind.Toys:
                 BuildTeddy();
+                break;
+            case CollectorPetKind.Duck:
+                BuildDuck();
                 break;
         }
     }
@@ -210,5 +230,19 @@ internal sealed partial class CollectorPet : Node3D
         Art.Ball(model, new(0, 1.02f, .368f), new(.057f, .033f, .025f), "61463c");
         Art.Ball(model, new(0, .83f, .318f), Vector3.One * .049f, "f5a275");
         Eyes(.115f, 1.12f, .315f);
+    }
+
+    private void BuildDuck()
+    {
+        Art.Ball(model, new(0, .5f, -.05f), new(.34f, .3f, .46f), "fff3c4");
+        Art.Ball(model, new(0, .55f, -.5f), new(.12f, .12f, .16f), "f4d783");
+        Art.Ball(model, new(0, .93f, .22f), new(.2f, .22f, .2f), "ffe58a");
+        Art.Ball(model, new(0, .86f, .45f), new(.12f, .05f, .14f), "f58a2f");
+        foreach (int side in new[] { -1, 1 })
+        {
+            Art.Ball(model, new(side * .27f, .56f, -.08f), new(.1f, .17f, .3f), "f4d783").RotateZ(side * .4f);
+            Foot(new(side * .13f, .27f, .02f), .27f, .1f, "f58a2f", side);
+        }
+        Eyes(.1f, .98f, .38f);
     }
 }

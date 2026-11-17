@@ -34,7 +34,7 @@ public partial class GarageChecks : Node
             Check(game.State == GameState.Garage && !car.Active, "garage stops driving at the village entrance");
             var buttons = game.FindChildren("Garage_*", "Button", true, false).Cast<Button>().ToArray();
             Check(
-                buttons.Length == CarLook.All.Count + CarBody.All.Count + CarAccessory.Catalogue.Count
+                buttons.Length == CarLook.Catalogue.Count + CarBody.All.Count + CarAccessory.Catalogue.Count
                     && buttons.Count(b => !b.Disabled) == 2
                     && game.Coins == 0,
                 "entire catalogue contains all rewards with only starting paint and model unlocked"

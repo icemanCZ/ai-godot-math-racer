@@ -60,9 +60,12 @@ public partial class Game
         {
             GolemOwned = GolemOwned,
             GolemActive = GolemActive,
-            FordStage = world.Ford?.Stage ?? 0,
-            FordTrip = Haul?.Trip ?? -1,
-            FordTripLoaded = Haul?.Loaded ?? false,
+            BuildStages = BuildStages(),
+            BuildTrip = (Haul as BuildTrip)?.Project.Index ?? -1,
+            BuildTripLoaded = Haul is BuildTrip { Loaded: true },
+            SupplyTrip = (Haul as SupplyTrip)?.WorksIndex ?? -1,
+            SupplyTripLoaded = Haul is SupplyTrip { Loaded: true },
+            WorksStock = world.WorksStock(),
             TrailerOwned = TrailerOwned,
             TrailerAttached = trailerParade,
             TrailerPaint = trailer.PaintId,
@@ -74,7 +77,7 @@ public partial class Game
             BanditSolved = banditSolved,
             BanditCooldown = banditCooldown,
             DisabledCollectorPets = world
-                .Village.CollectorPets.Where(p => p.IsOwned && p.Disabled)
+                .AllPets.Where(p => p.IsOwned && p.Disabled)
                 .Select(p => p.Kind.ToString())
                 .ToArray(),
             Postcards = (PostcardProgress?[])postcards.Clone(),
@@ -161,7 +164,7 @@ public partial class Game
         }
         lastCollected = Delivery?.Collected ?? -1;
         ui.DeliveryHud(Delivery);
-        RestoreFord(data);
+        RestoreBuilds(data);
         ui.AnimalCount(RemainingAnimals, world.Animals.Length);
         UpdateDeliveryGuides();
         beforePause = validEncounter ? data.State : GameState.Exploring;
@@ -203,7 +206,7 @@ public partial class Game
     private void RestoreCarLook(SaveData data)
     {
         vehicle.Appearance.ApplyModel(data.Model);
-        vehicle.Appearance.Apply(CarLook.All.FirstOrDefault(l => l.Id == data.Look) ?? CarLook.All[0]);
+        vehicle.Appearance.Apply(CarLook.Catalogue.FirstOrDefault(l => l.Id == data.Look) ?? CarLook.All[0]);
         foreach (var accessory in CarAccessory.Catalogue)
             if (vehicle.Appearance.HasAccessory(accessory.Id) != data.Accessories.Contains(accessory.Id))
                 vehicle.Appearance.ToggleAccessory(accessory.Id);
@@ -219,7 +222,7 @@ public partial class Game
         world.Village.RestoreGarden(data.GardenCount);
         world.Village.RestoreCollection(false, data.GemCount);
         world.Village.RestoreCollection(true, data.ToyCount);
-        foreach (var pet in world.Village.CollectorPets)
+        foreach (var pet in world.AllPets)
         {
             pet.Disabled = pet.IsOwned && (data.DisabledCollectorPets?.Contains(pet.Kind.ToString()) ?? false);
             PlaceCollectorPet(pet);

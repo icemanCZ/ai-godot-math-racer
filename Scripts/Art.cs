@@ -114,6 +114,39 @@ public static class Art
             color
         );
 
+    /// <summary>A round log lying along <paramref name="axis"/> (in the parent's space) with pale cut ends.</summary>
+    public static MeshInstance3D Log(
+        Node3D parent,
+        Vector3 center,
+        Vector3 axis,
+        float radius,
+        float length,
+        string color
+    )
+    {
+        var log = Cylinder(parent, center, radius, radius, length, color);
+        log.Quaternion = new Quaternion(Vector3.Up, axis.Normalized());
+        foreach (float end in new[] { -1f, 1f })
+            Cylinder(log, new Vector3(0, end * (length / 2 + .005f), 0), radius * .9f, radius * .9f, .02f, "dcb887");
+        return log;
+    }
+
+    /// <summary>A tall, glowing, see-through column that marks a place from far away; it starts hidden.</summary>
+    public static Node3D Beacon(Node3D parent, string color)
+    {
+        var beacon = new Node3D { Name = "Beacon", Visible = false };
+        parent.AddChild(beacon);
+        var column = Cylinder(beacon, new(0, 6, 0), .16f, .16f, 12, color);
+        column.MaterialOverride = new StandardMaterial3D
+        {
+            AlbedoColor = new Color(color).SrgbToLinear() with { A = .55f },
+            Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+        };
+        column.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
+        return beacon;
+    }
+
     public static void Beam(Node3D parent, Vector3 from, Vector3 to, float width, string color)
     {
         var b = Block(parent, (from + to) / 2, new Vector3(width, width, from.DistanceTo(to)), color);

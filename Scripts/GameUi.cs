@@ -523,7 +523,7 @@ public partial class GameUi : CanvasLayer
         var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         row.AddThemeConstantOverride("separation", 24);
         content.AddChild(row);
-        var look = System.Linq.Enumerable.First(CarLook.All, option => option.Id == appearance.CurrentLookId);
+        var look = System.Linq.Enumerable.First(CarLook.Catalogue, option => option.Id == appearance.CurrentLookId);
         Button? first = null;
         foreach (bool collection in new[] { false, true })
         {
@@ -587,7 +587,8 @@ public partial class GameUi : CanvasLayer
         header.AddChild(
             new Label
             {
-                Text = $"{owned.Count} / {CarLook.All.Count + CarBody.All.Count + CarAccessory.Catalogue.Count}   ·",
+                Text =
+                    $"{owned.Count} / {CarLook.Catalogue.Count + CarBody.All.Count + CarAccessory.Catalogue.Count}   ·",
             }
         );
         header.AddChild(new DeliveryPicture { Icon = "coin", CustomMinimumSize = new(40, 36) });
@@ -595,7 +596,7 @@ public partial class GameUi : CanvasLayer
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 22);
         content.AddChild(row);
-        var current = System.Linq.Enumerable.First(CarLook.All, look => look.Id == appearance.CurrentLookId);
+        var current = System.Linq.Enumerable.First(CarLook.Catalogue, look => look.Id == appearance.CurrentLookId);
         var car = new VBoxContainer();
         row.AddChild(car);
         var preview = new CarLookPreview
@@ -745,7 +746,7 @@ public partial class GameUi : CanvasLayer
                     Look =
                         reward.IsModel || reward.IsAccessory
                             ? current
-                            : System.Linq.Enumerable.First(CarLook.All, l => l.Id == reward.Id),
+                            : System.Linq.Enumerable.First(CarLook.Catalogue, l => l.Id == reward.Id),
                     ModelId = reward.IsModel ? reward.Id : appearance.CurrentModelId,
                     AccessoryId = reward.IsAccessory ? reward.Id : null,
                     AccessoryOnly = reward.IsAccessory,
@@ -887,7 +888,7 @@ public partial class GameUi : CanvasLayer
         );
         if (trailer is { } towing)
             GarageTrailerRow(catalogue, scroll, towing, ref selectedFocus);
-        Category("Laky", System.Linq.Enumerable.Select(CarLook.All, l => (new CarReward(l.Id, false), l.Name)));
+        Category("Laky", System.Linq.Enumerable.Select(CarLook.Catalogue, l => (new CarReward(l.Id, false), l.Name)));
         Category("Modely", System.Linq.Enumerable.Select(CarBody.All, b => (new CarReward(b.Id, false, true), b.Name)));
         Category(
             "Doplňky",

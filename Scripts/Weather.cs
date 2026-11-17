@@ -74,6 +74,9 @@ public partial class Weather : Node3D
         rainMaterial.SetShaderParameter("drift", drift);
     }
 
+    /// <summary>How hard the wind blows now, from 0 in calm weather to 1.5 in a storm.</summary>
+    internal float WindStrength => wind;
+
     internal void Tick(float dt)
     {
         remaining -= dt;

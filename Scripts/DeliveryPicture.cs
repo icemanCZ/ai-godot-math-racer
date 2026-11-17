@@ -171,6 +171,26 @@ public partial class DeliveryPicture : Control
                             Oval(p + new Vector2(-2, -3), new(8, 5), new("e8d296"));
                             DrawCircle(p + new Vector2(5, 2), 1.6f, new Color("b0914f"));
                             break;
+                        case "logs":
+                            Oval(p, new(12, 11), new("7a4f33"));
+                            Oval(p, new(8, 7), new("dcb887"));
+                            DrawArc(p, 4, 0, Mathf.Tau, 16, new("a77a59"), 1.5f, true);
+                            break;
+                        case "planks":
+                            DrawRect(new Rect2(p - new Vector2(12, 8), new Vector2(24, 16)), new Color("a77a59"));
+                            DrawRect(new Rect2(p - new Vector2(10, 6), new Vector2(20, 12)), new Color("d9b27a"));
+                            DrawLine(p + new Vector2(-8, 0), p + new Vector2(8, 0), new Color("b8895f"), 1.5f);
+                            break;
+                        case "bricks":
+                            DrawRect(new Rect2(p - new Vector2(12, 8), new Vector2(24, 16)), new Color("8a3f2d"));
+                            DrawRect(new Rect2(p - new Vector2(10, 6), new Vector2(20, 12)), new Color("c4623f"));
+                            DrawRect(new Rect2(p - new Vector2(8, 4), new Vector2(16, 3)), new Color("e0a384"));
+                            break;
+                        case "gravel":
+                            Oval(p, new(12, 9), new("8f8a7d"));
+                            Oval(p + new Vector2(-2, -2), new(9, 6), new("b9b4a5"));
+                            DrawCircle(p + new Vector2(5, 2), 2.5f, new Color("d3cebf"));
+                            break;
                         default:
                             Oval(p, new(12, 10), new("77756f"));
                             Oval(p + new Vector2(-2, -2), new(10, 8), new("8f8f8a"));
@@ -201,6 +221,113 @@ public partial class DeliveryPicture : Control
                 for (int i = 0; i < 7; i++)
                     DrawCircle(new(52 + i * 15, 104 - (i % 3) * 12), 3.5f, shade);
             }
+        }
+        else if (Icon == "logs")
+        {
+            // Six log ends in a pyramid.
+            for (int i = 0; i < 6; i++)
+            {
+                int row =
+                    i < 3 ? 0
+                    : i < 5 ? 1
+                    : 2;
+                int column =
+                    i < 3 ? i
+                    : i < 5 ? i - 3
+                    : 0;
+                var p = new Vector2(90 + (column - (2 - row) / 2f) * 46, 112 - row * 40);
+                DrawCircle(p, 22, new Color("5e3b26"));
+                DrawCircle(p, 19, new Color("7a4f33"));
+                DrawCircle(p, 15, new Color("dcb887"));
+                DrawArc(p, 9, 0, Mathf.Tau, 20, new Color("a77a59"), 2, true);
+                DrawCircle(p, 3, new Color("a77a59"));
+            }
+        }
+        else if (Icon == "planks")
+        {
+            // A bundle of boards seen from the side, tied with two straps.
+            string[] tones = { "d9b27a", "c99d63", "e0bd88", "c99d63" };
+            for (int i = 0; i < 4; i++)
+            {
+                DrawRect(new Rect2(18, 104 - i * 24, 144, 22), ink);
+                DrawRect(new Rect2(21, 107 - i * 24, 138, 16), new Color(tones[i]));
+                DrawLine(new(30 + i * 20, 112 - i * 24), new(70 + i * 20, 112 - i * 24), new Color("b8895f"), 2);
+            }
+            foreach (int x in new[] { 52, 128 })
+                DrawRect(new Rect2(x, 28, 8, 98), new Color("6f5a46"));
+        }
+        else if (Icon == "bricks")
+        {
+            // A wall of bricks with every other row shifted by half a brick.
+            DrawRect(new Rect2(14, 28, 152, 100), ink);
+            for (int row = 0; row < 4; row++)
+            for (int i = 0; i < 4; i++)
+            {
+                float x = 18 + i * 37 - (row % 2 == 0 ? 0 : 18);
+                float x0 = Mathf.Max(x, 18);
+                float x1 = Mathf.Min(x + 35, 162);
+                if (x1 <= x0)
+                    continue;
+                DrawRect(new Rect2(x0, 32 + row * 24, x1 - x0, 21), new Color(row % 2 == 0 ? "c4623f" : "b5533b"));
+                DrawRect(new Rect2(x0 + 2, 34 + row * 24, x1 - x0 - 4, 4), new Color("e0a384"));
+            }
+        }
+        else if (Icon == "gravel")
+        {
+            DrawColoredPolygon(
+                new Vector2[] { new(18, 126), new(66, 62), new(112, 56), new(162, 126) },
+                new Color("b9b4a5")
+            );
+            Oval(new(90, 62), new(26, 11), new Color("b9b4a5"));
+            for (int i = 0; i < 14; i++)
+                DrawCircle(
+                    new(40 + (i * 37) % 100, 108 - (i * 13) % 44),
+                    3 + i % 3,
+                    new Color(i % 2 == 0 ? "8f8a7d" : "d3cebf")
+                );
+        }
+        else if (Icon == "binoculars")
+        {
+            // Two lenses seen from the front, joined by a bridge: "look round the valley".
+            foreach (int x in new[] { 58, 122 })
+            {
+                DrawCircle(new Vector2(x, 80), 38, ink);
+                DrawCircle(new Vector2(x, 80), 33, new Color("5e6f78"));
+                DrawCircle(new Vector2(x, 80), 22, new Color("9ed5df"));
+                DrawCircle(new Vector2(x - 8, 72), 7, new Color("e8f8fb"));
+            }
+            DrawRect(new Rect2(76, 70, 28, 18), ink);
+            DrawRect(new Rect2(79, 73, 22, 12), new Color("5e6f78"));
+        }
+        else if (Icon == "fabric")
+        {
+            // Two rolls of cloth, one with a loose end.
+            foreach (var (x, y) in new[] { (60, 96), (116, 96), (88, 58) })
+            {
+                DrawCircle(new Vector2(x, y), 26, ink);
+                DrawCircle(new Vector2(x, y), 23, new Color("f1e9d6"));
+                DrawArc(new Vector2(x, y), 15, 0, Mathf.Tau, 24, new Color("c9b896"), 2.5f, true);
+                DrawCircle(new Vector2(x, y), 5, new Color("c9b896"));
+            }
+            DrawLine(new(60, 120), new(150, 126), new Color("f1e9d6"), 8, true);
+        }
+        else if (Icon == "capstone")
+        {
+            DrawRect(new Rect2(46, 100, 88, 24), ink);
+            DrawRect(new Rect2(49, 103, 82, 18), new Color("9d9c95"));
+            DrawColoredPolygon(new Vector2[] { new(58, 100), new(90, 22), new(122, 100) }, ink);
+            DrawColoredPolygon(new Vector2[] { new(63, 98), new(90, 30), new(117, 98) }, new Color("b4b3ab"));
+            DrawColoredPolygon(new Vector2[] { new(90, 30), new(117, 98), new(96, 98) }, new Color("9d9c95"));
+        }
+        else if (Icon == "flag")
+        {
+            DrawLine(new(60, 132), new(60, 18), new Color("a77a59"), 8, true);
+            DrawColoredPolygon(new Vector2[] { new(64, 22), new(150, 40), new(64, 76) }, ink);
+            DrawColoredPolygon(new Vector2[] { new(66, 27), new(142, 41), new(66, 70) }, new Color("e2563b"));
+            DrawColoredPolygon(
+                new Vector2[] { new(66, 27), new(142, 41), new(130, 46), new(66, 38) },
+                new Color("fff1b8")
+            );
         }
         else if (Icon.StartsWith("postcard-"))
         {

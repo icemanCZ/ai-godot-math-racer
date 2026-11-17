@@ -20,12 +20,14 @@ public partial class WorldCoins : Node3D
     private readonly List<Coin> coins = new();
     private World world = null!;
     private float phase;
+    private float flash;
 
     private sealed class Coin
     {
         public Node3D Node = null!;
         public Node3D Spinner = null!;
         public float Respawn;
+        public Node3D? Beacon;
         public bool Active => Respawn <= 0;
     }
 
@@ -69,6 +71,11 @@ public partial class WorldCoins : Node3D
         }
     }
 
+    /// <summary>Lights a tall beam over every coin for a while, so that they can be seen from far away.</summary>
+    internal void Flash(float seconds) => flash = seconds;
+
+    internal bool Flashing => flash > 0;
+
     /// <summary>Collects every visible coin within reach of the car and returns how many were found.</summary>
     public int Collect(Vector3 car)
     {
@@ -90,8 +97,16 @@ public partial class WorldCoins : Node3D
         if (!running)
             return;
         phase = (phase + delta * 2.4f) % Mathf.Tau;
+        flash = Mathf.Max(0, flash - delta);
         foreach (var coin in coins)
         {
+            if (flash > 0 && coin.Active)
+            {
+                coin.Beacon ??= Art.Beacon(coin.Node, "ffe36a");
+                coin.Beacon.Visible = true;
+            }
+            else if (coin.Beacon != null)
+                coin.Beacon.Visible = false;
             if (coin.Active)
             {
                 coin.Spinner.Rotation = new Vector3(0, phase, 0);

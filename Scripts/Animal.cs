@@ -43,6 +43,19 @@ public partial class Animal : Node3D
 
     public void Celebrate() => celebration = 2.5f;
 
+    private Node3D? beacon;
+    private float pingTime;
+
+    /// <summary>Lights a tall beam over the character for a while, as the lookout tower does for waiting friends.</summary>
+    internal void Ping(float seconds)
+    {
+        beacon ??= Art.Beacon(this, "7fe8ff");
+        beacon.Visible = true;
+        pingTime = seconds;
+    }
+
+    internal bool Pinged => pingTime > 0;
+
     private TaskMarker taskMarker = null!;
     private Label3D nameLabel = null!;
     private Sprite3D? roleIcon;
@@ -147,6 +160,14 @@ public partial class Animal : Node3D
         Art.Block(model, new(0, 2.27f, .55f), new(.7f, .06f, .35f), "e09a2c");
     }
 
+    /// <summary>A hard hat with a brim and a work apron for the people at the sawmill, brickworks and gravel works.</summary>
+    internal void DressAsWorker(string hat)
+    {
+        Art.Cylinder(model, new(0, 2.42f, 0), .6f, .48f, .28f, hat);
+        Art.Block(model, new(0, 2.3f, .55f), new(.74f, .06f, .36f), hat);
+        Art.Block(model, new(0, .95f, .46f), new(.78f, .8f, .12f), "56707a");
+    }
+
     internal void DressAsBandit(string scarf)
     {
         nameLabel.Hide();
@@ -169,6 +190,8 @@ public partial class Animal : Node3D
         if (AnimationPaused)
             return;
         time += (float)delta;
+        if (pingTime > 0 && (pingTime -= (float)delta) <= 0 && beacon != null)
+            beacon.Visible = false;
         wavingArm.Rotation = Running
             ? new(Mathf.Sin(time * 17) * .7f, 0, -.35f)
             : new(0, 0, (IsWaving || celebration > 0) ? .95f + Mathf.Sin(time * 9) * .48f : -.35f);

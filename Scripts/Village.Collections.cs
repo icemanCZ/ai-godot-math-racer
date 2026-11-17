@@ -70,7 +70,8 @@ public partial class Village
     private void GenerateCollectorPets()
     {
         var pets = new List<CollectorPet>();
-        foreach (var kind in Enum.GetValues<CollectorPetKind>())
+        // The duck belongs to the jetty, not to a collector: the world creates it.
+        foreach (var kind in Enum.GetValues<CollectorPetKind>().Where(kind => kind != CollectorPetKind.Duck))
         {
             var pet = new CollectorPet(kind, this);
             var collector = pet.Collector;

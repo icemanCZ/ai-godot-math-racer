@@ -95,7 +95,16 @@ public partial class CarLookPreview : SubViewportContainer
         camera.LookAt(new Vector3(0, ExpeditionCargo != null ? 1.5f : 1.25f, 0));
     }
 
-    private static readonly string[] RearAccessories = { "spare", "exhaust", "spoiler", "antenna", "flag", "valley-map" };
+    private static readonly string[] RearAccessories =
+    {
+        "spare",
+        "exhaust",
+        "spoiler",
+        "antenna",
+        "flag",
+        "valley-map",
+        "flour-sack",
+    };
 
     private static void BuildAccessoryOnly(Node3D studio, string id)
     {

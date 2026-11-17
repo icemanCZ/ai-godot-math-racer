@@ -27,6 +27,12 @@ public partial class FordChecks : Node
         GD.Print("PASS: " + message);
     }
 
+    /// <summary>Panels are freed at the end of a frame, so a node that is queued for deletion does not count.</summary>
+    private bool Has(string name) => game.FindChildren(name, "", true, false).Any(node => !node.IsQueuedForDeletion());
+
+    private int StockOf(HaulLoad load) =>
+        HaulLoads.IsGoods(load) ? world.Industry[(int)HaulLoads.ProductOf(load)].Stock : 0;
+
     private static float Flat(Vector3 a, Vector3 b) => new Vector2(a.X - b.X, a.Z - b.Z).Length();
 
     public override async void _Ready()
@@ -102,13 +108,28 @@ public partial class FordChecks : Node
             );
             await DriveAcross(site, expectCrossing: false);
 
+            // The first delivery is gravel, which has to be made first: without it the beaver shows what is missing.
             car.SetPose(world.Beaver!.Position + Vector3.Right * 2, 0);
-            game.OpenBeaver();
-            Check(game.State == GameState.FordStatus, "beaver offers the ford");
-            RoundTrip("beaver panel");
-            game.BeginFordTrip();
+            game.OpenBuilder(world.Beaver!);
             Check(
-                game.Haul is { Trip: 0, Loaded: false } && trailer.Attached && game.State == GameState.Exploring,
+                game.State == GameState.BuildStatus && !Has("StartBuildTrip") && Has("MissingGoods"),
+                "the beaver cannot start a delivery of goods that are not made"
+            );
+            game.BeginBuildTrip();
+            Check(game.Haul == null, "no delivery starts without its goods");
+            game.FinishInteraction();
+            foreach (var works in world.Industry)
+                works.SetStock(Works.Capacity);
+
+            car.SetPose(world.Beaver!.Position + Vector3.Right * 2, 0);
+            game.OpenBuilder(world.Beaver!);
+            Check(game.State == GameState.BuildStatus && Has("StartBuildTrip"), "beaver offers the ford");
+            RoundTrip("beaver panel");
+            game.BeginBuildTrip();
+            Check(
+                game.Haul is BuildTrip { Step: 0, Loaded: false }
+                    && trailer.Attached
+                    && game.State == GameState.Exploring,
                 "first trip hitches an empty trailer"
             );
             game.OpenChallenge(world.Village.Farmer);
@@ -121,10 +142,10 @@ public partial class FordChecks : Node
             Frames(2);
             Check(!trailer.Attached && trailer.Load == null, "the trailer is unhitched when no task needs it");
             car.SetPose(world.Beaver!.Position + Vector3.Right * 2, 0);
-            game.OpenBeaver();
-            game.BeginFordTrip();
+            game.OpenBuilder(world.Beaver!);
+            game.BeginBuildTrip();
             Check(
-                game.Haul is { Trip: 0, Loaded: false } && game.Delivery == null && trailer.Attached,
+                game.Haul is BuildTrip { Step: 0, Loaded: false } && game.Delivery == null && trailer.Attached,
                 "accepting the ford trip cancels the expedition and hitches the trailer again"
             );
             game.FinishInteraction();
@@ -138,8 +159,8 @@ public partial class FordChecks : Node
 
             for (int trip = 0; trip < Ford.Trips; trip++)
             {
-                var haul = game.Haul!;
-                Check(haul.Trip == trip && !haul.Loaded, $"trip {trip + 1} heads for its source");
+                var haul = (BuildTrip)game.Haul!;
+                Check(haul.Step == trip && !haul.Loaded, $"trip {trip + 1} heads for its source");
                 car.SetPose(world.Ground.At(haul.Source.Position.X, haul.Source.Position.Z, .15f), 0);
                 Frames(1);
                 Check(
@@ -155,6 +176,7 @@ public partial class FordChecks : Node
                         "a wrong count keeps the question open"
                     );
                 }
+                int stockBefore = StockOf(haul.Load);
                 if (trip == 1)
                     RoundTrip("loading question");
                 ChallengeChecks.Solve(game);
@@ -162,10 +184,14 @@ public partial class FordChecks : Node
                     game.Haul is { Loaded: true } && trailer.Load == haul.Load && game.State == GameState.Exploring,
                     "solving the question fills the trailer"
                 );
+                Check(
+                    StockOf(haul.Load) == stockBefore - (HaulLoads.IsGoods(haul.Load) ? Works.PerTrip : 0),
+                    "loading goods takes them from the works stock"
+                );
                 Check(car.LoadFactor < 1, "a full trailer slows the car a little");
                 RoundTrip("full trailer");
                 var dump = game.Haul!.Destination;
-                Check(site.OnFarBank(dump) == Ford.DumpsOnFarBank(trip), "load goes to the right bank");
+                Check(site.OnFarBank(dump) == ford.Steps[trip].FarBank, "load goes to the right bank");
                 car.SetPose(world.Ground.At(dump.X, dump.Z, .15f), 0);
                 Frames(1);
                 Check(trailer.Dumping && !car.Active, "the bed tips while the car waits");
@@ -179,11 +205,11 @@ public partial class FordChecks : Node
                     Check(game.Haul == null && !game.TaskActive, "the next trip waits for the player");
                     RoundTrip($"between loads {trip + 1}");
                     car.SetPose(world.Beaver!.Position + Vector3.Right * 2, 0);
-                    game.OpenBeaver();
-                    Check(game.State == GameState.FordStatus, "the beaver offers the next load");
-                    game.BeginFordTrip();
+                    game.OpenBuilder(world.Beaver!);
+                    Check(game.State == GameState.BuildStatus, "the beaver offers the next load");
+                    game.BeginBuildTrip();
                     Check(
-                        game.Haul is { Loaded: false } next && next.Trip == trip + 1 && trailer.Attached,
+                        game.Haul is BuildTrip { Loaded: false } next && next.Step == trip + 1 && trailer.Attached,
                         "confirming starts the next trip"
                     );
                 }
@@ -192,7 +218,7 @@ public partial class FordChecks : Node
             Frames(200);
             Check(
                 ford.Passable && game.TrailerOwned && game.Haul == null && !trailer.Attached,
-                "six loads finish the ford, grant the trailer and unhitch it"
+                "ten loads finish the ford, grant the trailer and unhitch it"
             );
             Check(
                 world.DriveSurface(site.CenterX, site.Z) > River.Level(site.Z) - .35f,
@@ -227,16 +253,16 @@ public partial class FordChecks : Node
 
             // A word quiz replaces the loading count when arithmetic is off.
             var words = game.CaptureProgress();
-            words.FordStage = 2;
-            words.FordTrip = 2;
-            words.FordTripLoaded = false;
+            words.BuildStages = new[] { 2, 0, 0, 0 };
+            words.BuildTrip = BuildPlans.Bridge;
+            words.BuildTripLoaded = false;
             words.TrailerOwned = false;
             words.TrailerAttached = false;
             words.QuizTypes = QuizType.Letters;
             Check(SaveStore.Write(words, path) && SaveStore.Read(path) != null, "partial ford save accepted");
             game.RestoreProgress(SaveStore.Read(path)!);
             Check(
-                ford.Stage == 2 && !ford.Passable && game.Haul is { Trip: 2 } && trailer.Attached,
+                ford.Stage == 2 && !ford.Passable && game.Haul is BuildTrip { Step: 2 } && trailer.Attached,
                 "a saved trip restores the ford and the trailer"
             );
             car.SetPose(world.Ground.At(game.Haul!.Source.Position.X, game.Haul.Source.Position.Z, .15f), 0);
@@ -251,6 +277,51 @@ public partial class FordChecks : Node
                 SaveStore.Write(invalid, invalidPath) && SaveStore.Read(invalidPath) == null,
                 "an unearned trailer is rejected"
             );
+            // Saves from before the buildings had ten deliveries have only FordStage (0-6) and no BuildStages.
+            SaveData Legacy(int stage, int trip = -1)
+            {
+                var legacy = game.CaptureProgress();
+                legacy.BuildStages = null;
+                legacy.BuildTrip = -1;
+                legacy.BuildTripLoaded = false;
+                legacy.FordStage = stage;
+                legacy.FordTrip = trip;
+                legacy.TrailerOwned = stage == 6;
+                legacy.TrailerAttached = false;
+                legacy.State = GameState.Exploring;
+                legacy.Nearby = -1;
+                legacy.Challenge = null;
+                legacy.Sender = -1;
+                legacy.Collection = false;
+                legacy.Picked = Array.Empty<bool>();
+                legacy.Arrived = false;
+                legacy.SupplyTrip = -1;
+                legacy.SupplyTripLoaded = false;
+                return legacy;
+            }
+            SaveData? MigratedSave(SaveData legacy, string name)
+            {
+                string file = DiagnosticArtifacts.PathFor($"ford-checks/{name}.json");
+                return SaveStore.Write(legacy, file) ? SaveStore.Read(file) : null;
+            }
+            var finished = MigratedSave(Legacy(6), "legacy-finished");
+            Check(
+                finished is { BuildStages: [BuildPlans.Trips, 0, 0, 0] } && finished.TrailerOwned,
+                "a finished six-load bridge becomes a finished ten-load bridge with its trailer"
+            );
+            var halfway = MigratedSave(Legacy(3), "legacy-half");
+            Check(halfway is { BuildStages: [5, 0, 0, 0] }, "a half-built bridge keeps its share of the work");
+            var tripUnderWay = MigratedSave(Legacy(2, trip: 2), "legacy-trip");
+            Check(
+                tripUnderWay is { BuildStages: [3, 0, 0, 0], BuildTrip: -1, FordTrip: -1 },
+                "a trip under way in an old save is dropped"
+            );
+            game.RestoreProgress(finished!);
+            Check(
+                ford.Passable && game.TrailerOwned && game.Haul == null,
+                "a migrated finished bridge restores as built"
+            );
+
             GD.Print("FORD_CHECKS_PASSED");
             GetTree().Quit();
         }

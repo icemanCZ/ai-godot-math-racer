@@ -95,9 +95,11 @@ public partial class TradeChecks : Node
                 {
                     game.OpenChallenge(trader);
                     Check(
-                        (trader == owner
-                            ? game.State == GameState.TradeStatus && game.CurrentChallenge == null
-                            : game.State == GameState.Challenge && game.CurrentChallenge != null)
+                        (
+                            trader == owner
+                                ? game.State == GameState.TradeStatus && game.CurrentChallenge == null
+                                : game.State == GameState.Challenge && game.CurrentChallenge != null
+                        )
                             && game.Delivery!.Sender == owner,
                         "another trader's quiz keeps the active trip until its order is accepted"
                     );

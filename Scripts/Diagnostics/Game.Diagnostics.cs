@@ -76,6 +76,16 @@ public partial class Game
             Start();
             AddChild(new FordChecks(this, world, vehicle));
         }
+        if (args.Contains("--build-checks"))
+        {
+            Start();
+            AddChild(new BuildChecks(this, world, vehicle));
+        }
+        if (args.Contains("--works-checks"))
+        {
+            Start();
+            AddChild(new WorksChecks(this, world, vehicle));
+        }
         if (args.Contains("--weather-checks"))
             AddChild(new WeatherChecks(this, world, vehicle));
         if (args.Contains("--bandit-checks"))
@@ -325,7 +335,7 @@ public partial class Game
             );
             trailerParade = true;
             trailer.Attach(true);
-            trailer.SetLoad(stage < 3 ? HaulLoad.Stones : HaulLoad.Soil);
+            trailer.SetLoad(stage < 3 ? HaulLoad.Gravel : HaulLoad.Bricks);
         }
         if (view == "trailer")
         {
@@ -335,13 +345,54 @@ public partial class Game
         }
         if (view == "bridge-roads")
             world.Ford?.SetStage(Ford.Trips);
+        if (
+            view is "sawmill" or "brickworks" or "gravel-works" or "works-full" or "works-panel"
+            && world.Industry.Length > 0
+        )
+        {
+            world.Ford?.SetStage(Ford.Trips);
+            TrailerOwned = true;
+            var works = world.Industry[
+                view switch
+                {
+                    "brickworks" => 1,
+                    "gravel-works" => 2,
+                    _ => 0,
+                }
+            ];
+            foreach (var other in world.Industry)
+                other.SetStock(view == "works-full" ? Works.Capacity : 7);
+            var ring = works.Site.Position;
+            vehicle.SetPose(
+                world.Ground.At(ring.X, ring.Z, .15f),
+                Mathf.Atan2(-works.Site.Inward.X, -works.Site.Inward.Z)
+            );
+            trailerParade = true;
+            trailer.Attach(true);
+            trailer.SetLoad(works.Spec.Input);
+            if (view == "works-panel")
+            {
+                vehicle.SetPose(works.Worker.Position + Vector3.Right * 3, 0);
+                OpenWorks(works.Worker);
+            }
+        }
+        if (ParseBuildView(view) is var (viewProject, viewStage) && viewProject < world.Projects.Length)
+        {
+            var project = world.Projects[viewProject];
+            project.SetStage(viewStage);
+            var drop = project.DropFor(0);
+            vehicle.SetPose(world.Ground.At(drop.X, drop.Z, .15f), 0);
+        }
+        if (view == "log-yard" && world.LogYard is { } logYard)
+            vehicle.SetPose(world.Ground.At(logYard.Position.X, logYard.Position.Z, .15f), 0);
         if (view is "beaver" or "load-question" && world.Beaver != null)
         {
             vehicle.SetPose(world.Beaver.Position + Vector3.Right * 3, 0);
-            OpenBeaver();
+            OpenBuilder(world.Beaver);
             if (view == "load-question")
             {
-                BeginFordTrip();
+                world.Industry[(int)Product.Gravel].SetStock(5);
+                BeginBuildTrip();
                 enabledQuizzes = QuizType.Math;
                 vehicle.SetPose(world.Ground.At(Haul!.Source.Position.X, Haul.Source.Position.Z, .15f), 0);
                 BeginLoading();
@@ -361,5 +412,28 @@ public partial class Game
             )
                 vehicle.Appearance.ToggleAccessory(id);
         }
+    }
+}
+
+public partial class Game
+{
+    /// <summary>A view such as <c>mill-5</c> or <c>tower-10</c>: the building and how many deliveries are shown.</summary>
+    internal static (int Project, int Stage)? ParseBuildView(string view)
+    {
+        foreach (
+            var (prefix, project) in new[]
+            {
+                ("mill-", BuildPlans.Mill),
+                ("tower-", BuildPlans.Tower),
+                ("jetty-", BuildPlans.Jetty),
+            }
+        )
+            if (
+                view.StartsWith(prefix)
+                && int.TryParse(view[prefix.Length..], out int stage)
+                && stage is >= 0 and <= BuildPlans.Trips
+            )
+                return (project, stage);
+        return null;
     }
 }

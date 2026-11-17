@@ -4,95 +4,33 @@ using Godot;
 namespace MathRacer;
 
 /// <summary>
-/// One trailer trip for the beaver's ford: drive to the quarry or pit, answer the loading question,
-/// then tip the load out at the ford. Road arrows and the target ring belong to this node.
+/// Trailer trips for buildings: each building has a builder who sends the next of ten deliveries (the bridge's
+/// builder is the beaver). The trips share the single task slot with expeditions and supply trips.
 /// </summary>
-public partial class FordTrip : Node3D
-{
-    private readonly World world;
-    private readonly Ford ford;
-    private readonly RouteGuide guide;
-    private Node3D? target;
-
-    internal int Trip { get; }
-    internal bool Loaded { get; private set; }
-
-    /// <summary>Set on reaching the current target; cleared when the car leaves it again.</summary>
-    internal bool Arrived { get; set; }
-    internal HaulLoad Load => Ford.TripLoads[Trip];
-    internal HaulSource Source => world.HaulSources[(int)Load];
-    internal bool FarBank => Ford.DumpsOnFarBank(Trip);
-    internal Vector3 Destination => Loaded ? ford.DumpFor(Trip) : Source.Position;
-    internal Vector3 Waypoint => guide.Waypoint;
-
-    private Vector3 RoadApproach =>
-        !Loaded ? Source.Road
-        : FarBank ? ford.Site.FarRoad
-        : ford.Site.NearRoad;
-
-    internal FordTrip(World world, Vehicle car, int trip, bool loaded)
-    {
-        this.world = world;
-        ford = world.Ford!;
-        Trip = trip;
-        Loaded = loaded;
-        Name = "FordTrip";
-        guide = new RouteGuide(world, car, this, () => Destination);
-        guide.Retarget(RoadApproach);
-    }
-
-    public override void _Ready()
-    {
-        target = new Node3D { Name = "HaulTarget" };
-        AddChild(target);
-        Art.Cylinder(target, Vector3.Up * .05f, 3.3f, 3.3f, .1f, "f1c232");
-        Art.Cylinder(target, Vector3.Up * .07f, 2.7f, 2.7f, .1f, "fff1b8");
-        Art.TaskMarker(target, Vector3.Up * 5, "!", true);
-        guide.CreateArrows();
-        PlaceTarget();
-    }
-
-    internal void SetLoaded(bool loaded)
-    {
-        Loaded = loaded;
-        Arrived = false;
-        guide.Retarget(RoadApproach);
-        PlaceTarget();
-    }
-
-    internal void Tick(double delta) => guide.Tick(delta);
-
-    internal bool Reached(Vector3 car) =>
-        new Vector2(car.X - Destination.X, car.Z - Destination.Z).Length() < (Loaded ? 4.5f : 6);
-
-    private void PlaceTarget()
-    {
-        if (target == null)
-            return;
-        var p = Destination;
-        target.Position = new Vector3(p.X, world.Ground.Height(p.X, p.Z), p.Z);
-    }
-}
-
 public partial class Game
 {
     private Trailer trailer = null!;
     private bool trailerParade;
     private readonly Random loadRandom = new(Settings.Seed + 2313);
 
-    /// <summary>The active ford trip, which takes the same single task slot as an expedition.</summary>
-    internal FordTrip? Haul { get; private set; }
+    /// <summary>
+    /// The active trailer trip for a building or a works, which takes the same single task slot as
+    /// an expedition.
+    /// </summary>
+    internal HaulTrip? Haul { get; private set; }
+
+    /// <summary>The trailer is won by finishing the bridge; it is lent for every trip before that.</summary>
     internal bool TrailerOwned { get; private set; }
     internal Trailer Trailer => trailer;
 
-    /// <summary>A delivery, collection or ford trip is under way; only one runs at a time.</summary>
+    /// <summary>A delivery, collection or trailer trip is under way; only one runs at a time.</summary>
     internal bool TaskActive => Delivery != null || Haul != null;
 
     /// <summary>Accepting a new task switches off the one under way, together with its cargo.</summary>
     private void CancelActiveTask()
     {
         EndExpedition(refreshUi: false);
-        EndFordTrip(refreshUi: false);
+        EndHaul(refreshUi: false);
         trailer.SetLoad(null);
         deliveryReward = false;
     }
@@ -104,52 +42,95 @@ public partial class Game
     {
         trailer = new Trailer(world, vehicle);
         world.AddChild(trailer);
-        ui.FordQuestRequested += BeginFordTrip;
+        ui.BuildQuestRequested += BeginBuildTrip;
+        ui.SupplyQuestRequested += BeginSupplyTrip;
+        ui.MissingSupplyRequested += BeginMissingSupply;
+        ui.LookoutRequested += BeginLookout;
         ui.TrailerToggleRequested += ToggleTrailer;
         ui.TrailerPaintSelected += SelectTrailerPaint;
     }
 
-    internal void OpenBeaver()
+    private BuildProject? ProjectOf(Animal? actor) =>
+        actor?.Role is BuilderRole role && role.Project < world.Projects.Length ? world.Projects[role.Project] : null;
+
+    /// <summary>The works that makes a goods load, or null for any other load.</summary>
+    private Works? GoodsWorks(HaulLoad load) =>
+        HaulLoads.IsGoods(load) && (int)HaulLoads.ProductOf(load) < world.Industry.Length
+            ? world.Industry[(int)HaulLoads.ProductOf(load)]
+            : null;
+
+    /// <summary>Whether the next delivery of a project can be fetched: goods need units in the works' stock.</summary>
+    private bool StepReady(BuildProject project) =>
+        project.Complete
+        || !HaulLoads.IsGoods(project.Steps[project.Stage].Cargo)
+        || GoodsWorks(project.Steps[project.Stage].Cargo) is { } works && works.Stock >= Works.PerTrip;
+
+    internal void OpenBuilder(Animal builder)
     {
-        if (world.Beaver == null || world.Ford == null)
+        if (ProjectOf(builder) is not { } project)
             return;
         ClearChallenge();
-        EnterInteraction(GameState.FordStatus, world.Beaver);
-        ShowBeaver();
-        if (Haul == null && !world.Ford.Passable)
-            Speak(world.Ford.Stage == 0 ? world.Beaver.Greeting : "Přivezeš mi další náklad?", world.Beaver);
+        EnterInteraction(GameState.BuildStatus, builder);
+        ShowBuilder();
+        if (Haul != null || project.Complete)
+            return;
+        Speak(
+            !StepReady(project) ? "Zboží ještě není vyrobené. Pošlu tě pro surovinu!"
+                : project.Stage == 0 ? builder.Greeting
+                : "Přivezeš mi další náklad?",
+            builder
+        );
     }
 
-    private void ShowBeaver() =>
-        ui.Beaver(world.Beaver!, world.Ford!.Stage, Haul, Haul == null && !world.Ford.Passable);
-
-    internal void BeginFordTrip()
+    private void ShowBuilder()
     {
-        if (State != GameState.FordStatus || world.Ford is not { Passable: false } ford || Haul != null)
+        if (ProjectOf(nearby) is not { } project)
+            return;
+        var trip = Haul is BuildTrip current && current.Project == project ? current : null;
+        bool free = Haul == null && !project.Complete;
+        bool ready = StepReady(project);
+        ui.BuilderPanel(
+            nearby!,
+            project,
+            trip,
+            free && ready,
+            free && !ready ? GoodsWorks(project.Steps[project.Stage].Cargo) : null,
+            project.Index == BuildPlans.Tower ? LookoutState : 0
+        );
+    }
+
+    internal void BeginBuildTrip()
+    {
+        if (
+            State != GameState.BuildStatus
+            || ProjectOf(nearby) is not { Complete: false } project
+            || Haul != null
+            || !StepReady(project)
+        )
             return;
         CancelActiveTask();
-        StartFordTrip(ford.Stage, loaded: false);
+        StartHaul(new BuildTrip(world, vehicle, project, project.Stage, loaded: false));
         Start();
-        Speak(TripInstruction(Haul!), world.Beaver);
+        Speak(TripInstruction(Haul!), project.Builder);
         SaveProgress();
     }
 
-    private void StartFordTrip(int trip, bool loaded)
+    private void StartHaul(HaulTrip trip)
     {
-        EndFordTrip(refreshUi: false);
-        Haul = new FordTrip(world, vehicle, trip, loaded);
+        EndHaul(refreshUi: false);
+        Haul = trip;
         AddChild(Haul);
         if (!trailer.Attached)
             trailer.Attach(true);
         // Keep the bed lowering after a dump; only a different load replaces the contents.
-        HaulLoad? load = loaded ? Haul.Load : null;
+        HaulLoad? load = trip.Loaded ? trip.Load : null;
         if (trailer.Load != load)
             trailer.SetLoad(load);
-        ui.HaulHud(Haul, world.Beaver);
+        ui.HaulHud(Haul);
         UpdateDeliveryGuides();
     }
 
-    private void EndFordTrip(bool refreshUi = true)
+    private void EndHaul(bool refreshUi = true)
     {
         if (Haul == null)
             return;
@@ -162,14 +143,22 @@ public partial class Game
         UpdateDeliveryGuides();
     }
 
-    /// <summary>Only a ford trip needs the trailer: once it is over (and the bed has settled) it is unhitched.</summary>
+    /// <summary>Only a trailer trip needs the trailer: once it is over (and the bed has settled) it is unhitched.</summary>
     private void UnhitchIdleTrailer()
     {
         if (Haul == null && !trailerParade && trailer.Attached && !trailer.Dumping)
             trailer.Attach(false);
     }
 
-    private void UpdateBeaverGuide() => world.Beaver?.Guide(world.Ford is { Passable: false } && Haul == null);
+    private void UpdateHaulGuides()
+    {
+        foreach (var project in world.Projects)
+            project.Builder.Guide(Haul == null && !project.Complete);
+        foreach (var works in world.Industry)
+            works.Worker.Guide(false);
+        for (int i = 0; i < SourceCatalog.Count; i++)
+            world.SourceWorkers[i]?.Guide(Haul == null && WorksOfSource(world.SourceWorkers[i]) is { Full: false });
+    }
 
     private void TickHaul(double delta)
     {
@@ -192,17 +181,17 @@ public partial class Game
             BeginLoading();
     }
 
-    /// <summary>The loading question; the beaver asks it from afar, like a radio call.</summary>
+    /// <summary>The loading question; whoever loads the cargo asks it from afar, like a radio call.</summary>
     private void BeginLoading()
     {
-        if (Haul is not { Loaded: false } || world.Beaver == null || State != GameState.Exploring)
+        if (Haul is not { Loaded: false } trip || State != GameState.Exploring)
             return;
-        nearby = world.Beaver;
+        nearby = trip.Asker;
         vehicle.Active = false;
-        BeginQuiz(load: Haul.Load);
+        BeginQuiz(load: HaulLoads.IsSpecial(trip.Load) ? null : trip.Load);
     }
 
-    internal void CompleteFordLoading()
+    internal void CompleteHaulLoading()
     {
         ClearChallenge();
         if (Haul is not { Loaded: false } trip)
@@ -210,11 +199,20 @@ public partial class Game
             CloseInteraction();
             return;
         }
+        // Goods come out of the works' stock the moment they are loaded.
+        if (GoodsWorks(trip.Load) is { } works && !works.Take(Works.PerTrip))
+        {
+            EndHaul();
+            CloseInteraction();
+            Speak("Zboží došlo. Zkus to znovu později.", trip.Asker);
+            return;
+        }
         trip.SetLoaded(true);
         trailer.Fill(trip.Load);
-        ui.HaulHud(trip, world.Beaver);
+        ui.HaulHud(trip);
+        UpdateHaulGuides();
         CloseInteraction();
-        Speak(TripInstruction(trip), world.Beaver);
+        Speak(TripInstruction(trip), trip.Contractor);
         SaveProgress();
     }
 
@@ -227,38 +225,63 @@ public partial class Game
         trailer.Dump(() => FinishDump(trip));
     }
 
-    private void FinishDump(FordTrip trip)
+    private void FinishDump(HaulTrip trip)
     {
         if (State == GameState.Exploring)
             vehicle.Active = true;
-        if (Haul != trip || world.Ford is not { } ford)
+        if (Haul != trip)
             return;
-        ford.SetStage(trip.Trip + 1);
-        world.Beaver?.Celebrate();
-        if (ford.Passable)
+        switch (trip)
         {
-            CompleteFord();
+            case BuildTrip buildTrip:
+                FinishBuildDump(buildTrip);
+                break;
+            case SupplyTrip supplyTrip:
+                FinishSupplyDump(supplyTrip);
+                break;
+        }
+    }
+
+    private void FinishBuildDump(BuildTrip trip)
+    {
+        var project = trip.Project;
+        project.SetStage(trip.Step + 1);
+        project.Builder.Celebrate();
+        if (project.Complete)
+        {
+            CompleteProject(project);
             return;
         }
-        CelebrateAt(ford.DumpFor(trip.Trip) + Vector3.Up * 2, $"Bóďa děkuje!  {ford.Stage} / {Ford.Trips}");
-        // The next load waits until the player asks the beaver for it again.
-        EndFordTrip();
-        Speak("Děkuju! Až budeš chtít, přijeď za mnou pro další náklad.", world.Beaver);
+        CelebrateAt(
+            project.DropFor(trip.Step) + Vector3.Up * 2,
+            $"{project.Builder.DisplayName} děkuje!  {project.Stage} / {BuildProject.Trips}"
+        );
+        // The next load waits until the player asks the builder for it again.
+        EndHaul();
+        Speak("Děkuju! Až budeš chtít, přijeď za mnou pro další náklad.", project.Builder);
         SaveProgress();
     }
 
-    private void CompleteFord()
+    /// <summary>The last delivery has been tipped out: the building is finished.</summary>
+    private void CompleteProject(BuildProject project)
     {
-        var ford = world.Ford!;
-        EndFordTrip();
-        TrailerOwned = true;
-        trailerParade = false;
-        var center = new Vector3(ford.Site.CenterX, ford.Site.DeckHeight + 2, ford.Site.Z);
-        CelebrateAt(center, "Most je hotový! Vozík je tvůj.");
-        var outward = followCamera.GlobalPosition - center;
+        EndHaul();
+        PayBuildReward(project);
+        if (project.Index == BuildPlans.Bridge)
+        {
+            TrailerOwned = true;
+            trailerParade = false;
+            CelebrateAt(project.Focus, "Most je hotový! Vozík je tvůj.");
+            Speak("Hurá, most je hotový! Teď můžeš přejet řeku. Vozík si nech, najdeš ho v garáži.", project.Builder);
+        }
+        else
+        {
+            CelebrateAt(project.Focus, $"Stavba je hotová!  +{BuildCoins}  ·  {BuildItemName(project.Index)}");
+            Speak("Hurá, je hotovo! Moc děkuju.", project.Builder);
+        }
+        var outward = followCamera.GlobalPosition - project.Focus;
         outward.Y = 0;
-        followCamera.ShowMoment(center, outward.LengthSquared() > .01f ? outward.Normalized() : Vector3.Back);
-        Speak("Hurá, most je hotový! Teď můžeš přejet řeku. Vozík si nech, najdeš ho v garáži.", world.Beaver);
+        followCamera.ShowMoment(project.Focus, outward.LengthSquared() > .01f ? outward.Normalized() : Vector3.Back);
         UpdateDeliveryGuides();
         SaveProgress();
     }
@@ -282,18 +305,32 @@ public partial class Game
         SaveProgress();
     }
 
-    private void RestoreFord(SaveData data)
+    private void RestoreBuilds(SaveData data)
     {
-        EndFordTrip(refreshUi: false);
-        var ford = world.Ford;
-        ford?.SetStage(data.FordStage);
-        TrailerOwned = ford is { Passable: true } && data.TrailerOwned;
+        EndHaul(refreshUi: false);
+        for (int i = 0; i < world.Projects.Length; i++)
+            world.Projects[i].SetStage(data.BuildStages![i]);
+        TrailerOwned = world.Ford is { Passable: true } && data.TrailerOwned;
         trailerParade = TrailerOwned && data.TrailerAttached;
         trailer.SetPaint(data.TrailerPaint);
-        if (ford != null && data.FordTrip >= 0 && data.FordTrip == ford.Stage && !ford.Passable)
+        if (world.Duck is { } duck)
+        {
+            duck.Disabled = duck.IsOwned && data.DisabledCollectorPets.Contains(duck.Kind.ToString());
+            PlaceCollectorPet(duck);
+        }
+        foreach (var works in world.Industry)
+            works.SetStock(data.WorksStock[works.Site.Index]);
+        if (data.BuildTrip >= 0 && data.BuildTrip < world.Projects.Length && !world.Projects[data.BuildTrip].Complete)
+        {
+            var project = world.Projects[data.BuildTrip];
+            trailer.SetLoad(null);
+            StartHaul(new BuildTrip(world, vehicle, project, project.Stage, data.BuildTripLoaded));
+            trailer.Snap();
+        }
+        else if (data.SupplyTrip >= 0 && data.SupplyTrip < world.Industry.Length)
         {
             trailer.SetLoad(null);
-            StartFordTrip(data.FordTrip, data.FordTripLoaded);
+            StartHaul(new SupplyTrip(world, vehicle, world.Industry[data.SupplyTrip], data.SupplyTripLoaded));
             trailer.Snap();
         }
         else
@@ -303,15 +340,33 @@ public partial class Game
         }
     }
 
-    private static string TripInstruction(FordTrip trip) =>
-        trip.Loaded
-            ? trip.FarBank
-                ? "Teď odvez hlínu na druhý břeh řeky. Přejeď po velkém mostě."
-                : "Teď odvez náklad k bobrovi Bóďovi a vysyp ho do žlutého kruhu."
-            : trip.Load switch
+    /// <summary>The deliveries made to each of the four buildings; zeros for buildings this valley lacks.</summary>
+    private int[] BuildStages()
+    {
+        var stages = new int[BuildPlans.Count];
+        foreach (var project in world.Projects)
+            stages[project.Index] = project.Stage;
+        return stages;
+    }
+
+    private static string TripInstruction(HaulTrip trip) =>
+        trip switch
+        {
+            BuildTrip { Loaded: true, FarBank: true } => "Teď odvez náklad na druhý břeh řeky. Přejeď po velkém mostě.",
+            BuildTrip { Loaded: true } => "Teď odvez náklad na stavbu a vysyp ho do žlutého kruhu.",
+            { Loaded: true } => "Teď odvez náklad do žlutého kruhu před závodem.",
+            _ => trip.Load switch
             {
                 HaulLoad.Stones => "Jeď s vozíkem pro kamení do lomu.",
                 HaulLoad.Soil => "Jeď s vozíkem pro hlínu.",
+                HaulLoad.Logs => "Jeď s vozíkem pro klády na skládku.",
+                HaulLoad.Planks => "Jeď s vozíkem pro prkna na pilu.",
+                HaulLoad.Bricks => "Jeď s vozíkem pro cihly do cihelny.",
+                HaulLoad.Gravel => "Jeď s vozíkem pro štěrk do štěrkovny.",
+                HaulLoad.Fabric => "Jeď s vozíkem pro látku k farmáři Tondovi.",
+                HaulLoad.Capstone => "Jeď s vozíkem pro kámen ke sběrateli drahokamů.",
+                HaulLoad.Flag => "Jeď s vozíkem pro vlaječku k hračkáři Pepovi.",
                 _ => "Jeď s vozíkem pro písek.",
-            };
+            },
+        };
 }

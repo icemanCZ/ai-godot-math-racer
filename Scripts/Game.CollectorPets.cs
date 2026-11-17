@@ -5,7 +5,7 @@ namespace MathRacer;
 
 public partial class Game
 {
-    private const int GolemWanderIndex = 4;
+    private const int GolemWanderIndex = 5;
 
     private struct CompanionWander
     {
@@ -21,7 +21,7 @@ public partial class Game
     {
         if (State != GameState.Garage)
             return;
-        var pet = world.Village.CollectorPets.First(p => p.Kind == kind);
+        var pet = world.AllPets.First(p => p.Kind == kind);
         if (!pet.IsOwned)
             return;
         pet.Disabled = !pet.Disabled;
@@ -51,7 +51,7 @@ public partial class Game
     {
         if (State is GameState.Title or GameState.Paused)
             return;
-        foreach (var pet in world.Village.CollectorPets)
+        foreach (var pet in world.AllPets)
         {
             if (!pet.IsOwned)
             {

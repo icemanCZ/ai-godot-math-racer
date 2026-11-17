@@ -104,20 +104,74 @@ internal sealed class SorcererRole : ActorRole
     public override void Open(Game game, Animal actor) => game.OpenSorcerer();
 }
 
-/// <summary>Bóďa the beaver, who builds a ford from six trailer loads and runs its own task marker.</summary>
-internal sealed class BeaverRole : ActorRole
+/// <summary>
+/// The character who gives the work for one building: Bóďa the beaver for the bridge, later the miller, the
+/// stargazer and the fisherman. They send the trailer with the next delivery and run their own task marker.
+/// </summary>
+internal sealed class BuilderRole : ActorRole
 {
+    public int Project { get; }
+
+    public BuilderRole(int project) => Project = project;
+
     public override string Icon => "trailer";
     public override bool UsesDeliveryGuide => false;
 
-    public override void ShowHint(GameUi ui, Animal actor) => ui.BeaverHint();
+    public override void ShowHint(GameUi ui, Animal actor) => ui.BuilderHint(Project);
 
-    public override void Open(Game game, Animal actor) => game.OpenBeaver();
+    public override void Open(Game game, Animal actor) => game.OpenBuilder(actor);
 
-    /// <summary>The beaver's only quiz is the loading question at a quarry or pit.</summary>
+    /// <summary>A builder's only quiz is the loading question for a raw load that has no worker of its own.</summary>
     public override bool CompleteQuiz(Game game, Animal actor, bool handover)
     {
-        game.CompleteFordLoading();
+        game.CompleteHaulLoading();
+        return true;
+    }
+}
+
+/// <summary>
+/// The worker at the sawmill, brickworks or gravel works. They show the stock and, for building trips, load the
+/// goods and ask the loading question from afar. Raw-material trips are started by the worker at the source.
+/// </summary>
+internal sealed class WorksRole : ActorRole
+{
+    public int Index { get; }
+
+    public WorksRole(int index) => Index = index;
+
+    public override bool UsesDeliveryGuide => false;
+
+    public override void ShowHint(GameUi ui, Animal actor) => ui.WorksHint(Index);
+
+    public override void Open(Game game, Animal actor) => game.OpenWorks(actor);
+
+    public override bool CompleteQuiz(Game game, Animal actor, bool handover)
+    {
+        game.CompleteHaulLoading();
+        return true;
+    }
+}
+
+/// <summary>
+/// The worker at the quarry, the clay pit or the log yard. Talking to them offers the trip that takes the raw
+/// material to its works; the loading question follows at once, asked by the worker.
+/// </summary>
+internal sealed class SourceRole : ActorRole
+{
+    public int Index { get; }
+
+    public SourceRole(int index) => Index = index;
+
+    public override string Icon => "trailer";
+    public override bool UsesDeliveryGuide => false;
+
+    public override void ShowHint(GameUi ui, Animal actor) => ui.SourceHint(Index);
+
+    public override void Open(Game game, Animal actor) => game.OpenSource(actor);
+
+    public override bool CompleteQuiz(Game game, Animal actor, bool handover)
+    {
+        game.CompleteHaulLoading();
         return true;
     }
 }

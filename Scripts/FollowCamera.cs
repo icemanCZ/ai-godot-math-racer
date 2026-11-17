@@ -13,6 +13,21 @@ public partial class FollowCamera : Camera3D
         momentSide;
     internal bool MomentPaused;
 
+    private float panorama,
+        panoramaTotal;
+    private Vector3 panoramaCenter;
+    private float panoramaStart;
+
+    /// <summary>The camera stands at <paramref name="center"/> and turns once round over <paramref name="seconds"/>.</summary>
+    internal void ShowPanorama(Vector3 center, float seconds, float startAngle)
+    {
+        panorama = panoramaTotal = seconds;
+        panoramaCenter = center;
+        panoramaStart = startAngle;
+    }
+
+    internal bool PanoramaActive => panorama > 0;
+
     internal void ShowMoment(Vector3 target, Vector3 outward)
     {
         moment = 3;
@@ -92,6 +107,17 @@ public partial class FollowCamera : Camera3D
     public override void _Process(double delta)
     {
         float dt = (float)delta;
+        if (panorama > 0)
+        {
+            StopDragging();
+            panorama = Mathf.Max(0, panorama - dt);
+            float turn = panoramaStart + (1 - panorama / panoramaTotal) * Mathf.Tau;
+            Position = panoramaCenter;
+            LookAt(panoramaCenter + new Vector3(Mathf.Sin(turn), -.16f, Mathf.Cos(turn)) * 60);
+            if (panorama <= 0)
+                Snap();
+            return;
+        }
         if (moment > 0)
         {
             StopDragging();

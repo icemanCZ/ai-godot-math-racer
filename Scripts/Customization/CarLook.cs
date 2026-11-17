@@ -25,4 +25,11 @@ public sealed record CarLook(
                 new CarLook("racer", "Závodní pruhy", "ed4762", "ffadb5", "fff2dc", "fff0b0"),
             }
         );
+
+    /// <summary>The paint that the jetty brings; it cannot be bought.</summary>
+    public static CarLook Water { get; } = new("water", "Vodní modrá", "2fa8e0", "bfe9ff", "f4fbff");
+
+    /// <summary>The paints of the garage and the special ones earned by building.</summary>
+    public static IReadOnlyList<CarLook> Catalogue { get; } =
+        System.Array.AsReadOnly(System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Append(All, Water)));
 }
