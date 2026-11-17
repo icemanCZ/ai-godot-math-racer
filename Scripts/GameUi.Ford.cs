@@ -95,9 +95,10 @@ public partial class GameUi
         Clear();
         var picture = Picture(content, "trailer-load", count: LoadChallenge.Capacity)!;
         picture.FilledCount = question.Present;
-        picture.CustomMinimumSize = new(300, 220);
+        picture.Cargo = LoadIcon(question.Cargo);
+        picture.CustomMinimumSize = new(420, 270);
         var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
-        row.AddThemeConstantOverride("separation", 16);
+        row.AddThemeConstantOverride("separation", 18);
         content.AddChild(row);
         Button? first = null;
         foreach (int choice in question.Choices)
@@ -110,9 +111,9 @@ public partial class GameUi
                 narrate: false
             );
             button.Name = $"Answer{answer}";
-            button.CustomMinimumSize = new(180, 130);
+            button.CustomMinimumSize = new(150, 110);
             button.Disabled = rejected.Contains(answer);
-            button.AddThemeFontSizeOverride("font_size", 40);
+            button.AddThemeFontSizeOverride("font_size", 48);
             if (!button.Disabled)
                 first ??= button;
         }

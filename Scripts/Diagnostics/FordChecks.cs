@@ -113,14 +113,25 @@ public partial class FordChecks : Node
             );
             game.OpenChallenge(world.Village.Farmer);
             Check(
-                game.State == GameState.FarmStatus && game.CurrentChallenge == null && game.Delivery == null,
-                "a ford trip blocks other expeditions"
+                game.State == GameState.Challenge && game.Haul != null,
+                "another task's quiz keeps the ford trip until it is accepted"
+            );
+            ChallengeChecks.Solve(game);
+            Check(game.Haul == null && game.Delivery?.Farm == true, "accepting another task cancels the ford trip");
+            Frames(2);
+            Check(!trailer.Attached && trailer.Load == null, "the trailer is unhitched when no task needs it");
+            car.SetPose(world.Beaver!.Position + Vector3.Right * 2, 0);
+            game.OpenBeaver();
+            game.BeginFordTrip();
+            Check(
+                game.Haul is { Trip: 0, Loaded: false } && game.Delivery == null && trailer.Attached,
+                "accepting the ford trip cancels the expedition and hitches the trailer again"
             );
             game.FinishInteraction();
             car.Reset();
             Check(
-                Flat(trailer.Position, car.Position) is > 4.4f and < 5
-                    && (trailer.Position - car.Position).Dot(car.Transform.Basis.Z) > 4.4f,
+                Flat(trailer.Position, car.Position) is > 3.9f and < 4.7f
+                    && (trailer.Position - car.Position).Dot(car.Transform.Basis.Z) > 3.9f,
                 "reset places the trailer behind the car"
             );
             RoundTrip("empty trailer");
@@ -178,23 +189,33 @@ public partial class FordChecks : Node
                 }
                 RoundTrip($"after load {trip + 1}");
             }
+            Frames(200);
             Check(
-                ford.Passable && game.TrailerOwned && game.Haul == null && trailer.Attached,
-                "six loads finish the ford and grant the trailer"
+                ford.Passable && game.TrailerOwned && game.Haul == null && !trailer.Attached,
+                "six loads finish the ford, grant the trailer and unhitch it"
             );
             Check(
                 world.DriveSurface(site.CenterX, site.Z) > River.Level(site.Z) - .35f,
                 "the finished deck lies above the water stop"
             );
             game.FinishInteraction();
+            // The trailer is only hitched for a parade now, so hitch it in the garage to tow it across.
+            car.SetPose(world.Village.GarageEntrance, 0);
+            game.OpenGarage();
+            game.ToggleTrailer();
+            game.FinishInteraction();
             await DriveAcross(site, expectCrossing: true);
 
             car.SetPose(world.Village.GarageEntrance, 0);
             game.OpenGarage();
+            game.ToggleTrailer();
             Check(
                 game.FindChild("GarageTrailer", true, false) is Button { Disabled: false },
                 "trailer is available in the garage"
             );
+            Check(!trailer.Attached, "the trailer stays unhitched between tasks");
+            game.ToggleTrailer();
+            Check(trailer.Attached, "the trailer can be hitched for a parade");
             game.ToggleTrailer();
             Check(!trailer.Attached, "the trailer can be unhitched");
             RoundTrip("unhitched");
@@ -266,7 +287,7 @@ public partial class FordChecks : Node
         var trailer = game.Trailer;
         Check(
             trailer.Attached
-                && Flat(trailer.Position, car.Position) is > 4 and < 5.2f
+                && Flat(trailer.Position, car.Position) is > 3.5f and < 4.8f
                 && site.OnFarBank(trailer.Position),
             "the trailer follows across"
         );

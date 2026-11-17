@@ -13,7 +13,7 @@ public partial class Game
             BeginDeliveryQuestion();
             return;
         }
-        if (TaskActive || role.Count(world.Village) >= role.Total)
+        if (Delivery?.Sender == owner || role.Count(world.Village) >= role.Total)
         {
             State = role.StatusState;
             role.ShowStatus(ui, world.Village, owner, Delivery);
@@ -25,7 +25,7 @@ public partial class Game
 
     internal void StartCollectorExpedition(Animal owner, CollectorRole role)
     {
-        if (TaskActive || role.Count(world.Village) >= role.Total)
+        if (Delivery?.Sender == owner || role.Count(world.Village) >= role.Total)
             return;
         StartExpedition(owner, true);
         SaveProgress();

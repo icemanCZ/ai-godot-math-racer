@@ -247,7 +247,7 @@ public partial class Game : Node3D
                 ui.HouseCollection(Delivery.Sender, Delivery.Collected);
                 return true;
             case GameState.HouseFruitOffer when nearby != null:
-                ui.HouseFruitOffer(nearby, world.Village.Level(nearby.HouseIndex), !TaskActive);
+                ui.HouseFruitOffer(nearby, world.Village.Level(nearby.HouseIndex), true);
                 return true;
             case GameState.FarmStatus:
                 ui.FarmStatus(world.Village, Delivery, returned);
@@ -314,13 +314,6 @@ public partial class Game : Node3D
         }
         if (e.IsActionPressed("talk"))
             Interact();
-        else if (
-            e is InputEventKey { PhysicalKeycode: Key.Space, Pressed: true }
-            && !AtGarage
-            && nearby == null
-            && NearbyPostcard() >= 0
-        )
-            InteractWithPostcards();
     }
 
     private void Interact()
@@ -389,7 +382,7 @@ public partial class Game : Node3D
 
     internal void OfferDelivery(Animal sender)
     {
-        if (State != GameState.Exploring || TaskActive || !roadside.CanStart(sender, Delivery))
+        if (State != GameState.Exploring || !roadside.CanStart(sender, Delivery))
             return;
         CurrentChallenge = null;
         EnterInteraction(GameState.ExpeditionChoice, sender);
@@ -399,13 +392,14 @@ public partial class Game : Node3D
 
     internal void SelectExpedition(bool collection)
     {
-        if (State != GameState.ExpeditionChoice || nearby == null || TaskActive)
+        if (State != GameState.ExpeditionChoice || nearby == null || !roadside.CanStart(nearby, Delivery))
             return;
         StartExpedition(nearby, collection);
     }
 
     private void StartExpedition(Animal sender, bool collection)
     {
+        CancelActiveTask();
         Delivery = new Expedition(world, vehicle, sender, collection);
         AddChild(Delivery);
         ClearChallenge();
@@ -416,7 +410,7 @@ public partial class Game : Node3D
         Speak(ExpeditionInstruction(Delivery), sender);
     }
 
-    private bool CanChooseExpedition(Animal animal) => Haul == null && roadside.CanStart(animal, Delivery);
+    private bool CanChooseExpedition(Animal animal) => roadside.CanStart(animal, Delivery);
 
     private void UpdateDeliveryGuides()
     {
@@ -625,6 +619,7 @@ public partial class Game : Node3D
             ui.DeliveryHint(false);
         if (State is not (GameState.Paused or GameState.Title))
             trailer.Tick((float)delta);
+        UnhitchIdleTrailer();
         TickCompanionStop((float)delta);
         TickGolem((float)delta);
         TickCollectorPets((float)delta);

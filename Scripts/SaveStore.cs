@@ -254,7 +254,8 @@ public static class SaveStore
             data.Nearby >= World.FirstTraderId
             && data.Nearby < World.WitchId
             && data.State == GameState.Challenge
-            && (data.Sender >= 0 || data.Challenge is DeliveryChallenge)
+            // The opening quiz may run while another task is active; a shop never quizzes about its own order.
+            && (data.Sender == data.Nearby || data.Challenge is DeliveryChallenge)
         )
         || (
             data.Sender >= World.FirstTraderId
@@ -323,13 +324,17 @@ public static class SaveStore
         || (
             data.Nearby == World.FarmerId
             && data.State == GameState.Challenge
-            && (data.Sender >= 0 || data.FarmCount == Village.FarmKinds.Length || data.Challenge is DeliveryChallenge)
+            && (
+                data.Sender == World.FarmerId
+                || data.FarmCount == Village.FarmKinds.Length
+                || data.Challenge is DeliveryChallenge
+            )
         )
         || (
             data.Nearby == World.GardenerId
             && data.State == GameState.Challenge
             && (
-                data.Sender >= 0
+                data.Sender == World.GardenerId
                 || data.GardenCount == Village.FlowerNames.Length
                 || data.Challenge is DeliveryChallenge
             )
@@ -339,7 +344,7 @@ public static class SaveStore
             && data.Nearby < World.FirstTraderId
             && data.State == GameState.Challenge
             && (
-                data.Sender >= 0
+                data.Sender == data.Nearby
                 || (data.Nearby == World.GemCollectorId ? data.GemCount : data.ToyCount)
                     == Village.CollectionNames(data.Nearby == World.ToymakerId).Length
                 || data.Challenge is DeliveryChallenge

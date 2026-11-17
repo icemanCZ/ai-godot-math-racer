@@ -96,7 +96,8 @@ internal static class TrailerModel
 /// </summary>
 public partial class Trailer : Node3D
 {
-    private const float HitchOffset = 2.1f;
+    /// <summary>Distance from the car's centre to the drawbar ball; the car's rear bumper ends near 1.65.</summary>
+    private const float HitchOffset = 1.7f;
     private const float DrawbarLength = 2.6f;
     private const float MaxHitchAngle = 75 * Mathf.Pi / 180;
     private const float FillTime = .8f;

@@ -13,6 +13,9 @@ public partial class CarLookPreview : SubViewportContainer
     public int CargoAmount { get; set; } = 1;
     public IReadOnlyList<string> Accessories { get; set; } = System.Array.Empty<string>();
 
+    /// <summary>Shows <see cref="AccessoryId"/> alone, without the car, framed to fill the picture.</summary>
+    public bool AccessoryOnly { get; set; }
+
     public override void _Ready()
     {
         CustomMinimumSize = new Vector2(205, 160);
@@ -36,6 +39,11 @@ public partial class CarLookPreview : SubViewportContainer
         };
         AddChild(viewport);
         var studio = CreateStudio(viewport);
+        if (AccessoryOnly && AccessoryId != null)
+        {
+            BuildAccessoryOnly(studio, AccessoryId);
+            return;
+        }
         var car = new Node3D();
         studio.AddChild(car);
         var appearance = new VehicleAppearance();
@@ -75,7 +83,7 @@ public partial class CarLookPreview : SubViewportContainer
             );
         }
 
-        bool rear = AccessoryId is "spare" or "exhaust" or "spoiler" or "antenna" or "flag" or "valley-map";
+        bool rear = AccessoryId != null && System.Array.IndexOf(RearAccessories, AccessoryId) >= 0;
         var camera = new Camera3D
         {
             Projection = Camera3D.ProjectionType.Orthogonal,
@@ -85,6 +93,48 @@ public partial class CarLookPreview : SubViewportContainer
         };
         studio.AddChild(camera);
         camera.LookAt(new Vector3(0, ExpeditionCargo != null ? 1.5f : 1.25f, 0));
+    }
+
+    private static readonly string[] RearAccessories = { "spare", "exhaust", "spoiler", "antenna", "flag", "valley-map" };
+
+    private static void BuildAccessoryOnly(Node3D studio, string id)
+    {
+        Node3D piece;
+        if (id == "wheels")
+        {
+            // The bigger wheels are a scale change on the car, so show one tyre on its own.
+            piece = new Node3D();
+            studio.AddChild(piece);
+            Art.Cylinder(piece, new(0, .6f, 0), .66f, .66f, .4f, "263440").RotationDegrees = new(0, 0, 90);
+            Art.Cylinder(piece, new(.22f, .6f, 0), .42f, .42f, .05f, "fff0ce").RotationDegrees = new(0, 0, 90);
+            Art.Ball(piece, new(.25f, .6f, 0), new(.14f, .14f, .14f), "48bfc2");
+        }
+        else
+        {
+            piece = new CarAccessory(id, id).Create(studio);
+            piece.Visible = true;
+        }
+        Aabb? bounds = null;
+        foreach (var node in piece.FindChildren("*", "MeshInstance3D", true, false))
+        {
+            var mesh = (MeshInstance3D)node;
+            var box = mesh.GlobalTransform * mesh.GetAabb();
+            bounds = bounds is { } known ? known.Merge(box) : box;
+        }
+        if (piece is MeshInstance3D own)
+            bounds ??= own.GlobalTransform * own.GetAabb();
+        var area = bounds ?? new Aabb(Vector3.Zero, Vector3.One);
+        var center = area.GetCenter();
+        bool rear = id == "wheels" || System.Array.IndexOf(RearAccessories, id) >= 0;
+        var camera = new Camera3D
+        {
+            Projection = Camera3D.ProjectionType.Orthogonal,
+            Size = Mathf.Max(.45f, area.Size.Length() * .9f),
+            Position = center + new Vector3(.8f, .6f, rear ? 1 : -1).Normalized() * 12,
+            Current = true,
+        };
+        studio.AddChild(camera);
+        camera.LookAt(center);
     }
 
     internal static Node3D CreateStudio(SubViewport viewport)

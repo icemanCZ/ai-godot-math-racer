@@ -22,10 +22,10 @@ On Windows, `run.cmd` and `build.cmd` also work when PowerShell script execution
 | Action | Keyboard and mouse | Xbox controller |
 | --- | --- | --- |
 | Drive and steer | WASD or arrow keys | Left stick, RT to accelerate and LT to reverse |
-| Handbrake | Space | X |
+| Handbrake | Space (also interacts when a character, marker or garage is in reach) | X |
 | Return to the starting road | R | Y |
 | Orbit the camera | Hold the right mouse button and move | Right stick |
-| Interact | E or click the on-screen button | A |
+| Interact | E, Space or click the on-screen button | A |
 | Choose a menu item | Mouse or arrow keys, then E, Space or Enter | D-pad or left stick, then A |
 | Pause or resume | Esc | Menu |
 | Back or leave an activity | Back arrow on screen | B |
@@ -59,7 +59,7 @@ Roadside animals, village residents, shops and forest bandits cycle evenly throu
 - **Forest bandits.** A group of three can run out from cover when the player drives past a suitable forest road. Solve three questions to send them back. After a short break, they can appear beside a different road. The encounter preserves any cargo on the car.
 - **Weather and wildlife.** The valley hosts 240 butterflies, birds, rabbits, foxes and deer. Animals move away from the car and eventually return to their home area. Weather cycles between clear skies, wind, rain and storms. The village witch offers weather selection. Tree trunks, branches, crowns, leaves and fruit bend together in wind.
 
-Only one delivery, collection or ford trip can be active at a time. The car leaves fading tyre tracks and bends meadow grass as it passes. The river stops the car at the water, and the wooden bridge connects the banks. There are no task timers or game-over conditions.
+Only one delivery, collection or ford trip is active at a time: accepting a new task switches off the current one. The trailer is hitched only for a ford trip and unhitched afterwards, unless you hitch it for a parade in the garage. The car leaves fading tyre tracks and bends meadow grass as it passes. The river stops the car at the water, and the wooden bridge connects the banks. There are no task timers or game-over conditions.
 
 ## Saved progress and world generation
 

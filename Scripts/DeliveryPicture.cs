@@ -12,6 +12,9 @@ public partial class DeliveryPicture : Control
     public int FilledCount { get; set; } = -1;
     public float Direction { get; set; }
 
+    /// <summary>Material drawn on the loading question's trailer: stones, soil or sand.</summary>
+    public string Cargo { get; set; } = "stones";
+
     public override void _Ready()
     {
         MouseFilter = MouseFilterEnum.Ignore;
@@ -126,26 +129,54 @@ public partial class DeliveryPicture : Control
         }
         else if (Icon is "trailer" or "trailer-load")
         {
-            // A side view of the trailer; the loading question fills it with stones and empty places.
-            var body = new Color(Icon == "trailer" ? "c0573e" : "c39770");
-            DrawRect(new Rect2(26, 52, 128, 58), body);
-            DrawRect(new Rect2(26, 52, 128, 7), new Color("e2bb8b"));
-            DrawLine(new(26, 100), new(4, 104), ink, 6, true);
-            DrawCircle(new(66, 116), 17, ink);
-            DrawCircle(new(66, 116), 7, new Color("d8d2c4"));
-            DrawCircle(new(116, 116), 17, ink);
-            DrawCircle(new(116, 116), 7, new Color("d8d2c4"));
-            if (Icon == "trailer-load")
+            // A side view of the trailer. The loading question lays its places out in two tidy rows
+            // inside the bed: loaded pieces look like the cargo, empty places are dark hollows.
+            bool question = Icon == "trailer-load";
+            var wood = new Color(question ? "c9a06f" : "c0573e");
+            var rim = new Color(question ? "e6c593" : "e08a6f");
+            var hollow = new Color("8a6641");
+            Oval(new(88, 136), new(70, 7), new Color(0, 0, 0, .13f));
+            DrawLine(new(18, 100), new(2, 108), ink, 5, true);
+            DrawCircle(new(2, 108), 4, ink);
+            DrawRect(new Rect2(12, 24, 156, 84), ink);
+            DrawRect(new Rect2(15, 27, 150, 78), wood);
+            DrawRect(new Rect2(15, 27, 150, 8), rim);
+            DrawRect(new Rect2(15, 97, 150, 8), wood.Darkened(.14f));
+            DrawRect(new Rect2(21, 39, 138, 56), hollow);
+            DrawRect(new Rect2(21, 39, 138, 6), hollow.Darkened(.18f));
+            foreach (int x in new[] { 52, 128 })
+            {
+                DrawCircle(new(x, 112), 19, ink);
+                DrawCircle(new(x, 112), 14, new Color("4b6068"));
+                DrawCircle(new(x, 112), 7, new Color("d8d2c4"));
+            }
+            if (question)
                 for (int i = 0; i < Count; i++)
                 {
-                    var p = new Vector2(42 + (i % 5) * 24, 71 + (i / 5) * 23);
-                    if (i < FilledCount)
+                    var p = new Vector2(38 + (i % 5) * 26, 56 + (i / 5) * 28);
+                    if (i >= FilledCount)
                     {
-                        Oval(p, new(11, 9), new("8f8f8a"));
-                        Oval(p + new Vector2(-3, -3), new(4, 3), new("b4b3ab"));
+                        DrawArc(p, 10, 0, Mathf.Tau, 24, hollow.Darkened(.3f), 2.5f, true);
+                        continue;
                     }
-                    else
-                        DrawArc(p, 10, 0, Mathf.Tau, 24, ink, 2.5f, true);
+                    switch (Cargo)
+                    {
+                        case "soil":
+                            Oval(p, new(12, 9), new("6f4b33"));
+                            Oval(p + new Vector2(-2, -3), new(8, 5), new("8a6142"));
+                            DrawCircle(p + new Vector2(5, 2), 2, new Color("57392a"));
+                            break;
+                        case "sand":
+                            Oval(p, new(12, 9), new("c9aa66"));
+                            Oval(p + new Vector2(-2, -3), new(8, 5), new("e8d296"));
+                            DrawCircle(p + new Vector2(5, 2), 1.6f, new Color("b0914f"));
+                            break;
+                        default:
+                            Oval(p, new(12, 10), new("77756f"));
+                            Oval(p + new Vector2(-2, -2), new(10, 8), new("8f8f8a"));
+                            Oval(p + new Vector2(-4, -4), new(4, 3), new("c4c3bb"));
+                            break;
+                    }
                 }
         }
         else if (Icon is "stones" or "soil" or "sand")

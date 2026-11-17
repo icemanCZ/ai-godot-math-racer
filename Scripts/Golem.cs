@@ -211,11 +211,11 @@ public partial class Game
         ShowSorcerer();
     }
 
-    private void ShowSorcerer() => ui.Sorcerer(world.Sorcerer, Delivery, GolemOwned, busy: Haul != null);
+    private void ShowSorcerer() => ui.Sorcerer(world.Sorcerer, Delivery, GolemOwned);
 
     internal void BeginGolemQuest()
     {
-        if (State != GameState.SorcererStatus || TaskActive || GolemOwned)
+        if (State != GameState.SorcererStatus || Delivery?.Golem == true || GolemOwned)
             return;
         StartExpedition(world.Sorcerer, true);
         SaveProgress();
@@ -246,7 +246,7 @@ public partial class GameUi
         talkButton.Text = controller ? "A · Černokněžník" : "E · Černokněžník";
     }
 
-    internal void Sorcerer(Animal sorcerer, Expedition? delivery, bool owned, bool busy = false)
+    internal void Sorcerer(Animal sorcerer, Expedition? delivery, bool owned)
     {
         Clear();
         Text(sorcerer.DisplayName, 30);
@@ -254,8 +254,6 @@ public partial class GameUi
             Text("✓  6 / 6", 32);
         else if (delivery?.Golem == true)
             Text($"{delivery.Collected} / 6", 32);
-        else if (delivery != null || busy)
-            Text("…", 32);
         else
         {
             Text("0 / 6", 32);

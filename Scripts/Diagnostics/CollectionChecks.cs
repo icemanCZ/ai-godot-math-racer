@@ -118,10 +118,8 @@ public partial class CollectionChecks : Node
                     {
                         game.OpenChallenge(other);
                         Check(
-                            game.CurrentChallenge == null
-                                && game.Delivery!.Sender == owner
-                                && village.CollectionCount(toys) == i,
-                            "active expedition blocks another trip and empty handover"
+                            game.Delivery!.Sender == owner && village.CollectionCount(toys) == i,
+                            "another resident's quiz keeps the active expedition until its task is accepted"
                         );
                         RoundTrip();
                         game.FinishInteraction();

@@ -120,7 +120,9 @@ public partial class DeliveryChecks : Node
                     "accepting does not consume visit"
                 );
                 game.OfferDelivery(delivery.Recipient);
-                Check(game.Delivery == delivery && game.State == GameState.Exploring, "cannot replace active delivery");
+                Check(game.Delivery == delivery, "offering a friend's task does not cancel the active delivery");
+                game.FinishInteraction();
+                Check(game.State == GameState.Exploring, "postponing an offered task returns to driving");
                 foreach (var body in CarBody.All)
                     car.Appearance.ApplyModel(body.Id);
                 car.Reset();
@@ -195,9 +197,11 @@ public partial class DeliveryChecks : Node
                     game.OpenChallenge(other);
                     ChallengeChecks.Solve(game);
                     Check(
-                        game.State == GameState.Exploring,
-                        "solving another question preserves active expedition and postpones its task choice"
+                        game.State == GameState.ExpeditionChoice && game.Delivery == delivery,
+                        "solving another question offers its task while the active expedition stays until a choice"
                     );
+                    game.FinishInteraction();
+                    Check(game.State == GameState.Exploring, "postponing the offered task returns to driving");
                     game.TogglePause();
                     game.TogglePause();
                     Check(

@@ -323,11 +323,13 @@ public partial class Game
                 world.Ground.At(site.NearDump.X, site.Z, .15f),
                 site.Side > 0 ? -Mathf.Pi / 2 : Mathf.Pi / 2
             );
+            trailerParade = true;
             trailer.Attach(true);
             trailer.SetLoad(stage < 3 ? HaulLoad.Stones : HaulLoad.Soil);
         }
         if (view == "trailer")
         {
+            trailerParade = true;
             trailer.Attach(true);
             trailer.SetLoad(HaulLoad.Stones);
         }

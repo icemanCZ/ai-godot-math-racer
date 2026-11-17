@@ -176,11 +176,18 @@ public partial class VillageChecks : Node
             village.RestoreLevels(new[] { firstFruit, 0, 0, 0 });
             game.OpenChallenge(village.Residents[0]);
             Check(
-                game.State == GameState.HouseFruitOffer && game.FindChild("VillageFruitTask", true, false) == null,
-                "fruit offer waits while another expedition is active"
+                game.State == GameState.HouseFruitOffer && game.FindChild("VillageFruitTask", true, false) != null,
+                "fruit offer stays available while another expedition is active"
             );
             game.BeginVillageCollection();
-            Check(game.Delivery == roadside, "village task cannot replace another expedition");
+            Check(
+                game.Delivery != roadside && game.Delivery?.Sender == village.Residents[0],
+                "village task replaces another expedition"
+            );
+            game.OpenChallenge(world.Animals[0]);
+            game.SelectExpedition(true);
+            roadside = game.Delivery;
+            Check(roadside?.Sender == world.Animals[0], "a roadside order replaces the village task");
             game.FinishInteraction();
             GatherAll();
             game.SubmitAnswer(3);

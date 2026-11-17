@@ -88,6 +88,15 @@ public partial class Game
     /// <summary>A delivery, collection or ford trip is under way; only one runs at a time.</summary>
     internal bool TaskActive => Delivery != null || Haul != null;
 
+    /// <summary>Accepting a new task switches off the one under way, together with its cargo.</summary>
+    private void CancelActiveTask()
+    {
+        EndExpedition(refreshUi: false);
+        EndFordTrip(refreshUi: false);
+        trailer.SetLoad(null);
+        deliveryReward = false;
+    }
+
     /// <summary>Companions trail further back while the trailer is hitched.</summary>
     private float TrailerTrailShift => trailer?.Attached == true ? 3.5f : 0;
 
@@ -107,17 +116,18 @@ public partial class Game
         ClearChallenge();
         EnterInteraction(GameState.FordStatus, world.Beaver);
         ShowBeaver();
-        if (Haul == null && !world.Ford.Passable && Delivery == null)
+        if (Haul == null && !world.Ford.Passable)
             Speak(world.Ford.Stage == 0 ? world.Beaver.Greeting : "Přivezeš mi další náklad?", world.Beaver);
     }
 
     private void ShowBeaver() =>
-        ui.Beaver(world.Beaver!, world.Ford!.Stage, Haul, Haul == null && Delivery == null && !world.Ford.Passable);
+        ui.Beaver(world.Beaver!, world.Ford!.Stage, Haul, Haul == null && !world.Ford.Passable);
 
     internal void BeginFordTrip()
     {
-        if (State != GameState.FordStatus || world.Ford is not { Passable: false } ford || TaskActive)
+        if (State != GameState.FordStatus || world.Ford is not { Passable: false } ford || Haul != null)
             return;
+        CancelActiveTask();
         StartFordTrip(ford.Stage, loaded: false);
         Start();
         Speak(TripInstruction(Haul!), world.Beaver);
@@ -152,7 +162,14 @@ public partial class Game
         UpdateDeliveryGuides();
     }
 
-    private void UpdateBeaverGuide() => world.Beaver?.Guide(world.Ford is { Passable: false } && !TaskActive);
+    /// <summary>Only a ford trip needs the trailer: once it is over (and the bed has settled) it is unhitched.</summary>
+    private void UnhitchIdleTrailer()
+    {
+        if (Haul == null && !trailerParade && trailer.Attached && !trailer.Dumping)
+            trailer.Attach(false);
+    }
+
+    private void UpdateBeaverGuide() => world.Beaver?.Guide(world.Ford is { Passable: false } && Haul == null);
 
     private void TickHaul(double delta)
     {
@@ -235,7 +252,7 @@ public partial class Game
         var ford = world.Ford!;
         EndFordTrip();
         TrailerOwned = true;
-        trailerParade = true;
+        trailerParade = false;
         var center = new Vector3(ford.Site.CenterX, ford.Site.DeckHeight + 2, ford.Site.Z);
         CelebrateAt(center, "Most je hotový! Vozík je tvůj.");
         var outward = followCamera.GlobalPosition - center;

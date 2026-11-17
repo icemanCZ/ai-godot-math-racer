@@ -52,18 +52,28 @@ public partial class FarmChecks : Node
                 world.Animals.All(a => !village.IsNearVillage(a.Position)),
                 "task animals leave farm and village clear"
             );
-            // An existing expedition must finish before the farmer can start another.
+            // Accepting the farmer's task switches off an active expedition; the quiz alone does not.
             game.OpenChallenge(world.Animals[0]);
             ChallengeChecks.Solve(game);
             game.SelectExpedition(false);
             var existing = game.Delivery;
             game.OpenChallenge(village.Farmer);
-            game.SubmitAnswer(1);
             Check(
-                game.State == GameState.FarmStatus && game.Delivery == existing,
-                "farmer cannot replace an active expedition"
+                game.State == GameState.Challenge && game.Delivery == existing,
+                "the farmer's quiz keeps the active expedition until the task is accepted"
+            );
+            ChallengeChecks.Solve(game);
+            Check(
+                game.State == GameState.Exploring && game.Delivery != existing && game.Delivery?.Farm == true,
+                "accepting the farmer's task replaces the active expedition"
             );
             RoundTrip();
+            game.OpenChallenge(world.Animals[0]);
+            game.SelectExpedition(false);
+            Check(
+                game.Delivery?.Sender == world.Animals[0] && game.Delivery.Farm == false,
+                "a roadside order replaces the farm task"
+            );
             game.FinishInteraction();
             car.SetPose(game.Delivery!.Recipient.Position + Vector3.Right * 2, 0);
             game.BeginDeliveryQuestion();

@@ -7,7 +7,8 @@ public partial class Game
         nearby = owner;
         ClearChallenge();
         vehicle.Active = false;
-        if (TaskActive)
+        // Only this trader's own order shows its status; any other task is replaced after the quiz.
+        if (Delivery?.Sender == owner)
         {
             State = GameState.TradeStatus;
             ui.TradeStatus(owner, Delivery);
@@ -18,7 +19,7 @@ public partial class Game
 
     internal void StartTrade()
     {
-        if (TaskActive || nearby?.IsTrader != true)
+        if (nearby?.IsTrader != true || Delivery?.Sender == nearby)
             return;
         StartExpedition(nearby, false);
         SaveProgress();

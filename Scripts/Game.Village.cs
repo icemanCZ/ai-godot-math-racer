@@ -37,7 +37,7 @@ public partial class Game
         {
             ClearChallenge();
             EnterInteraction(GameState.HouseFruitOffer, resident);
-            ui.HouseFruitOffer(resident, world.Village.Level(house), !TaskActive);
+            ui.HouseFruitOffer(resident, world.Village.Level(house), true);
             return;
         }
         BeginChallenge(resident);
@@ -56,7 +56,6 @@ public partial class Game
             || nearby == null
             || nearby.HouseIndex < 0
             || !nearby.RewardAvailable
-            || TaskActive
             || world.Village.TaskAt(nearby.HouseIndex) != VillageTaskKind.Fruit
         )
             return;

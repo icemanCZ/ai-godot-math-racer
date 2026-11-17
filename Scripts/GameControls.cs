@@ -12,7 +12,7 @@ internal static class GameControls
         Keys("right", Key.D, Key.Right);
         Keys("brake", Key.Space);
         Keys("reset", Key.R);
-        Keys("talk", Key.E);
+        Keys("talk", Key.E, Key.Space);
         Keys("pause", Key.Escape);
         Keys("back");
         Axis("accelerate", JoyAxis.TriggerRight, 1, .08f);
@@ -35,7 +35,7 @@ internal static class GameControls
         foreach (var e in InputMap.ActionGetEvents(action))
             if (e is InputEventJoypadButton or InputEventJoypadMotion)
                 InputMap.ActionEraseEvent(action, e);
-        Keys("ui_accept", Key.E);
+        Keys("ui_accept", Key.E, Key.Space);
         Button("ui_accept", JoyButton.A);
         Button("ui_up", JoyButton.DpadUp);
         Button("ui_down", JoyButton.DpadDown);

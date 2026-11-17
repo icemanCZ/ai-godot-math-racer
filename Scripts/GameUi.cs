@@ -563,10 +563,27 @@ public partial class GameUi : CanvasLayer
     )
     {
         Clear();
-        Text("Garáž", 32);
+        // The top bar keeps Back always in view, and the arrow keys reach it from the first row.
         var header = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
-        header.AddThemeConstantOverride("separation", 10);
+        header.AddThemeConstantOverride("separation", 14);
         content.AddChild(header);
+        var leave = IconButton(
+            "back",
+            () =>
+            {
+                garageScroll = 0;
+                garageFocus = "";
+                CloseInteractionRequested?.Invoke();
+            },
+            "LeaveGarage",
+            header
+        );
+        leave.CustomMinimumSize = new(120, 60);
+        leave.AccessibilityName = "Vyjet z garáže";
+        var title = new Label { Text = "Garáž", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        title.HorizontalAlignment = HorizontalAlignment.Center;
+        title.AddThemeFontSizeOverride("font_size", 32);
+        header.AddChild(title);
         header.AddChild(
             new Label
             {
@@ -731,8 +748,10 @@ public partial class GameUi : CanvasLayer
                             : System.Linq.Enumerable.First(CarLook.All, l => l.Id == reward.Id),
                     ModelId = reward.IsModel ? reward.Id : appearance.CurrentModelId,
                     AccessoryId = reward.IsAccessory ? reward.Id : null,
+                    AccessoryOnly = reward.IsAccessory,
                 };
-                if (!unlocked)
+                // Anything that can be bought keeps its real colours; only special prizes stay grey.
+                if (!unlocked && reward.Price == null)
                     sample.Material = gray;
                 card.AddChild(sample);
                 int? price = unlocked ? null : reward.Price;
@@ -874,17 +893,6 @@ public partial class GameUi : CanvasLayer
             "Doplňky",
             System.Linq.Enumerable.Select(CarAccessory.Catalogue, a => (new CarReward(a.Id, true), a.Name))
         );
-        var leave = IconButton(
-            "back",
-            () =>
-            {
-                garageScroll = 0;
-                garageFocus = "";
-                CloseInteractionRequested?.Invoke();
-            },
-            "LeaveGarage"
-        );
-        leave.AccessibilityName = "Vyjet z garáže";
         (selectedFocus ?? firstQuiz ?? firstPet ?? first)?.GrabFocus();
         scroll.SetDeferred(ScrollContainer.PropertyName.ScrollVertical, (int)garageScroll);
     }
