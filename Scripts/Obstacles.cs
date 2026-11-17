@@ -11,15 +11,19 @@ internal static class Obstacles
         body.AddToGroup("solid_obstacles");
         parent.AddChild(body);
         body.AddChild(new CollisionShape3D { Shape = shape });
-        body.AddToGroup(shape is CapsuleShape3D ? "obstacle_trunks" : shape is ConvexPolygonShape3D ? "obstacle_rocks" : "obstacle_boxes");
+        body.AddToGroup(
+            shape is CapsuleShape3D ? "obstacle_trunks"
+            : shape is ConvexPolygonShape3D ? "obstacle_rocks"
+            : "obstacle_boxes"
+        );
         return body;
     }
 
-    internal static void Box(Node3D parent, Vector3 center, Vector3 size, Basis? basis = null)
-        => Add(parent, center, new BoxShape3D { Size = size }, basis);
+    internal static void Box(Node3D parent, Vector3 center, Vector3 size, Basis? basis = null) =>
+        Add(parent, center, new BoxShape3D { Size = size }, basis);
 
-    internal static StaticBody3D Trunk(Node3D parent, Vector3 foot, float radius, float height)
-        => Add(parent, foot + Vector3.Up * (height / 2), new CapsuleShape3D { Radius = radius, Height = height });
+    internal static StaticBody3D Trunk(Node3D parent, Vector3 foot, float radius, float height) =>
+        Add(parent, foot + Vector3.Up * (height / 2), new CapsuleShape3D { Radius = radius, Height = height });
 
     internal static void Rock(Node3D parent, Vector3 center, Vector3 size)
     {
@@ -30,8 +34,8 @@ internal static class Obstacles
         for (int side = 0; side < 8; side++)
         {
             float angle = side * Mathf.Tau / 8;
-            points[ring * 8 + side] = new Vector3(.85f * Mathf.Cos(angle),
-                ring == 0 ? -1 : 1, .85f * Mathf.Sin(angle)) * size;
+            points[ring * 8 + side] =
+                new Vector3(.85f * Mathf.Cos(angle), ring == 0 ? -1 : 1, .85f * Mathf.Sin(angle)) * size;
         }
         Add(parent, center, new ConvexPolygonShape3D { Points = points });
     }

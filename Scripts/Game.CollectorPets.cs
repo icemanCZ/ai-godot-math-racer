@@ -1,25 +1,29 @@
-using Godot;
 using System.Linq;
+using Godot;
 
 namespace MathRacer;
 
 public partial class Game
 {
     private const int GolemWanderIndex = 4;
+
     private struct CompanionWander
     {
         internal Vector3? Goal;
         internal float Pause;
     }
+
     private readonly CompanionWander[] companionWanders = new CompanionWander[GolemWanderIndex + 1];
     private readonly RandomNumberGenerator companionRandom = new() { Seed = (ulong)Settings.Seed + 710 };
     private float companionStopTime;
 
     private void ToggleCollectorPet(CollectorPetKind kind)
     {
-        if (State != GameState.Garage) return;
+        if (State != GameState.Garage)
+            return;
         var pet = world.Village.CollectorPets.First(p => p.Kind == kind);
-        if (!pet.IsOwned) return;
+        if (!pet.IsOwned)
+            return;
         pet.Disabled = !pet.Disabled;
         PlaceCollectorPet(pet);
         ShowGarage();
@@ -38,12 +42,14 @@ public partial class Game
             pet.Place(target, vehicle.Heading + Mathf.Pi);
             companionWanders[(int)pet.Kind] = default;
         }
-        else pet.ReturnHome();
+        else
+            pet.ReturnHome();
     }
 
     private void TickCollectorPets(float delta)
     {
-        if (State is GameState.Title or GameState.Paused) return;
+        if (State is GameState.Title or GameState.Paused)
+            return;
         foreach (var pet in world.Village.CollectorPets)
         {
             if (!pet.IsOwned)
@@ -51,7 +57,8 @@ public partial class Game
                 pet.Animate(delta, 0);
                 continue;
             }
-            if (!pet.IsActive || State != GameState.Exploring) continue;
+            if (!pet.IsActive || State != GameState.Exploring)
+                continue;
             var target = CompanionTarget((int)pet.Kind, pet.Position, CollectorPetTarget(pet), delta);
             var offset = target - pet.Position;
             offset.Y = 0;
@@ -76,8 +83,10 @@ public partial class Game
 
     private void TickCompanionStop(float delta)
     {
-        if (State != GameState.Exploring) return;
-        if (Mathf.Abs(vehicle.Speed) < .55f) companionStopTime = Mathf.Min(.65f, companionStopTime + delta);
+        if (State != GameState.Exploring)
+            return;
+        if (Mathf.Abs(vehicle.Speed) < .55f)
+            companionStopTime = Mathf.Min(.65f, companionStopTime + delta);
         else if (companionStopTime > 0)
         {
             companionStopTime = 0;
@@ -87,7 +96,8 @@ public partial class Game
 
     private Vector3 CompanionTarget(int index, Vector3 current, Vector3 trail, float delta)
     {
-        if (companionStopTime < .65f || current.DistanceTo(vehicle.Position) > 12) return trail;
+        if (companionStopTime < .65f || current.DistanceTo(vehicle.Position) > 12)
+            return trail;
         ref var wander = ref companionWanders[index];
         if (wander.Goal is Vector3 goal)
         {
@@ -96,7 +106,8 @@ public partial class Game
             wander.Goal = null;
         }
         wander.Pause -= delta;
-        if (wander.Pause > 0) return current;
+        if (wander.Pause > 0)
+            return current;
 
         var radial = current - vehicle.Position;
         float heading = Mathf.Atan2(radial.X, radial.Z);
@@ -107,7 +118,8 @@ public partial class Game
             var target = vehicle.Position + new Vector3(Mathf.Sin(angle), 0, Mathf.Cos(angle)) * radius;
             if (River.OnBridge(vehicle.Position.X, vehicle.Position.Z))
                 target.Z = Mathf.Clamp(target.Z, River.BridgeZ - 2.1f, River.BridgeZ + 2.1f);
-            if (FlatDistanceSquared(current, target) < 2 || !ClearCompanionPath(current, target)) continue;
+            if (FlatDistanceSquared(current, target) < 2 || !ClearCompanionPath(current, target))
+                continue;
             wander.Goal = target;
             wander.Pause = companionRandom.RandfRange(.45f, 2.1f);
             return target;
@@ -121,8 +133,10 @@ public partial class Game
         for (int step = 1; step <= 8; step++)
         {
             var p = from.Lerp(to, step / 8f);
-            if (FlatDistanceSquared(p, vehicle.Position) < 5.3f || world.Plants.NearTrunk(p, .95f)) return false;
-            if (!River.OnBridge(p.X, p.Z) && River.Distance(p.X, p.Z) < River.HalfWidth(p.Z) + .55f) return false;
+            if (FlatDistanceSquared(p, vehicle.Position) < 5.3f || world.Plants.NearTrunk(p, .95f))
+                return false;
+            if (!River.OnBridge(p.X, p.Z) && River.Distance(p.X, p.Z) < River.HalfWidth(p.Z) + .55f)
+                return false;
         }
         return true;
     }

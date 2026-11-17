@@ -16,57 +16,77 @@ public partial class Village
 
         // Small alternating pavers follow the terrain; no tall slab at the entrance.
         var surfaces = new[] { new SurfaceTool(), new SurfaceTool(), new SurfaceTool() };
-        foreach (var surface in surfaces) surface.Begin(Mesh.PrimitiveType.Triangles);
+        foreach (var surface in surfaces)
+            surface.Begin(Mesh.PrimitiveType.Triangles);
         Vector3 Ground(float x, float z)
         {
             var p = plot * new Vector3(x, 0, z);
             return new Vector3(p.X, ground.Height(p.X, p.Z) + .065f, p.Z);
         }
         for (int x = -22; x < 22; x++)
-            for (int z = -13; z < 13; z++)
-            {
-                bool border = x is -22 or 21 || z is -13 or 12;
-                var surface = surfaces[border ? 2 : (x + z + 35) % 2];
-                var a = Ground(x * .5f, z * .5f);
-                var b = Ground((x + 1) * .5f, z * .5f);
-                var c = Ground(x * .5f, (z + 1) * .5f);
-                var d = Ground((x + 1) * .5f, (z + 1) * .5f);
-                // Plot yaw preserves the winding of the surface in world space.
-                foreach (var p in new[] { a, b, c, b, d, c }) surface.AddVertex(p);
-                walkwayTriangles.Add((a, c, b)); walkwayTriangles.Add((b, c, d));
-            }
+        for (int z = -13; z < 13; z++)
+        {
+            bool border = x is -22 or 21 || z is -13 or 12;
+            var surface = surfaces[border ? 2 : (x + z + 35) % 2];
+            var a = Ground(x * .5f, z * .5f);
+            var b = Ground((x + 1) * .5f, z * .5f);
+            var c = Ground(x * .5f, (z + 1) * .5f);
+            var d = Ground((x + 1) * .5f, (z + 1) * .5f);
+            // Plot yaw preserves the winding of the surface in world space.
+            foreach (var p in new[] { a, b, c, b, d, c })
+                surface.AddVertex(p);
+            walkwayTriangles.Add((a, c, b));
+            walkwayTriangles.Add((b, c, d));
+        }
         string[] paving = { "e7d5b7", "dfcba9", "b99878" };
         for (int i = 0; i < surfaces.Length; i++)
         {
             surfaces[i].GenerateNormals();
-            var mesh = new MeshInstance3D { Name = "SquarePaving", Mesh = surfaces[i].Commit(), MaterialOverride = Art.Mat(paving[i]) };
-            AddChild(mesh); mesh.CreateTrimeshCollision();
+            var mesh = new MeshInstance3D
+            {
+                Name = "SquarePaving",
+                Mesh = surfaces[i].Commit(),
+                MaterialOverride = Art.Mat(paving[i]),
+            };
+            AddChild(mesh);
+            mesh.CreateTrimeshCollision();
         }
         var entrance = Ground(0, 6.3f);
         Path(entrance, road, 5);
 
         var fountain = SquareProp("Fountain", 0, -.7f);
-        float high = float.NegativeInfinity, low = float.PositiveInfinity;
+        float high = float.NegativeInfinity,
+            low = float.PositiveInfinity;
         for (float x = -2.2f; x <= 2.2f; x += .2f)
-            for (float z = -2.2f; z <= 2.2f; z += .2f)
-            {
-                if (x * x + z * z > 2.2f * 2.2f) continue;
-                var p = fountain.GlobalTransform * new Vector3(x, 0, z);
-                float height = ground.Height(p.X, p.Z);
-                high = Mathf.Max(high, height); low = Mathf.Min(low, height);
-            }
+        for (float z = -2.2f; z <= 2.2f; z += .2f)
+        {
+            if (x * x + z * z > 2.2f * 2.2f)
+                continue;
+            var p = fountain.GlobalTransform * new Vector3(x, 0, z);
+            float height = ground.Height(p.X, p.Z);
+            high = Mathf.Max(high, height);
+            low = Mathf.Min(low, height);
+        }
         fountain.GlobalPosition = new(fountain.GlobalPosition.X, high + .1f, fountain.GlobalPosition.Z);
         float foundationHeight = high - low + .2f;
         Art.Cylinder(fountain, Vector3.Down * foundationHeight / 2, 2.2f, 2.2f, foundationHeight, "c5b598");
-        Obstacles.Add(fountain, Vector3.Down * foundationHeight / 2,
-            new CylinderShape3D { Radius = 2.2f, Height = foundationHeight });
+        Obstacles.Add(
+            fountain,
+            Vector3.Down * foundationHeight / 2,
+            new CylinderShape3D { Radius = 2.2f, Height = foundationHeight }
+        );
         Art.Cylinder(fountain, new(0, .15f, 0), 2.2f, 2.2f, .3f, "c5b598");
         Art.Cylinder(fountain, new(0, .31f, 0), 1.85f, 1.85f, .06f, "79d0db");
         // Individual rim stones leave the turquoise pool visible from the road.
         for (int i = 0; i < 16; i++)
         {
             float angle = i * Mathf.Tau / 16;
-            var stone = Art.Block(fountain, new(Mathf.Sin(angle) * 2, .48f, Mathf.Cos(angle) * 2), new(.8f, .5f, .38f), "eee0c3");
+            var stone = Art.Block(
+                fountain,
+                new(Mathf.Sin(angle) * 2, .48f, Mathf.Cos(angle) * 2),
+                new(.8f, .5f, .38f),
+                "eee0c3"
+            );
             stone.Rotation = new(0, angle, 0);
         }
         Art.Cylinder(fountain, new(0, .9f, 0), .4f, .25f, 1.4f, "dbceb4");
@@ -90,18 +110,18 @@ public partial class Village
             Obstacles.Box(bench, new(0, .7f, -.1f), new(2.8f, 1.4f, 1));
         }
         foreach (float x in new[] { -10f, 10f })
-            foreach (float z in new[] { -5.4f, 5.4f })
-            {
-                var lamp = SquareProp("SquareLantern", x, z);
-                Art.Cylinder(lamp, new(0, .15f, 0), .35f, .26f, .3f, "526f71");
-                Art.Cylinder(lamp, new(0, 1.8f, 0), .095f, .07f, 3.6f, "526f71");
-                Art.Block(lamp, new(0, 3.65f, 0), new(.55f, .7f, .55f), "ffe3a0");
-                foreach (float corner in new[] { -.28f, .28f })
-                    foreach (float depth in new[] { -.28f, .28f })
-                        Art.Block(lamp, new(corner, 3.65f, depth), new(.06f, .8f, .06f), "526f71");
-                Art.Cylinder(lamp, new(0, 4.1f, 0), .48f, .06f, .3f, "526f71");
-                Obstacles.Trunk(lamp, Vector3.Zero, .2f, 4.2f);
-            }
+        foreach (float z in new[] { -5.4f, 5.4f })
+        {
+            var lamp = SquareProp("SquareLantern", x, z);
+            Art.Cylinder(lamp, new(0, .15f, 0), .35f, .26f, .3f, "526f71");
+            Art.Cylinder(lamp, new(0, 1.8f, 0), .095f, .07f, 3.6f, "526f71");
+            Art.Block(lamp, new(0, 3.65f, 0), new(.55f, .7f, .55f), "ffe3a0");
+            foreach (float corner in new[] { -.28f, .28f })
+            foreach (float depth in new[] { -.28f, .28f })
+                Art.Block(lamp, new(corner, 3.65f, depth), new(.06f, .8f, .06f), "526f71");
+            Art.Cylinder(lamp, new(0, 4.1f, 0), .48f, .06f, .3f, "526f71");
+            Obstacles.Trunk(lamp, Vector3.Zero, .2f, 4.2f);
+        }
         foreach (float x in new[] { -3.5f, 3.5f })
         {
             var pot = SquareProp("FlowerPlanter", x, 5.3f);
@@ -131,11 +151,19 @@ public partial class Village
             float t = i / 12f;
             var next = left.Position.Lerp(right.Position, t) + Vector3.Up * (4.65f - Mathf.Sin(t * Mathf.Pi) * .65f);
             Art.Beam(Square, previous, next, .025f, "ac805f");
-            var flag = new SurfaceTool(); flag.Begin(Mesh.PrimitiveType.Triangles);
+            var flag = new SurfaceTool();
+            flag.Begin(Mesh.PrimitiveType.Triangles);
             var middle = (previous + next) / 2 + Vector3.Down * .55f;
-            foreach (var p in new[] { previous, next, middle, next, previous, middle }) flag.AddVertex(p);
+            foreach (var p in new[] { previous, next, middle, next, previous, middle })
+                flag.AddVertex(p);
             flag.GenerateNormals();
-            Art.Mesh(Square, flag.Commit(), Vector3.Zero, Vector3.One, new[] { "ef9980", "83c4b3", "f0cc76", "b5a2d6" }[i % 4]);
+            Art.Mesh(
+                Square,
+                flag.Commit(),
+                Vector3.Zero,
+                Vector3.One,
+                new[] { "ef9980", "83c4b3", "f0cc76", "b5a2d6" }[i % 4]
+            );
             previous = next;
         }
         Art.Sign(Square, (left.Position + right.Position) / 2 + Vector3.Up * 3, "NÁVES U KAŠNY", 30);
@@ -159,7 +187,12 @@ public partial class Village
             Art.Cylinder(stall, new(side, 1.65f, -.5f), .07f, .07f, 3.3f, "926c51");
         for (int i = 0; i < 8; i++)
         {
-            var awning = Art.Block(stall, new(-1.75f + i * .5f, 3.1f, 0), new(.5f, .12f, 2.3f), i % 2 == 0 ? color : "fff0d3");
+            var awning = Art.Block(
+                stall,
+                new(-1.75f + i * .5f, 3.1f, 0),
+                new(.5f, .12f, 2.3f),
+                i % 2 == 0 ? color : "fff0d3"
+            );
             awning.Rotation = new(.12f, 0, 0);
             Art.Block(stall, new(-1.75f + i * .5f, 2.82f, 1.1f), new(.5f, .4f, .1f), i % 2 == 0 ? color : "fff0d3");
         }
@@ -168,9 +201,12 @@ public partial class Village
             float position = -1.1f + i * 1.1f;
             Art.Block(stall, new(position, 1.48f, 0), new(.95f, .16f, 1.1f), "916c4d");
             for (int j = 0; j < 4; j++)
-                Art.Ball(stall, new(position - .2f + j % 2 * .4f, 1.7f, -.25f + j / 2 * .45f),
+                Art.Ball(
+                    stall,
+                    new(position - .2f + j % 2 * .4f, 1.7f, -.25f + j / 2 * .45f),
                     fruit ? Vector3.One * .21f : new(.2f, .16f, .32f),
-                    fruit ? new[] { "df7864", "edc45e", "91b96a" }[i] : "dca15f");
+                    fruit ? new[] { "df7864", "edc45e", "91b96a" }[i] : "dca15f"
+                );
         }
         Obstacles.Box(stall, new(0, .7f, 0), new(3.6f, 1.4f, 1.8f));
     }
@@ -178,7 +214,12 @@ public partial class Village
     private void HouseMailbox(Transform3D plot, string color)
     {
         var p = plot * new Vector3(-4.3f, 0, 6.3f);
-        var mailbox = new Node3D { Name = "HouseMailbox", Position = ground.At(p.X, p.Z), Basis = plot.Basis };
+        var mailbox = new Node3D
+        {
+            Name = "HouseMailbox",
+            Position = ground.At(p.X, p.Z),
+            Basis = plot.Basis,
+        };
         AddChild(mailbox);
         Art.Cylinder(mailbox, new(0, .65f, 0), .09f, .07f, 1.3f, "a77a59");
         Art.Block(mailbox, new(0, 1.45f, 0), new(.8f, .65f, .55f), color);

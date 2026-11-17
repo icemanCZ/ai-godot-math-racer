@@ -2,7 +2,13 @@ using Godot;
 
 namespace MathRacer;
 
-internal enum WeatherKind { Clear, Rain, Wind, Storm }
+internal enum WeatherKind
+{
+    Clear,
+    Rain,
+    Wind,
+    Storm,
+}
 
 public partial class Weather : Node3D
 {
@@ -17,7 +23,14 @@ public partial class Weather : Node3D
     private FollowCamera camera = null!;
     private Vehicle car = null!;
     private Vector2 windDirection;
-    private float remaining, cover, wind, rainfall, wetness, rainTime, nextBolt, flash;
+    private float remaining,
+        cover,
+        wind,
+        rainfall,
+        wetness,
+        rainTime,
+        nextBolt,
+        flash;
     internal WeatherKind Current { get; private set; }
 
     internal void Setup(World world, Vehicle vehicle, FollowCamera view)
@@ -36,7 +49,7 @@ public partial class Weather : Node3D
             AlbedoColor = new Color("e6efff"),
             ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
             CullMode = BaseMaterial3D.CullModeEnum.Disabled,
-            DisableFog = true
+            DisableFog = true,
         };
         bolt.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
         AddChild(bolt);
@@ -50,10 +63,12 @@ public partial class Weather : Node3D
         Current = kind;
         remaining = kind == WeatherKind.Clear ? random.RandfRange(240, 420) : random.RandfRange(35, 60);
         nextBolt = random.RandfRange(4, 7);
-        if (flash > 0) atmosphere.ApplyWeather(cover, 0);
+        if (flash > 0)
+            atmosphere.ApplyWeather(cover, 0);
         flash = 0;
         bolt.Hide();
-        if (kind == WeatherKind.Clear) return;
+        if (kind == WeatherKind.Clear)
+            return;
         windDirection = Vector2.Right.Rotated(random.RandfRange(0, Mathf.Tau));
         var drift = windDirection * (kind == WeatherKind.Storm ? 5f : 1.5f);
         rainMaterial.SetShaderParameter("drift", drift);
@@ -65,15 +80,38 @@ public partial class Weather : Node3D
         if (remaining <= 0)
         {
             float roll = random.Randf();
-            Begin(Current != WeatherKind.Clear ? WeatherKind.Clear :
-                roll < .15f ? WeatherKind.Storm : roll < .60f ? WeatherKind.Rain : WeatherKind.Wind);
+            Begin(
+                Current != WeatherKind.Clear ? WeatherKind.Clear
+                : roll < .15f ? WeatherKind.Storm
+                : roll < .60f ? WeatherKind.Rain
+                : WeatherKind.Wind
+            );
         }
 
-        float coverTarget = Current switch { WeatherKind.Rain => .62f, WeatherKind.Storm => 1, WeatherKind.Wind => .18f, _ => 0 };
-        float windTarget = Current switch { WeatherKind.Rain => .14f, WeatherKind.Storm => 1.5f, WeatherKind.Wind => 1.1f, _ => 0 };
-        float rainTarget = Current switch { WeatherKind.Rain => .69f, WeatherKind.Storm => 1, _ => 0 };
-        float previousCover = cover, previousFlash = flash;
-        float previousWind = wind, previousWetness = wetness;
+        float coverTarget = Current switch
+        {
+            WeatherKind.Rain => .62f,
+            WeatherKind.Storm => 1,
+            WeatherKind.Wind => .18f,
+            _ => 0,
+        };
+        float windTarget = Current switch
+        {
+            WeatherKind.Rain => .14f,
+            WeatherKind.Storm => 1.5f,
+            WeatherKind.Wind => 1.1f,
+            _ => 0,
+        };
+        float rainTarget = Current switch
+        {
+            WeatherKind.Rain => .69f,
+            WeatherKind.Storm => 1,
+            _ => 0,
+        };
+        float previousCover = cover,
+            previousFlash = flash;
+        float previousWind = wind,
+            previousWetness = wetness;
         cover = Mathf.MoveToward(cover, coverTarget, dt * .23f);
         wind = Mathf.MoveToward(wind, windTarget, dt * .45f);
         rainfall = Mathf.MoveToward(rainfall, rainTarget, dt * .35f);
@@ -87,7 +125,8 @@ public partial class Weather : Node3D
             rainMaterial.SetShaderParameter("rain_time", rainTime);
             rainMaterial.SetShaderParameter("intensity", rainfall);
         }
-        else rainTime = 0;
+        else
+            rainTime = 0;
         if (wind != previousWind || wind > 0)
             RenderingServer.GlobalShaderParameterSet("weather_wind", windDirection * wind);
         if (wetness != previousWetness)
@@ -102,7 +141,8 @@ public partial class Weather : Node3D
             flash = 1;
         }
         bolt.Visible = flash > .45f;
-        if (cover != previousCover || flash != previousFlash) atmosphere.ApplyWeather(cover, flash);
+        if (cover != previousCover || flash != previousFlash)
+            atmosphere.ApplyWeather(cover, flash);
     }
 
     private void CreateRain()
@@ -113,7 +153,7 @@ public partial class Weather : Node3D
             UseCustomData = true,
             Mesh = new QuadMesh(),
             CustomAabb = new Aabb(new(-25, -10, -25), new(50, 24, 50)),
-            InstanceCount = 1600
+            InstanceCount = 1600,
         };
         for (int i = 0; i < drops.InstanceCount; i++)
         {
@@ -122,8 +162,10 @@ public partial class Weather : Node3D
         }
         rain = new MultiMeshInstance3D
         {
-            Multimesh = drops, MaterialOverride = rainMaterial, Visible = false,
-            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off
+            Multimesh = drops,
+            MaterialOverride = rainMaterial,
+            Visible = false,
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
         };
         AddChild(rain);
     }

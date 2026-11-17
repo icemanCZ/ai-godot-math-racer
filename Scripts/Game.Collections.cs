@@ -1,17 +1,54 @@
 namespace MathRacer;
 
+/// <summary>Farm, garden, museum and playground: one off-road expedition per display item.</summary>
 public partial class Game
 {
-    private void OpenCollection(Animal owner)
+    internal void OpenCollector(Animal owner, CollectorRole role)
     {
-        nearby = owner; CurrentChallenge = null; rejectedAnswers.Clear(); vehicle.Active = false;
-        if (Delivery?.Sender == owner && Delivery.CanDeliver) { BeginDeliveryQuestion(); return; }
-        bool toys = owner.IsToymaker;
-        int count = world.Village.CollectionCount(toys);
-        if (Delivery != null || count >= Village.CollectionNames(toys).Length)
+        nearby = owner;
+        ClearChallenge();
+        vehicle.Active = false;
+        if (Delivery?.Sender == owner && Delivery.CanDeliver)
         {
-            State = GameState.CollectionStatus; ui.CollectionStatus(world.Village, owner, Delivery); return;
+            BeginDeliveryQuestion();
+            return;
         }
+        if (Delivery != null || role.Count(world.Village) >= role.Total)
+        {
+            State = role.StatusState;
+            role.ShowStatus(ui, world.Village, owner, Delivery);
+            return;
+        }
+        // Every new trip requires a fresh quiz; an abandoned quiz never unlocks a departure.
         BeginQuiz();
+    }
+
+    internal void StartCollectorExpedition(Animal owner, CollectorRole role)
+    {
+        if (Delivery != null || role.Count(world.Village) >= role.Total)
+            return;
+        StartExpedition(owner, true);
+        SaveProgress();
+    }
+
+    private void CompleteCollectorDelivery(CollectorRole role)
+    {
+        var owner = nearby!;
+        var pet = world.Village.PetFor(owner);
+        int count = pet.Count + 1;
+        CelebrateCompletion(
+            owner,
+            count == pet.Goal ? $"Nový mazlíček: {pet.DisplayName}!" : role.DeliveredMessage,
+            true
+        );
+        EndExpedition(refreshUi: false);
+        role.Restore(world.Village, count);
+        ClearChallenge();
+        ui.DeliveryHud(null);
+        UpdateDeliveryGuides();
+        State = role.StatusState;
+        role.ShowStatus(ui, world.Village, owner, null, returned: true);
+        ShowCelebrationView();
+        SaveProgress();
     }
 }

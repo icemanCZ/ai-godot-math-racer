@@ -10,7 +10,7 @@ public enum QuizType
     Letters = 2,
     Syllables = 4,
     Reading = 8,
-    All = Math | Letters | Syllables | Reading
+    All = Math | Letters | Syllables | Reading,
 }
 
 public partial class Game
@@ -18,7 +18,13 @@ public partial class Game
     private readonly LetterChallengeGenerator letterChallenges = new(Settings.Seed + 205);
     private readonly SyllableChallengeGenerator syllableChallenges = new(Settings.Seed + 206);
     private readonly ReadingChallengeGenerator readingChallenges = new(Settings.Seed + 207);
-    private static readonly QuizType[] QuizRotation = { QuizType.Math, QuizType.Syllables, QuizType.Letters, QuizType.Reading };
+    private static readonly QuizType[] QuizRotation =
+    {
+        QuizType.Math,
+        QuizType.Syllables,
+        QuizType.Letters,
+        QuizType.Reading,
+    };
     internal static int QuizRotationLength => QuizRotation.Length;
     private QuizType enabledQuizzes = QuizType.All;
     private bool threeTermMath;
@@ -28,7 +34,8 @@ public partial class Game
 
     private void ToggleQuizType(QuizType type)
     {
-        if (State != GameState.Garage || enabledQuizzes == type) return;
+        if (State != GameState.Garage || enabledQuizzes == type)
+            return;
         enabledQuizzes ^= type;
         ShowGarage();
         SaveProgress();
@@ -36,7 +43,8 @@ public partial class Game
 
     private void SetMathLevel(bool advanced)
     {
-        if (State != GameState.Garage || threeTermMath == advanced) return;
+        if (State != GameState.Garage || threeTermMath == advanced)
+            return;
         threeTermMath = advanced;
         ShowGarage();
         SaveProgress();
@@ -56,13 +64,14 @@ public partial class Game
             QuizType.Letters => letterChallenges.Next(),
             QuizType.Syllables => syllableChallenges.Next(),
             QuizType.Reading => readingChallenges.Next(),
-            _ => throw new InvalidOperationException("At least one quiz type must be enabled.")
+            _ => throw new InvalidOperationException("At least one quiz type must be enabled."),
         };
         handoverQuiz = handover;
         syllableSelection = default;
         rejectedAnswers.Clear();
         State = GameState.Challenge;
         ShowChallenge();
-        if (nearby != null && !InBanditQuiz) Speak(QuizInstruction(nearby, CurrentChallenge));
+        if (nearby != null && !InBanditQuiz)
+            Speak(QuizInstruction(nearby, CurrentChallenge), nearby);
     }
 }

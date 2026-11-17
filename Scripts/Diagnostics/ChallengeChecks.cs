@@ -1,6 +1,6 @@
-using Godot;
 using System;
 using System.Linq;
+using Godot;
 
 namespace MathRacer;
 
@@ -12,7 +12,8 @@ public static class ChallengeChecks
         var question = game.CurrentChallenge!;
         foreach (int choice in question.Choices.Where(question.Accepts))
             game.SubmitAnswer(choice);
-        if (question is SyllableChallenge) game.ConfirmSyllables();
+        if (question is SyllableChallenge)
+            game.ConfirmSyllables();
     }
 
     public static void Run(Game game, World world, Vehicle car, Action<bool, string> check)
@@ -23,61 +24,111 @@ public static class ChallengeChecks
         var operations = new System.Collections.Generic.HashSet<MathOperation>();
         for (int i = 0; i < 1000; i++)
         {
-            var q = generator.Next(); var other = repeat.Next();
-            if (q.Left < 0 || q.Left > 10 || q.Right < 0 || q.Right > 10 || q.Answer < 0 || q.Answer > 10 ||
-                q.Choices.Count != 3 || q.Choices.Distinct().Count() != 3 || q.Choices.Any(v => v < 0 || v > 10) ||
-                q.Choices.Count(v => v == q.Answer) != 1)
+            var q = generator.Next();
+            var other = repeat.Next();
+            if (
+                q.Left < 0
+                || q.Left > 10
+                || q.Right < 0
+                || q.Right > 10
+                || q.Answer < 0
+                || q.Answer > 10
+                || q.Choices.Count != 3
+                || q.Choices.Distinct().Count() != 3
+                || q.Choices.Any(v => v < 0 || v > 10)
+                || q.Choices.Count(v => v == q.Answer) != 1
+            )
                 throw new InvalidOperationException("Question bounds or unique choices failed.");
             if (q.Expression != other.Expression || !q.Choices.SequenceEqual(other.Choices))
                 throw new InvalidOperationException("Question stream is not deterministic.");
-            slots.Add(q.Choices.ToList().IndexOf(q.Answer)); operations.Add(q.Operation);
+            slots.Add(q.Choices.ToList().IndexOf(q.Answer));
+            operations.Add(q.Operation);
         }
-        check(slots.Count == 3 && operations.Count == 2, "1000 valid deterministic questions; both operations and all answer positions");
+        check(
+            slots.Count == 3 && operations.Count == 2,
+            "1000 valid deterministic questions; both operations and all answer positions"
+        );
         var sums = new int[11];
         for (int i = 0; i < 1000; i++)
         {
-            var q = generator.Next(threeTerms: true); var other = repeat.Next(threeTerms: true);
-            if (q.Operation != MathOperation.Addition || q.Left <= 0 || q.Right <= 0 || q.Third is not > 0 ||
-                q.Answer != q.Left + q.Right + q.Third || q.Answer > 10 ||
-                q.Choices.Count != 3 || q.Choices.Distinct().Count() != 3 || q.Choices.Any(v => v < 0 || v > 10) ||
-                q.Choices.Count(q.Accepts) != 1 || q.Expression != other.Expression || !q.Choices.SequenceEqual(other.Choices))
+            var q = generator.Next(threeTerms: true);
+            var other = repeat.Next(threeTerms: true);
+            if (
+                q.Operation != MathOperation.Addition
+                || q.Left <= 0
+                || q.Right <= 0
+                || q.Third is not > 0
+                || q.Answer != q.Left + q.Right + q.Third
+                || q.Answer > 10
+                || q.Choices.Count != 3
+                || q.Choices.Distinct().Count() != 3
+                || q.Choices.Any(v => v < 0 || v > 10)
+                || q.Choices.Count(q.Accepts) != 1
+                || q.Expression != other.Expression
+                || !q.Choices.SequenceEqual(other.Choices)
+            )
                 throw new InvalidOperationException("Invalid or nondeterministic three-term question.");
             sums[q.Answer]++;
         }
-        check(sums.Skip(3).All(count => count is > 90 and < 160),
-            "1000 deterministic three-term additions distribute sums evenly from 3 to 10");
+        check(
+            sums.Skip(3).All(count => count is > 90 and < 160),
+            "1000 deterministic three-term additions distribute sums evenly from 3 to 10"
+        );
 
         var letters = new LetterChallengeGenerator(53);
         var repeatLetters = new LetterChallengeGenerator(53);
         var letterSlots = new System.Collections.Generic.HashSet<int>();
         var initials = new System.Collections.Generic.HashSet<string>();
         var pictureDeck = new System.Collections.Generic.HashSet<string>();
-        check(LetterChallengeGenerator.Words.Count == 32 && LetterChallengeGenerator.Words.Select(p => p.Id).Distinct().Count() == 32,
-            "catalogue contains 32 distinct pictures");
+        check(
+            LetterChallengeGenerator.Words.Count == 32
+                && LetterChallengeGenerator.Words.Select(p => p.Id).Distinct().Count() == 32,
+            "catalogue contains 32 distinct pictures"
+        );
         for (int i = 0; i < 1000; i++)
         {
-            var q = letters.Next(); var other = repeatLetters.Next();
-            if (q.Pictures.Count != 3 || q.Pictures.Select(p => p.Id).Distinct().Count() != 3 ||
-                q.Pictures.Count(p => p.Initial == q.Letter) != 1 || q.Answer < 0 || q.Answer > 2 ||
-                q.Letter != other.Letter || !q.Pictures.SequenceEqual(other.Pictures))
+            var q = letters.Next();
+            var other = repeatLetters.Next();
+            if (
+                q.Pictures.Count != 3
+                || q.Pictures.Select(p => p.Id).Distinct().Count() != 3
+                || q.Pictures.Count(p => p.Initial == q.Letter) != 1
+                || q.Answer < 0
+                || q.Answer > 2
+                || q.Letter != other.Letter
+                || !q.Pictures.SequenceEqual(other.Pictures)
+            )
                 throw new InvalidOperationException("Invalid or nondeterministic letter question.");
-            letterSlots.Add(q.Answer); initials.Add(q.Letter);
+            letterSlots.Add(q.Answer);
+            initials.Add(q.Letter);
             if (i < LetterChallengeGenerator.Words.Count && !pictureDeck.Add(q.Pictures[q.Answer].Id))
                 throw new InvalidOperationException("Correct picture repeated before the deck was exhausted.");
             if (i == LetterChallengeGenerator.Words.Count - 1)
-                check(pictureDeck.SetEquals(LetterChallengeGenerator.Words.Select(p => p.Id)), "all 32 pictures appear as targets before the deck repeats");
+                check(
+                    pictureDeck.SetEquals(LetterChallengeGenerator.Words.Select(p => p.Id)),
+                    "all 32 pictures appear as targets before the deck repeats"
+                );
         }
-        check(letterSlots.Count == 3 && new[] { "Š", "Ž", "Č" }.All(initials.Contains),
-            "1000 letter tasks have one matching picture despite shared initials, including Š, Ž and Č");
+        check(
+            letterSlots.Count == 3 && new[] { "Š", "Ž", "Č" }.All(initials.Contains),
+            "1000 letter tasks have one matching picture despite shared initials, including Š, Ž and Č"
+        );
         var syllables = new SyllableChallengeGenerator(53);
         var repeatSyllables = new SyllableChallengeGenerator(53);
         foreach (var _ in SyllableChallengeGenerator.Words)
         {
-            var q = syllables.Next(); var other = repeatSyllables.Next();
+            var q = syllables.Next();
+            var other = repeatSyllables.Next();
             var word = SyllableChallengeGenerator.Words.Single(word => word.Id == q.PictureId);
-            check(q.IsValid() && q.Tiles.Count == 6 && q.Tiles.Distinct().Count() == 6 &&
-                q.Expression == word.Word.ToUpperInvariant() && q.PictureId == other.PictureId && q.Tiles.SequenceEqual(other.Tiles),
-                "syllable task has the word's syllables and shuffled distractors in a deterministic six-tile grid");
+            check(
+                q.IsValid()
+                    && q.Tiles.Count == 6
+                    && q.Tiles.Distinct().Count() == 6
+                    && q.Expression == word.Word.ToUpperInvariant()
+                    && q.PictureId == other.PictureId
+                    && q.Tiles.SequenceEqual(other.Tiles),
+                "syllable task has the word's syllables and shuffled distractors in a deterministic six-tile grid"
+            );
         }
         var reading = new ReadingChallengeGenerator(53);
         var readingWords = new System.Collections.Generic.HashSet<string>();
@@ -85,9 +136,14 @@ public static class ChallengeChecks
         {
             var question = reading.Next();
             if (!question.IsValid() || !readingWords.Add(question.Word))
-                throw new InvalidOperationException("Reading quiz has an invalid word, picture choice or repeated target.");
+                throw new InvalidOperationException(
+                    "Reading quiz has an invalid word, picture choice or repeated target."
+                );
         }
-        check(readingWords.Contains("LES") && readingWords.Contains("PES"), "the reading deck has distinct three-letter Czech words and one matching picture each");
+        check(
+            readingWords.Contains("LES") && readingWords.Contains("PES"),
+            "the reading deck has distinct three-letter Czech words and one matching picture each"
+        );
 
         var rewardRandom = new Random(83);
         System.Collections.Generic.IReadOnlyList<CarReward> drawn = Array.Empty<CarReward>();
@@ -95,36 +151,65 @@ public static class ChallengeChecks
         for (int i = 0; i < 1000; i++)
         {
             var next = CarReward.Draw(rewardRandom, drawn);
-            if (next.Count != 4 || next.Distinct().Count() != 4 || next.Count(r => r.IsAccessory) != 2 ||
-                !next.Any(r => !r.IsAccessory && !r.IsModel) || !next.Any(r => r.IsModel) || next.ToHashSet().SetEquals(drawn))
+            if (
+                next.Count != 4
+                || next.Distinct().Count() != 4
+                || next.Count(r => r.IsAccessory) != 2
+                || !next.Any(r => !r.IsAccessory && !r.IsModel)
+                || !next.Any(r => r.IsModel)
+                || next.ToHashSet().SetEquals(drawn)
+            )
                 throw new InvalidOperationException("Invalid mixed reward set.");
-            seen.UnionWith(next); drawn = next;
+            seen.UnionWith(next);
+            drawn = next;
         }
-        check(seen.Count == CarLook.All.Count + CarAccessory.All.Count + CarBody.All.Count, "1000 mixed reward sets can offer every paint, accessory and model");
+        check(
+            seen.Count == CarLook.All.Count + CarAccessory.All.Count + CarBody.All.Count,
+            "1000 mixed reward sets can offer every paint, accessory and model"
+        );
 
         void Press(string name)
         {
             var button = game.FindChild(name, true, false) as Button;
-            if (button == null || button.Disabled) throw new InvalidOperationException("Missing or disabled UI button: " + name);
+            if (button == null || button.Disabled)
+                throw new InvalidOperationException("Missing or disabled UI button: " + name);
             button.EmitSignal(Button.SignalName.Pressed);
         }
         void CheckCounter()
         {
             var label = game.FindChild("AnimalCount", true, false) as Label;
-            string expected = game.RemainingAnimals == 0 ? "Všechna zvířátka navštívena!" : $"Zbývá zvířátek: {game.RemainingAnimals} / {world.Animals.Length}";
-            check(label != null && label.IsVisibleInTree() && label.Text == expected, "visible HUD matches remaining animals");
+            string expected =
+                game.RemainingAnimals == 0
+                    ? "Všechna zvířátka navštívena!"
+                    : $"Zbývá zvířátek: {game.RemainingAnimals} / {world.Animals.Length}";
+            check(
+                label != null && label.IsVisibleInTree() && label.Text == expected,
+                "visible HUD matches remaining animals"
+            );
         }
 
         // SmokeTest has already visited and left the first animal without answering.
-        check(game.RemainingAnimals == world.Animals.Length - 1 && !world.Animals[0].RewardAvailable, "leaving a question consumes exactly one visit");
+        check(
+            game.RemainingAnimals == world.Animals.Length - 1 && !world.Animals[0].RewardAvailable,
+            "leaving a question consumes exactly one visit"
+        );
         game.OpenChallenge(world.Animals[0]);
-        check(game.State == GameState.Exploring && game.CurrentChallenge == null, "cancelled animal cannot be reopened");
+        check(
+            game.State == GameState.Exploring && game.CurrentChallenge == null,
+            "cancelled animal cannot be reopened"
+        );
         CheckCounter();
         string originalLook = car.Appearance.CurrentLookId;
         game.SelectLook("blueberry");
         check(car.Appearance.CurrentLookId == originalLook, "reward unavailable before correct answer");
         int visits = 1;
-        Type[] rotation = { typeof(MathChallenge), typeof(SyllableChallenge), typeof(LetterChallenge), typeof(ReadingChallenge) };
+        Type[] rotation =
+        {
+            typeof(MathChallenge),
+            typeof(SyllableChallenge),
+            typeof(LetterChallenge),
+            typeof(ReadingChallenge),
+        };
         var ui = game.GetChildren().OfType<GameUi>().Single();
         string? spoken = null;
         ui.SpeechRequested += RecordSpeech;
@@ -135,53 +220,90 @@ public static class ChallengeChecks
             game.OpenChallenge(animal);
             visits++;
             var question = game.CurrentChallenge!;
-            check(question.GetType() == rotation[(visits - 1) % rotation.Length], "visits rotate equally through all four quiz types");
+            check(
+                question.GetType() == rotation[(visits - 1) % rotation.Length],
+                "visits rotate equally through all four quiz types"
+            );
             if (question is SyllableChallenge)
             {
-                check(game.FindChildren("*", "", true, false).OfType<WordPicture>().Count() == 1 &&
-                    question.Choices.All(choice => game.FindChild($"Answer{choice}", true, false) is Button),
-                    "syllable UI displays one picture and six tiles");
+                check(
+                    game.FindChildren("*", "", true, false).OfType<WordPicture>().Count() == 1
+                        && question.Choices.All(choice => game.FindChild($"Answer{choice}", true, false) is Button),
+                    "syllable UI displays one picture and six tiles"
+                );
                 game.ConfirmSyllables();
-                check(game.State == GameState.Challenge && ((Button)game.FindChild("ConfirmSyllables", true, false)).Disabled,
-                    "a syllable word cannot be confirmed before all tiles are selected");
+                check(
+                    game.State == GameState.Challenge
+                        && ((Button)game.FindChild("ConfirmSyllables", true, false)).Disabled,
+                    "a syllable word cannot be confirmed before all tiles are selected"
+                );
             }
             else if (question is IPictureChallenge)
-                check(game.FindChildren("*", "", true, false).OfType<WordPicture>().Count() == 3,
-                    "initial-letter and reading tasks display three illustrated choices");
+                check(
+                    game.FindChildren("*", "", true, false).OfType<WordPicture>().Count() == 3,
+                    "initial-letter and reading tasks display three illustrated choices"
+                );
             spoken = null;
             int option = question.Choices[1];
             ((Button)game.FindChild($"Answer{option}", true, false)).EmitSignal(Control.SignalName.MouseEntered);
-            check(spoken == (question switch
-                {
-                    SyllableChallenge => null,
-                    IPictureChallenge pictures => pictures.Pictures[option].Word,
-                    _ => option.ToString()
-                }), "answer buttons speak their own number or picture name, and syllable buttons stay silent");
-            check(game.State == GameState.Challenge && !car.Active && !animal.RewardAvailable && game.RemainingAnimals == before - 1,
-                "opening a question consumes one visit and stops car");
+            check(
+                spoken
+                    == (
+                        question switch
+                        {
+                            SyllableChallenge => null,
+                            IPictureChallenge pictures => pictures.Pictures[option].Word,
+                            _ => option.ToString(),
+                        }
+                    ),
+                "answer buttons speak their own number or picture name, and syllable buttons stay silent"
+            );
+            check(
+                game.State == GameState.Challenge
+                    && !car.Active
+                    && !animal.RewardAvailable
+                    && game.RemainingAnimals == before - 1,
+                "opening a question consumes one visit and stops car"
+            );
             CheckCounter();
             game.SubmitAnswer(-1);
-            check(game.State == GameState.Challenge && ReferenceEquals(question, game.CurrentChallenge), "invalid answer does not complete task");
+            check(
+                game.State == GameState.Challenge && ReferenceEquals(question, game.CurrentChallenge),
+                "invalid answer does not complete task"
+            );
             int wrong = question.Choices.First(value => !question.Accepts(value));
             Press($"Answer{wrong}");
-            game.TogglePause(); game.TogglePause();
-            check(game.State == GameState.Challenge && ReferenceEquals(question, game.CurrentChallenge) && !car.Active &&
-                (game.FindChild($"Answer{wrong}", true, false) as Button)?.Disabled == true && game.RemainingAnimals == before - 1,
-                "wrong answer and pause preserve the visit, question and rejected choice");
+            game.TogglePause();
+            game.TogglePause();
+            check(
+                game.State == GameState.Challenge
+                    && ReferenceEquals(question, game.CurrentChallenge)
+                    && !car.Active
+                    && (game.FindChild($"Answer{wrong}", true, false) as Button)?.Disabled == true
+                    && game.RemainingAnimals == before - 1,
+                "wrong answer and pause preserve the visit, question and rejected choice"
+            );
             int secondWrong = question.Choices.First(value => !question.Accepts(value) && value != wrong);
             Press($"Answer{secondWrong}");
             var correct = question is SyllableChallenge wordQuestion
-                ? wordQuestion.Syllables.Reverse().Select(tile => wordQuestion.Choices.Single(choice => wordQuestion.Tiles[choice] == tile)).ToArray()
+                ? wordQuestion
+                    .Syllables.Reverse()
+                    .Select(tile => wordQuestion.Choices.Single(choice => wordQuestion.Tiles[choice] == tile))
+                    .ToArray()
                 : question.Choices.Where(question.Accepts).ToArray();
             for (int i = 0; i < correct.Length; i++)
             {
                 Press($"Answer{correct[i]}");
                 if (i + 1 < correct.Length)
                 {
-                    game.TogglePause(); game.TogglePause();
+                    game.TogglePause();
+                    game.TogglePause();
                     game.ConfirmSyllables();
-                    check(game.State == GameState.Challenge && (game.FindChild($"Answer{correct[i]}", true, false) as Button)?.Disabled == true,
-                        "partial syllable selection survives pause and waits for the rest of the word");
+                    check(
+                        game.State == GameState.Challenge
+                            && (game.FindChild($"Answer{correct[i]}", true, false) as Button)?.Disabled == true,
+                        "partial syllable selection survives pause and waits for the rest of the word"
+                    );
                 }
             }
             if (question is SyllableChallenge)
@@ -189,71 +311,127 @@ public static class ChallengeChecks
                 check(game.State == GameState.Challenge, "selecting the final tile leaves the confirmation open");
                 Press("ConfirmSyllables");
             }
-            check(game.State == GameState.ExpeditionChoice && !car.Active && game.CurrentRewards.Count == 0, "correct answer opens task choice before reward");
-            game.TogglePause(); game.TogglePause();
+            check(
+                game.State == GameState.ExpeditionChoice && !car.Active && game.CurrentRewards.Count == 0,
+                "correct answer opens task choice before reward"
+            );
+            game.TogglePause();
+            game.TogglePause();
             check(game.State == GameState.ExpeditionChoice, "pause preserves task choice");
             Press(visits % 2 == 0 ? "ChooseCollection" : "ChooseDelivery");
             var expedition = game.Delivery!;
             if (expedition.Collection)
-                foreach (var point in expedition.PickupPositions) { car.SetPose(point + Vector3.Up * .2f, 0); expedition.Tick(.25); }
-            car.SetPose(expedition.Recipient.Position + Vector3.Right * 2, 0); game.BeginDeliveryQuestion();
+                foreach (var point in expedition.PickupPositions)
+                {
+                    car.SetPose(point + Vector3.Up * .2f, 0);
+                    expedition.Tick(.25);
+                }
+            car.SetPose(expedition.Recipient.Position + Vector3.Right * 2, 0);
+            game.BeginDeliveryQuestion();
             Press($"Answer{game.CurrentChallenge!.Choices.Single(game.CurrentChallenge.Accepts)}");
             check(game.State == GameState.Reward && !car.Active, "completing chosen expedition opens reward");
             var rewards = game.CurrentRewards.ToArray();
-            game.TogglePause(); game.TogglePause();
-            check(game.State == GameState.Reward && game.CurrentRewards.SequenceEqual(rewards), "pause preserves exact reward choices");
-            check(game.FindChild("NewChallenge", true, false) == null, "reward cannot start another example at the same animal");
+            game.TogglePause();
+            game.TogglePause();
+            check(
+                game.State == GameState.Reward && game.CurrentRewards.SequenceEqual(rewards),
+                "pause preserves exact reward choices"
+            );
+            check(
+                game.FindChild("NewChallenge", true, false) == null,
+                "reward cannot start another example at the same animal"
+            );
             var absent = CarAccessory.All.First(a => !rewards.Contains(new CarReward(a.Id, true)));
             bool wasEquipped = car.Appearance.HasAccessory(absent.Id);
             game.SelectAccessory(absent.Id);
-            check(game.State == GameState.Reward && car.Appearance.HasAccessory(absent.Id) == wasEquipped, "cannot select an unoffered reward");
-            if (visits % 4 == 0) Press("KeepLook");
+            check(
+                game.State == GameState.Reward && car.Appearance.HasAccessory(absent.Id) == wasEquipped,
+                "cannot select an unoffered reward"
+            );
+            if (visits % 4 == 0)
+                Press("KeepLook");
             else
             {
-                var reward = rewards.First(r => visits % 4 == 1 ? r.IsModel : visits % 4 == 2 ? !r.IsModel && !r.IsAccessory : r.IsAccessory);
+                var reward = rewards.First(r =>
+                    visits % 4 == 1 ? r.IsModel
+                    : visits % 4 == 2 ? !r.IsModel && !r.IsAccessory
+                    : r.IsAccessory
+                );
                 bool hadAccessory = car.Appearance.HasAccessory(reward.Id);
                 Press(reward.ButtonName);
-                check(reward.IsModel ? car.Appearance.CurrentModelId == reward.Id : reward.IsAccessory
-                    ? car.Appearance.HasAccessory(reward.Id) != hadAccessory : car.Appearance.CurrentLookId == reward.Id,
-                    "offered reward UI applies selected model, paint or accessory");
+                check(
+                    reward.IsModel ? car.Appearance.CurrentModelId == reward.Id
+                        : reward.IsAccessory ? car.Appearance.HasAccessory(reward.Id) != hadAccessory
+                        : car.Appearance.CurrentLookId == reward.Id,
+                    "offered reward UI applies selected model, paint or accessory"
+                );
             }
             check(game.State == GameState.Exploring && car.Active, "reward choice resumes driving");
-            car.Reset(); game.TogglePause(); game.TogglePause();
-            foreach (var visited in world.Animals.Take(visits)) game.OpenChallenge(visited);
-            check(game.State == GameState.Exploring && game.CurrentChallenge == null && game.RemainingAnimals == before - 1,
-                "all previous visits stay blocked after other rewards, reset and pause");
+            car.Reset();
+            game.TogglePause();
+            game.TogglePause();
+            foreach (var visited in world.Animals.Take(visits))
+                game.OpenChallenge(visited);
+            check(
+                game.State == GameState.Exploring
+                    && game.CurrentChallenge == null
+                    && game.RemainingAnimals == before - 1,
+                "all previous visits stay blocked after other rewards, reset and pause"
+            );
         }
-        check(game.RemainingAnimals == 0 && world.Animals.All(a => !a.RewardAvailable) && car.Active, "all 10 visits complete and free driving remains available");
+        check(
+            game.RemainingAnimals == 0 && world.Animals.All(a => !a.RewardAvailable) && car.Active,
+            "all 10 visits complete and free driving remains available"
+        );
         ui.SpeechRequested -= RecordSpeech;
         CheckCounter();
 
         // Verify the complete cosmetic catalogue independently of finite gameplay visits.
         foreach (var accessory in CarAccessory.All)
         {
-            if (!car.Appearance.HasAccessory(accessory.Id)) car.Appearance.ToggleAccessory(accessory.Id);
+            if (!car.Appearance.HasAccessory(accessory.Id))
+                car.Appearance.ToggleAccessory(accessory.Id);
             check(car.Appearance.HasAccessory(accessory.Id), "accessory equips: " + accessory.Id);
             if (accessory.Id != "wheels")
             {
                 var attachment = car.FindChild("Attachment_" + accessory.Id, true, false) as Node3D;
-                check(attachment != null && attachment.IsVisibleInTree() && attachment.GetChildCount() > 0, "accessory has visible geometry");
+                check(
+                    attachment != null && attachment.IsVisibleInTree() && attachment.GetChildCount() > 0,
+                    "accessory has visible geometry"
+                );
             }
         }
         car.Reset();
         foreach (var body in CarBody.All)
         {
             car.Appearance.ApplyModel(body.Id);
-            var visibleModels = car.FindChildren("Coachwork_*", "Node3D", true, false).OfType<Node3D>().Where(n => n.IsVisibleInTree()).ToArray();
-            check(visibleModels.Length == 1 && visibleModels[0].Name == "Coachwork_" + body.Id && CarAccessory.All.All(a => car.Appearance.HasAccessory(a.Id)),
-                "model swaps preserve accessories and show one coachwork: " + body.Id);
+            var visibleModels = car.FindChildren("Coachwork_*", "Node3D", true, false)
+                .OfType<Node3D>()
+                .Where(n => n.IsVisibleInTree())
+                .ToArray();
+            check(
+                visibleModels.Length == 1
+                    && visibleModels[0].Name == "Coachwork_" + body.Id
+                    && CarAccessory.All.All(a => car.Appearance.HasAccessory(a.Id)),
+                "model swaps preserve accessories and show one coachwork: " + body.Id
+            );
         }
         foreach (var look in CarLook.All)
         {
             car.Appearance.Apply(look);
             var meshes = car.FindChildren("*", "MeshInstance3D", true, false).OfType<MeshInstance3D>().ToArray();
-            check(car.Appearance.HasStripes == (look.StripeColor != null) && meshes.Any(m => m.MaterialOverride == VehicleModel.Paint(look.BodyColor)) &&
-                CarAccessory.All.All(a => car.Appearance.HasAccessory(a.Id)), "paint materials and stripes apply while preserving accessories: " + look.Id);
+            check(
+                car.Appearance.HasStripes == (look.StripeColor != null)
+                    && meshes.Any(m => m.MaterialOverride == VehicleModel.Paint(look.BodyColor))
+                    && CarAccessory.All.All(a => car.Appearance.HasAccessory(a.Id)),
+                "paint materials and stripes apply while preserving accessories: " + look.Id
+            );
         }
-        car.Appearance.ToggleAccessory("flower"); car.Appearance.ToggleAccessory("wheels");
-        check(!car.Appearance.HasAccessory("flower") && !car.Appearance.BigWheels && car.Appearance.HasAccessory("bow"), "accessories can be removed independently");
+        car.Appearance.ToggleAccessory("flower");
+        car.Appearance.ToggleAccessory("wheels");
+        check(
+            !car.Appearance.HasAccessory("flower") && !car.Appearance.BigWheels && car.Appearance.HasAccessory("bow"),
+            "accessories can be removed independently"
+        );
     }
 }

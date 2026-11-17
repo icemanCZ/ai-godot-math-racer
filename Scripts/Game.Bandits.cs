@@ -1,6 +1,6 @@
-using Godot;
 using System;
 using System.Linq;
+using Godot;
 
 namespace MathRacer;
 
@@ -11,7 +11,9 @@ public partial class Game
     internal const int MaxBanditSites = 8;
     private const float BanditRunTime = 1.15f;
     internal const float BanditCooldownTime = 35;
+
     private readonly record struct BanditSite(Vector3 Road, Vector3 Verge, Vector3 Cover, Vector3 Along);
+
     private BanditSite[] banditSites = Array.Empty<BanditSite>();
     private readonly Animal[] bandits = new Animal[3];
     private int banditSite = -1;
@@ -21,7 +23,9 @@ public partial class Game
     private float banditRetreat;
     private bool InBanditQuiz => nearby != null && nearby == bandits[0];
     internal int BanditSiteCount => banditSites.Length;
-    internal (Vector3 Road, Vector3 Along) BanditApproach(int index) => (banditSites[index].Road, banditSites[index].Along);
+
+    internal (Vector3 Road, Vector3 Along) BanditApproach(int index) =>
+        (banditSites[index].Road, banditSites[index].Along);
 
     private void SetupBandits()
     {
@@ -31,26 +35,36 @@ public partial class Game
         var sites = new System.Collections.Generic.List<BanditSite>();
         foreach (var (road, along) in anchors)
         {
-            if (world.Village.IsNearVillage(road) || FlatDistanceSquared(road, Vector3.Zero) < 150 * 150 ||
-                FlatDistanceSquared(road, Vector3.Zero) > 475 * 475 ||
-                world.Animals.Any(a => FlatDistanceSquared(a.Position, road) < 36 * 36) ||
-                FlatDistanceSquared(world.Sorcerer.Position, road) < 42 * 42 || FlatDistanceSquared(world.Witch.Position, road) < 36 * 36 ||
-                sites.Any(site => FlatDistanceSquared(site.Road, road) < 70 * 70) ||
-                Events.Points.Cast<Vector3>().Any(point => FlatDistanceSquared(point, road) < 30 * 30) ||
-                viewpoints.Any(view => FlatDistanceSquared(view.Stop, road) < 30 * 30)) continue;
+            if (
+                world.Village.IsNearVillage(road)
+                || FlatDistanceSquared(road, Vector3.Zero) < 150 * 150
+                || FlatDistanceSquared(road, Vector3.Zero) > 475 * 475
+                || world.Animals.Any(a => FlatDistanceSquared(a.Position, road) < 36 * 36)
+                || FlatDistanceSquared(world.Sorcerer.Position, road) < 42 * 42
+                || FlatDistanceSquared(world.Witch.Position, road) < 36 * 36
+                || sites.Any(site => FlatDistanceSquared(site.Road, road) < 70 * 70)
+                || Events.Points.Cast<Vector3>().Any(point => FlatDistanceSquared(point, road) < 30 * 30)
+                || viewpoints.Any(view => FlatDistanceSquared(view.Stop, road) < 30 * 30)
+            )
+                continue;
 
             var side = along.Cross(Vector3.Up).Normalized();
             foreach (float sign in new[] { 1f, -1f })
             {
                 var verge = road + side * (sign * 5.2f);
                 var cover = road + side * (sign * 15f);
-                if (world.Routes.Distance(verge) < 4.5f || world.Routes.Distance(cover) < 10 ||
-                    trees.Count(tree => FlatDistanceSquared(tree, cover) < 10 * 10) < 3 ||
-                    !ClearBanditRoute(cover, verge, along)) continue;
+                if (
+                    world.Routes.Distance(verge) < 4.5f
+                    || world.Routes.Distance(cover) < 10
+                    || trees.Count(tree => FlatDistanceSquared(tree, cover) < 10 * 10) < 3
+                    || !ClearBanditRoute(cover, verge, along)
+                )
+                    continue;
                 sites.Add(new BanditSite(road, verge, cover, along));
                 break;
             }
-            if (sites.Count == MaxBanditSites) break;
+            if (sites.Count == MaxBanditSites)
+                break;
         }
         banditSites = sites.ToArray();
         for (int i = 0; i < bandits.Length; i++)
@@ -85,10 +99,19 @@ public partial class Game
             var bandit = bandits[i];
             float fraction = retreating ? 1 - progress : progress;
             float step = fraction >= 1 ? 1 : Mathf.Clamp(fraction * 1.24f - i * .11f, 0, 1);
-            var p = site.Cover.Lerp(site.Verge, step) +
-                site.Along * (i == 0 ? 0 : i == 1 ? -2.5f : 2.5f);
+            var p =
+                site.Cover.Lerp(site.Verge, step)
+                + site.Along
+                    * (
+                        i == 0 ? 0
+                        : i == 1 ? -2.5f
+                        : 2.5f
+                    );
             bandit.Position = world.Ground.At(p.X, p.Z);
-            var direction = retreating ? site.Cover - site.Verge : step < 1 ? site.Verge - site.Cover : vehicle.Position - bandit.Position;
+            var direction =
+                retreating ? site.Cover - site.Verge
+                : step < 1 ? site.Verge - site.Cover
+                : vehicle.Position - bandit.Position;
             bandit.Rotation = new(0, Mathf.Atan2(direction.X, direction.Z), 0);
             bandit.Running = step > 0 && step < 1;
             bandit.Visible = step > 0;
@@ -99,7 +122,8 @@ public partial class Game
 
     private void TickBandits(float delta)
     {
-        if (State is GameState.Paused or GameState.Title) return;
+        if (State is GameState.Paused or GameState.Title)
+            return;
         if (banditArrival > 0 && State == GameState.Challenge && InBanditQuiz)
         {
             banditArrival = Mathf.Max(0, banditArrival - delta);
@@ -107,7 +131,7 @@ public partial class Game
             if (banditArrival == 0)
             {
                 ShowChallenge();
-                Speak("Stůj, pocestný! Vyřeš tři úkoly, nebo tě dál nepustíme!");
+                Speak("Stůj, pocestný! Vyřeš tři úkoly, nebo tě dál nepustíme!", bandits[0]);
             }
             return;
         }
@@ -116,13 +140,22 @@ public partial class Game
             banditRetreat = Mathf.Max(0, banditRetreat - delta);
             PositionBandits(1 - banditRetreat / BanditRunTime, retreating: true);
         }
-        if (State != GameState.Exploring) return;
+        if (State != GameState.Exploring)
+            return;
         banditCooldown = Mathf.Max(0, banditCooldown - delta);
-        if (banditCooldown > 0 || Events.Active >= 0 || CelebrationShowing || nearby != null ||
-            Mathf.Abs(vehicle.Speed) < 1.5f || world.Routes.Distance(vehicle.Position) > 4) return;
+        if (
+            banditCooldown > 0
+            || Events.Active >= 0
+            || CelebrationShowing
+            || nearby != null
+            || Mathf.Abs(vehicle.Speed) < 1.5f
+            || world.Routes.Distance(vehicle.Position) > 4
+        )
+            return;
         for (int i = 0; i < banditSites.Length; i++)
         {
-            if (i == banditSite || FlatDistanceSquared(banditSites[i].Road, vehicle.Position) > 13 * 13) continue;
+            if (i == banditSite || FlatDistanceSquared(banditSites[i].Road, vehicle.Position) > 13 * 13)
+                continue;
             banditSite = i;
             banditSolved = 0;
             banditArrival = BanditRunTime;
@@ -143,13 +176,15 @@ public partial class Game
             CloseInteraction();
             CelebrateAt(position, "✓  3 / 3");
         }
-        else BeginQuiz();
+        else
+            BeginQuiz();
         SaveProgress();
     }
 
     private void DismissBandits()
     {
-        if (!InBanditQuiz) return;
+        if (!InBanditQuiz)
+            return;
         banditRetreat = BanditRunTime - banditArrival;
         banditArrival = 0;
         banditCooldown = BanditCooldownTime;
@@ -163,9 +198,12 @@ public partial class Game
         banditCooldown = data.BanditCooldown;
         banditSolved = data.BanditSolved;
         banditArrival = banditRetreat = 0;
-        foreach (var bandit in bandits) bandit.Hide();
-        if (data.Nearby != BanditActorId) return true;
-        if (banditSite < 0) return false;
+        foreach (var bandit in bandits)
+            bandit.Hide();
+        if (data.Nearby != BanditActorId)
+            return true;
+        if (banditSite < 0)
+            return false;
         PositionBandits(1, retreating: false);
         return true;
     }

@@ -1,31 +1,35 @@
-using Godot;
 using System.Collections.Generic;
 using System.Linq;
+using Godot;
 
 namespace MathRacer;
 
 public sealed record CarAccessory(string Id, string Name)
 {
-    public static IReadOnlyList<CarAccessory> All { get; } = System.Array.AsReadOnly(new[]
-    {
-        new CarAccessory("flower", "Kytička"),
-        new CarAccessory("bow", "Mašle"),
-        new CarAccessory("flag", "Vlaječka"),
-        new CarAccessory("wheels", "Větší kola"),
-        new CarAccessory("spoiler", "Zadní křídlo"),
-        new CarAccessory("rack", "Střešní nosič"),
-        new CarAccessory("suitcase", "Cestovní kufr"),
-        new CarAccessory("surfboard", "Surfovací prkno"),
-        new CarAccessory("lights", "Přídavné světlomety"),
-        new CarAccessory("bumper", "Ochranný rám"),
-        new CarAccessory("antenna", "Hvězdná anténa"),
-        new CarAccessory("horns", "Dvojitá houkačka"),
-        new CarAccessory("exhaust", "Sportovní výfuky"),
-        new CarAccessory("spare", "Rezervní kolo")
-    });
+    public static IReadOnlyList<CarAccessory> All { get; } =
+        System.Array.AsReadOnly(
+            new[]
+            {
+                new CarAccessory("flower", "Kytička"),
+                new CarAccessory("bow", "Mašle"),
+                new CarAccessory("flag", "Vlaječka"),
+                new CarAccessory("wheels", "Větší kola"),
+                new CarAccessory("spoiler", "Zadní křídlo"),
+                new CarAccessory("rack", "Střešní nosič"),
+                new CarAccessory("suitcase", "Cestovní kufr"),
+                new CarAccessory("surfboard", "Surfovací prkno"),
+                new CarAccessory("lights", "Přídavné světlomety"),
+                new CarAccessory("bumper", "Ochranný rám"),
+                new CarAccessory("antenna", "Hvězdná anténa"),
+                new CarAccessory("horns", "Dvojitá houkačka"),
+                new CarAccessory("exhaust", "Sportovní výfuky"),
+                new CarAccessory("spare", "Rezervní kolo"),
+            }
+        );
 
     public static CarAccessory ValleyMap { get; } = new("valley-map", "Mapka údolí");
-    public static IReadOnlyList<CarAccessory> Catalogue { get; } = System.Array.AsReadOnly(All.Append(ValleyMap).ToArray());
+    public static IReadOnlyList<CarAccessory> Catalogue { get; } =
+        System.Array.AsReadOnly(All.Append(ValleyMap).ToArray());
 
     internal static void PlaceValleyMap(Node3D sticker, string model)
     {
@@ -34,7 +38,7 @@ public sealed record CarAccessory(string Id, string Name)
             "pickup" => new(-.23f, 1.62f, .60f),
             "wagon" => new(-.23f, 1.62f, 1.29f),
             "buggy" => new(0, 1.95f, .798f),
-            _ => new(-.23f, 1.62f, .93f)
+            _ => new(-.23f, 1.62f, .93f),
         };
         sticker.RotationDegrees = new Vector3(model == "classic" ? -34 : 0, 0, 0);
     }
@@ -98,7 +102,12 @@ public sealed record CarAccessory(string Id, string Name)
                 for (int i = 0; i < 5; i++)
                 {
                     float angle = i * Mathf.Tau / 5;
-                    Art.Ball(root, new(-.72f + Mathf.Sin(angle) * .12f, 2.58f + Mathf.Cos(angle) * .12f, 1.12f), new(.085f, .085f, .04f), "ffd04b");
+                    Art.Ball(
+                        root,
+                        new(-.72f + Mathf.Sin(angle) * .12f, 2.58f + Mathf.Cos(angle) * .12f, 1.12f),
+                        new(.085f, .085f, .04f),
+                        "ffd04b"
+                    );
                 }
                 break;
             case "horns":
@@ -130,7 +139,12 @@ public sealed record CarAccessory(string Id, string Name)
                 for (int i = 0; i < 6; i++)
                 {
                     float angle = i * Mathf.Tau / 6;
-                    Art.Ball(root, new(Mathf.Cos(angle) * .22f, 0, Mathf.Sin(angle) * .22f), new(.16f, .07f, .16f), "fff5df");
+                    Art.Ball(
+                        root,
+                        new(Mathf.Cos(angle) * .22f, 0, Mathf.Sin(angle) * .22f),
+                        new(.16f, .07f, .16f),
+                        "fff5df"
+                    );
                 }
                 Art.Ball(root, new(0, .055f, 0), new(.14f, .08f, .14f), "ffca38");
                 Art.Ball(root, new(.22f, -.04f, .26f), new(.11f, .04f, .22f), "55ab76");
@@ -151,8 +165,14 @@ public sealed record CarAccessory(string Id, string Name)
                 Art.Cylinder(root, new(0, .77f, 0), .025f, .025f, 1.54f, "fff5df");
                 Art.Ball(root, new(0, 1.56f, 0), new(.065f, .065f, .065f), "ffca38");
                 var mesh = new ArrayMesh();
-                var arrays = new Godot.Collections.Array(); arrays.Resize((int)Mesh.ArrayType.Max);
-                arrays[(int)Mesh.ArrayType.Vertex] = new Vector3[] { new(0, 1.49f, 0), new(.62f, 1.26f, 0), new(0, 1.03f, 0) };
+                var arrays = new Godot.Collections.Array();
+                arrays.Resize((int)Mesh.ArrayType.Max);
+                arrays[(int)Mesh.ArrayType.Vertex] = new Vector3[]
+                {
+                    new(0, 1.49f, 0),
+                    new(.62f, 1.26f, 0),
+                    new(0, 1.03f, 0),
+                };
                 mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
                 var material = (StandardMaterial3D)Art.Mat("5bc5bd").Duplicate();
                 material.CullMode = BaseMaterial3D.CullModeEnum.Disabled;

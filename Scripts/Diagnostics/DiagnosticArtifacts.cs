@@ -1,5 +1,5 @@
-using Godot;
 using System.IO;
+using Godot;
 
 namespace MathRacer;
 

@@ -1,7 +1,7 @@
-using Godot;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Godot;
 
 namespace MathRacer;
 
@@ -24,26 +24,41 @@ public partial class BanditChecks(Game game, World world, Vehicle car) : Node
 
             await Approach(0);
             var reading = game.CurrentChallenge as ReadingChallenge;
-            Check(IsQuestionAt(0, 0) && !car.Active && reading != null && reading.IsValid() &&
-                game.FindChildren("*", "", true, false).OfType<WordPicture>().Count() == 3,
-                "a moving car triggers the encounter and the next enabled quiz in the rotation");
+            Check(
+                IsQuestionAt(0, 0)
+                    && !car.Active
+                    && reading != null
+                    && reading.IsValid()
+                    && game.FindChildren("*", "", true, false).OfType<WordPicture>().Count() == 3,
+                "a moving car triggers the encounter and the next enabled quiz in the rotation"
+            );
             game.SubmitAnswer(reading!.Choices.First(choice => !reading.Accepts(choice)));
             Check(IsQuestionAt(0, 0), "wrong answer leaves the same question open");
             game.TogglePause();
             string path = DiagnosticArtifacts.PathFor($"bandit-checks/{Settings.Seed}/progress.json");
             Check(SaveStore.Write(game.CaptureProgress(), path), "paused encounter saves to disk");
-            game.RestoreProgress(SaveStore.Read(path) ?? throw new InvalidOperationException("Bandit save failed validation."));
-            Check(IsQuestionAt(0, 0) && game.CurrentChallenge is ReadingChallenge restored &&
-                restored.Word == reading.Word && restored.Pictures.SequenceEqual(reading.Pictures),
-                "restore resumes the same question with the same pictures");
+            game.RestoreProgress(
+                SaveStore.Read(path) ?? throw new InvalidOperationException("Bandit save failed validation.")
+            );
+            Check(
+                IsQuestionAt(0, 0)
+                    && game.CurrentChallenge is ReadingChallenge restored
+                    && restored.Word == reading.Word
+                    && restored.Pictures.SequenceEqual(reading.Pictures),
+                "restore resumes the same question with the same pictures"
+            );
             ChallengeChecks.Solve(game);
-            Check(IsQuestionAt(0, 1) && game.CurrentChallenge is MathChallenge { Third: > 0 },
-                "second question follows the saved rotation and the selected arithmetic level");
+            Check(
+                IsQuestionAt(0, 1) && game.CurrentChallenge is MathChallenge { Third: > 0 },
+                "second question follows the saved rotation and the selected arithmetic level"
+            );
             ChallengeChecks.Solve(game);
             Check(IsQuestionAt(0, 2), "two solves leave the final question");
             ChallengeChecks.Solve(game);
-            Check(game.State == GameState.Exploring && car.Active && game.CaptureProgress().Sender == sender,
-                "third solve sends the bandits away and resumes the expedition");
+            Check(
+                game.State == GameState.Exploring && car.Active && game.CaptureProgress().Sender == sender,
+                "third solve sends the bandits away and resumes the expedition"
+            );
             await Approach(1);
             Check(game.State == GameState.Exploring, "a different site remains quiet during the cooldown");
             game._Process(36);
@@ -67,8 +82,10 @@ public partial class BanditChecks(Game game, World world, Vehicle car) : Node
     private bool IsQuestionAt(int site, int solved)
     {
         var save = game.CaptureProgress();
-        return game.State == GameState.Challenge && save.Nearby == Game.BanditActorId &&
-            save.BanditSite == site && save.BanditSolved == solved;
+        return game.State == GameState.Challenge
+            && save.Nearby == Game.BanditActorId
+            && save.BanditSite == site
+            && save.BanditSolved == solved;
     }
 
     private async Task Approach(int index)
@@ -91,7 +108,8 @@ public partial class BanditChecks(Game game, World world, Vehicle car) : Node
 
     private static void Check(bool condition, string message)
     {
-        if (!condition) throw new InvalidOperationException(message);
+        if (!condition)
+            throw new InvalidOperationException(message);
         GD.Print("PASS: " + message);
     }
 }

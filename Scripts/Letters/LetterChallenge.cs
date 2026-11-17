@@ -19,15 +19,21 @@ public sealed record LetterChallenge(string Letter, IReadOnlyList<PictureWord> P
     public int Answer => Pictures.ToList().FindIndex(picture => picture.Initial == Letter);
     public IReadOnlyList<int> Choices { get; } = Array.AsReadOnly(new[] { 0, 1, 2 });
     public string Expression => Letter;
+
     public bool Accepts(int choice) => choice == Answer;
 }
 
 public sealed class LetterChallengeGenerator
 {
-    public static IReadOnlyList<PictureWord> Words { get; } = Array.AsReadOnly(SyllableChallengeGenerator.Words.Select(word => new PictureWord(word.Id, word.Word)).ToArray());
+    public static IReadOnlyList<PictureWord> Words { get; } =
+        Array.AsReadOnly(
+            SyllableChallengeGenerator.Words.Select(word => new PictureWord(word.Id, word.Word)).ToArray()
+        );
     private readonly Random random;
     private readonly List<PictureWord> remaining = new();
+
     public LetterChallengeGenerator(int seed) => random = new Random(seed);
+
     public LetterChallenge Next()
     {
         if (remaining.Count == 0)
@@ -35,7 +41,8 @@ public sealed class LetterChallengeGenerator
             remaining.AddRange(Words);
         }
         int index = random.Next(remaining.Count);
-        var correct = remaining[index]; remaining.RemoveAt(index);
+        var correct = remaining[index];
+        remaining.RemoveAt(index);
         var distractors = Words.Where(word => word.Initial != correct.Initial).ToArray();
         random.Shuffle(distractors);
         var pictures = new[] { correct, distractors[0], distractors[1] };

@@ -1,6 +1,6 @@
-using Godot;
 using System;
 using System.Linq;
+using Godot;
 
 namespace MathRacer;
 
@@ -12,8 +12,12 @@ public partial class PostcardChecks(Game game, World world, Vehicle car) : Node
         {
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             var initial = game.CaptureProgress();
-            Require(game.PostcardQuestion(0) is SyllableChallenge && game.PostcardQuestion(1) is LetterChallenge &&
-                game.PostcardQuestion(2) is ReadingChallenge, "postcards use the available word activities by default");
+            Require(
+                game.PostcardQuestion(0) is SyllableChallenge
+                    && game.PostcardQuestion(1) is LetterChallenge
+                    && game.PostcardQuestion(2) is ReadingChallenge,
+                "postcards use the available word activities by default"
+            );
             initial.QuizTypes = QuizType.Math | QuizType.Syllables;
             game.RestoreProgress(initial);
             var owner = world.Animals[0];
@@ -28,13 +32,24 @@ public partial class PostcardChecks(Game game, World world, Vehicle car) : Node
             {
                 car.SetPose(game.PostcardStop(i) + Vector3.Up * .2f, 0);
                 Input.ActionPress("accelerate");
-                for (int tick = 0; tick < 12; tick++) car._PhysicsProcess(1.0 / 60);
+                for (int tick = 0; tick < 12; tick++)
+                    car._PhysicsProcess(1.0 / 60);
                 Input.ActionRelease("accelerate");
                 Require(car.Speed > 1, "car has not stopped at the viewpoint");
                 game._Process(.016);
                 var key = i % 2 == 0 ? Key.E : Key.Space;
-                game._UnhandledInput(new InputEventKey { Keycode = key, PhysicalKeycode = key, Pressed = true });
-                Require(game.State == GameState.PostcardAlbum && !car.Active, "E and Space can open the camera while driving");
+                game._UnhandledInput(
+                    new InputEventKey
+                    {
+                        Keycode = key,
+                        PhysicalKeycode = key,
+                        Pressed = true,
+                    }
+                );
+                Require(
+                    game.State == GameState.PostcardAlbum && !car.Active,
+                    "E and Space can open the camera while driving"
+                );
                 game.TogglePause();
                 game._Process(2);
                 Require(game.CaptureProgress().Postcards[i] == null, "pause holds the camera shot");
@@ -44,19 +59,33 @@ public partial class PostcardChecks(Game game, World world, Vehicle car) : Node
                 var question = (SyllableChallenge)game.PostcardQuestion(i)!;
                 string wrongChoice = $"Answer{question.Choices.First(choice => !question.Accepts(choice))}";
                 var choice = Find(wrongChoice);
-                Require(choice.Text.Length > 0 && question.Choices.All(index => Find($"Answer{index}") != null),
-                    "postcard has six syllable choices");
+                Require(
+                    choice.Text.Length > 0 && question.Choices.All(index => Find($"Answer{index}") != null),
+                    "postcard has six syllable choices"
+                );
                 Press(wrongChoice);
                 Require(Find(wrongChoice).Disabled, "wrong syllable is marked and disabled");
-                Require(game.CaptureProgress().Postcards[i] is { Stamped: false }, "wrong answer leaves the postcard unstamped");
+                Require(
+                    game.CaptureProgress().Postcards[i] is { Stamped: false },
+                    "wrong answer leaves the postcard unstamped"
+                );
                 if (question.Syllables.Count > 1)
                 {
                     int correct = question.Choices.Last(question.Accepts);
                     Press($"Answer{correct}");
-                    Require(game.CaptureProgress().Postcards[i] is { Stamped: false }, "a partial word does not grant a stamp");
+                    Require(
+                        game.CaptureProgress().Postcards[i] is { Stamped: false },
+                        "a partial word does not grant a stamp"
+                    );
                     Require(SaveStore.Write(game.CaptureProgress(), path), "partial postcard saves to disk");
-                    game.RestoreProgress(SaveStore.Read(path) ?? throw new InvalidOperationException("Partial postcard save failed validation"));
-                    Require(Find($"Answer{correct}").Disabled && Find(wrongChoice).Disabled, "reload keeps the marked syllables");
+                    game.RestoreProgress(
+                        SaveStore.Read(path)
+                            ?? throw new InvalidOperationException("Partial postcard save failed validation")
+                    );
+                    Require(
+                        Find($"Answer{correct}").Disabled && Find(wrongChoice).Disabled,
+                        "reload keeps the marked syllables"
+                    );
                 }
                 game.FinishInteraction();
             }
@@ -72,32 +101,55 @@ public partial class PostcardChecks(Game game, World world, Vehicle car) : Node
                 Press($"Postcard{i}");
                 var question = game.PostcardQuestion(i)!;
                 foreach (int choice in question.Choices.Where(question.Accepts).Reverse())
-                    if (!Find($"Answer{choice}").Disabled) Press($"Answer{choice}");
-                Require(game.CaptureProgress().Postcards[i] is { Stamped: false } && !Find("ConfirmSyllables").Disabled,
-                    "selecting the last syllable leaves the card unstamped");
+                    if (!Find($"Answer{choice}").Disabled)
+                        Press($"Answer{choice}");
+                Require(
+                    game.CaptureProgress().Postcards[i] is { Stamped: false } && !Find("ConfirmSyllables").Disabled,
+                    "selecting the last syllable leaves the card unstamped"
+                );
                 Require(SaveStore.Write(game.CaptureProgress(), path), "a complete unconfirmed word saves to disk");
-                game.RestoreProgress(SaveStore.Read(path) ?? throw new InvalidOperationException("Complete unconfirmed word failed validation"));
+                game.RestoreProgress(
+                    SaveStore.Read(path)
+                        ?? throw new InvalidOperationException("Complete unconfirmed word failed validation")
+                );
                 Press("ConfirmSyllables");
-                Require(game.CaptureProgress().Postcards[i] is { Stamped: true }, "confirming the completed word stamps the selected postcard");
-                Require(game.OwnedRewards.Contains(reward) == (i + 1 >= Game.PostcardRewardStamps), "sticker unlocks with the third stamp");
+                Require(
+                    game.CaptureProgress().Postcards[i] is { Stamped: true },
+                    "confirming the completed word stamps the selected postcard"
+                );
+                Require(
+                    game.OwnedRewards.Contains(reward) == (i + 1 >= Game.PostcardRewardStamps),
+                    "sticker unlocks with the third stamp"
+                );
                 Press("PostcardBack");
             }
             var save = game.CaptureProgress();
             Require(SaveStore.Write(save, path), "album saves to disk");
-            game.RestoreProgress(SaveStore.Read(path) ?? throw new InvalidOperationException("Postcard save failed validation"));
-            Require(game.State == GameState.PostcardAlbum && game.CaptureProgress().Postcards.All(card => card?.Stamped == true),
-                "album and stamps restore");
+            game.RestoreProgress(
+                SaveStore.Read(path) ?? throw new InvalidOperationException("Postcard save failed validation")
+            );
+            Require(
+                game.State == GameState.PostcardAlbum
+                    && game.CaptureProgress().Postcards.All(card => card?.Stamped == true),
+                "album and stamps restore"
+            );
             Require(game.CaptureProgress().Sender == sender, "original delivery survives album and reload");
             Require(car.Appearance.HasAccessory(reward.Id), "sticker is still equipped after reload");
             game.FinishInteraction();
             save.Postcards = save.Postcards.Take(Game.OriginalPostcardCount).ToArray();
             save.PostcardPage = 2;
             Require(SaveStore.Write(save, path), "original three-card save written");
-            game.RestoreProgress(SaveStore.Read(path) ?? throw new InvalidOperationException("Original postcard save failed validation"));
+            game.RestoreProgress(
+                SaveStore.Read(path) ?? throw new InvalidOperationException("Original postcard save failed validation")
+            );
             var expanded = game.CaptureProgress();
-            Require(expanded.PostcardPage == 2 && expanded.Postcards.Take(Game.OriginalPostcardCount).All(card => card?.Stamped == true) &&
-                expanded.Postcards.Skip(Game.OriginalPostcardCount).All(card => card == null) && car.Appearance.HasAccessory(reward.Id),
-                "original save preserves old stamps, selected postcard and sticker");
+            Require(
+                expanded.PostcardPage == 2
+                    && expanded.Postcards.Take(Game.OriginalPostcardCount).All(card => card?.Stamped == true)
+                    && expanded.Postcards.Skip(Game.OriginalPostcardCount).All(card => card == null)
+                    && car.Appearance.HasAccessory(reward.Id),
+                "original save preserves old stamps, selected postcard and sticker"
+            );
             game.FinishInteraction();
             car.SetPose(world.Village.GarageEntrance, 0);
             Talk();
@@ -106,15 +158,23 @@ public partial class PostcardChecks(Game game, World world, Vehicle car) : Node
             GD.Print("POSTCARD_CHECKS_OK");
             GetTree().Quit();
         }
-        catch (Exception error) { GD.PushError(error.ToString()); GetTree().Quit(1); }
+        catch (Exception error)
+        {
+            GD.PushError(error.ToString());
+            GetTree().Quit(1);
+        }
     }
 
     private void Talk() => game._UnhandledInput(new InputEventAction { Action = "talk", Pressed = true });
+
     private Button Find(string name) => (Button)game.FindChild(name, true, false);
+
     private void Press(string name) => Find(name).EmitSignal(Button.SignalName.Pressed);
+
     private static void Require(bool condition, string message)
     {
-        if (!condition) throw new InvalidOperationException(message);
+        if (!condition)
+            throw new InvalidOperationException(message);
         GD.Print("PASS: " + message);
     }
 }

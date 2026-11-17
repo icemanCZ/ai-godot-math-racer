@@ -7,6 +7,7 @@ namespace MathRacer;
 public sealed class ChallengeGenerator
 {
     private readonly Random random;
+
     public ChallengeGenerator(int seed) => random = new Random(seed);
 
     public MathChallenge Next(bool threeTerms = false)
@@ -16,7 +17,8 @@ public sealed class ChallengeGenerator
             int sum = random.Next(3, 11);
             int firstCut = random.Next(1, sum);
             int secondCut = random.Next(1, sum - 1);
-            if (secondCut >= firstCut) secondCut++;
+            if (secondCut >= firstCut)
+                secondCut++;
             int first = Math.Min(firstCut, secondCut);
             int second = Math.Abs(firstCut - secondCut);
             int third = sum - first - second;
@@ -38,8 +40,10 @@ public sealed class ChallengeGenerator
         foreach (int offset in offsets)
         {
             int candidate = answer + offset;
-            if (candidate >= 0 && candidate <= 10 && !choices.Contains(candidate)) choices.Add(candidate);
-            if (choices.Count == 3) break;
+            if (candidate >= 0 && candidate <= 10 && !choices.Contains(candidate))
+                choices.Add(candidate);
+            if (choices.Count == 3)
+                break;
         }
         var answers = choices.ToArray();
         Shuffle(answers);

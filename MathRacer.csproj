@@ -4,4 +4,8 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  <!-- Release exports ship without the headless checks and capture views. -->
+  <ItemGroup Condition="'$(Configuration)' == 'ExportRelease'">
+    <Compile Remove="Scripts/Diagnostics/**" />
+  </ItemGroup>
 </Project>

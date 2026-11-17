@@ -10,13 +10,15 @@ public partial class GameUi
 
     public void TradeStatus(Animal owner, Expedition? expedition)
     {
-        Clear(); Text(owner.DisplayName, 30);
+        Clear();
+        Text(owner.DisplayName, 30);
         if (expedition?.Sender == owner)
         {
             Picture(content, expedition.Cargo, null, expedition.Amount);
             Picture(content, "", expedition.Recipient);
         }
-        else Text("…", 30);
+        else
+            Text("…", 30);
         BackButton().GrabFocus();
     }
 }

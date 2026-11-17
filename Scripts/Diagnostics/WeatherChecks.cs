@@ -1,6 +1,6 @@
-using Godot;
 using System;
 using System.Linq;
+using Godot;
 
 namespace MathRacer;
 
@@ -15,23 +15,38 @@ public partial class WeatherChecks(Game game, World world, Vehicle car) : Node
             var puddles = weather.GetChildren().OfType<Puddles>().Single();
             var rain = weather.GetChildren().OfType<MultiMeshInstance3D>().Single();
             var bolt = weather.GetChildren().OfType<MeshInstance3D>().Single();
-            Check(world.Plants.TreeBatchesShareWindRoots(), "trunks, foliage and small tree details share one wind origin per tree");
+            Check(
+                world.Plants.TreeBatchesShareWindRoots(),
+                "trunks, foliage and small tree details share one wind origin per tree"
+            );
             weather.Tick(239);
-            Check(weather.Current == WeatherKind.Clear && !rain.Visible && !puddles.Visible, "Clear for the first four minutes");
+            Check(
+                weather.Current == WeatherKind.Clear && !rain.Visible && !puddles.Visible,
+                "Clear for the first four minutes"
+            );
             weather.Tick(182);
             Check(weather.Current != WeatherKind.Clear, "Automatic weather starts by the seventh minute");
             weather.Tick(61);
             Check(weather.Current == WeatherKind.Clear, "Automatic weather returns to clear within a minute");
 
             var witch = world.Witch;
-            Check(!world.Village.TerrainArea.HasPoint(new Vector2(witch.Position.X, witch.Position.Z)) &&
-                world.Routes.Distance(witch.Position) < Settings.InteractionRange, "Witch is behind the village and reachable from the road");
+            Check(
+                !world.Village.TerrainArea.HasPoint(new Vector2(witch.Position.X, witch.Position.Z))
+                    && world.Routes.Distance(witch.Position) < Settings.InteractionRange,
+                "Witch is behind the village and reachable from the road"
+            );
             car.SetPose(witch.Position + witch.Basis.Z * 3 + Vector3.Up * .2f, 0);
             game._Process(.016);
             game._UnhandledInput(new InputEventAction { Action = "talk", Pressed = true });
-            Check(game.CurrentChallenge is MathChallenge && game.State == GameState.Challenge, "Normal interaction opens a math challenge");
+            Check(
+                game.CurrentChallenge is MathChallenge && game.State == GameState.Challenge,
+                "Normal interaction opens a math challenge"
+            );
             game.SubmitAnswer(game.CurrentChallenge!.Choices.First(choice => !game.CurrentChallenge.Accepts(choice)));
-            Check(game.State == GameState.Challenge && weather.Current == WeatherKind.Clear, "Wrong answer leaves the weather unchanged");
+            Check(
+                game.State == GameState.Challenge && weather.Current == WeatherKind.Clear,
+                "Wrong answer leaves the weather unchanged"
+            );
             ChallengeChecks.Solve(game);
             Check(game.State == GameState.WeatherChoice, "Correct answer unlocks weather choice");
             string path = DiagnosticArtifacts.PathFor($"weather-checks/{Settings.Seed}/progress.json");
@@ -40,8 +55,12 @@ public partial class WeatherChecks(Game game, World world, Vehicle car) : Node
             Check(progress?.State == GameState.WeatherChoice, "Weather choice passes save validation");
             game.RestoreProgress(progress!);
             game.SelectWeather(WeatherKind.Storm);
-            Check(game.State == GameState.Exploring && weather.Current == WeatherKind.Storm, "Storm starts and returns the player to driving");
-            for (int step = 0; step < 70 && !bolt.Visible; step++) weather.Tick(.1f);
+            Check(
+                game.State == GameState.Exploring && weather.Current == WeatherKind.Storm,
+                "Storm starts and returns the player to driving"
+            );
+            for (int step = 0; step < 70 && !bolt.Visible; step++)
+                weather.Tick(.1f);
             Check(bolt.Visible && rain.Visible && puddles.Visible, "Storm produces lightning, rain and puddles");
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             weather.Tick(8);
@@ -67,7 +86,10 @@ public partial class WeatherChecks(Game game, World world, Vehicle car) : Node
             game.RestoreProgress(progress!);
             var beforeBack = weather.Current;
             game._Input(new InputEventAction { Action = "back", Pressed = true });
-            Check(game.State == GameState.Exploring && weather.Current == beforeBack, "Back leaves the weather choice without casting");
+            Check(
+                game.State == GameState.Exploring && weather.Current == beforeBack,
+                "Back leaves the weather choice without casting"
+            );
             GD.Print("WEATHER_CHECKS_OK");
             GetTree().Quit();
         }
@@ -81,7 +103,8 @@ public partial class WeatherChecks(Game game, World world, Vehicle car) : Node
 
     private static void Check(bool ok, string message)
     {
-        if (!ok) throw new InvalidOperationException(message);
+        if (!ok)
+            throw new InvalidOperationException(message);
         GD.Print("PASS: " + message);
     }
 }

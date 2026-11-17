@@ -1,9 +1,15 @@
-using Godot;
 using System.Collections.Generic;
+using Godot;
 
 namespace MathRacer;
 
-internal enum CollectorPetKind { Farm, Garden, Gems, Toys }
+internal enum CollectorPetKind
+{
+    Farm,
+    Garden,
+    Gems,
+    Toys,
+}
 
 internal sealed partial class CollectorPet : Node3D
 {
@@ -19,13 +25,14 @@ internal sealed partial class CollectorPet : Node3D
     internal string DisplayName { get; }
     internal string RewardHint => $"Odměna za všech {Goal}: {DisplayName}.";
     internal int Goal { get; }
-    internal int Count => Kind switch
-    {
-        CollectorPetKind.Farm => village.FarmCount,
-        CollectorPetKind.Garden => village.GardenCount,
-        CollectorPetKind.Gems => village.GemCount,
-        _ => village.ToyCount
-    };
+    internal int Count =>
+        Kind switch
+        {
+            CollectorPetKind.Farm => village.FarmCount,
+            CollectorPetKind.Garden => village.GardenCount,
+            CollectorPetKind.Gems => village.GemCount,
+            _ => village.ToyCount,
+        };
     internal bool IsOwned => Count >= Goal;
     internal bool IsActive => IsOwned && !Disabled;
     internal bool Disabled { get; set; }
@@ -38,18 +45,41 @@ internal sealed partial class CollectorPet : Node3D
         Name = $"CollectorPet_{kind}";
         (Collector, DisplayName, Goal, TrailOffset) = kind switch
         {
-            CollectorPetKind.Farm => (village.Farmer, "Vlněné jehňátko", Village.FarmKinds.Length, new Vector3(-1.8f, 0, 4.2f)),
-            CollectorPetKind.Garden => (village.Gardener, "Květinový skřítek", Village.FlowerNames.Length, new Vector3(1.8f, 0, 4.2f)),
-            CollectorPetKind.Gems => (village.GemCollector, "Krystalová želvička", Village.GemNames.Length, new Vector3(-1.8f, 0, 7.3f)),
-            _ => (village.Toymaker, "Plyšový medvídek", Village.ToyNames.Length, new Vector3(1.8f, 0, 7.3f))
+            CollectorPetKind.Farm => (
+                village.Farmer,
+                "Vlněné jehňátko",
+                Village.FarmKinds.Length,
+                new Vector3(-1.8f, 0, 4.2f)
+            ),
+            CollectorPetKind.Garden => (
+                village.Gardener,
+                "Květinový skřítek",
+                Village.FlowerNames.Length,
+                new Vector3(1.8f, 0, 4.2f)
+            ),
+            CollectorPetKind.Gems => (
+                village.GemCollector,
+                "Krystalová želvička",
+                Village.GemNames.Length,
+                new Vector3(-1.8f, 0, 7.3f)
+            ),
+            _ => (village.Toymaker, "Plyšový medvídek", Village.ToyNames.Length, new Vector3(1.8f, 0, 7.3f)),
         };
         AddChild(model);
         switch (kind)
         {
-            case CollectorPetKind.Farm: BuildLamb(); break;
-            case CollectorPetKind.Garden: BuildSprout(); break;
-            case CollectorPetKind.Gems: BuildTurtle(); break;
-            case CollectorPetKind.Toys: BuildTeddy(); break;
+            case CollectorPetKind.Farm:
+                BuildLamb();
+                break;
+            case CollectorPetKind.Garden:
+                BuildSprout();
+                break;
+            case CollectorPetKind.Gems:
+                BuildTurtle();
+                break;
+            case CollectorPetKind.Toys:
+                BuildTeddy();
+                break;
         }
     }
 
@@ -128,8 +158,13 @@ internal sealed partial class CollectorPet : Node3D
         for (int i = 0; i < 8; i++)
         {
             float angle = i * Mathf.Tau / 8;
-            Art.Ball(model, new(Mathf.Sin(angle) * .33f, .98f + Mathf.Cos(angle) * .33f, 0),
-                new(.135f, .23f, .1f), i % 2 == 0 ? "f7a9c4" : "ee87ae").RotateZ(-angle);
+            Art.Ball(
+                    model,
+                    new(Mathf.Sin(angle) * .33f, .98f + Mathf.Cos(angle) * .33f, 0),
+                    new(.135f, .23f, .1f),
+                    i % 2 == 0 ? "f7a9c4" : "ee87ae"
+                )
+                .RotateZ(-angle);
         }
         Art.Ball(model, new(0, .98f, .08f), new(.3f, .29f, .19f), "f6cc73");
         foreach (int side in new[] { -1, 1 })

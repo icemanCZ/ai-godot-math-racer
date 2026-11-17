@@ -69,7 +69,9 @@ Pass `--seed=NUMBER` after Godot’s `--` separator to reproduce a valley during
 
 ## Development and previews
 
-`./build.ps1 -Test` runs gameplay, save, world generation, course, physics and simulated controller checks in up to four Godot processes. Use `-TestJobs 1` to run them in sequence or set a different concurrency limit with `-TestJobs`. Each scenario keeps its log and any test saves in its own folder under `artifacts/game-tests/`. The road audits verify connected loops, gradients and bridge clearance. The road-driving tests drive routes in both directions using the car physics.
+`./build.ps1 -Test` runs gameplay, save, world generation, course, physics and simulated controller checks in parallel Godot processes: one per logical processor, at most sixteen. Road driving runs one process per route, and scenarios start roughly longest first. Use `-TestJobs 1` to run them in sequence or set a different concurrency limit with `-TestJobs`. Each scenario keeps its log and any test saves in its own folder under `artifacts/game-tests/`. The road audits verify connected loops, gradients and bridge clearance. The road-driving tests drive routes in both directions using the car physics.
+
+C# code is formatted with [CSharpier](https://csharpier.com/), pinned in `dotnet-tools.json` and configured in `.csharpierrc.json` (120-character lines). Run `dotnet tool restore` once, then `dotnet csharpier format Scripts` before committing; `dotnet csharpier check Scripts` reports unformatted files.
 
 `./run.ps1 -Capture -View reading` writes `artifacts/reading.png`. Other useful views include `syllables`, `letters`, `challenge-2`, `garage`, `task-choice`, `delivery`, `square`, `slalom`, `museum-full`, `toys-full`, `garden-full`, `farm-full`, `wildlife`, `tree-impact`, `tree-wind`, `vegetation-detail` and `grass`.
 

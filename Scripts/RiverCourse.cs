@@ -1,5 +1,5 @@
-using Godot;
 using System;
+using Godot;
 
 namespace MathRacer;
 
@@ -34,15 +34,19 @@ public sealed class RiverCourse
                 {
                     float bend = (source - column) * CandidateStep;
                     float candidate = previous[source] + bend * bend * .035f;
-                    if (candidate >= best) continue;
-                    best = candidate; parents[row, column] = source;
+                    if (candidate >= best)
+                        continue;
+                    best = candidate;
+                    parents[row, column] = source;
                 }
                 next[column] = cost + best;
             }
             previous = next;
         }
         int chosen = 0;
-        for (int i = 1; i < Candidates; i++) if (previous[i] < previous[chosen]) chosen = i;
+        for (int i = 1; i < Candidates; i++)
+            if (previous[i] < previous[chosen])
+                chosen = i;
         for (int row = rows - 1; row >= 0; row--)
         {
             centers[row] = MinX + chosen * CandidateStep;
@@ -51,13 +55,16 @@ public sealed class RiverCourse
         for (int pass = 0; pass < 12; pass++)
         {
             var smooth = (float[])centers.Clone();
-            for (int i = 1; i + 1 < rows; i++) smooth[i] = (centers[i - 1] + centers[i] * 2 + centers[i + 1]) / 4;
+            for (int i = 1; i + 1 < rows; i++)
+                smooth[i] = (centers[i - 1] + centers[i] * 2 + centers[i + 1]) / 4;
             Array.Copy(smooth, centers, rows);
         }
         // Keep bends gradual enough for both river banks and the generated road loops.
         float maxShift = step * .22f;
-        for (int i = 1; i < rows; i++) centers[i] = Mathf.Clamp(centers[i], centers[i - 1] - maxShift, centers[i - 1] + maxShift);
-        for (int i = rows - 2; i >= 0; i--) centers[i] = Mathf.Clamp(centers[i], centers[i + 1] - maxShift, centers[i + 1] + maxShift);
+        for (int i = 1; i < rows; i++)
+            centers[i] = Mathf.Clamp(centers[i], centers[i - 1] - maxShift, centers[i - 1] + maxShift);
+        for (int i = rows - 2; i >= 0; i--)
+            centers[i] = Mathf.Clamp(centers[i], centers[i + 1] - maxShift, centers[i + 1] + maxShift);
     }
 
     public float At(float z)

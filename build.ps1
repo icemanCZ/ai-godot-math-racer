@@ -2,27 +2,40 @@
     [switch]$Test,
     [switch]$Export,
     [ValidateRange(1, [int]::MaxValue)]
-    [int]$TestJobs = [Math]::Min(4, [Environment]::ProcessorCount)
+    [int]$TestJobs = [Math]::Max(1, [Math]::Min(16, [Environment]::ProcessorCount))
 )
 . "$PSScriptRoot/scripts-common.ps1"
 
-function New-GameTestCase([string]$Mode, [int[]]$Seeds = @(0)) {
+function New-GameTestCase([string]$Mode, [int[]]$Seeds = @(0), [string]$Argument = '', [string]$Suffix = '') {
     foreach ($seed in $Seeds) {
         $label = if ($seed) { "$Mode-$seed" } else { $Mode }
-        [PSCustomObject]@{ Mode = $Mode; Seed = $seed; Label = $label }
+        if ($Suffix) { $label = "$label-$Suffix" }
+        [PSCustomObject]@{ Mode = $Mode; Seed = $seed; Label = $label; Argument = $Argument }
+    }
+}
+
+# Road driving is by far the longest scenario, so each route runs as its own process.
+# The "4-" part also covers any route added later.
+function New-RoadDrivingCases([string[]]$Routes, [int[]]$Seeds = @(1, 16)) {
+    foreach ($route in $Routes) {
+        New-GameTestCase 'road-driving-checks' $Seeds " --road-driving-route=$route" "route$($route.TrimEnd('-'))"
     }
 }
 
 function Invoke-GameTests([string]$Godot, [int]$JobCount) {
+    # Roughly longest first, so no long scenario starts near the end of the run.
     $cases = @(
-        New-GameTestCase 'road-driving-checks' 1,16
-        New-GameTestCase 'new-game-checks' 42
+        New-RoadDrivingCases '2', '3', '0'
         New-GameTestCase 'smoke-test'
+        New-GameTestCase 'new-game-checks' 42
+        New-GameTestCase 'track-checks'
+        New-RoadDrivingCases '4-', '1'
+        New-GameTestCase 'bandit-checks' 42
+        New-GameTestCase 'collision-checks'
         New-GameTestCase 'controller-checks'
         New-GameTestCase 'village-checks' 42
         New-GameTestCase 'golem-checks' 42
         New-GameTestCase 'weather-checks' 42
-        New-GameTestCase 'bandit-checks' 42
         New-GameTestCase 'postcard-checks' 42
         New-GameTestCase 'event-checks' 42
         New-GameTestCase 'trade-checks' 1,42,7421
@@ -33,8 +46,6 @@ function Invoke-GameTests([string]$Godot, [int]$JobCount) {
         New-GameTestCase 'save-checks' 42
         New-GameTestCase 'garage-checks' 42
         New-GameTestCase 'delivery-checks' 1,42,7421
-        New-GameTestCase 'collision-checks'
-        New-GameTestCase 'track-checks'
         New-GameTestCase 'road-audit' 1,2,42,44,53,7421
     )
     $runId = '{0}-{1}' -f (Get-Date -Format 'yyyyMMdd-HHmmss'), [Guid]::NewGuid().ToString('N').Substring(0, 8)
@@ -57,7 +68,7 @@ function Invoke-GameTests([string]$Godot, [int]$JobCount) {
                 $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
                 $startInfo.FileName = $Godot
                 $startInfo.WorkingDirectory = $PSScriptRoot
-                $startInfo.Arguments = '--headless --path "{0}" --log-file "{1}"{2} -- --{3}{4}' -f $PSScriptRoot, $log, $fpsArgument, $case.Mode, $seedArgument
+                $startInfo.Arguments = '--headless --path "{0}" --log-file "{1}"{2} -- --{3}{4}{5}' -f $PSScriptRoot, $log, $fpsArgument, $case.Mode, $seedArgument, $case.Argument
                 $startInfo.UseShellExecute = $false
                 $startInfo.CreateNoWindow = $true
                 $startInfo.EnvironmentVariables['MATHRACER_TEST_DIRECTORY'] = $caseDirectory

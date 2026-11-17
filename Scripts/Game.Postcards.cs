@@ -1,6 +1,6 @@
-using Godot;
 using System;
 using System.Linq;
+using Godot;
 
 namespace MathRacer;
 
@@ -11,20 +11,51 @@ public partial class Game
         internal string Icon => Pictures[Correct];
         internal string Word => Segmented.Replace("-", "");
     }
+
     private static readonly Postcard[] Postcards =
     {
-        new("Most a lekníny", "U příjezdu k mostu",
-            "most", new[] { "postcard-village", "postcard-bridge", "postcard-farm" }, 1),
-        new("Domečky pod kopcem", "Na silnici nad vesnicí",
-            "do-meč-ky", new[] { "postcard-bridge", "postcard-farm", "postcard-village" }, 2),
-        new("Farma mezi loukami", "Na silnici u farmy",
-            "far-ma", new[] { "postcard-farm", "postcard-village", "postcard-bridge" }, 0),
-        new("Garáž u cesty", "Poblíž garáže", "ga-ráž",
-            new[] { "postcard-garden", "postcard-garage", "postcard-meadow" }, 1),
-        new("Zahrada plná květin", "U zahradnictví", "za-hra-da",
-            new[] { "postcard-meadow", "postcard-garage", "postcard-garden" }, 2),
-        new("Louka u lesní cesty", "U lučních květin", "lou-ka",
-            new[] { "postcard-meadow", "postcard-garden", "postcard-garage" }, 0)
+        new(
+            "Most a lekníny",
+            "U příjezdu k mostu",
+            "most",
+            new[] { "postcard-village", "postcard-bridge", "postcard-farm" },
+            1
+        ),
+        new(
+            "Domečky pod kopcem",
+            "Na silnici nad vesnicí",
+            "do-meč-ky",
+            new[] { "postcard-bridge", "postcard-farm", "postcard-village" },
+            2
+        ),
+        new(
+            "Farma mezi loukami",
+            "Na silnici u farmy",
+            "far-ma",
+            new[] { "postcard-farm", "postcard-village", "postcard-bridge" },
+            0
+        ),
+        new(
+            "Garáž u cesty",
+            "Poblíž garáže",
+            "ga-ráž",
+            new[] { "postcard-garden", "postcard-garage", "postcard-meadow" },
+            1
+        ),
+        new(
+            "Zahrada plná květin",
+            "U zahradnictví",
+            "za-hra-da",
+            new[] { "postcard-meadow", "postcard-garage", "postcard-garden" },
+            2
+        ),
+        new(
+            "Louka u lesní cesty",
+            "U lučních květin",
+            "lou-ka",
+            new[] { "postcard-meadow", "postcard-garden", "postcard-garage" },
+            0
+        ),
     };
     internal static int PostcardCount => Postcards.Length;
     internal const int PostcardRewardStamps = 3;
@@ -32,8 +63,9 @@ public partial class Game
     private static readonly CarReward PostcardReward = new(CarAccessory.ValleyMap.Id, true);
     private static readonly QuizType[] PostcardQuizTypes = { QuizType.Syllables, QuizType.Letters, QuizType.Reading };
     private readonly PostcardProgress?[] postcards = new PostcardProgress?[PostcardCount];
-    private readonly (Vector3 Stop, Vector3 Subject, Label3D Sign)[] viewpoints =
-        new (Vector3, Vector3, Label3D)[PostcardCount];
+    private readonly (Vector3 Stop, Vector3 Subject, Label3D Sign)[] viewpoints = new (Vector3, Vector3, Label3D)[
+        PostcardCount
+    ];
     private Vector3 albumStop;
     private int postcardPage = -1;
     private int pendingPhoto = -1;
@@ -55,26 +87,41 @@ public partial class Game
         var farm = world.Village.FarmBuilding.GlobalPosition;
         var subjects = new[]
         {
-            bridge, village, farm, world.Village.GarageBuilding.GlobalPosition,
-            world.Village.GardenBuilding.GlobalPosition, world.Plants.MeadowPreview
+            bridge,
+            village,
+            farm,
+            world.Village.GarageBuilding.GlobalPosition,
+            world.Village.GardenBuilding.GlobalPosition,
+            world.Plants.MeadowPreview,
         };
         var actors = world.InteractionActors.Where(actor => !actor.IsSorcerer).ToArray();
-        var candidates = world.Routes.Samples.Select(point =>
-        {
-            point.Y = world.Routes.SurfaceHeight(point, world.Ground.Height(point.X, point.Z));
-            return point;
-        }).Where(point => !River.OnBridge(point.X, point.Z) &&
-            actors.All(actor => actor.Position.DistanceTo(point) > Settings.InteractionRange + 5) &&
-            point.DistanceTo(world.Village.GarageEntrance) > Settings.InteractionRange + 5 &&
-            point.DistanceTo(albumStop) > 13 &&
-            Events.Points.Cast<Vector3>().All(gate => gate.DistanceTo(point) > 10)).ToArray();
+        var candidates = world
+            .Routes.Samples.Select(point =>
+            {
+                point.Y = world.Routes.SurfaceHeight(point, world.Ground.Height(point.X, point.Z));
+                return point;
+            })
+            .Where(point =>
+                !River.OnBridge(point.X, point.Z)
+                && actors.All(actor => actor.Position.DistanceTo(point) > Settings.InteractionRange + 5)
+                && point.DistanceTo(world.Village.GarageEntrance) > Settings.InteractionRange + 5
+                && point.DistanceTo(albumStop) > 13
+                && Events.Points.Cast<Vector3>().All(gate => gate.DistanceTo(point) > 10)
+            )
+            .ToArray();
         for (int i = 0; i < Postcards.Length; i++)
         {
             var subject = subjects[i];
-            float preferredDistance = i == 1 ? 44 : i == 5 ? 16 : 27;
-            var stop = candidates.Where(point => viewpoints.Take(i).All(view => view.Stop.DistanceTo(point) > 15))
-                .MinBy(point => Mathf.Abs(point.DistanceTo(subject) - preferredDistance)
-                    + (i == 1 ? 2 * Mathf.Max(0, subject.Y + 4 - point.Y) : 0));
+            float preferredDistance =
+                i == 1 ? 44
+                : i == 5 ? 16
+                : 27;
+            var stop = candidates
+                .Where(point => viewpoints.Take(i).All(view => view.Stop.DistanceTo(point) > 15))
+                .MinBy(point =>
+                    Mathf.Abs(point.DistanceTo(subject) - preferredDistance)
+                    + (i == 1 ? 2 * Mathf.Max(0, subject.Y + 4 - point.Y) : 0)
+                );
             var sign = PostcardMarker(world, stop + Vector3.Up * 4);
             Art.Sign(sign, Vector3.Down * .85f, Postcards[i].Name, 34);
             viewpoints[i] = (stop, subject, sign);
@@ -98,7 +145,8 @@ public partial class Game
 
     internal static bool ValidPostcardSelection(int index, int seed, PostcardProgress card)
     {
-        if (card.Selection == default) return true;
+        if (card.Selection == default)
+            return true;
         var question = PostcardSyllables(index, seed);
         return card.Selection.IsValid(question);
     }
@@ -106,24 +154,27 @@ public partial class Game
     internal IChallenge PostcardQuestion(int index)
     {
         var card = Postcards[index];
-        var type = Enumerable.Range(0, PostcardQuizTypes.Length)
+        var type = Enumerable
+            .Range(0, PostcardQuizTypes.Length)
             .Select(offset => PostcardQuizTypes[(index + offset) % PostcardQuizTypes.Length])
             .FirstOrDefault(candidate => enabledQuizzes.HasFlag(candidate), QuizType.Math);
         return type switch
         {
-            QuizType.Letters => new LetterChallenge(card.Word[..1].ToUpperInvariant(),
-                card.Pictures.Select(icon => new PictureWord(icon, Postcards[PostcardIndex(icon)].Word)).ToArray()),
+            QuizType.Letters => new LetterChallenge(
+                card.Word[..1].ToUpperInvariant(),
+                card.Pictures.Select(icon => new PictureWord(icon, Postcards[PostcardIndex(icon)].Word)).ToArray()
+            ),
             QuizType.Syllables => PostcardSyllables(index, Settings.Seed),
             QuizType.Reading => new ReadingChallengeGenerator(Settings.Seed + 300 + index).Next(),
             QuizType.Math => new ChallengeGenerator(Settings.Seed + 280 + index).Next(threeTermMath),
-            _ => throw new InvalidOperationException("At least one quiz type must be enabled.")
+            _ => throw new InvalidOperationException("At least one quiz type must be enabled."),
         };
     }
 
     internal Vector3 PostcardStop(int index) => viewpoints[index].Stop;
 
-    private int NearbyPostcard() => Array.FindIndex(viewpoints, view =>
-        view.Sign.Visible && vehicle.Position.DistanceTo(view.Stop) < 4.5f);
+    private int NearbyPostcard() =>
+        Array.FindIndex(viewpoints, view => view.Sign.Visible && vehicle.Position.DistanceTo(view.Stop) < 4.5f);
 
     private bool InteractWithPostcards()
     {
@@ -137,7 +188,8 @@ public partial class Game
         }
 
         int index = NearbyPostcard();
-        if (index < 0) return false;
+        if (index < 0)
+            return false;
         nearby = null;
         vehicle.Active = false;
         State = GameState.PostcardAlbum;
@@ -156,21 +208,31 @@ public partial class Game
         var position = car - toward * 12 + toward.Cross(Vector3.Up) * 5 + Vector3.Up * 7;
         position.Y = Mathf.Max(position.Y, world.Ground.Height(position.X, position.Z) + 5);
         var target = car.Lerp(subject, .42f) + Vector3.Up * 1.7f;
-        photoCamera = new Camera3D { Fov = 57, Far = 1200, CullMask = followCamera.CullMask & ~Art.SignLayer };
+        photoCamera = new Camera3D
+        {
+            Fov = 57,
+            Far = 1200,
+            CullMask = followCamera.CullMask & ~Art.SignLayer,
+        };
         AddChild(photoCamera);
         photoCamera.LookAtFromPosition(position, target);
         photoCamera.MakeCurrent();
 
-        if (DisplayServer.GetName() == "headless") return true;
+        if (DisplayServer.GetName() == "headless")
+            return true;
         photoViewport = new SubViewport
         {
-            World3D = GetViewport().World3D, Size = new Vector2I(640, 360),
-            RenderTargetUpdateMode = SubViewport.UpdateMode.Once
+            World3D = GetViewport().World3D,
+            Size = new Vector2I(640, 360),
+            RenderTargetUpdateMode = SubViewport.UpdateMode.Once,
         };
         AddChild(photoViewport);
         var snapshot = new Camera3D
         {
-            Fov = photoCamera.Fov, Far = photoCamera.Far, CullMask = photoCamera.CullMask, Current = true
+            Fov = photoCamera.Fov,
+            Far = photoCamera.Far,
+            CullMask = photoCamera.CullMask,
+            Current = true,
         };
         photoViewport.AddChild(snapshot);
         snapshot.GlobalTransform = photoCamera.GlobalTransform;
@@ -182,7 +244,8 @@ public partial class Game
         if (State == GameState.PostcardAlbum && pendingPhoto >= 0)
         {
             photoTime -= delta;
-            if (photoTime > 0) return;
+            if (photoTime > 0)
+                return;
             using var image = photoViewport?.GetTexture().GetImage();
             byte[] jpeg = image != null && !image.IsEmpty() ? image.SaveJpgToBuffer(.82f) : Array.Empty<byte>();
             int index = pendingPhoto;
@@ -192,14 +255,18 @@ public partial class Game
             OpenPostcardPage(index);
             SaveProgress();
         }
-        if (State != GameState.Exploring || AtGarage || nearby != null) return;
-        if (vehicle.Position.DistanceTo(albumStop) < 4.5f) ui.EventHint("Album");
-        else if (NearbyPostcard() >= 0) ui.EventHint("Vyfotit", space: true);
+        if (State != GameState.Exploring || AtGarage || nearby != null)
+            return;
+        if (vehicle.Position.DistanceTo(albumStop) < 4.5f)
+            ui.EventHint("Album");
+        else if (NearbyPostcard() >= 0)
+            ui.EventHint("Vyfotit", space: true);
     }
 
     private void CancelPostcardPhoto()
     {
-        if (pendingPhoto < 0) return;
+        if (pendingPhoto < 0)
+            return;
         pendingPhoto = -1;
         followCamera.MakeCurrent();
         photoCamera?.QueueFree();
@@ -221,38 +288,69 @@ public partial class Game
         int count = postcards.Count(card => card?.Stamped == true);
         if (postcardPage < 0)
         {
-            ui.PostcardAlbum(count, Postcards.Select((card, i) =>
-                (card.Name, card.Clue, card.Icon, postcards[i] != null, postcards[i]?.Stamped == true)).ToArray(), OpenPostcardPage);
+            ui.PostcardAlbum(
+                count,
+                Postcards
+                    .Select(
+                        (card, i) =>
+                            (card.Name, card.Clue, card.Icon, postcards[i] != null, postcards[i]?.Stamped == true)
+                    )
+                    .ToArray(),
+                OpenPostcardPage
+            );
             return;
         }
         var card = Postcards[postcardPage];
         var progress = postcards[postcardPage]!;
-        ui.PostcardDetail(card.Name, progress.Stamped ? null : PostcardQuestion(postcardPage), progress, rejectedPostcardAnswers, postcardFeedback,
-            AnswerPostcard, () => OpenPostcardPage(-1));
+        ui.PostcardDetail(
+            card.Name,
+            progress.Stamped ? null : PostcardQuestion(postcardPage),
+            progress,
+            rejectedPostcardAnswers,
+            postcardFeedback,
+            AnswerPostcard,
+            () => OpenPostcardPage(-1)
+        );
     }
 
     private void AnswerPostcard(int answer)
     {
-        if (State != GameState.PostcardAlbum || postcardPage < 0 ||
-            postcards[postcardPage] is not { Stamped: false } card) return;
+        if (
+            State != GameState.PostcardAlbum
+            || postcardPage < 0
+            || postcards[postcardPage] is not { Stamped: false } card
+        )
+            return;
         var question = PostcardQuestion(postcardPage);
-        if (!question.Choices.Contains(answer)) return;
+        if (!question.Choices.Contains(answer))
+            return;
         if (question is SyllableChallenge syllables)
         {
             var selection = card.Selection.Pick(syllables, answer);
-            if (selection == card.Selection) return;
+            if (selection == card.Selection)
+                return;
             postcards[postcardPage] = card with { Selection = selection };
             SaveProgress();
         }
-        else if (question.Accepts(answer)) { StampPostcard(card); SaveProgress(); }
-        else rejectedPostcardAnswers |= 1 << answer;
+        else if (question.Accepts(answer))
+        {
+            StampPostcard(card);
+            SaveProgress();
+        }
+        else
+            rejectedPostcardAnswers |= 1 << answer;
         ShowPostcards();
     }
 
     private void ConfirmPostcardSyllables()
     {
-        if (postcardPage < 0 || postcards[postcardPage] is not { Stamped: false } card ||
-            PostcardQuestion(postcardPage) is not SyllableChallenge syllables || !card.Selection.IsComplete(syllables)) return;
+        if (
+            postcardPage < 0
+            || postcards[postcardPage] is not { Stamped: false } card
+            || PostcardQuestion(postcardPage) is not SyllableChallenge syllables
+            || !card.Selection.IsComplete(syllables)
+        )
+            return;
         StampPostcard(card);
         SaveProgress();
         ShowPostcards();
@@ -262,7 +360,10 @@ public partial class Game
     {
         postcards[postcardPage] = card with { Stamped = true };
         postcardFeedback = "Pohlednice má razítko.";
-        if (postcards.Count(progress => progress?.Stamped == true) >= PostcardRewardStamps && OwnedRewards.Add(PostcardReward))
+        if (
+            postcards.Count(progress => progress?.Stamped == true) >= PostcardRewardStamps
+            && OwnedRewards.Add(PostcardReward)
+        )
         {
             vehicle.Appearance.ToggleAccessory(PostcardReward.Id);
             postcardFeedback = "V garáži máš samolepku Mapka údolí!";

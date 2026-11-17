@@ -1,5 +1,5 @@
-using Godot;
 using System.Linq;
+using Godot;
 
 namespace MathRacer;
 
@@ -9,14 +9,24 @@ public partial class VisualCapture : Node
     private readonly World world;
     private readonly Vehicle car;
     private readonly string view;
-    public VisualCapture(FollowCamera camera, World world, Vehicle car, string view) { this.camera = camera; this.world = world; this.car = car; this.view = view; }
+
+    public VisualCapture(FollowCamera camera, World world, Vehicle car, string view)
+    {
+        this.camera = camera;
+        this.world = world;
+        this.car = car;
+        this.view = view;
+    }
+
     public override async void _Ready()
     {
         if (view is "nature" or "riverbank")
         {
-            camera.SetProcess(false); car.Active = false;
+            camera.SetProcess(false);
+            car.Active = false;
             var focus = view == "nature" ? world.Plants.MeadowPreview : world.Plants.BankPreview;
-            if (focus == Vector3.Zero) focus = world.Plants.PreviewSpot;
+            if (focus == Vector3.Zero)
+                focus = world.Plants.PreviewSpot;
             if (view == "riverbank")
             {
                 int side = focus.X < River.CenterX(focus.Z) ? -1 : 1;
@@ -31,7 +41,8 @@ public partial class VisualCapture : Node
         }
         else if (view == "square")
         {
-            camera.SetProcess(false); car.Active = false;
+            camera.SetProcess(false);
+            car.Active = false;
             var square = world.Village.Square;
             var focus = square.GlobalPosition + Vector3.Up;
             camera.Position = focus + square.GlobalBasis * new Vector3(17, 17, 27);
@@ -45,46 +56,67 @@ public partial class VisualCapture : Node
             var frame = game.Events.Sample(course, game.Events.StartDistances[course]);
             var before = game.Events.Sample(course, game.Events.StartDistances[course] - 8).Center;
             before.Y = world.Routes.SurfaceHeight(before, world.Ground.Height(before.X, before.Z));
-            if (River.OnBridge(before.X, before.Z)) before.Y = Mathf.Max(before.Y, River.BridgeSurfaceHeight(before.X));
+            if (River.OnBridge(before.X, before.Z))
+                before.Y = Mathf.Max(before.Y, River.BridgeSurfaceHeight(before.X));
             car.SetPose(before + Vector3.Up * .2f, Mathf.Atan2(-frame.Forward.X, -frame.Forward.Z));
             car.SetPhysicsProcess(false);
             camera.Snap();
         }
         else if (view == "letter-pictures" || view == "letter-pictures-2")
         {
-            var layer = new CanvasLayer { Layer = 100 }; AddChild(layer);
-            var background = new ColorRect { Color = new Color("fff5df") }; layer.AddChild(background);
+            var layer = new CanvasLayer { Layer = 100 };
+            AddChild(layer);
+            var background = new ColorRect { Color = new Color("fff5df") };
+            layer.AddChild(background);
             background.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-            var center = new CenterContainer(); layer.AddChild(center); center.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-            var grid = new GridContainer { Columns = 4 }; center.AddChild(grid);
-            grid.AddThemeConstantOverride("h_separation", 28); grid.AddThemeConstantOverride("v_separation", 14);
+            var center = new CenterContainer();
+            layer.AddChild(center);
+            center.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+            var grid = new GridContainer { Columns = 4 };
+            center.AddChild(grid);
+            grid.AddThemeConstantOverride("h_separation", 28);
+            grid.AddThemeConstantOverride("v_separation", 14);
             foreach (var word in LetterChallengeGenerator.Words.Skip(view == "letter-pictures-2" ? 16 : 0).Take(16))
             {
-                var card = new VBoxContainer(); grid.AddChild(card);
+                var card = new VBoxContainer();
+                grid.AddChild(card);
                 card.AddChild(new WordPicture { PictureId = word.Id, CustomMinimumSize = new Vector2(220, 160) });
                 var label = new Label { Text = word.Word, HorizontalAlignment = HorizontalAlignment.Center };
                 label.AddThemeColorOverride("font_color", new Color("3c5960"));
-                label.AddThemeFontSizeOverride("font_size", 22); card.AddChild(label);
+                label.AddThemeFontSizeOverride("font_size", 22);
+                card.AddChild(label);
             }
         }
-        else if ((view.StartsWith("baker") || view.StartsWith("merchant") || view.StartsWith("confectioner")) && !view.EndsWith("delivery") && !view.EndsWith("reward"))
+        else if (
+            (view.StartsWith("baker") || view.StartsWith("merchant") || view.StartsWith("confectioner"))
+            && !view.EndsWith("delivery")
+            && !view.EndsWith("reward")
+        )
         {
-            camera.SetProcess(false); car.Active = false;
-            int trade = view.StartsWith("baker") ? 0 : view.StartsWith("merchant") ? 1 : 2;
+            camera.SetProcess(false);
+            car.Active = false;
+            int trade =
+                view.StartsWith("baker") ? 0
+                : view.StartsWith("merchant") ? 1
+                : 2;
             var shop = world.Village.Shops[trade];
             var focus = shop.GlobalPosition + Vector3.Up * 2;
-            camera.Position = focus + shop.GlobalBasis * new Vector3(11, 9, 19); camera.LookAt(focus);
+            camera.Position = focus + shop.GlobalBasis * new Vector3(11, 9, 19);
+            camera.LookAt(focus);
         }
         else if ((view.StartsWith("museum") || view.StartsWith("toys")) && !view.EndsWith("expedition"))
         {
-            camera.SetProcess(false); car.Active = false;
+            camera.SetProcess(false);
+            car.Active = false;
             var building = view.StartsWith("toys") ? world.Village.ToyBuilding : world.Village.MuseumBuilding;
             var focus = building.GlobalPosition + building.GlobalBasis * new Vector3(5, 2, 0);
-            camera.Position = focus + building.GlobalBasis * new Vector3(17, 17, 29); camera.LookAt(focus);
+            camera.Position = focus + building.GlobalBasis * new Vector3(17, 17, 29);
+            camera.LookAt(focus);
         }
         else if (view is "garden" or "garden-full" or "garden-question")
         {
-            camera.SetProcess(false); car.Active = false;
+            camera.SetProcess(false);
+            car.Active = false;
             var garden = world.Village.GardenBuilding;
             var focus = garden.GlobalPosition + garden.GlobalBasis * new Vector3(5, 1.5f, 0);
             camera.Position = focus + garden.GlobalBasis * new Vector3(17, 17, 29);
@@ -92,7 +124,8 @@ public partial class VisualCapture : Node
         }
         else if (view is "farm" or "farm-full" or "farm-question")
         {
-            camera.SetProcess(false); car.Active = false;
+            camera.SetProcess(false);
+            car.Active = false;
             var farm = world.Village.FarmBuilding;
             var focus = farm.GlobalPosition + farm.GlobalBasis * new Vector3(5, 2, 0);
             camera.Position = focus + farm.GlobalBasis * new Vector3(18, 18, 30);
@@ -100,7 +133,8 @@ public partial class VisualCapture : Node
         }
         else if (view is "village" or "village-upgraded" or "village-question" or "village-fruit-offer")
         {
-            camera.SetProcess(false); car.Active = false;
+            camera.SetProcess(false);
+            car.Active = false;
             var house = world.Village.Houses[0];
             var focus = house.GlobalPosition + Vector3.Up * 3;
             camera.Position = focus + house.GlobalBasis * new Vector3(12, 8, 20);
@@ -108,7 +142,8 @@ public partial class VisualCapture : Node
         }
         else if (view == "garage-building")
         {
-            camera.SetProcess(false); car.Active = false;
+            camera.SetProcess(false);
+            car.Active = false;
             var building = world.Village.GarageBuilding;
             var focus = building.GlobalPosition + Vector3.Up * 2;
             camera.Position = focus + building.GlobalBasis * new Vector3(12, 8, 19);
@@ -134,7 +169,8 @@ public partial class VisualCapture : Node
         else if (view == "tracks" || view == "tracks-right")
         {
             Input.ActionPress("accelerate");
-            if (view == "tracks-right") Input.ActionPress("right", .15f);
+            if (view == "tracks-right")
+                Input.ActionPress("right", .15f);
             await ToSignal(GetTree().CreateTimer(1.5), SceneTreeTimer.SignalName.Timeout);
             if (view == "tracks-right")
             {
@@ -166,12 +202,17 @@ public partial class VisualCapture : Node
             car.SetPose(world.Ground.At(focus.X, focus.Z + 2.7f, .15f), 0);
             camera.Position = focus + new Vector3(7, 4, 9);
             camera.LookAt(focus + Vector3.Up * 2.2f);
-            if (view == "tree-wind") ((Game)GetParent()).Weather.Begin(WeatherKind.Wind);
+            if (view == "tree-wind")
+                ((Game)GetParent()).Weather.Begin(WeatherKind.Wind);
             else
             {
                 await ToSignal(GetTree().CreateTimer(2), SceneTreeTimer.SignalName.Timeout);
-                var trunk = GetTree().GetNodesInGroup("obstacle_trunks").Cast<StaticBody3D>()
-                    .Where(body => body.GetParent() == world.Plants).OrderBy(body => body.Position.DistanceSquaredTo(focus)).First();
+                var trunk = GetTree()
+                    .GetNodesInGroup("obstacle_trunks")
+                    .Cast<StaticBody3D>()
+                    .Where(body => body.GetParent() == world.Plants)
+                    .OrderBy(body => body.Position.DistanceSquaredTo(focus))
+                    .First();
                 world.Plants.HitTree(trunk, Vector3.Forward * 12, Vector3.Back);
             }
         }
@@ -196,41 +237,103 @@ public partial class VisualCapture : Node
             camera.Position = new Vector3(-460, 320, 480);
             camera.LookAt(new Vector3(0, 0, 0));
         }
-        else if (view == "decorated" || view == "car" || view == "car-rear" || view == "buggy" || view == "pickup" || view == "wagon")
+        else if (
+            view == "decorated"
+            || view == "car"
+            || view == "car-rear"
+            || view == "buggy"
+            || view == "pickup"
+            || view == "wagon"
+        )
         {
             camera.SetProcess(false);
             var focus = car.Position + Vector3.Up * 1.2f;
             camera.Position = focus + (view == "car-rear" ? new Vector3(-4, 2.5f, 5) : new Vector3(4, 2.5f, -5));
             camera.LookAt(focus);
         }
-        else if (view is "collection" or "village-fruit" or "farm-expedition" or "garden-expedition" or "museum-expedition" or "toys-expedition")
+        else if (
+            view
+            is "collection"
+                or "village-fruit"
+                or "farm-expedition"
+                or "garden-expedition"
+                or "museum-expedition"
+                or "toys-expedition"
+        )
         {
             camera.SetProcess(false);
             var point = ((Game)GetParent()).Delivery!.PickupPositions[0];
             car.SetPose(world.Ground.At(point.X, point.Z + 7, .15f), 0);
-            camera.Position = point + new Vector3(7, 6, 14); camera.LookAt(point + Vector3.Up);
+            camera.Position = point + new Vector3(7, 6, 14);
+            camera.LookAt(point + Vector3.Up);
         }
         else if (view == "delivery" || view.EndsWith("-delivery"))
         {
             camera.SetProcess(false);
-            var direction = (((Game)GetParent()).Delivery!.Waypoint - car.Position); direction.Y = 0; direction = direction.Normalized();
+            var direction = (((Game)GetParent()).Delivery!.Waypoint - car.Position);
+            direction.Y = 0;
+            direction = direction.Normalized();
             car.SetPose(car.Position, Mathf.Atan2(-direction.X, -direction.Z));
-            camera.Position = car.Position - direction * 12 + Vector3.Up * 7; camera.LookAt(car.Position + direction * 5);
+            camera.Position = car.Position - direction * 12 + Vector3.Up * 7;
+            camera.LookAt(car.Position + direction * 5);
         }
-        else if (view is "house-celebration" or "challenge-2" or "syllables" or "reading" || view.StartsWith("postcard-")) { }
-        else if (!view.EndsWith("-reward") && !view.StartsWith("collection-") && !view.StartsWith("delivery-") && view != "gameplay" && view != "title" && view != "challenge" && view != "letters" && view != "reward" && view != "accessories")
+        else if (
+            view is "house-celebration" or "challenge-2" or "syllables" or "reading"
+            || view.StartsWith("postcard-")
+        ) { }
+        else if (
+            !view.EndsWith("-reward")
+            && !view.StartsWith("collection-")
+            && !view.StartsWith("delivery-")
+            && view != "gameplay"
+            && view != "title"
+            && view != "challenge"
+            && view != "letters"
+            && view != "reward"
+            && view != "accessories"
+        )
         {
             camera.SetProcess(false);
-            Vector3 focus = (view == "river" || view == "pond") ? new Vector3(River.CenterX(River.BridgeZ), River.BridgeHeight, River.BridgeZ) : view == "village" ? world.Village.Center + Vector3.Up * 2 : world.Animals[view == "fox" ? 1 : view == "bear" ? 2 : 0].Position + Vector3.Up * 1.5f;
-            camera.Position = focus + (view == "village" ? new Vector3(30, 27, 39) : (view == "river" || view == "pond") ? new Vector3(34, 25, 33) : new Vector3(4, 2, 8));
+            Vector3 focus =
+                (view == "river" || view == "pond")
+                    ? new Vector3(River.CenterX(River.BridgeZ), River.BridgeHeight, River.BridgeZ)
+                : view == "village" ? world.Village.Center + Vector3.Up * 2
+                : world
+                    .Animals[
+                        view == "fox" ? 1
+                        : view == "bear" ? 2
+                        : 0
+                    ]
+                    .Position
+                    + Vector3.Up * 1.5f;
+            camera.Position =
+                focus
+                + (
+                    view == "village" ? new Vector3(30, 27, 39)
+                    : (view == "river" || view == "pond") ? new Vector3(34, 25, 33)
+                    : new Vector3(4, 2, 8)
+                );
             camera.LookAt(focus);
         }
-        await ToSignal(GetTree().CreateTimer(view == "grass" ? .15 : view == "tree-impact" ? .5 : view == "delivery-reward" || view == "house-celebration" ? 1.2 : 3), SceneTreeTimer.SignalName.Timeout);
-        if (DisplayServer.GetName() == "headless") { GetTree().Quit(); return; }
+        await ToSignal(
+            GetTree()
+                .CreateTimer(
+                    view == "grass" ? .15
+                    : view == "tree-impact" ? .5
+                    : view == "delivery-reward" || view == "house-celebration" ? 1.2
+                    : 3
+                ),
+            SceneTreeTimer.SignalName.Timeout
+        );
+        if (DisplayServer.GetName() == "headless")
+        {
+            GetTree().Quit();
+            return;
+        }
         await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
         DirAccess.MakeDirRecursiveAbsolute(ProjectSettings.GlobalizePath("res://artifacts"));
         var result = GetViewport().GetTexture().GetImage().SavePng($"res://artifacts/{view}.png");
-        GD.Print("CAPTURE: " + result); GetTree().Quit(result == Error.Ok ? 0 : 1);
+        GD.Print("CAPTURE: " + result);
+        GetTree().Quit(result == Error.Ok ? 0 : 1);
     }
 }
-

@@ -9,12 +9,17 @@ public partial class FollowCamera : Camera3D
     private Vector3 focus;
     private Vector3 lastTargetPosition;
     private float moment;
-    private Vector3 momentFocus, momentSide;
+    private Vector3 momentFocus,
+        momentSide;
     internal bool MomentPaused;
+
     internal void ShowMoment(Vector3 target, Vector3 outward)
     {
-        moment = 3; momentFocus = target; momentSide = outward;
+        moment = 3;
+        momentFocus = target;
+        momentSide = outward;
     }
+
     private const float ReturnDelay = 3f;
     private const float Sensitivity = .006f;
     private static readonly float DefaultPitch = Mathf.Atan2(4.3f, 10.5f);
@@ -29,7 +34,8 @@ public partial class FollowCamera : Camera3D
     {
         if (Target.Active && e is InputEventMouseButton { ButtonIndex: MouseButton.Right, Pressed: true })
         {
-            if (!dragging) previousMouseMode = Input.MouseMode;
+            if (!dragging)
+                previousMouseMode = Input.MouseMode;
             dragging = true;
             idleTime = 0;
             Input.MouseMode = Input.MouseModeEnum.Captured;
@@ -40,8 +46,13 @@ public partial class FollowCamera : Camera3D
     public override void _Input(InputEvent e)
     {
         // Release must also work over UI controls, before they consume the event.
-        if (e is InputEventMouseButton { ButtonIndex: MouseButton.Right, Pressed: false }) StopDragging();
-        if (!Target.Active) { StopDragging(); return; }
+        if (e is InputEventMouseButton { ButtonIndex: MouseButton.Right, Pressed: false })
+            StopDragging();
+        if (!Target.Active)
+        {
+            StopDragging();
+            return;
+        }
         if (dragging && e is InputEventMouseMotion motion && motion.Relative != Vector2.Zero)
         {
             yaw = Mathf.Wrap(yaw - motion.Relative.X * Sensitivity, -Mathf.Pi, Mathf.Pi);
@@ -53,43 +64,52 @@ public partial class FollowCamera : Camera3D
 
     private void StopDragging()
     {
-        if (!dragging) return;
+        if (!dragging)
+            return;
         dragging = false;
         Input.MouseMode = previousMouseMode;
     }
 
     public override void _Notification(int what)
     {
-        if (what == NotificationApplicationFocusOut || what == NotificationExitTree) StopDragging();
+        if (what == NotificationApplicationFocusOut || what == NotificationExitTree)
+            StopDragging();
     }
 
     public void Snap()
     {
         StopDragging();
         moment = 0;
-        yaw = 0; pitch = DefaultPitch; idleTime = 0;
+        yaw = 0;
+        pitch = DefaultPitch;
+        idleTime = 0;
         focus = Target.Position + Vector3.Up * 1.5f;
         lastTargetPosition = Target.Position;
         Position = Target.Position + Target.Transform.Basis.Z * 10.5f + Vector3.Up * 5.7f;
         LookAt(focus);
     }
+
     public override void _Process(double delta)
     {
         float dt = (float)delta;
         if (moment > 0)
         {
             StopDragging();
-            if (MomentPaused) return;
+            if (MomentPaused)
+                return;
             moment -= dt;
             var view = momentFocus + momentSide * 17 + Vector3.Up * 8;
             view.Y = Mathf.Max(view.Y, Ground.Height(view.X, view.Z) + 3);
             Position = Position.Lerp(view, 1 - Mathf.Exp(-dt * 4));
-            focus = focus.Lerp(momentFocus, 1 - Mathf.Exp(-dt * 4)); LookAt(focus);
-            if (Target.Active) moment = 0;
+            focus = focus.Lerp(momentFocus, 1 - Mathf.Exp(-dt * 4));
+            LookAt(focus);
+            if (Target.Active)
+                moment = 0;
             lastTargetPosition = Target.Position;
             return;
         }
-        if (!Target.Active) StopDragging();
+        if (!Target.Active)
+            StopDragging();
         idleTime += dt;
         var stick = Input.GetVector("camera_left", "camera_right", "camera_up", "camera_down");
         if (Target.Active && stick != Vector2.Zero)
@@ -107,7 +127,9 @@ public partial class FollowCamera : Camera3D
         float blend = 1 - Mathf.Exp(-dt * 3.5f);
         var behind = Target.Transform.Basis.Z;
         var orbit = behind.Rotated(Vector3.Up, yaw);
-        var desired = Target.Position + orbit * (Mathf.Cos(pitch) * OrbitDistance)
+        var desired =
+            Target.Position
+            + orbit * (Mathf.Cos(pitch) * OrbitDistance)
             + Vector3.Up * (1.4f + Mathf.Sin(pitch) * OrbitDistance);
         desired.Y = Mathf.Max(desired.Y, Ground.Height(desired.X, desired.Z) + 3);
         // Follow translation immediately, but smooth the orbit in polar coordinates.
@@ -117,11 +139,24 @@ public partial class FollowCamera : Camera3D
         var offset = Position - lastTargetPosition;
         lastTargetPosition = Target.Position;
         var desiredOffset = desired - Target.Position;
-        float angle = Mathf.LerpAngle(Mathf.Atan2(offset.X, offset.Z), Mathf.Atan2(desiredOffset.X, desiredOffset.Z), blend);
-        float radius = Mathf.Lerp(new Vector2(offset.X, offset.Z).Length(), new Vector2(desiredOffset.X, desiredOffset.Z).Length(), blend);
+        float angle = Mathf.LerpAngle(
+            Mathf.Atan2(offset.X, offset.Z),
+            Mathf.Atan2(desiredOffset.X, desiredOffset.Z),
+            blend
+        );
+        float radius = Mathf.Lerp(
+            new Vector2(offset.X, offset.Z).Length(),
+            new Vector2(desiredOffset.X, desiredOffset.Z).Length(),
+            blend
+        );
         radius = Mathf.Max(radius, 3);
-        var next = Target.Position + new Vector3(Mathf.Sin(angle) * radius,
-            Mathf.Lerp(offset.Y, desiredOffset.Y, blend), Mathf.Cos(angle) * radius);
+        var next =
+            Target.Position
+            + new Vector3(
+                Mathf.Sin(angle) * radius,
+                Mathf.Lerp(offset.Y, desiredOffset.Y, blend),
+                Mathf.Cos(angle) * radius
+            );
         next.Y = Mathf.Max(next.Y, Ground.Height(next.X, next.Z) + 3);
         Position = next;
         focus += movement;
@@ -131,4 +166,3 @@ public partial class FollowCamera : Camera3D
         LookAt(focus);
     }
 }
-

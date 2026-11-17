@@ -1,7 +1,7 @@
-using Godot;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Godot;
 
 namespace MathRacer;
 
@@ -9,6 +9,7 @@ public sealed record DeliveryChallenge(string Cargo, int Answer) : IChallenge
 {
     public IReadOnlyList<int> Choices => new[] { 1, 2, 3 };
     public string Expression => "";
+
     public bool Accepts(int choice) => choice == Answer;
 }
 
@@ -24,11 +25,16 @@ public partial class Expedition : Node3D
     public bool Toys => Sender.IsToymaker;
     public bool Golem => Sender.IsSorcerer;
     public bool SpecialCollection => Farm || Garden || Gems || Toys || Golem;
-    public int FarmIndex { get; }
-    public string FarmName => Village.FarmNames[FarmIndex];
-    public string FlowerName => Village.FlowerNames[FarmIndex];
-    public string CollectionName => Village.CollectionNames(Toys)[FarmIndex];
-    public string Cargo => Sender.IsTrader ? Village.TradeCargo[Sender.TradeIndex] : Collection ? "apple" : Sender.Kind == 0 ? "carrot" : Sender.Kind == 1 ? "apple" : "honey";
+    public int ItemIndex { get; }
+    public string FarmName => Village.FarmNames[ItemIndex];
+    public string FlowerName => Village.FlowerNames[ItemIndex];
+    public string CollectionName => Village.CollectionNames(Toys)[ItemIndex];
+    public string Cargo =>
+        Sender.IsTrader ? Village.TradeCargo[Sender.TradeIndex]
+        : Collection ? "apple"
+        : Sender.Kind == 0 ? "carrot"
+        : Sender.Kind == 1 ? "apple"
+        : "honey";
     public int Amount { get; }
     public int Collected { get; private set; }
     public bool CanDeliver => !Collection || Collected == Amount;
@@ -54,6 +60,7 @@ public partial class Expedition : Node3D
     private MeshInstance3D destinationArrow = null!;
     private float arrowPhase;
     private float refresh;
+    private float destinationRoadDistance;
     private Vector3 roadExit;
     private Vector3 roadWaypoint;
     private bool offRoad;
@@ -62,30 +69,53 @@ public partial class Expedition : Node3D
     internal bool CargoVisible => !cargoDetached && load != null && load.IsVisibleInTree();
     internal int RouteLength { get; private set; }
 
+    /// <summary>
+    /// A stable number for this sender's trip that picks the delivery recipient and amount. It depends only
+    /// on saved progress, so a restored expedition matches the one that was saved. Traders count their
+    /// finished orders to vary repeat trips; residents follow the roadside friends.
+    /// </summary>
+    private static int TripNumber(World world, Animal sender) =>
+        sender.Role switch
+        {
+            TraderRole trader => trader.Index + world.Village.TradeCounts[trader.Index],
+            HouseResidentRole resident => world.Animals.Length + resident.House,
+            _ => Array.IndexOf(world.Animals, sender),
+        };
+
     public Expedition(World world, Vehicle car, Animal sender, bool collection, bool[]? restoredPickups = null)
     {
-        this.world = world; this.car = car; Sender = sender;
+        this.world = world;
+        this.car = car;
+        Sender = sender;
         // Existing clearings guarantee that both ends are reachable from a road.
-        var candidates = world.Animals.Where(a => a != sender).OrderBy(a => a.Position.DistanceSquaredTo(sender.Position)).Take(5).ToArray();
-        int index = sender.IsTrader ? sender.TradeIndex + world.Village.TradeCounts[sender.TradeIndex] : sender.HouseIndex >= 0 ? world.Animals.Length + sender.HouseIndex : Array.IndexOf(world.Animals, sender);
+        var candidates = world
+            .Animals.Where(a => a != sender)
+            .OrderBy(a => a.Position.DistanceSquaredTo(sender.Position))
+            .Take(5)
+            .ToArray();
+        int trip = TripNumber(world, sender);
         Collection = collection;
-        FarmIndex = Farm ? world.Village.FarmCount : Garden ? world.Village.GardenCount : Gems ? world.Village.GemCount : Toys ? world.Village.ToyCount : 0;
-        Recipient = Collection ? sender : candidates[index % candidates.Length];
-        Amount = Golem ? 6 : SpecialCollection ? 1 : Collection ? 3 : (index / 3 + index) % 3 + 1;
+        var collector = sender.Role as CollectorRole;
+        ItemIndex = collector?.Count(world.Village) ?? 0;
+        Recipient = Collection ? sender : candidates[trip % candidates.Length];
+        Amount =
+            Golem ? 6
+            : SpecialCollection ? 1
+            : Collection ? 3
+            : (trip / 3 + trip) % 3 + 1;
         Collected = Collection ? 0 : Amount;
-        PickupPositions = Collection ? candidates.Take(3).Select(a => world.Routes.Samples[Nearest(a.Position)]).ToArray() : Array.Empty<Vector3>();
+        PickupPositions = Collection
+            ? candidates.Take(3).Select(a => world.Routes.Samples[Nearest(a.Position)]).ToArray()
+            : Array.Empty<Vector3>();
         if (Golem)
         {
             Recipient = sender;
             PickupPositions = world.SpecialPickupSpots.Take(6).ToArray();
         }
-        else if (SpecialCollection)
+        else if (collector != null)
         {
             Recipient = sender;
-            int offset = Farm ? 0 : Village.FarmKinds.Length;
-            if (Gems || Toys) offset += Village.FlowerNames.Length;
-            if (Toys) offset += Village.GemNames.Length;
-            specialPickupOffset = FarmIndex + offset;
+            specialPickupOffset = collector.PickupSlotOffset + ItemIndex;
             PickupPositions = new[] { world.SpecialPickupSpots[specialPickupOffset] };
         }
         picked = new bool[PickupPositions.Length];
@@ -100,47 +130,72 @@ public partial class Expedition : Node3D
         var buckets = new Dictionary<Vector2I, List<int>>();
         for (int i = 0; i < samples.Count; i++)
         {
-            var p = samples[i]; var key = new Vector2I(Mathf.FloorToInt(p.X / 4), Mathf.FloorToInt(p.Z / 4));
-            for (int x = -1; x <= 1; x++) for (int z = -1; z <= 1; z++)
+            var p = samples[i];
+            var key = new Vector2I(Mathf.FloorToInt(p.X / 4), Mathf.FloorToInt(p.Z / 4));
+            for (int x = -1; x <= 1; x++)
+            for (int z = -1; z <= 1; z++)
                 if (buckets.TryGetValue(key + new Vector2I(x, z), out var neighbors))
                     foreach (int j in neighbors)
-                        if (p.DistanceSquaredTo(samples[j]) < 10.24f) { edges[i].Add(j); edges[j].Add(i); }
-            if (!buckets.TryGetValue(key, out var bucket)) buckets[key] = bucket = new();
+                        if (p.DistanceSquaredTo(samples[j]) < 10.24f)
+                        {
+                            edges[i].Add(j);
+                            edges[j].Add(i);
+                        }
+            if (!buckets.TryGetValue(key, out var bucket))
+                buckets[key] = bucket = new();
             bucket.Add(i);
         }
         RebuildRoute();
     }
+
     private void RebuildRoute()
     {
         var samples = world.Routes.Samples;
+        var destination = Destination;
+        destinationRoadDistance = world.Routes.Distance(destination);
         Array.Fill(next, -1);
-        int routeTarget = SpecialCollection && !CanDeliver
-            ? Nearest(world.PickupApproaches[specialPickupOffset + Array.FindIndex(picked, collected => !collected)].Road)
-            : Nearest(Destination);
+        int routeTarget =
+            SpecialCollection && !CanDeliver
+                ? Nearest(
+                    world.PickupApproaches[specialPickupOffset + Array.FindIndex(picked, collected => !collected)].Road
+                )
+                : Nearest(destination);
         roadExit = samples[routeTarget];
         roadExit.Y = ArrowRoadHeight(roadExit);
         var costs = Enumerable.Repeat(float.PositiveInfinity, samples.Count).ToArray();
-        var queue = new PriorityQueue<int, float>(); costs[routeTarget] = 0; queue.Enqueue(routeTarget, 0);
+        var queue = new PriorityQueue<int, float>();
+        costs[routeTarget] = 0;
+        queue.Enqueue(routeTarget, 0);
         while (queue.TryDequeue(out int i, out float cost))
         {
-            if (cost > costs[i]) continue;
+            if (cost > costs[i])
+                continue;
             foreach (int j in edges[i])
             {
                 float candidate = cost + samples[i].DistanceTo(samples[j]);
-                if (candidate >= costs[j]) continue;
-                costs[j] = candidate; next[j] = i; queue.Enqueue(j, candidate);
+                if (candidate >= costs[j])
+                    continue;
+                costs[j] = candidate;
+                next[j] = i;
+                queue.Enqueue(j, candidate);
             }
         }
-        if (costs.Any(float.IsPositiveInfinity)) throw new InvalidOperationException("Delivery road navigation is disconnected.");
+        if (costs.Any(float.IsPositiveInfinity))
+            throw new InvalidOperationException("Delivery road navigation is disconnected.");
     }
 
     private int Nearest(Vector3 p)
     {
-        int best = 0; float distance = float.PositiveInfinity;
+        int best = 0;
+        float distance = float.PositiveInfinity;
         for (int i = 0; i < world.Routes.Samples.Count; i++)
         {
             float d = world.Routes.Samples[i].DistanceSquaredTo(p);
-            if (d < distance) { best = i; distance = d; }
+            if (d < distance)
+            {
+                best = i;
+                distance = d;
+            }
         }
         return best;
     }
@@ -149,19 +204,49 @@ public partial class Expedition : Node3D
     {
         load = new Node3D { Name = "DeliveryCargo", Position = new(0, 2.4f, .3f) };
         car.AddChild(load);
-        foreach (float x in new[] { -.65f, .65f }) Art.Block(load, new(x, -.23f, 0), new(.1f, .4f, .8f), "795b43");
+        foreach (float x in new[] { -.65f, .65f })
+            Art.Block(load, new(x, -.23f, 0), new(.1f, .4f, .8f), "795b43");
         Art.Block(load, Vector3.Zero, new(1.8f, .28f, 1.05f), "bc8b61");
         int loaded = 0;
         for (int i = 0; i < picked.Length; i++)
-            if (picked[i]) { AddLoadAnimalOrCargo(Golem ? new(-.65f + (loaded % 3) * .65f, .5f, -.25f + (loaded / 3) * .5f) : new(-.6f + loaded * .6f, .5f, 0), i); loaded++; }
-        if (!Collection) for (int i = 0; i < Collected; i++) AddLoadAnimalOrCargo(new(-.6f + i * .6f, .5f, 0));
+            if (picked[i])
+            {
+                AddLoadAnimalOrCargo(
+                    Golem
+                        ? new(-.65f + (loaded % 3) * .65f, .5f, -.25f + (loaded / 3) * .5f)
+                        : new(-.6f + loaded * .6f, .5f, 0),
+                    i
+                );
+                loaded++;
+            }
+        if (!Collection)
+            for (int i = 0; i < Collected; i++)
+                AddLoadAnimalOrCargo(new(-.6f + i * .6f, .5f, 0));
         pickupModels = new Node3D[PickupPositions.Length];
         for (int i = 0; i < PickupPositions.Length; i++)
         {
-            var p = PickupPositions[i]; float y = SpecialCollection ? world.Ground.Height(p.X, p.Z) : world.Routes.SurfaceHeight(p, world.Ground.Height(p.X, p.Z));
-            if (River.OnBridge(p.X, p.Z)) y = Mathf.Max(y, River.BridgeSurfaceHeight(p.X));
+            var p = PickupPositions[i];
+            float y = SpecialCollection
+                ? world.Ground.Height(p.X, p.Z)
+                : world.Routes.SurfaceHeight(p, world.Ground.Height(p.X, p.Z));
+            if (River.OnBridge(p.X, p.Z))
+                y = Mathf.Max(y, River.BridgeSurfaceHeight(p.X));
             PickupPositions[i] = new(p.X, y, p.Z);
-            var pickup = new Node3D { Name = (Golem ? "GolemPart" : Gems ? "CollectibleGem" : Toys ? "CollectibleToy" : Garden ? "CollectibleFlower" : Farm ? "CatchableAnimal" : "CollectibleApple") + i, Position = PickupPositions[i] }; AddChild(pickup); pickupModels[i] = pickup;
+            var pickup = new Node3D
+            {
+                Name =
+                    (
+                        Golem ? "GolemPart"
+                        : Gems ? "CollectibleGem"
+                        : Toys ? "CollectibleToy"
+                        : Garden ? "CollectibleFlower"
+                        : Farm ? "CatchableAnimal"
+                        : "CollectibleApple"
+                    ) + i,
+                Position = PickupPositions[i],
+            };
+            AddChild(pickup);
+            pickupModels[i] = pickup;
             if (Golem)
             {
                 GolemModel.Part(pickup, i, Vector3.Up * .7f);
@@ -169,56 +254,79 @@ public partial class Expedition : Node3D
             }
             else if (Farm)
             {
-                var animal = new WildAnimal(Village.FarmKinds[FarmIndex], .5f) { Scale = Vector3.One * 1.5f };
+                var animal = new WildAnimal(Village.FarmKinds[ItemIndex], .5f) { Scale = Vector3.One * 1.5f };
                 waitingAnimal = animal;
-                pickup.AddChild(animal); animal.Animate(0, false);
+                pickup.AddChild(animal);
+                animal.Animate(0, false);
                 Art.Sign(pickup, Vector3.Up * 3.5f, FarmName, 28);
             }
             else if (Gems || Toys)
             {
-                var item = Toys ? Village.CreateToy(pickup, Vector3.Zero, FarmIndex) : Village.CreateGem(pickup, Vector3.Zero, FarmIndex);
+                var item = Toys
+                    ? Village.CreateToy(pickup, Vector3.Zero, ItemIndex)
+                    : Village.CreateGem(pickup, Vector3.Zero, ItemIndex);
                 item.Scale = Vector3.One * 1.5f;
                 Art.Sign(pickup, Vector3.Up * 3.5f, CollectionName, 28);
             }
             else if (Garden)
             {
-                var flower = Village.CreateFlower(pickup, Vector3.Zero, FarmIndex); flower.Scale = Vector3.One * 1.7f;
+                var flower = Village.CreateFlower(pickup, Vector3.Zero, ItemIndex);
+                flower.Scale = Vector3.One * 1.7f;
                 Art.Sign(pickup, Vector3.Up * 3.5f, FlowerName, 28);
             }
             else
             {
-                var fruit = new Node3D { Scale = Vector3.One * 3 }; pickup.AddChild(fruit); AddCargo(fruit, Vector3.Up * .45f, Cargo);
+                var fruit = new Node3D { Scale = Vector3.One * 3 };
+                pickup.AddChild(fruit);
+                AddCargo(fruit, Vector3.Up * .45f, Cargo);
             }
             Art.TaskMarker(pickup, Vector3.Up * 5, "!", true);
-            if (picked[i]) pickup.Hide();
+            if (picked[i])
+                pickup.Hide();
         }
-        var arrowBuilder = new SurfaceTool(); arrowBuilder.Begin(Mesh.PrimitiveType.Triangles);
+        var arrowBuilder = new SurfaceTool();
+        arrowBuilder.Begin(Mesh.PrimitiveType.Triangles);
         // A solid arrow points along local -Z, with lit sides that make its depth visible.
-        var outline = new Vector3[] { new(0, 0, -1.2f), new(.72f, 0, -.35f), new(.28f, 0, -.35f), new(.28f, 0, .85f), new(-.28f, 0, .85f), new(-.28f, 0, -.35f), new(-.72f, 0, -.35f) };
+        var outline = new Vector3[]
+        {
+            new(0, 0, -1.2f),
+            new(.72f, 0, -.35f),
+            new(.28f, 0, -.35f),
+            new(.28f, 0, .85f),
+            new(-.28f, 0, .85f),
+            new(-.28f, 0, -.35f),
+            new(-.72f, 0, -.35f),
+        };
         const float halfThickness = .18f;
         var cap = new[] { 0, 1, 2, 0, 2, 5, 0, 5, 6, 2, 3, 4, 2, 4, 5 };
         arrowBuilder.SetNormal(Vector3.Up);
-        foreach (int vertex in cap) arrowBuilder.AddVertex(outline[vertex] + Vector3.Up * halfThickness);
+        foreach (int vertex in cap)
+            arrowBuilder.AddVertex(outline[vertex] + Vector3.Up * halfThickness);
         arrowBuilder.SetNormal(Vector3.Down);
-        for (int i = cap.Length - 1; i >= 0; i--) arrowBuilder.AddVertex(outline[cap[i]] + Vector3.Down * halfThickness);
+        for (int i = cap.Length - 1; i >= 0; i--)
+            arrowBuilder.AddVertex(outline[cap[i]] + Vector3.Down * halfThickness);
         for (int i = 0; i < outline.Length; i++)
         {
-            var a = outline[i]; var b = outline[(i + 1) % outline.Length];
+            var a = outline[i];
+            var b = outline[(i + 1) % outline.Length];
             var edge = b - a;
             arrowBuilder.SetNormal(new Vector3(edge.Z, 0, -edge.X).Normalized());
-            var topA = a + Vector3.Up * halfThickness; var bottomA = a + Vector3.Down * halfThickness;
-            var topB = b + Vector3.Up * halfThickness; var bottomB = b + Vector3.Down * halfThickness;
-            foreach (var vertex in new[] { topA, bottomA, bottomB, topA, bottomB, topB }) arrowBuilder.AddVertex(vertex);
+            var topA = a + Vector3.Up * halfThickness;
+            var bottomA = a + Vector3.Down * halfThickness;
+            var topB = b + Vector3.Up * halfThickness;
+            var bottomB = b + Vector3.Down * halfThickness;
+            foreach (var vertex in new[] { topA, bottomA, bottomB, topA, bottomB, topB })
+                arrowBuilder.AddVertex(vertex);
         }
         arrowMesh = arrowBuilder.Commit();
-        arrowMaterial = new ShaderMaterial
-        {
-            Shader = GD.Load<Shader>("res://Shaders/RouteArrow.gdshader")
-        };
+        arrowMaterial = new ShaderMaterial { Shader = GD.Load<Shader>("res://Shaders/RouteArrow.gdshader") };
         destinationArrow = new MeshInstance3D
         {
-            Name = "DestinationArrow", Mesh = arrowMesh, MaterialOverride = arrowMaterial,
-            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off, Visible = false
+            Name = "DestinationArrow",
+            Mesh = arrowMesh,
+            MaterialOverride = arrowMaterial,
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+            Visible = false,
         };
         AddChild(destinationArrow);
         UpdateGuidance();
@@ -248,7 +356,8 @@ public partial class Expedition : Node3D
         else if (cargo == "carrot")
         {
             Art.Cylinder(parent, p, .04f, .19f, .75f, "f59242");
-            for (int k = -1; k <= 1; k++) Art.Ball(parent, p + new Vector3(k * .12f, .5f, 0), new(.08f, .25f, .07f), "70b765");
+            for (int k = -1; k <= 1; k++)
+                Art.Ball(parent, p + new Vector3(k * .12f, .5f, 0), new(.08f, .25f, .07f), "70b765");
         }
         else if (cargo == "apple")
         {
@@ -266,42 +375,66 @@ public partial class Expedition : Node3D
 
     private void AddLoadAnimalOrCargo(Vector3 p, int pieceIndex = 0)
     {
-        if (Golem) { GolemModel.Part(load!, pieceIndex, p); return; }
+        if (Golem)
+        {
+            GolemModel.Part(load!, pieceIndex, p);
+            return;
+        }
         if (Gems || Toys)
         {
-            var item = Toys ? Village.CreateToy(load!, Vector3.Up * .15f, FarmIndex) : Village.CreateGem(load!, Vector3.Up * .15f, FarmIndex);
-            item.Scale = Vector3.One * .85f; return;
+            var item = Toys
+                ? Village.CreateToy(load!, Vector3.Up * .15f, ItemIndex)
+                : Village.CreateGem(load!, Vector3.Up * .15f, ItemIndex);
+            item.Scale = Vector3.One * .85f;
+            return;
         }
         if (Garden)
         {
             Art.Cylinder(load!, new(0, .3f, 0), .25f, .4f, .6f, "cd8962");
-            Village.CreateFlower(load!, new(0, .6f, 0), FarmIndex); return;
+            Village.CreateFlower(load!, new(0, .6f, 0), ItemIndex);
+            return;
         }
-        if (!Farm) { AddCargo(load!, p, Cargo); return; }
-        var animal = new WildAnimal(Village.FarmKinds[FarmIndex], .5f) { Position = new(0, .15f, 0), Scale = Vector3.One * .85f };
-        load!.AddChild(animal); animal.Animate(0, false);
+        if (!Farm)
+        {
+            AddCargo(load!, p, Cargo);
+            return;
+        }
+        var animal = new WildAnimal(Village.FarmKinds[ItemIndex], .5f)
+        {
+            Position = new(0, .15f, 0),
+            Scale = Vector3.One * .85f,
+        };
+        load!.AddChild(animal);
+        animal.Animate(0, false);
         transportedAnimal = animal;
     }
 
     internal Node3D? DetachCargo()
     {
-        if (load == null || cargoDetached) return null;
+        if (load == null || cargoDetached)
+            return null;
         cargoDetached = true;
         var delivered = new Node3D { Name = "HandedOverCargo", Transform = load.Transform };
         car.AddChild(delivered);
         // The first three meshes form the carrier. Only its contents fly to the recipient.
         foreach (var item in load.GetChildren().Skip(3).ToArray())
-            if (item is Node3D model) model.Reparent(delivered, true);
+            if (item is Node3D model)
+                model.Reparent(delivered, true);
         return delivered;
     }
 
     internal void ReleaseCargo()
     {
-        if (load == null || !GodotObject.IsInstanceValid(load)) return;
+        if (load == null || !GodotObject.IsInstanceValid(load))
+            return;
         load.Hide();
-        load.GetParent()?.RemoveChild(load); load.QueueFree(); load = null;
+        load.GetParent()?.RemoveChild(load);
+        load.QueueFree();
+        load = null;
     }
+
     public override void _ExitTree() => ReleaseCargo();
+
     public void Tick(double delta)
     {
         // Move the rendered mesh while keeping the road anchors fixed; pause freezes the phase.
@@ -315,15 +448,27 @@ public partial class Expedition : Node3D
             for (int i = 0; i < picked.Length; i++)
                 if (!picked[i] && car.Position.DistanceTo(PickupPositions[i]) < (SpecialCollection ? 2.8f : 4))
                 {
-                    picked[i] = true; pickupModels[i].Hide();
-                    AddLoadAnimalOrCargo(new(-.65f + (Collected % 3) * .65f, .5f, -.25f + (Collected / 3) * .5f), i); Collected++; changed = true;
+                    picked[i] = true;
+                    pickupModels[i].Hide();
+                    AddLoadAnimalOrCargo(new(-.65f + (Collected % 3) * .65f, .5f, -.25f + (Collected / 3) * .5f), i);
+                    Collected++;
+                    changed = true;
                 }
-            if (changed) { RebuildRoute(); refresh = 0; }
+            if (changed)
+            {
+                RebuildRoute();
+                refresh = 0;
+            }
         }
         refresh -= (float)delta;
-        if (refresh <= 0) { refresh = .25f; UpdateGuidance(); }
+        if (refresh <= 0)
+        {
+            refresh = .25f;
+            UpdateGuidance();
+        }
         UpdateArrowVisibility();
     }
+
     private void UpdateArrowVisibility()
     {
         offRoad = !OnRoad(car.Position);
@@ -337,42 +482,55 @@ public partial class Expedition : Node3D
         var anchor = offRoad ? car.Position : roadExit;
         var direction = Destination - anchor;
         direction.Y = 0;
-        destinationArrow.Visible = (offRoad || showRoadExit) && direction.LengthSquared() > .5f;
-        if (!destinationArrow.Visible) return;
+        destinationArrow.Visible =
+            direction.LengthSquared() > .5f && (offRoad ? direction.Length() <= destinationRoadDistance : showRoadExit);
+        if (!destinationArrow.Visible)
+            return;
         destinationArrow.Position = anchor + Vector3.Up * (offRoad ? 4.2f : 1.25f);
         destinationArrow.Rotation = new Vector3(0, Mathf.Atan2(-direction.X, -direction.Z), 0);
     }
+
     private bool OnRoad(Vector3 point) => world.Routes.Contains(point) || River.OnBridge(point.X, point.Z);
+
     private float ArrowRoadHeight(Vector3 point)
     {
         float surface = world.Routes.SurfaceHeight(point, world.Ground.Height(point.X, point.Z));
         return River.OnBridge(point.X, point.Z) ? Mathf.Max(surface, River.BridgeSurfaceHeight(point.X)) : surface;
     }
+
     private static void AnimateFarmAnimal(WildAnimal? animal, float delta)
     {
-        if (animal == null || !GodotObject.IsInstanceValid(animal)) return;
-        animal.Phase += delta; animal.Animate(delta, false);
+        if (animal == null || !GodotObject.IsInstanceValid(animal))
+            return;
+        animal.Phase += delta;
+        animal.Animate(delta, false);
     }
+
     private void UpdateGuidance()
     {
         var points = new List<Vector3>();
         var nodes = new List<int>();
-        int node = Nearest(car.Position); RouteLength = 0;
+        int node = Nearest(car.Position);
+        RouteLength = 0;
         while (node >= 0 && RouteLength++ < next.Length)
         {
-            nodes.Add(node); points.Add(world.Routes.Samples[node]); node = next[node];
+            nodes.Add(node);
+            points.Add(world.Routes.Samples[node]);
+            node = next[node];
         }
         points.Add(Destination);
         // Aim ahead along the road instead of across the river or through trees.
         roadWaypoint = points[Math.Min(8, points.Count - 1)];
         showRoadExit = nodes.Count <= 8 && !OnRoad(Destination);
-        foreach (var arrow in guidanceArrows) arrow.Hide();
+        foreach (var arrow in guidanceArrows)
+            arrow.Hide();
         guidanceArrows.Clear();
         var shownAnchors = new HashSet<int>();
         for (int sample = 0; sample < Math.Min(54, nodes.Count - 1); sample++)
         {
             int anchorIndex = world.Routes.SampleAnchors[nodes[sample]];
-            if (!shownAnchors.Add(anchorIndex)) continue;
+            if (!shownAnchors.Add(anchorIndex))
+                continue;
             var anchor = world.Routes.NavigationAnchors[anchorIndex];
             bool reverse = anchor.Forward.Dot(points[sample + 1] - points[sample]) < 0;
             var key = (anchorIndex, reverse);
@@ -380,15 +538,19 @@ public partial class Expedition : Node3D
             {
                 var p = anchor.Position;
                 var forward = reverse ? -anchor.Forward : anchor.Forward;
-                if (forward.LengthSquared() < .001f) continue;
+                if (forward.LengthSquared() < .001f)
+                    continue;
                 arrow = new MeshInstance3D
                 {
-                    Name = "RouteArrow" + routeArrows.Count, Mesh = arrowMesh, MaterialOverride = arrowMaterial,
+                    Name = "RouteArrow" + routeArrows.Count,
+                    Mesh = arrowMesh,
+                    MaterialOverride = arrowMaterial,
                     CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
                     Position = new Vector3(p.X, ArrowRoadHeight(p) + 1.25f, p.Z),
-                    Rotation = new Vector3(0, Mathf.Atan2(-forward.X, -forward.Z), 0)
+                    Rotation = new Vector3(0, Mathf.Atan2(-forward.X, -forward.Z), 0),
                 };
-                routeArrows.Add(key, arrow); AddChild(arrow);
+                routeArrows.Add(key, arrow);
+                AddChild(arrow);
             }
             guidanceArrows.Add(arrow);
         }

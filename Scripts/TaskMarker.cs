@@ -8,8 +8,8 @@ public partial class TaskMarker : Label3D
 
     public override void _Process(double delta)
     {
-        if (!IsVisibleInTree() || GetViewport().GetCamera3D() is not { } camera ||
-            GetParentNode3D() is not { } parent) return;
+        if (!IsVisibleInTree() || GetViewport().GetCamera3D() is not { } camera || GetParentNode3D() is not { } parent)
+            return;
 
         var anchor = parent.ToGlobal(AnchorPosition);
         var separation = anchor - camera.GlobalPosition;

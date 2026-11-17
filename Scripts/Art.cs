@@ -1,14 +1,21 @@
-using Godot;
 using System.Collections.Generic;
+using Godot;
 
 namespace MathRacer;
 
 public static class Art
 {
     private static readonly Dictionary<string, StandardMaterial3D> Materials = new();
-    private static readonly SphereMesh Sphere = new() { Radius = 1, Height = 2, RadialSegments = 12, Rings = 6 };
+    private static readonly SphereMesh Sphere = new()
+    {
+        Radius = 1,
+        Height = 2,
+        RadialSegments = 12,
+        Rings = 6,
+    };
     private static readonly BoxMesh Box = new();
     private static readonly Dictionary<string, ImageTexture> RoleIcons = new();
+
     public static Sprite3D RoleTaskIcon(Node3D parent, string icon)
     {
         if (!RoleIcons.TryGetValue(icon, out var texture))
@@ -16,17 +23,24 @@ public static class Art
             // Vector outlines avoid platform-dependent, full-color emoji glyphs.
             string path = icon switch
             {
-                "envelope" => "M29 33 H103 Q110 33 110 40 V96 Q110 103 103 103 H29 Q22 103 22 96 V40 Q22 33 29 33 Z M24 40 L61 70 Q66 74 71 70 L108 40",
-                "basket" => "M34 56 L49 27 Q66 9 83 27 L98 56 M22 56 H110 L98 109 H34 Z M49 71 L53 95 M66 71 V95 M83 71 L79 95",
-                "hand" => "M40 69 V35 Q40 25 50 25 Q57 25 57 35 V58 V22 Q57 12 66 12 Q75 12 75 22 V58 V29 Q75 19 84 19 Q93 19 93 29 V61 V43 Q93 33 102 33 Q111 33 111 43 V80 Q111 111 79 115 Q61 117 49 103 L24 75 Q17 65 25 59 Q32 54 40 69 Z",
-                "cloud" => "M35 99 C22 99 15 91 15 80 C15 68 24 60 36 60 C39 44 51 34 66 34 C81 34 93 44 96 58 C108 58 117 67 117 79 C117 91 108 99 96 99 Z",
-                "sorcerer" => "M23 99 Q66 112 109 99 L97 91 H35 Z M35 91 L62 23 Q66 14 71 23 L97 91 M52 75 L80 75 M66 45 V62 M58 53 H74",
-                _ => "M81 29 A15 15 0 1 1 51 29 A15 15 0 1 1 81 29 Z M44 111 V77 L31 88 L22 77 L46 53 H86 L110 77 L101 88 L88 77 V111 H73 V88 H59 V111 Z"
+                "envelope" =>
+                    "M29 33 H103 Q110 33 110 40 V96 Q110 103 103 103 H29 Q22 103 22 96 V40 Q22 33 29 33 Z M24 40 L61 70 Q66 74 71 70 L108 40",
+                "basket" =>
+                    "M34 56 L49 27 Q66 9 83 27 L98 56 M22 56 H110 L98 109 H34 Z M49 71 L53 95 M66 71 V95 M83 71 L79 95",
+                "hand" =>
+                    "M40 69 V35 Q40 25 50 25 Q57 25 57 35 V58 V22 Q57 12 66 12 Q75 12 75 22 V58 V29 Q75 19 84 19 Q93 19 93 29 V61 V43 Q93 33 102 33 Q111 33 111 43 V80 Q111 111 79 115 Q61 117 49 103 L24 75 Q17 65 25 59 Q32 54 40 69 Z",
+                "cloud" =>
+                    "M35 99 C22 99 15 91 15 80 C15 68 24 60 36 60 C39 44 51 34 66 34 C81 34 93 44 96 58 C108 58 117 67 117 79 C117 91 108 99 96 99 Z",
+                "sorcerer" =>
+                    "M23 99 Q66 112 109 99 L97 91 H35 Z M35 91 L62 23 Q66 14 71 23 L97 91 M52 75 L80 75 M66 45 V62 M58 53 H74",
+                _ =>
+                    "M81 29 A15 15 0 1 1 51 29 A15 15 0 1 1 81 29 Z M44 111 V77 L31 88 L22 77 L46 53 H86 L110 77 L101 88 L88 77 V111 H73 V88 H59 V111 Z",
             };
-            string svg = "<svg xmlns='http://www.w3.org/2000/svg' width='132' height='132' viewBox='0 0 132 132'>" +
-                "<g fill='none' stroke-linecap='round' stroke-linejoin='round'>" +
-                $"<path d='{path}' stroke='#241a10' stroke-width='15'/>" +
-                $"<path d='{path}' stroke='#ffeb3b' stroke-width='7'/></g></svg>";
+            string svg =
+                "<svg xmlns='http://www.w3.org/2000/svg' width='132' height='132' viewBox='0 0 132 132'>"
+                + "<g fill='none' stroke-linecap='round' stroke-linejoin='round'>"
+                + $"<path d='{path}' stroke='#241a10' stroke-width='15'/>"
+                + $"<path d='{path}' stroke='#ffeb3b' stroke-width='7'/></g></svg>";
             var image = new Image();
             image.LoadSvgFromString(svg, 2);
             texture = ImageTexture.CreateFromImage(image);
@@ -41,11 +55,12 @@ public static class Art
             FixedSize = true,
             Shaded = false,
             NoDepthTest = false,
-            Layers = SignLayer
+            Layers = SignLayer,
         };
         parent.AddChild(marker);
         return marker;
     }
+
     public static StandardMaterial3D Mat(string color)
     {
         if (!Materials.TryGetValue(color, out var m))
@@ -55,23 +70,54 @@ public static class Art
         }
         return m;
     }
-    public static MeshInstance3D Ball(Node3D parent, Vector3 pos, Vector3 scale, string color)
-        => Mesh(parent, Sphere, pos, scale, color);
-    public static MeshInstance3D Block(Node3D parent, Vector3 pos, Vector3 scale, string color)
-        => Mesh(parent, Box, pos, scale, color);
+
+    public static MeshInstance3D Ball(Node3D parent, Vector3 pos, Vector3 scale, string color) =>
+        Mesh(parent, Sphere, pos, scale, color);
+
+    public static MeshInstance3D Block(Node3D parent, Vector3 pos, Vector3 scale, string color) =>
+        Mesh(parent, Box, pos, scale, color);
+
     public static MeshInstance3D Mesh(Node3D parent, Mesh mesh, Vector3 pos, Vector3 scale, string color)
     {
-        var instance = new MeshInstance3D { Mesh = mesh, Position = pos, Scale = scale, MaterialOverride = Mat(color) };
+        var instance = new MeshInstance3D
+        {
+            Mesh = mesh,
+            Position = pos,
+            Scale = scale,
+            MaterialOverride = Mat(color),
+        };
         parent.AddChild(instance);
         return instance;
     }
-    public static MeshInstance3D Cylinder(Node3D parent, Vector3 pos, float bottom, float top, float height, string color)
-        => Mesh(parent, new CylinderMesh { BottomRadius = bottom, TopRadius = top, Height = height, RadialSegments = 10 }, pos, Vector3.One, color);
+
+    public static MeshInstance3D Cylinder(
+        Node3D parent,
+        Vector3 pos,
+        float bottom,
+        float top,
+        float height,
+        string color
+    ) =>
+        Mesh(
+            parent,
+            new CylinderMesh
+            {
+                BottomRadius = bottom,
+                TopRadius = top,
+                Height = height,
+                RadialSegments = 10,
+            },
+            pos,
+            Vector3.One,
+            color
+        );
+
     public static void Beam(Node3D parent, Vector3 from, Vector3 to, float width, string color)
     {
         var b = Block(parent, (from + to) / 2, new Vector3(width, width, from.DistanceTo(to)), color);
         b.LookAt(parent.ToGlobal(to), Vector3.Up);
     }
+
     internal const uint SignLayer = 1 << 1;
 
     public static Label3D Sign(Node3D parent, Vector3 pos, string text, int size = 44)
@@ -86,11 +132,12 @@ public static class Art
             Modulate = new Color("fff5d9"),
             Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
             NoDepthTest = false,
-            Layers = SignLayer
+            Layers = SignLayer,
         };
         parent.AddChild(label);
         return label;
     }
+
     public static TaskMarker TaskMarker(Node3D parent, Vector3 pos, string text, bool destination = false)
     {
         // Fixed-size symbols grow in world space with distance. Keep the whole
@@ -109,10 +156,9 @@ public static class Art
             OutlineModulate = new Color("241a10"),
             Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
             NoDepthTest = false,
-            Layers = SignLayer
+            Layers = SignLayer,
         };
         parent.AddChild(marker);
         return marker;
     }
 }
-

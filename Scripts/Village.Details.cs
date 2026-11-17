@@ -1,5 +1,5 @@
-using Godot;
 using System.Collections.Generic;
+using Godot;
 
 namespace MathRacer;
 
@@ -33,7 +33,9 @@ public partial class Village
             Art.Block(detail, new(-.98f, 1.65f, 3.12f), new(.38f, .42f, .08f), "fff1d2");
             var number = Art.Sign(Houses[i], new(-.98f, 1.65f, 3.2f), (i + 1).ToString(), 28);
             number.Billboard = BaseMaterial3D.BillboardModeEnum.Disabled;
-            number.PixelSize = .009f; number.Modulate = new Color("526f71"); number.OutlineSize = 0;
+            number.PixelSize = .009f;
+            number.Modulate = new Color("526f71");
+            number.OutlineSize = 0;
             BakeDetails(detail);
         }
 
@@ -47,8 +49,13 @@ public partial class Village
             Art.Block(detail, new(.9f, 1.42f, 3.34f), new(3.45f, .12f, .3f), "c39871");
             for (int item = 0; item < 3; item++)
             {
-                var display = new Node3D { Position = new(-.2f + item * 1.08f, 1.5f, 3.38f), Scale = Vector3.One * .52f };
-                detail.AddChild(display); Expedition.AddCargo(display, Vector3.Zero, TradeCargo[i]);
+                var display = new Node3D
+                {
+                    Position = new(-.2f + item * 1.08f, 1.5f, 3.38f),
+                    Scale = Vector3.One * .52f,
+                };
+                detail.AddChild(display);
+                Expedition.AddCargo(display, Vector3.Zero, TradeCargo[i]);
             }
             for (int stripe = 0; stripe < 8; stripe++)
             {
@@ -87,10 +94,22 @@ public partial class Village
             bool garden = building == GardenBuilding;
             var detail = DetailRoot(building);
             BuildingTrim(detail, garden ? 6 : 7, garden ? 5 : 5.5f, garden ? 3.4f : 3.6f);
-            FlatRoof(detail, garden ? 7 : 8, garden ? 6 : 6.5f, garden ? 3.75f : 4.1f,
-                garden ? "c39871" : building == ToyBuilding ? "ca6f79" : "649eaf");
+            FlatRoof(
+                detail,
+                garden ? 7 : 8,
+                garden ? 6 : 6.5f,
+                garden ? 3.75f : 4.1f,
+                garden ? "c39871"
+                    : building == ToyBuilding ? "ca6f79"
+                    : "649eaf"
+            );
             DoorDetails(detail, garden ? -1 : -1.5f, garden ? 2.66f : 2.91f, garden ? 2.4f : 2.6f);
-            WindowDetails(detail, new(garden ? 1.4f : 1.3f, 2, garden ? 2.8f : 3.05f), garden ? 1.2f : 1.7f, garden ? 1.1f : 1.2f);
+            WindowDetails(
+                detail,
+                new(garden ? 1.4f : 1.3f, 2, garden ? 2.8f : 3.05f),
+                garden ? 1.2f : 1.7f,
+                garden ? 1.1f : 1.2f
+            );
             WallLantern(detail, new(garden ? -2.35f : -2.65f, 2.5f, garden ? 2.8f : 3.05f));
             BakeDetails(detail);
         }
@@ -101,7 +120,9 @@ public partial class Village
 
     private static Node3D DetailRoot(Node3D parent)
     {
-        var root = new Node3D { Name = "ArchitecturalDetails" }; parent.AddChild(root); return root;
+        var root = new Node3D { Name = "ArchitecturalDetails" };
+        parent.AddChild(root);
+        return root;
     }
 
     private static void BuildingTrim(Node3D parent, float width, float depth, float height)
@@ -113,13 +134,23 @@ public partial class Village
             Art.Block(parent, new(side * (width / 2 + .035f), .3f, 0), new(.1f, .6f, depth), "c5b598");
             Art.Block(parent, new(side * (width / 2 + .06f), height - .12f, 0), new(.16f, .2f, depth), "fff1d2");
             foreach (int corner in new[] { -1, 1 })
-                Art.Block(parent, new(side * (width / 2 - .08f), height / 2, corner * (depth / 2 + .07f)), new(.22f, height, .18f), "fff1d2");
+                Art.Block(
+                    parent,
+                    new(side * (width / 2 - .08f), height / 2, corner * (depth / 2 + .07f)),
+                    new(.22f, height, .18f),
+                    "fff1d2"
+                );
             for (int row = 0; row < 2; row++)
-                for (int i = 0; i < (int)width; i++)
-                {
-                    float x = -width / 2 + .4f + i + row * .25f;
-                    Art.Block(parent, new(x, .15f + row * .3f, side * (depth / 2 + .095f)), new(.78f, .23f, .035f), (i + row) % 3 == 0 ? "dfd4bd" : "b7ab96");
-                }
+            for (int i = 0; i < (int)width; i++)
+            {
+                float x = -width / 2 + .4f + i + row * .25f;
+                Art.Block(
+                    parent,
+                    new(x, .15f + row * .3f, side * (depth / 2 + .095f)),
+                    new(.78f, .23f, .035f),
+                    (i + row) % 3 == 0 ? "dfd4bd" : "b7ab96"
+                );
+            }
         }
     }
 
@@ -138,7 +169,8 @@ public partial class Village
                 for (int tile = 0; tile < 10; tile++)
                 {
                     float z = -3.3f + tile * .72f + row % 2 * .22f;
-                    if (z > 3.5f) continue;
+                    if (z > 3.5f)
+                        continue;
                     var joint = Art.Block(parent, new(x, y + .007f, z), new(.62f, .035f, .028f), colors[house]);
                     joint.Rotation = new(0, 0, -side * Mathf.Atan(.675f));
                 }
@@ -168,7 +200,12 @@ public partial class Village
             Art.Block(parent, new(x + side, height / 2, z), new(.14f, height + .12f, .16f), "fff1d2");
         Art.Block(parent, new(x, height + .06f, z), new(1.65f, .16f, .18f), "fff1d2");
         for (int i = 0; i < 5; i++)
-            Art.Block(parent, new(x - .51f + i * .255f, height * .4f, z + .02f), new(.025f, height * .72f, .035f), "916c51");
+            Art.Block(
+                parent,
+                new(x - .51f + i * .255f, height * .4f, z + .02f),
+                new(.025f, height * .72f, .035f),
+                "916c51"
+            );
         Art.Block(parent, new(x, height * .78f, z + .035f), new(.75f, .55f, .05f), "fff1d2");
         Art.Block(parent, new(x, height * .78f, z + .07f), new(.59f, .39f, .04f), "88c7d8");
     }
@@ -179,7 +216,12 @@ public partial class Village
         Art.Block(parent, center, new(width, .075f, .06f), "fff1d2");
         Art.Block(parent, center + new Vector3(0, -height / 2 - .13f, .035f), new(width + .37f, .16f, .32f), "fff1d2");
         // Pale inset reflections read as glass without transparency sorting.
-        var reflection = Art.Block(parent, center + new Vector3(-width * .23f, height * .2f, .005f), new(width * .12f, height * .32f, .018f), "ccebf0");
+        var reflection = Art.Block(
+            parent,
+            center + new Vector3(-width * .23f, height * .2f, .005f),
+            new(width * .12f, height * .32f, .018f),
+            "ccebf0"
+        );
         reflection.Rotation = new(0, 0, -.35f);
     }
 
@@ -208,18 +250,31 @@ public partial class Village
         foreach (var child in meshes)
         {
             var instance = (MeshInstance3D)child;
-            if (instance.Mesh == null || instance.MaterialOverride == null) continue;
+            if (instance.Mesh == null || instance.MaterialOverride == null)
+                continue;
             if (!batches.TryGetValue(instance.MaterialOverride, out var surface))
             {
-                surface = new SurfaceTool(); surface.Begin(Mesh.PrimitiveType.Triangles);
+                surface = new SurfaceTool();
+                surface.Begin(Mesh.PrimitiveType.Triangles);
                 batches.Add(instance.MaterialOverride, surface);
             }
             var local = root.GlobalTransform.AffineInverse() * instance.GlobalTransform;
             surface.AppendFrom(instance.Mesh, 0, local);
         }
-        foreach (var child in root.GetChildren()) { root.RemoveChild(child); child.QueueFree(); }
+        foreach (var child in root.GetChildren())
+        {
+            root.RemoveChild(child);
+            child.QueueFree();
+        }
         foreach (var batch in batches)
-            root.AddChild(new MeshInstance3D { Name = "DetailBatch", Mesh = batch.Value.Commit(), MaterialOverride = batch.Key });
+            root.AddChild(
+                new MeshInstance3D
+                {
+                    Name = "DetailBatch",
+                    Mesh = batch.Value.Commit(),
+                    MaterialOverride = batch.Key,
+                }
+            );
     }
 
     private void GarageDetails()
@@ -252,7 +307,16 @@ public partial class Village
     {
         foreach (var node in Square.GetChildren())
         {
-            if (node is not Node3D prop || (prop.Name != "FruitStall" && prop.Name != "BakeryStall" && prop.Name != "SquareBench" && prop.Name != "Fountain")) continue;
+            if (
+                node is not Node3D prop
+                || (
+                    prop.Name != "FruitStall"
+                    && prop.Name != "BakeryStall"
+                    && prop.Name != "SquareBench"
+                    && prop.Name != "Fountain"
+                )
+            )
+                continue;
             var detail = DetailRoot(prop);
             if (prop.Name == "Fountain")
             {

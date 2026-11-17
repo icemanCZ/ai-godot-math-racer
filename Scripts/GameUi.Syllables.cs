@@ -1,5 +1,5 @@
-using Godot;
 using System;
+using Godot;
 
 namespace MathRacer;
 
@@ -10,8 +10,11 @@ public partial class GameUi
         var group = new VBoxContainer();
         group.AddThemeConstantOverride("separation", 6);
         content.AddChild(group);
-        var instruction = new Label { Text = $"✓  {selection.Count} / {question.Syllables.Count}",
-            HorizontalAlignment = HorizontalAlignment.Center };
+        var instruction = new Label
+        {
+            Text = $"✓  {selection.Count} / {question.Syllables.Count}",
+            HorizontalAlignment = HorizontalAlignment.Center,
+        };
         instruction.AddThemeFontSizeOverride("font_size", 22);
         group.AddChild(instruction);
         var grid = new GridContainer { Columns = 3 };
@@ -24,15 +27,24 @@ public partial class GameUi
             bool selected = selection.IsSelected(choice);
             bool rejected = selection.IsRejected(choice);
             string tile = question.Tiles[choice];
-            var button = Button(selected ? $"✓ {tile}" : rejected ? $"× {tile}" : tile, () => choose(choice), grid, narrate: false);
+            var button = Button(
+                selected ? $"✓ {tile}"
+                    : rejected ? $"× {tile}"
+                    : tile,
+                () => choose(choice),
+                grid,
+                narrate: false
+            );
             button.Name = $"Answer{choice}";
             button.ActionMode = BaseButton.ActionModeEnum.Release;
             button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
             button.CustomMinimumSize = new(124, 56);
             button.AddThemeFontSizeOverride("font_size", 30);
             button.Disabled = selected || rejected;
-            if (selected) button.AddThemeStyleboxOverride("disabled", Style("cde6cb", 20));
-            if (!button.Disabled) first ??= button;
+            if (selected)
+                button.AddThemeStyleboxOverride("disabled", Style("cde6cb", 20));
+            if (!button.Disabled)
+                first ??= button;
         }
         var confirm = Button("Potvrdit", () => SyllablesConfirmed?.Invoke(), group, narrate: false);
         confirm.Name = "ConfirmSyllables";
