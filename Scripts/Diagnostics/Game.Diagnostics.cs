@@ -331,6 +331,8 @@ public partial class Game
             trailer.Attach(true);
             trailer.SetLoad(HaulLoad.Stones);
         }
+        if (view == "bridge-roads")
+            world.Ford?.SetStage(Ford.Trips);
         if (view is "beaver" or "load-question" && world.Beaver != null)
         {
             vehicle.SetPose(world.Beaver.Position + Vector3.Right * 3, 0);

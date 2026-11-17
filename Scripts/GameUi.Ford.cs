@@ -43,7 +43,7 @@ public partial class GameUi
         }
         Text(stage >= Ford.Trips ? $"✓  {stage} / {Ford.Trips}" : $"{stage} / {Ford.Trips}", 30);
         if (stage >= Ford.Trips)
-            Text("Brod je hotový!", 24);
+            Text("Most je hotový!", 24);
         else if (trip != null)
             Picture(content, trip.Loaded ? LoadIcon(trip.Load) : "trailer");
         else if (canStart)
@@ -153,7 +153,7 @@ public partial class GameUi
             {
                 button.AddThemeStyleboxOverride("disabled", Style("d5d5d5", 16));
                 button.AddThemeColorOverride("font_disabled_color", new Color("777777"));
-                button.TooltipText = "Postav s bobrem Bóďou brod a vozík je tvůj.";
+                button.TooltipText = "Postav s bobrem Bóďou most a vozík je tvůj.";
             }
             return button;
         }

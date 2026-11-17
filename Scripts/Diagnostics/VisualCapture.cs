@@ -282,6 +282,27 @@ public partial class VisualCapture : Node
             camera.Position = focus + new Vector3(-ford.Site.Side * 9, 11, 20);
             camera.LookAt(focus);
         }
+        else if (view == "bridge-roads" && world.Ford is { } bridge)
+        {
+            // Both approach roads meeting the finished beaver's bridge, seen from above.
+            camera.SetProcess(false);
+            var site = bridge.Site;
+            var focus = new Vector3(site.CenterX, site.DeckHeight, site.Z);
+            camera.Position = focus + new Vector3(0, 55, 28);
+            camera.LookAt(focus);
+        }
+        else if (view == "quarry" && world.HaulSources.Length > 0)
+        {
+            // The field path from the road to the quarry's loading yard.
+            camera.SetProcess(false);
+            var source = world.HaulSources[(int)HaulLoad.Stones];
+            var along = source.Position - source.Road;
+            along.Y = 0;
+            along = along.Normalized();
+            var focus = source.Road.Lerp(source.Position, .55f) + Vector3.Up;
+            camera.Position = source.Road - along * 10 + along.Cross(Vector3.Up) * 8 + Vector3.Up * 12;
+            camera.LookAt(focus);
+        }
         else if (view == "trailer")
         {
             camera.SetProcess(false);

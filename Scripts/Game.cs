@@ -625,7 +625,6 @@ public partial class Game : Node3D
             ui.DeliveryHint(false);
         if (State is not (GameState.Paused or GameState.Title))
             trailer.Tick((float)delta);
-        TickFordSplash();
         TickCompanionStop((float)delta);
         TickGolem((float)delta);
         TickCollectorPets((float)delta);

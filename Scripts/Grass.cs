@@ -137,6 +137,8 @@ public partial class Grass : Node3D
             || River.OnBridge(p.X, p.Z)
             || world.Village.IsReserved(p)
             || world.Routes.SurfaceHeight(p, p.Y) > p.Y + .05f
+            || world.Tracks?.Contains(p) == true
+            || world.Ford?.Covers(p) == true
             || world.Plants.NearTrunk(p, .65f)
         )
             return false;

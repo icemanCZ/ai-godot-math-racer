@@ -58,6 +58,24 @@ public partial class FordChecks : Node
             var site = ford.Site;
             var trailer = game.Trailer;
             Check(!site.OnFarBank(site.NearDump) && site.OnFarBank(site.FarDump), "dumps lie on both banks");
+            Check(
+                Mathf.Abs(site.Z - River.BridgeZ) >= World.MinBridgeGap,
+                "the beaver's bridge is far from the main one"
+            );
+            var tracks = world.Tracks!;
+            Check(
+                new[] { site.NearRoad, site.NearDump, site.FarRoad, site.FarDump }.All(tracks.Contains)
+                    && world.HaulSources.All(s => tracks.Contains(s.Position) && tracks.Contains(s.Road)),
+                "roads lead to both bridge ends and field paths to every source"
+            );
+            foreach (var end in new[] { site.NearEnd, site.FarEnd })
+            {
+                var inward = new Vector3(site.CenterX - end.X, 0, 0).Normalized();
+                Check(
+                    tracks.Contains(end - inward * .5f) && tracks.Contains(end + inward * 2),
+                    "each road runs under the end of the deck without a meadow gap"
+                );
+            }
             Check(world.HaulSources.All(s => !site.OnFarBank(s.Position)), "sources lie on the village bank");
             Check(
                 world.HaulSources.Select((s, i) => s.Load == (HaulLoad)i).All(same => same),
@@ -146,7 +164,18 @@ public partial class FordChecks : Node
                     "dumped load builds the ford"
                 );
                 if (trip < Ford.Trips - 1)
-                    Check(game.Haul is { Loaded: false } next && next.Trip == trip + 1, "the next trip starts");
+                {
+                    Check(game.Haul == null && !game.TaskActive, "the next trip waits for the player");
+                    RoundTrip($"between loads {trip + 1}");
+                    car.SetPose(world.Beaver!.Position + Vector3.Right * 2, 0);
+                    game.OpenBeaver();
+                    Check(game.State == GameState.FordStatus, "the beaver offers the next load");
+                    game.BeginFordTrip();
+                    Check(
+                        game.Haul is { Loaded: false } next && next.Trip == trip + 1 && trailer.Attached,
+                        "confirming starts the next trip"
+                    );
+                }
                 RoundTrip($"after load {trip + 1}");
             }
             Check(

@@ -10,9 +10,18 @@ public partial class World
     // 43 is the bandit representative's save ID in Game.
     internal const int BeaverId = 44;
 
-    /// <summary>The beaver's ford, or null when the seeded valley has no suitable crossing.</summary>
+    /// <summary>The beaver's bridge, or null when the seeded valley has no suitable crossing.</summary>
     internal Ford? Ford { get; private set; }
     internal Animal? Beaver { get; private set; }
+
+    /// <summary>Field paths to the sources and the roads to both bridge ends; null without a ford.</summary>
+    internal Tracks? Tracks { get; private set; }
+
+    internal const float BridgeRoadHalfWidth = Ford.HalfWidth;
+    internal const float FieldPathHalfWidth = 2.2f;
+
+    /// <summary>The beaver's bridge keeps at least this far from the main bridge along the river.</summary>
+    internal const float MinBridgeGap = 150;
 
     /// <summary>The quarry, clay pit and sand pit, indexed by <see cref="HaulLoad"/>.</summary>
     internal HaulSource[] HaulSources { get; private set; } = Array.Empty<HaulSource>();
@@ -67,7 +76,8 @@ public partial class World
         AddChild(Ford);
         foreach (var source in sources)
             BuildHaulSource(source);
-        Beaver = Animal.Create("Bobr Bóďa", "Postavíme brod přes řeku? Přivez mi kamení, hlínu a písek.", 2, "9a6a46");
+        BuildTracks(site, sources);
+        Beaver = Animal.Create("Bobr Bóďa", "Postavíme most přes řeku? Přivez mi kamení, hlínu a písek.", 2, "9a6a46");
         Beaver.Role = new BeaverRole();
         Beaver.DressAsBeaver();
         Beaver.Position = site.BeaverSpot;
@@ -84,12 +94,13 @@ public partial class World
         float bestScore = float.PositiveInfinity;
         for (float z = -Settings.PlayableRadius + 40; z <= Settings.PlayableRadius - 40; z += 4)
         {
-            if (Mathf.Abs(z - River.BridgeZ) < 70)
+            if (Mathf.Abs(z - River.BridgeZ) < MinBridgeGap)
                 continue;
             float centerX = River.CenterX(z);
             // The village sits near the origin, so the far bank lies away from it.
             float side = centerX >= 0 ? 1 : -1;
-            float deck = River.Level(z) + .08f;
+            // The deck stands clear of the water like the main bridge, on piers between the banks.
+            float deck = River.Level(z) + .65f;
             float width = Mathf.Max(River.HalfWidth(z), Mathf.Max(River.HalfWidth(z - 4), River.HalfWidth(z + 4)));
             // The deck ends where the bank rises above it, so the slab meets the ground without a step.
             float halfLength = 0;
@@ -131,13 +142,13 @@ public partial class World
                 fordRejections[3]++;
                 continue;
             }
-            var nearRoad = BankRoad(near, farBank: false, side, friends, 160);
+            var nearRoad = BankRoad(near, farBank: false, side, friends, 220);
             if (nearRoad is not Vector3 nearStart)
             {
                 fordRejections[4]++;
                 continue;
             }
-            var farRoad = BankRoad(far, farBank: true, side, friends, 90);
+            var farRoad = BankRoad(far, farBank: true, side, friends, 120);
             if (farRoad is not Vector3 farStart)
             {
                 fordRejections[5]++;
@@ -326,6 +337,40 @@ public partial class World
         var edge = new Vector2(to.X, to.Z) - a;
         float t = edge.LengthSquared() < .0001f ? 0 : Mathf.Clamp((p - a).Dot(edge) / edge.LengthSquared(), 0, 1);
         return p.DistanceTo(a + edge * t);
+    }
+
+    /// <summary>
+    /// Draws the already cleared approaches: a road from the network to each bridge end through its
+    /// dump, and a field path ending in a loading yard at each source.
+    /// </summary>
+    private void BuildTracks(FordSite site, HaulSource[] sources)
+    {
+        Tracks = new Tracks { Name = "Tracks" };
+        foreach (
+            var (road, dump, end) in new[]
+            {
+                (site.NearRoad, site.NearDump, site.NearEnd),
+                (site.FarRoad, site.FarDump, site.FarEnd),
+            }
+        )
+        {
+            // The road runs on down the bank to the water, so no meadow is left between it and the
+            // bridge, during the building or under the finished deck.
+            var water = new Vector3(
+                site.CenterX + Mathf.Sign(end.X - site.CenterX) * River.HalfWidth(site.Z),
+                0,
+                site.Z
+            );
+            Tracks.Line(road, dump, BridgeRoadHalfWidth, Tracks.Kind.Road);
+            Tracks.Line(dump, water, BridgeRoadHalfWidth, Tracks.Kind.Road, FlatDistance(road, dump));
+        }
+        foreach (var source in sources)
+        {
+            Tracks.Line(source.Road, source.Position, FieldPathHalfWidth, Tracks.Kind.Path);
+            Tracks.Pad(source.Position, 4.5f, Tracks.Kind.Path);
+        }
+        AddChild(Tracks);
+        Tracks.Build(Ground);
     }
 
     private void BuildHaulSource(HaulSource source)

@@ -91,41 +91,10 @@ public partial class Game
     /// <summary>Companions trail further back while the trailer is hitched.</summary>
     private float TrailerTrailShift => trailer?.Attached == true ? 3.5f : 0;
 
-    private CpuParticles3D fordSplash = null!;
-
     private void SetupTrailer()
     {
         trailer = new Trailer(world, vehicle);
         world.AddChild(trailer);
-        fordSplash = new CpuParticles3D
-        {
-            Name = "FordSplash",
-            Emitting = false,
-            Amount = 40,
-            Lifetime = .7f,
-            Mesh = new SphereMesh
-            {
-                Radius = .09f,
-                Height = .18f,
-                RadialSegments = 6,
-                Rings = 3,
-            },
-            EmissionShape = CpuParticles3D.EmissionShapeEnum.Box,
-            EmissionBoxExtents = new Vector3(1.1f, .05f, 1.6f),
-            Direction = Vector3.Up,
-            Spread = 40,
-            InitialVelocityMin = 1.5f,
-            InitialVelocityMax = 3.2f,
-            Gravity = new Vector3(0, -9, 0),
-            LocalCoords = false,
-            MaterialOverride = new StandardMaterial3D
-            {
-                AlbedoColor = new Color(.86f, .95f, 1, .7f),
-                Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
-                ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-            },
-        };
-        world.AddChild(fordSplash);
         ui.FordQuestRequested += BeginFordTrip;
         ui.TrailerToggleRequested += ToggleTrailer;
         ui.TrailerPaintSelected += SelectTrailerPaint;
@@ -139,7 +108,7 @@ public partial class Game
         EnterInteraction(GameState.FordStatus, world.Beaver);
         ShowBeaver();
         if (Haul == null && !world.Ford.Passable && Delivery == null)
-            Speak(world.Beaver.Greeting, world.Beaver);
+            Speak(world.Ford.Stage == 0 ? world.Beaver.Greeting : "Přivezeš mi další náklad?", world.Beaver);
     }
 
     private void ShowBeaver() =>
@@ -181,19 +150,6 @@ public partial class Game
             return;
         ui.DeliveryHud(null);
         UpdateDeliveryGuides();
-    }
-
-    /// <summary>Water sprays from the wheels while the car drives through the finished ford.</summary>
-    private void TickFordSplash()
-    {
-        bool wading =
-            State == GameState.Exploring
-            && world.Ford is { Passable: true } ford
-            && ford.Contains(vehicle.Position.X, vehicle.Position.Z)
-            && Mathf.Abs(vehicle.Speed) > 2.5f;
-        if (wading)
-            fordSplash.Position = vehicle.Position + Vector3.Up * .2f;
-        fordSplash.Emitting = wading;
     }
 
     private void UpdateBeaverGuide() => world.Beaver?.Guide(world.Ford is { Passable: false } && !TaskActive);
@@ -268,8 +224,9 @@ public partial class Game
             return;
         }
         CelebrateAt(ford.DumpFor(trip.Trip) + Vector3.Up * 2, $"Bóďa děkuje!  {ford.Stage} / {Ford.Trips}");
-        StartFordTrip(ford.Stage, loaded: false);
-        Speak(TripInstruction(Haul!), world.Beaver);
+        // The next load waits until the player asks the beaver for it again.
+        EndFordTrip();
+        Speak("Děkuju! Až budeš chtít, přijeď za mnou pro další náklad.", world.Beaver);
         SaveProgress();
     }
 
@@ -280,11 +237,11 @@ public partial class Game
         TrailerOwned = true;
         trailerParade = true;
         var center = new Vector3(ford.Site.CenterX, ford.Site.DeckHeight + 2, ford.Site.Z);
-        CelebrateAt(center, "Brod je hotový! Vozík je tvůj.");
+        CelebrateAt(center, "Most je hotový! Vozík je tvůj.");
         var outward = followCamera.GlobalPosition - center;
         outward.Y = 0;
         followCamera.ShowMoment(center, outward.LengthSquared() > .01f ? outward.Normalized() : Vector3.Back);
-        Speak("Hurá, brod je hotový! Teď můžeš přejet řeku. Vozík si nech, najdeš ho v garáži.", world.Beaver);
+        Speak("Hurá, most je hotový! Teď můžeš přejet řeku. Vozík si nech, najdeš ho v garáži.", world.Beaver);
         UpdateDeliveryGuides();
         SaveProgress();
     }
@@ -332,7 +289,7 @@ public partial class Game
     private static string TripInstruction(FordTrip trip) =>
         trip.Loaded
             ? trip.FarBank
-                ? "Teď odvez hlínu na druhý břeh řeky. Přejeď po mostě."
+                ? "Teď odvez hlínu na druhý břeh řeky. Přejeď po velkém mostě."
                 : "Teď odvez náklad k bobrovi Bóďovi a vysyp ho do žlutého kruhu."
             : trip.Load switch
             {

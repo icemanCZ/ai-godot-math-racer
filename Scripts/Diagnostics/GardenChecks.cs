@@ -150,7 +150,8 @@ public partial class GardenChecks : Node
                 game.Delivery.Tick(.01);
                 Check(!exitArrow.Visible, "off-road arrow stays hidden far from the target");
                 game.Delivery.Tick(.25);
-                var roadArrows = game.Delivery.GetChildren()
+                var roadArrows = game
+                    .Delivery.GetChildren()
                     .OfType<MeshInstance3D>()
                     .Where(a => a != exitArrow && a.Name.ToString().StartsWith("RouteArrow"))
                     .ToArray();
