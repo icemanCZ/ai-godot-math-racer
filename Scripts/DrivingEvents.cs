@@ -130,10 +130,11 @@ public partial class DrivingEvents : Node3D
                     : (i + 1).ToString();
                 Art.Sign(gate, Vector3.Up * (course == 0 ? 5.7f : 3.2f), label, 38);
             }
-            StartMarkers[course] = Art.TaskMarker(this, Points[course, 0] + Vector3.Up * 7, "☺");
+            StartMarkers[course] = Art.TaskMarker(this, Points[course, 0] + Vector3.Up * 7, "");
+            Art.RoleTaskIcon(StartMarkers[course], course == 0 ? "gates" : "slalom");
             signs[course] = Art.Sign(
                 this,
-                Points[course, 0] + Vector3.Up * 7,
+                Points[course, 0] + Vector3.Up * 5.4f,
                 Title(course) + "\nZastav a stiskni tlačítko úkolu",
                 36
             );

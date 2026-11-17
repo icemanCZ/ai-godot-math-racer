@@ -16,7 +16,10 @@ public partial class World
 
     // The workers at the quarry, the clay pit and the log yard follow the builders (48–50, planned for later).
     internal const int FirstSourceId = 51;
-    internal const int LastSourceId = FirstSourceId + SourceCatalog.Count - 1;
+
+    // The workers at the second sites (quarry, clay pit, sand pit, log yard) follow them.
+    internal const int FirstExtraSourceId = FirstSourceId + SourceCatalog.Count;
+    internal const int LastSourceId = FirstExtraSourceId + 4 - 1;
     internal const float WorksPathHalfWidth = 3;
 
     /// <summary>Works keep at least this far from the other places haul sites have taken.</summary>
@@ -82,7 +85,11 @@ public partial class World
         var sites = new List<WorksSite>();
         for (int index = 0; index < WorksCatalog.Count; index++)
         {
-            if (!FindSpur(random, friends, ford, true, out var road, out var ring, out var inward))
+            // The works stand at the edge of the village where the valley has room, else anywhere on the bank.
+            if (
+                !FindSpur(random, friends, ford, true, out var road, out var ring, out var inward, WorksBand)
+                && !FindSpur(random, friends, ford, true, out road, out ring, out inward)
+            )
             {
                 Rollback();
                 GD.Print(
@@ -134,8 +141,51 @@ public partial class World
     };
 
     /// <summary>
+    /// Passes for the sites that belong at the edge of the village. The village already keeps a wide quiet belt for the
+    /// roadside friends, so these sites live inside it, a short way off a road: the search only looks near the houses.
+    /// </summary>
+    private static readonly SpurRules[] EdgePasses =
+    {
+        new(10, 45, 40, 1.1f, 12, 14, 5000),
+        new(8, 70, 32, 1.6f, 10, 11, 10000),
+        new(8, 90, 26, 2.2f, 9, 9, 20000),
+    };
+
+    /// <summary>
+    /// How far from the nearest house (see <see cref="Village.PlotDistance"/>) a site at the village edge may stand:
+    /// beyond the yards and the square, but still within sight of the houses.
+    /// </summary>
+    internal readonly record struct VillageBand(float Min, float Max);
+
+    /// <summary>The sawmill, the brickworks and the gravel works stand right at the edge of the village.</summary>
+    internal static readonly VillageBand WorksBand = new(30, 64);
+
+    /// <summary>The windmill and the lookout tower stand a little further out, where there is room and wind.</summary>
+    internal static readonly VillageBand LandmarkBand = new(34, 98);
+
+    private bool InBand(Vector3 point, VillageBand? band) =>
+        band is not { } wanted
+        || Village.PlotDistance(point) >= wanted.Min && Village.PlotDistance(point) <= wanted.Max;
+
+    /// <summary>The road samples of the village bank that a site search may start from.</summary>
+    private int[] BankSamples(FordSite ford, VillageBand? band, float reach) =>
+        Enumerable
+            .Range(0, Routes.Samples.Count - 1)
+            .Where(i =>
+            {
+                var forward = Routes.Samples[i + 1] - Routes.Samples[i];
+                forward.Y = 0;
+                return !ford.OnFarBank(Routes.Samples[i])
+                    && forward.LengthSquared() is > .01f and <= 9
+                    && !River.OnBridge(Routes.Samples[i].X, Routes.Samples[i].Z)
+                    && (band is not { } near || Village.PlotDistance(Routes.Samples[i]) <= near.Max + reach);
+            })
+            .ToArray();
+
+    /// <summary>
     /// A spot on the village bank beside a road, reached by a clear off-road approach. A works needs a larger,
-    /// level, dry footprint behind the spot (<paramref name="inward"/> points away from the road).
+    /// level, dry footprint behind the spot (<paramref name="inward"/> points away from the road). With a
+    /// <paramref name="band"/> the spot has to stand at that distance from the houses.
     /// </summary>
     private bool FindSpur(
         Random random,
@@ -144,21 +194,13 @@ public partial class World
         bool works,
         out Vector3 road,
         out Vector3 spot,
-        out Vector3 inward
+        out Vector3 inward,
+        VillageBand? band = null,
+        Func<Vector3, bool>? accept = null
     )
     {
-        var bank = Enumerable
-            .Range(0, Routes.Samples.Count - 1)
-            .Where(i =>
-            {
-                var forward = Routes.Samples[i + 1] - Routes.Samples[i];
-                forward.Y = 0;
-                return !ford.OnFarBank(Routes.Samples[i])
-                    && forward.LengthSquared() is > .01f and <= 9
-                    && !River.OnBridge(Routes.Samples[i].X, Routes.Samples[i].Z);
-            })
-            .ToArray();
-        foreach (var rules in SpurPasses)
+        var bank = BankSamples(ford, band, band == null ? 0 : 90);
+        foreach (var rules in band == null ? SpurPasses : EdgePasses)
         {
             // A log yard is small, so it may stand a little closer to the road and to other sites.
             float spacing = works ? rules.Spacing : Mathf.Min(rules.Spacing, 40);
@@ -175,11 +217,11 @@ public partial class World
                 spot = point;
                 inward = outward;
                 int reason =
-                    ford.OnFarBank(point) ? 0
+                    ford.OnFarBank(point) || !InBand(point, band) ? 0
                     : River.Distance(point.X, point.Z) < River.HalfWidth(point.Z) + rules.RiverMargin ? 1
                     : haulClearings.Any(other => FlatDistance(other, point) < spacing) ? 2
-                    : !FreeHaulSpot(point, friends, rules.RoadClearance) ? 3
-                    : works && !WorksFootprintFits(point, outward, friends, rules) ? 4
+                    : !FreeHaulSpot(point, friends, rules.RoadClearance, band) || accept?.Invoke(point) == false ? 3
+                    : works && !WorksFootprintFits(point, outward, friends, rules, band) ? 4
                     : !ClearHaulPath(road, point, friends, toWater: false) ? 5
                     : -1;
                 if (reason >= 0)
@@ -195,7 +237,13 @@ public partial class World
     }
 
     /// <summary>The buildings, stock yard and raw heap stand on gently sloping, dry, otherwise empty ground.</summary>
-    private bool WorksFootprintFits(Vector3 ring, Vector3 inward, Animal[] friends, SpurRules rules)
+    private bool WorksFootprintFits(
+        Vector3 ring,
+        Vector3 inward,
+        Animal[] friends,
+        SpurRules rules,
+        VillageBand? band = null
+    )
     {
         var right = Vector3.Up.Cross(inward);
         foreach (float x in new[] { -12f, -6f, 0, 6f, 12f })
@@ -207,7 +255,7 @@ public partial class World
                 Mathf.Abs(q.Y - ring.Y) > rules.Slope
                 || River.Distance(q.X, q.Z) < River.HalfWidth(q.Z) + rules.RiverMargin - 5
                 || Village.IsReserved(q)
-                || Village.IsNearVillage(q)
+                || (band == null ? Village.IsNearVillage(q) : Village.PlotDistance(q) < 16)
                 || IsPickupApproachReserved(q)
                 || Routes.Distance(q) < Mathf.Min(8, rules.RoadClearance - 4)
                 || friends.Any(a => FlatDistance(a.Position, q) < 9)
@@ -219,20 +267,89 @@ public partial class World
         return true;
     }
 
+    /// <summary>A second quarry, clay pit, sand pit and log yard, far from the first: any site fills the trailer.</summary>
+    internal HaulSource[] ExtraSources { get; private set; } = Array.Empty<HaulSource>();
+
+    /// <summary>Every place where a load can be picked up: the first site of a raw material, then its second.</summary>
+    internal IEnumerable<HaulSource> SourceSites(HaulLoad load)
+    {
+        yield return SourceFor(load);
+        foreach (var extra in ExtraSources)
+            if (extra.Load == load)
+                yield return extra;
+    }
+
+    /// <summary>The site of a load nearest to <paramref name="from"/>: where a new trip sends the player.</summary>
+    internal HaulSource NearestSource(HaulLoad load, Vector3 from) =>
+        SourceSites(load).MinBy(source => FlatDistance(source.Position, from));
+
+    /// <summary>
+    /// Plans one more place for each raw material, far from the first one and out in the countryside. Optional: a
+    /// valley without room for one simply keeps a single site. Planned last, with its own seeded search.
+    /// </summary>
+    private HaulSource[] PlanExtraSources(FordSite ford, HaulSource[] sources, IndustryPlan? industry)
+    {
+        var random = new Random(Settings.Seed + 2340);
+        var friends = InteractionActors.ToArray();
+        var extras = new List<HaulSource>();
+        foreach (var load in SourceCatalog.ExtraLoads)
+        {
+            HaulSource? first = load == HaulLoad.Logs ? industry?.LogYard : sources[(int)load];
+            if (first is not { } origin)
+                continue;
+            Array.Clear(industryRejections);
+            if (
+                !FindSpur(random, friends, ford, false, out var road, out var spot, out _, accept: p =>
+                    FlatDistance(p, origin.Position) >= ExtraSourceGap
+                )
+            )
+            {
+                GD.Print(
+                    $"EXTRA_SOURCE_MISSING seed={Settings.Seed} load={load} rejected={string.Join(",", industryRejections)}"
+                );
+                continue;
+            }
+            extras.Add(new HaulSource(load, spot, road));
+            haulApproaches.Add((road, spot));
+            haulClearings.Add(spot);
+        }
+        return extras.ToArray();
+    }
+
+    /// <summary>A second site keeps at least this far from the first one of its material.</summary>
+    private const float ExtraSourceGap = 110;
+
     /// <summary>The workers of the quarry, the clay pit and the log yard, in <see cref="SourceCatalog"/> order.</summary>
     internal Animal?[] SourceWorkers { get; } = new Animal?[SourceCatalog.Count];
 
-    /// <summary>The worker who loads a raw material, or null where nobody does (the sand pit).</summary>
+    /// <summary>The workers of the second quarry, clay pit, sand pit and log yard, in <see cref="SourceCatalog.Extra"/> order.</summary>
+    internal Animal?[] ExtraSourceWorkers { get; } = new Animal?[SourceCatalog.Extra.Length];
+
+    /// <summary>The worker of the first site of a raw material, or null where nobody works (the sand pit).</summary>
     internal Animal? SourceWorker(HaulLoad load)
     {
         int index = SourceCatalog.IndexOf(load);
         return index < 0 ? null : SourceWorkers[index];
     }
 
-    /// <summary>The character who asks the loading question for a load: its source worker, if there is one.</summary>
-    internal Animal? PickupActor(HaulLoad load) =>
+    /// <summary>The worker of the second site of a raw material, or null where the valley has none.</summary>
+    internal Animal? ExtraSourceWorker(HaulLoad load)
+    {
+        int index = SourceCatalog.ExtraIndexOf(load);
+        return index < 0 ? null : ExtraSourceWorkers[index];
+    }
+
+    /// <summary>Every worker at a raw-material site, first sites before second ones.</summary>
+    internal IEnumerable<Animal> AllSourceWorkers => SourceWorkers.Concat(ExtraSourceWorkers).OfType<Animal>();
+
+    /// <summary>
+    /// The character who asks the loading question for a load: the worker of the site it is loaded at (the first
+    /// one unless <paramref name="source"/> is the second), if there is one.
+    /// </summary>
+    internal Animal? PickupActor(HaulLoad load, HaulSource? source = null) =>
         HaulLoads.IsGoods(load) ? Industry[(int)HaulLoads.ProductOf(load)].Worker
         : HaulLoads.IsSpecial(load) ? SpecialGiver(load)
+        : source is { } site && ExtraSources.Contains(site) ? ExtraSourceWorker(load)
         : SourceWorker(load);
 
     /// <summary>The collector who hands over a special load: the farmer gives cloth, the gem collector a stone, the toymaker a flag.</summary>
@@ -244,36 +361,62 @@ public partial class World
             _ => Village.Toymaker,
         };
 
-    /// <summary>The actor ID of whoever asks the loading question for a load of a project: see <see cref="PickupActor"/>.</summary>
-    internal static int AskerId(HaulLoad load, int project) =>
-        load == HaulLoad.Fabric ? FarmerId
-        : load == HaulLoad.Capstone ? GemCollectorId
-        : load == HaulLoad.Flag ? ToymakerId
-        : HaulLoads.IsGoods(load) ? FirstWorksId + (int)HaulLoads.ProductOf(load)
-        : SourceCatalog.IndexOf(load) >= 0 ? FirstSourceId + SourceCatalog.IndexOf(load)
-        : BuilderId(project);
-
-    /// <summary>Places the worker beside the loading spot of a quarry, clay pit or log yard.</summary>
-    private void BuildSourceWorker(HaulSource source)
+    /// <summary>
+    /// The actor IDs of whoever may ask the loading question for a load of a project (see <see cref="PickupActor"/>):
+    /// one, or for a raw material the workers of both its sites (and, at the first sand pit, the builder).
+    /// </summary>
+    internal static int[] AskerIds(HaulLoad load, int project)
     {
-        int index = SourceCatalog.IndexOf(source.Load);
-        if (index < 0)
-            return;
-        var spec = SourceCatalog.All[index];
+        if (load == HaulLoad.Fabric)
+            return new[] { FarmerId };
+        if (load == HaulLoad.Capstone)
+            return new[] { GemCollectorId };
+        if (load == HaulLoad.Flag)
+            return new[] { ToymakerId };
+        if (HaulLoads.IsGoods(load))
+            return new[] { FirstWorksId + (int)HaulLoads.ProductOf(load) };
+        int first = SourceCatalog.IndexOf(load) >= 0 ? FirstSourceId + SourceCatalog.IndexOf(load) : BuilderId(project);
+        int extra = SourceCatalog.ExtraIndexOf(load);
+        return extra < 0 ? new[] { first } : new[] { first, FirstExtraSourceId + extra };
+    }
+
+    /// <summary>Places a worker beside the loading spot of a quarry, clay pit, sand pit or log yard.</summary>
+    private Animal PlaceSourceWorker(HaulSource source, SourceSpec spec, int id)
+    {
         var inward = source.Position - source.Road;
         inward.Y = 0;
         inward = inward.Normalized();
         var across = inward.Cross(Vector3.Up);
         var spot = source.Position - across * 3.4f + inward * 1.2f;
         var worker = Animal.Create(spec.Name, spec.Greeting, spec.Kind, spec.Fur);
-        worker.Role = new SourceRole(index);
+        worker.Role = new SourceRole(source.Load);
         worker.DressAsWorker(spec.Hat);
         worker.Position = Ground.At(spot.X, spot.Z);
         var facing = source.Position - worker.Position;
         worker.Rotation = new Vector3(0, Mathf.Atan2(facing.X, facing.Z), 0);
         AddChild(worker);
-        SourceWorkers[index] = worker;
-        actors.Add(FirstSourceId + index, worker);
+        actors.Add(id, worker);
+        return worker;
+    }
+
+    /// <summary>Places the worker of the first quarry, clay pit or log yard (the sand pit has none).</summary>
+    private void BuildSourceWorker(HaulSource source)
+    {
+        int index = SourceCatalog.IndexOf(source.Load);
+        if (index >= 0)
+            SourceWorkers[index] = PlaceSourceWorker(source, SourceCatalog.All[index], FirstSourceId + index);
+    }
+
+    /// <summary>Places the worker of a second site; every raw material has one, the sand pit too.</summary>
+    private void BuildExtraSourceWorker(HaulSource source)
+    {
+        int index = SourceCatalog.ExtraIndexOf(source.Load);
+        if (index >= 0)
+            ExtraSourceWorkers[index] = PlaceSourceWorker(
+                source,
+                SourceCatalog.Extra[index],
+                FirstExtraSourceId + index
+            );
     }
 
     /// <summary>Raises the log yard's stacks and the three works with their workers.</summary>

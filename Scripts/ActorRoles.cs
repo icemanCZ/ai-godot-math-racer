@@ -114,7 +114,14 @@ internal sealed class BuilderRole : ActorRole
 
     public BuilderRole(int project) => Project = project;
 
-    public override string Icon => "trailer";
+    public override string Icon =>
+        Project switch
+        {
+            BuildPlans.Mill => "mill",
+            BuildPlans.Tower => "tower",
+            BuildPlans.Jetty => "jetty",
+            _ => "bridge",
+        };
     public override bool UsesDeliveryGuide => false;
 
     public override void ShowHint(GameUi ui, Animal actor) => ui.BuilderHint(Project);
@@ -139,6 +146,7 @@ internal sealed class WorksRole : ActorRole
 
     public WorksRole(int index) => Index = index;
 
+    public override string Icon => WorksCatalog.All[Index].Icon;
     public override bool UsesDeliveryGuide => false;
 
     public override void ShowHint(GameUi ui, Animal actor) => ui.WorksHint(Index);
@@ -158,14 +166,17 @@ internal sealed class WorksRole : ActorRole
 /// </summary>
 internal sealed class SourceRole : ActorRole
 {
-    public int Index { get; }
+    public HaulLoad Load { get; }
 
-    public SourceRole(int index) => Index = index;
+    /// <summary>Position in <see cref="SourceCatalog.All"/>; -1 for the sand pit's worker, who has no works.</summary>
+    public int Index => SourceCatalog.IndexOf(Load);
 
-    public override string Icon => "trailer";
+    public SourceRole(HaulLoad load) => Load = load;
+
+    public override string Icon => SourceCatalog.IconOf(Load);
     public override bool UsesDeliveryGuide => false;
 
-    public override void ShowHint(GameUi ui, Animal actor) => ui.SourceHint(Index);
+    public override void ShowHint(GameUi ui, Animal actor) => ui.SourceHint(Load);
 
     public override void Open(Game game, Animal actor) => game.OpenSource(actor);
 

@@ -147,10 +147,11 @@ public partial class EventChecks(Game game, World world, Vehicle car) : Node
                     );
                 }
                 Check(
-                    events.StartMarkers[course].Text == "☺"
+                    events.StartMarkers[course].Text == ""
+                        && events.StartMarkers[course].GetChildren().OfType<Sprite3D>().Count() == 1
                         && events.StartMarkers[course].FixedSize
                         && !events.StartMarkers[course].NoDepthTest,
-                    "event has smile marker with same fixed screen size and occlusion as task markers"
+                    "event has an icon marker with same fixed screen size and occlusion as task markers"
                 );
                 car.SetPose(events.Points[course, 0], 0);
                 game._Process(.016);

@@ -87,7 +87,7 @@ public partial class VillageChecks : Node
             );
             DriveTo(world.SourceFor(works.Spec.Input).Position);
             Check(
-                game.State == GameState.Challenge && fetch!.Asker == world.SourceWorker(works.Spec.Input),
+                game.State == GameState.Challenge && fetch!.Asker == world.PickupActor(works.Spec.Input, fetch.Source),
                 $"{what}: the worker at the source asks the loading question"
             );
             ChallengeChecks.Solve(game);

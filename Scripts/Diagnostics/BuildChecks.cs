@@ -97,6 +97,11 @@ public partial class BuildChecks : Node
                     $"the builder of the {name} stands by its ring"
                 );
                 Check(!ford.Site.OnFarBank(site.Position), $"the {name} lies on the village bank");
+                if (project.Index is BuildPlans.Mill or BuildPlans.Tower)
+                    Check(
+                        world.Village.PlotDistance(site.Position) <= World.LandmarkBand.Max + 40,
+                        $"the {name} stands close to the village"
+                    );
                 Check(tracks.Contains(site.Position) && tracks.Contains(site.Road), $"a way leads to the {name}");
                 Check(project.Stage == 0 && !project.Complete, $"the {name} starts unbuilt");
                 for (int step = 0; step <= 20; step++)
@@ -153,7 +158,7 @@ public partial class BuildChecks : Node
                     $"delivery {step + 1} of the {name} sends the empty trailer"
                 );
                 Check(
-                    trip!.Load == cargo && trip.Asker == (world.PickupActor(cargo) ?? project.Builder),
+                    trip!.Load == cargo && trip.Asker == (world.PickupActor(cargo, trip.Source) ?? project.Builder),
                     "the right character loads it"
                 );
                 var source = world.SourceFor(cargo);
@@ -242,7 +247,7 @@ public partial class BuildChecks : Node
             car.SetPose(world.Ground.At(rawSource.Position.X, rawSource.Position.Z, .15f), 0);
             Frames(1);
             Check(
-                game.State == GameState.Challenge && fetch!.Asker == world.SourceWorker(needed.Spec.Input),
+                game.State == GameState.Challenge && fetch!.Asker == world.PickupActor(needed.Spec.Input, fetch.Source),
                 "the worker at the source asks the loading question"
             );
             ChallengeChecks.Solve(game);

@@ -95,10 +95,12 @@ public partial class World
         // before anything is put on the terrain.
         var industry = PlanIndustry(site);
         var builds = PlanBuilds(site);
+        var extras = PlanExtraSources(site, sources, industry);
         if (builds != null)
             Ground.Grade(builds.Grading, (x, z) => Routes.Distance(new Vector3(x, 0, z)));
         river.AddBankRocks(Ground, site.Z);
         HaulSources = sources;
+        ExtraSources = extras;
         Ford = new Ford(site, Ground);
         AddChild(Ford);
         foreach (var source in sources)
@@ -106,7 +108,12 @@ public partial class World
             BuildHaulSource(source);
             BuildSourceWorker(source);
         }
-        BuildTracks(site, sources, industry, builds);
+        foreach (var extra in extras)
+        {
+            BuildHaulSource(extra, extra: true);
+            BuildExtraSourceWorker(extra);
+        }
+        BuildTracks(site, sources, extras, industry, builds);
         BuildIndustry(industry);
         Beaver = Animal.Create("Bobr Bóďa", "Postavíme most přes řeku? Přivez mi štěrk, cihly a prkna.", 2, "9a6a46");
         Beaver.Role = new BuilderRole(BuildPlans.Bridge);
@@ -277,10 +284,10 @@ public partial class World
         return null;
     }
 
-    private bool FreeHaulSpot(Vector3 spot, Animal[] friends, float roadClearance) =>
+    private bool FreeHaulSpot(Vector3 spot, Animal[] friends, float roadClearance, VillageBand? band = null) =>
         new Vector2(spot.X, spot.Z).Length() < Settings.PlayableRadius - 15
         && Routes.Distance(spot) >= roadClearance
-        && !Village.IsNearVillage(spot)
+        && (band is { } edge ? Village.PlotDistance(spot) >= edge.Min : !Village.IsNearVillage(spot))
         && !Village.IsReserved(spot)
         && !IsPickupApproachReserved(spot)
         && friends.All(a => FlatDistance(a.Position, spot) >= 24)
@@ -407,7 +414,13 @@ public partial class World
     /// Draws the already cleared approaches: a road from the network to each bridge end through its
     /// dump, and a field path ending in a loading yard at each source.
     /// </summary>
-    private void BuildTracks(FordSite site, HaulSource[] sources, IndustryPlan? industry, BuildPlan? builds)
+    private void BuildTracks(
+        FordSite site,
+        HaulSource[] sources,
+        HaulSource[] extras,
+        IndustryPlan? industry,
+        BuildPlan? builds
+    )
     {
         Tracks = new Tracks { Name = "Tracks" };
         foreach (
@@ -428,7 +441,7 @@ public partial class World
             Tracks.Line(road, dump, BridgeRoadHalfWidth, Tracks.Kind.Road);
             Tracks.Line(dump, water, BridgeRoadHalfWidth, Tracks.Kind.Road, FlatDistance(road, dump));
         }
-        foreach (var source in sources)
+        foreach (var source in sources.Concat(extras))
         {
             Tracks.Line(source.Road, source.Position, FieldPathHalfWidth, Tracks.Kind.Path);
             Tracks.Pad(source.Position, 4.5f, Tracks.Kind.Path);
@@ -484,10 +497,13 @@ public partial class World
         }
     }
 
-    private void BuildHaulSource(HaulSource source)
+    private void BuildHaulSource(HaulSource source, bool extra = false)
     {
-        var site = new Node3D { Name = source.Load + "Source", Position = source.Position };
+        var site = new Node3D { Name = (extra ? "Extra" : "") + source.Load + "Source", Position = source.Position };
         AddChild(site);
+        // The first sand pit has nobody to talk to: it carries its own icon above the loading spot.
+        if (!extra && SourceCatalog.IndexOf(source.Load) < 0)
+            Art.RoleTaskIcon(Art.TaskMarker(site, Vector3.Up * 6f, ""), SourceCatalog.IconOf(source.Load));
         var inward = source.Position - source.Road;
         inward.Y = 0;
         inward = inward.Normalized();
