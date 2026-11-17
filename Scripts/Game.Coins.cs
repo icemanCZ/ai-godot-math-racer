@@ -10,6 +10,9 @@ public partial class Game
     internal const int PostcardCoins = 5;
     internal const int BanditCoins = 5;
     internal const int CourseCoins = 5;
+
+    /// <summary>Paid on top of <see cref="CourseCoins"/> for beating the ghost on a driving course.</summary>
+    internal const int GhostCoins = 5;
     internal const int WorldCoinValue = 1;
 
     internal int Coins => rewards.Coins;

@@ -109,23 +109,42 @@ public partial class Game
         ui.SetEventVisible(State == GameState.Exploring);
         if (State != GameState.Exploring)
             return;
+        Events.Advance(delta);
         int finished = Events.Tick(vehicle.Position);
         if (finished >= 0)
         {
-            CelebrateAt(vehicle.Position, $"{DrivingEvents.Title(finished)} — krásná jízda!");
-            AddCoins(CourseCoins);
+            var (time, ghostTime, beat) = Events.Result;
+            string result = DrivingEvents.FormatTime(time);
+            CelebrateAt(
+                vehicle.Position,
+                beat
+                    ? $"{DrivingEvents.Title(finished)} — porazil jsi ducha! Čas {result} s"
+                    : $"{DrivingEvents.Title(finished)} — krásná jízda! Čas {result} s, duch měl {DrivingEvents.FormatTime(ghostTime)} s"
+            );
+            AddCoins(CourseCoins + (beat ? GhostCoins : 0));
             SaveProgress();
         }
         if (Events.Active >= 0)
         {
             float distance = vehicle.Position.DistanceTo(Events.Points[Events.Active, Events.Next]);
-            ui.EventHud($"{Events.Next + 1} / {DrivingEvents.GateCount} · {distance:0} m");
+            string hud =
+                $"Brána {Events.Next + 1} / {DrivingEvents.GateCount} · {distance:0} m\nČas {DrivingEvents.FormatTime(Events.Elapsed)} s";
+            if (!float.IsNaN(Events.Gap))
+                hud +=
+                    Events.Gap <= 0
+                        ? $"\nPřed duchem o {DrivingEvents.FormatTime(-Events.Gap)} s"
+                        : $"\nZa duchem o {DrivingEvents.FormatTime(Events.Gap)} s";
+            ui.EventHud(hud);
             ui.EventHint("Ukončit jízdu");
         }
         else
         {
             int course = Events.Nearby(vehicle.Position);
-            ui.EventHud(course >= 0 ? DrivingEvents.Title(course) : "");
+            ui.EventHud(
+                course >= 0
+                    ? $"{DrivingEvents.Title(course)}\nPoraz ducha: {DrivingEvents.FormatTime(Events.GhostTime(course))} s"
+                    : ""
+            );
             if (course >= 0 && nearby == null && !AtGarage)
                 ui.EventHint("Zahájit jízdu");
         }

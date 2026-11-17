@@ -82,6 +82,9 @@ public partial class Game
             EventActive = Events.Active,
             EventNext = Events.Next,
             EventWins = (int[])Events.Wins.Clone(),
+            EventBest = Events.BestSplits.Select(b => (float[])b.Clone()).ToArray(),
+            EventTime = (float)Events.Elapsed,
+            EventSplits = Events.RunSplits.ToArray(),
             Seed = Settings.Seed,
             Position = new[] { vehicle.Position.X, vehicle.Position.Y, vehicle.Position.Z },
             Heading = vehicle.Heading,
@@ -131,7 +134,14 @@ public partial class Game
         syllableSelection = data.SyllableSelection;
         RestorePostcards(data);
         ResetCelebration();
-        Events.Restore(data.EventActive, data.EventNext, data.EventWins);
+        Events.Restore(
+            data.EventActive,
+            data.EventNext,
+            data.EventWins,
+            data.EventBest,
+            data.EventTime,
+            data.EventSplits
+        );
         RestoreCarPose(data);
         RestoreGolem(data.GolemOwned, data.GolemActive);
         RestoreCarLook(data);
