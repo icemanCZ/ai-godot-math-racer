@@ -61,7 +61,9 @@ public partial class Game
         );
     }
 
-    internal void BeginPlotTrip()
+    internal void BeginPlotTrip() => BeginPlotTrip(false);
+
+    private void BeginPlotTrip(bool quizzed)
     {
         if (
             State != GameState.PlotStatus
@@ -70,6 +72,11 @@ public partial class Game
             || !PlotStepReady(plot)
         )
             return;
+        if (!quizzed)
+        {
+            AskBeforeDeparture(Departure.Plot);
+            return;
+        }
         CancelActiveTask();
         StartHaul(new PlotTrip(world, vehicle, plot, plot.Stage, loaded: false));
         Start();

@@ -150,6 +150,7 @@ public partial class PlotChecks : Node
                     $"plot {plot.Index}: the newcomer offers delivery {step + 1}"
                 );
                 game.BeginPlotTrip();
+                ChallengeChecks.Solve(game);
                 var trip = game.Haul as PlotTrip;
                 Check(
                     trip is { Loaded: false } && trip.Plot == plot && trip.Step == step && trailer.Attached,
@@ -207,9 +208,11 @@ public partial class PlotChecks : Node
                 "the newcomer shows what is missing when there is no gravel"
             );
             game.BeginPlotTrip();
+            ChallengeChecks.Solve(game);
             Check(game.Haul == null, "no delivery starts without its goods");
             var needed = world.Industry[(int)HaulLoads.ProductOf(PlotPlans.CargoOf(0))];
             game.BeginMissingSupply();
+            ChallengeChecks.Solve(game);
             var fetch = game.Haul as SupplyTrip;
             Check(
                 fetch is { Loaded: false } && fetch.Works == needed && trailer.Attached,
@@ -233,6 +236,7 @@ public partial class PlotChecks : Node
             Near(first.Resident);
             game.OpenPlot(first.Resident);
             game.BeginPlotTrip();
+            ChallengeChecks.Solve(game);
             Check(game.Haul is PlotTrip, "a trip starts");
             game.OpenPlot(first.Resident);
             Check(!Has("StartPlotTrip"), "talking to the newcomer during the trip starts no second one");
@@ -323,6 +327,7 @@ public partial class PlotChecks : Node
                 "a finished house asks for no more material"
             );
             game.BeginPlotTrip();
+            ChallengeChecks.Solve(game);
             Check(game.Haul == null, "no delivery starts for a finished house");
             game.FinishInteraction();
             Check(Has("PlotStage5"), "the finished house is part of the village");
@@ -421,6 +426,7 @@ public partial class PlotChecks : Node
             RoundTrip("the panel of a newcomer");
             Check(game.State == GameState.PlotStatus && Has("StartPlotTrip"), "the panel comes back after loading");
             game.BeginPlotTrip();
+            ChallengeChecks.Solve(game);
             RoundTrip("an empty trailer on its way");
             Check(
                 game.Haul is PlotTrip { Loaded: false, Plot: var restored } && restored == second,

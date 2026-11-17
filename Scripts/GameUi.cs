@@ -161,7 +161,7 @@ public partial class GameUi : CanvasLayer
     private void UpdateControls() =>
         controls.Text = controller
             ? "RT / LT   ◀ ▶    A · ?    B · ↶    Menu · Ⅱ"
-            : "WASD / ↑↓←→    E · ?    R · ↶    Esc · Ⅱ";
+            : "WASD / ↑↓←→    E / mezerník · ?    R · ↶    Esc · Ⅱ";
 
     public void Setup()
     {
@@ -984,7 +984,7 @@ public partial class GameUi : CanvasLayer
     public void Hint(bool visible, bool available) =>
         hint.Text =
             !visible ? ""
-            : available ? (controller ? "Stiskni A pro úkol a odměnu" : "Stiskni E pro úkol a odměnu")
+            : available ? (controller ? "Stiskni A pro úkol a odměnu" : "Stiskni E nebo mezerník pro úkol a odměnu")
             : "Toto zvířátko už jsi navštívil. Sleduj další otazníky!";
 
     private DeliveryPicture? Picture(Container parent, string icon, Animal? animal = null, int count = 1)

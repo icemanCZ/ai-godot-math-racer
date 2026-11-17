@@ -30,6 +30,29 @@ public partial class Game
     private bool threeTermMath;
     private int nextQuiz;
     private bool handoverQuiz;
+
+    /// <summary>The trip that starts once the quiz now on screen is solved.</summary>
+    private enum Departure
+    {
+        None,
+        Golem,
+        Fruit,
+        Build,
+        Plot,
+        House,
+        Missing,
+    }
+
+    private Departure departure;
+    private GameState departureState;
+
+    /// <summary>Asks the quiz that must be solved before a trip starts; the trip continues in StartDeparture.</summary>
+    private void AskBeforeDeparture(Departure trip)
+    {
+        departureState = State;
+        departure = trip;
+        BeginQuiz();
+    }
     private SyllableSelection syllableSelection;
 
     private void ToggleQuizType(QuizType type)

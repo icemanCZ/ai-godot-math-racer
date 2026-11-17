@@ -101,7 +101,9 @@ public partial class Game
         );
     }
 
-    internal void BeginBuildTrip()
+    internal void BeginBuildTrip() => BeginBuildTrip(false);
+
+    private void BeginBuildTrip(bool quizzed)
     {
         if (
             State != GameState.BuildStatus
@@ -110,6 +112,11 @@ public partial class Game
             || !StepReady(project)
         )
             return;
+        if (!quizzed)
+        {
+            AskBeforeDeparture(Departure.Build);
+            return;
+        }
         CancelActiveTask();
         StartHaul(new BuildTrip(world, vehicle, project, project.Stage, loaded: false));
         Start();

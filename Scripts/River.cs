@@ -107,8 +107,9 @@ public partial class River : Node3D
                 continue;
             float x = CenterX(z) + (i % 2 == 0 ? -1 : 1) * (HalfWidth(z) + 5.5f);
             var p = terrain.At(x, z);
-            Art.Ball(this, p, new Vector3(.55f, .3f, .45f), "adaebf");
-            Obstacles.Rock(this, p, new Vector3(.55f, .3f, .45f));
+            var size = new Vector3(1, .6f, .85f);
+            Art.Ball(this, p, size, "adaebf");
+            Obstacles.Rock(this, p, size);
             for (int reed = 0; reed < 3; reed++)
                 Art.Cylinder(this, p + new Vector3(.25f * reed, .5f, .3f), .035f, .025f, 1, "80c94d");
         }

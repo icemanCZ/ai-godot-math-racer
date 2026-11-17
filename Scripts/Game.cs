@@ -168,6 +168,7 @@ public partial class Game : Node3D
     /// <summary>Forgets the open question together with the wrong answers already tried.</summary>
     private void ClearChallenge()
     {
+        departure = Departure.None;
         CurrentChallenge = null;
         rejectedAnswers.Clear();
     }
@@ -566,6 +567,14 @@ public partial class Game : Node3D
         {
             handoverQuiz = false;
             ClearChallenge();
+        }
+        // A solved quiz that was asked before a trip lets the trip start.
+        if (departure != Departure.None)
+        {
+            var trip = departure;
+            departure = Departure.None;
+            StartDeparture(trip);
+            return;
         }
         // A solved quiz with the collector who holds the special load of the trip under way hands the load over.
         if (Haul is { Loaded: false } pickup && HaulLoads.IsSpecial(pickup.Load) && pickup.Asker == nearby)

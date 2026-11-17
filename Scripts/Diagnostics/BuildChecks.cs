@@ -152,6 +152,7 @@ public partial class BuildChecks : Node
                     $"the {name} builder offers delivery {step + 1}"
                 );
                 game.BeginBuildTrip();
+                ChallengeChecks.Solve(game);
                 var trip = game.Haul as BuildTrip;
                 Check(
                     trip is { Loaded: false } && trip.Project == project && trip.Step == step && trailer.Attached,
@@ -231,6 +232,7 @@ public partial class BuildChecks : Node
                 "the miller shows what is missing when there are no goods"
             );
             game.BeginBuildTrip();
+            ChallengeChecks.Solve(game);
             Check(game.Haul == null, "no delivery starts without its goods");
 
             // Continuity: the builder sends the player for the raw material, the works makes the goods and the
@@ -238,6 +240,7 @@ public partial class BuildChecks : Node
             var needed = world.Industry[(int)HaulLoads.ProductOf(mill.Steps[mill.Stage].Cargo)];
             Check(Has("StartMissingSupply"), "the miller offers to send the player for the raw material");
             game.BeginMissingSupply();
+            ChallengeChecks.Solve(game);
             var fetch = game.Haul as SupplyTrip;
             Check(
                 fetch is { Loaded: false } && fetch.Works == needed && trailer.Attached,

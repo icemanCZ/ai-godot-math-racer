@@ -48,6 +48,8 @@ public partial class GolemChecks : Node
             Check(game.State == GameState.SorcererStatus && !game.GolemOwned, "sorcerer offers quest");
             RoundTrip();
             game.BeginGolemQuest();
+            Check(game.State == GameState.Challenge && game.Delivery == null, "the golem trip asks a quiz first");
+            ChallengeChecks.Solve(game);
             Check(game.Delivery is { Golem: true, Amount: 6, Collected: 0 }, "six part quest starts");
             for (int i = 0; i < 6; i++)
             {

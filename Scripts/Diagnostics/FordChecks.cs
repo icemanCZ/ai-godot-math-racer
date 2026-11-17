@@ -116,6 +116,7 @@ public partial class FordChecks : Node
                 "the beaver cannot start a delivery of goods that are not made"
             );
             game.BeginBuildTrip();
+            ChallengeChecks.Solve(game);
             Check(game.Haul == null, "no delivery starts without its goods");
             game.FinishInteraction();
             foreach (var works in world.Industry)
@@ -126,6 +127,7 @@ public partial class FordChecks : Node
             Check(game.State == GameState.BuildStatus && Has("StartBuildTrip"), "beaver offers the ford");
             RoundTrip("beaver panel");
             game.BeginBuildTrip();
+            ChallengeChecks.Solve(game);
             Check(
                 game.Haul is BuildTrip { Step: 0, Loaded: false }
                     && trailer.Attached
@@ -144,6 +146,7 @@ public partial class FordChecks : Node
             car.SetPose(world.Beaver!.Position + Vector3.Right * 2, 0);
             game.OpenBuilder(world.Beaver!);
             game.BeginBuildTrip();
+            ChallengeChecks.Solve(game);
             Check(
                 game.Haul is BuildTrip { Step: 0, Loaded: false } && game.Delivery == null && trailer.Attached,
                 "accepting the ford trip cancels the expedition and hitches the trailer again"
@@ -208,6 +211,7 @@ public partial class FordChecks : Node
                     game.OpenBuilder(world.Beaver!);
                     Check(game.State == GameState.BuildStatus, "the beaver offers the next load");
                     game.BeginBuildTrip();
+                    ChallengeChecks.Solve(game);
                     Check(
                         game.Haul is BuildTrip { Loaded: false } next && next.Step == trip + 1 && trailer.Attached,
                         "confirming starts the next trip"

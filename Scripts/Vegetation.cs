@@ -158,7 +158,7 @@ public partial class Vegetation : Node3D
             Leaf(p + Vector3.Up * .38f, new Vector3(.075f, .065f, .075f), "ffd240");
             if (i % 15 == 0)
             {
-                var size = new Vector3(.7f, .43f, .55f);
+                var size = new Vector3(1.15f, .75f, .95f);
                 Leaf(p, size, "adaebf");
                 Obstacles.Rock(this, p, size);
             }

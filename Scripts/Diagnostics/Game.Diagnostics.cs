@@ -290,7 +290,10 @@ public partial class Game
             )
                 OpenChallenge(world.Village.Residents[0]);
             if (view == "village-fruit")
+            {
                 BeginVillageCollection();
+                ChallengeChecks.Solve(this);
+            }
         }
         if (view == "task-choice")
         {
@@ -429,6 +432,7 @@ public partial class Game
             {
                 world.Industry[(int)Product.Gravel].SetStock(5);
                 BeginBuildTrip();
+                ChallengeChecks.Solve(this);
                 enabledQuizzes = QuizType.Math;
                 vehicle.SetPose(world.Ground.At(Haul!.Source.Position.X, Haul.Source.Position.Z, .15f), 0);
                 BeginLoading();

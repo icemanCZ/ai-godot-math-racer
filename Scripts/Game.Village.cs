@@ -96,7 +96,9 @@ public partial class Game
     }
 
     /// <summary>The resident's trip: take goods from the works' stock on the trailer and tip them out in front of the house.</summary>
-    internal void BeginHouseTrip()
+    internal void BeginHouseTrip() => BeginHouseTrip(false);
+
+    private void BeginHouseTrip(bool quizzed)
     {
         if (
             State != GameState.HouseMaterialOffer
@@ -107,6 +109,11 @@ public partial class Game
             || works.Stock < Works.PerTrip
         )
             return;
+        if (!quizzed)
+        {
+            AskBeforeDeparture(Departure.House);
+            return;
+        }
         CancelActiveTask();
         StartHaul(new HouseTrip(world, vehicle, resident.HouseIndex, load, loaded: false));
         Start();
@@ -139,9 +146,50 @@ public partial class Game
             || world.Village.TaskAt(nearby.HouseIndex) != VillageTaskKind.Fruit
         )
             return;
-        deliveryReward = false;
-        StartExpedition(nearby, true);
-        SaveProgress();
+        // The apple trip starts only after a solved quiz.
+        departure = Departure.Fruit;
+        BeginQuiz();
+    }
+
+    /// <summary>A trip whose quiz has just been solved starts: the golem's pieces or a resident's apples.</summary>
+    private void StartDeparture(Departure trip)
+    {
+        if (nearby == null)
+            return;
+        // The panel that offered the trip comes back so that its own checks run once more.
+        switch (trip)
+        {
+            case Departure.Build:
+                State = departureState;
+                BeginBuildTrip(true);
+                break;
+            case Departure.Plot:
+                State = departureState;
+                BeginPlotTrip(true);
+                break;
+            case Departure.House:
+                State = departureState;
+                BeginHouseTrip(true);
+                break;
+            case Departure.Missing:
+                State = departureState;
+                BeginMissingSupply(true);
+                break;
+            case Departure.Golem:
+                if (Delivery?.Golem == true || GolemOwned)
+                    return;
+                StartExpedition(world.Sorcerer, true);
+                SaveProgress();
+                break;
+            default:
+                deliveryReward = false;
+                StartExpedition(nearby, true);
+                SaveProgress();
+                break;
+        }
+        // A refused trip must not leave the quiz state behind.
+        if (State == departureState && State != GameState.Exploring && trip is not (Departure.Golem or Departure.Fruit))
+            CloseInteraction();
     }
 
     private void CompleteHouseTask(Animal owner)

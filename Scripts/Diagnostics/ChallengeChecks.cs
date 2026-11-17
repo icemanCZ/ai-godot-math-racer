@@ -9,7 +9,8 @@ public static class ChallengeChecks
 {
     internal static void Solve(Game game)
     {
-        var question = game.CurrentChallenge!;
+        if (game.CurrentChallenge is not { } question)
+            return;
         foreach (int choice in question.Choices.Where(question.Accepts))
             game.SubmitAnswer(choice);
         if (question is SyllableChallenge)

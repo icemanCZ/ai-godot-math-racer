@@ -179,7 +179,10 @@ public static class Art
     public static void Beam(Node3D parent, Vector3 from, Vector3 to, float width, string color)
     {
         var b = Block(parent, (from + to) / 2, new Vector3(width, width, from.DistanceTo(to)), color);
-        b.LookAt(parent.ToGlobal(to), Vector3.Up);
+        // A vertical beam cannot look along Up without a degenerate basis, so it turns around another axis.
+        var along = parent.ToGlobal(to) - parent.ToGlobal(from);
+        var up = Mathf.Abs(along.Normalized().Dot(Vector3.Up)) > .999f ? Vector3.Right : Vector3.Up;
+        b.LookAt(parent.ToGlobal(to), up);
     }
 
     internal const uint SignLayer = 1 << 1;

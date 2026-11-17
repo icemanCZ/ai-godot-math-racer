@@ -80,7 +80,9 @@ public partial class Game
     /// The next delivery needs goods the works has not made: the builder sends the player straight for the raw material
     /// (logs for planks, soil for bricks, stones for gravel), so no one has to look for the right worker.
     /// </summary>
-    internal void BeginMissingSupply()
+    internal void BeginMissingSupply() => BeginMissingSupply(false);
+
+    private void BeginMissingSupply(bool quizzed)
     {
         Works works;
         Animal asker;
@@ -123,6 +125,11 @@ public partial class Game
         }
         else
             return;
+        if (!quizzed)
+        {
+            AskBeforeDeparture(Departure.Missing);
+            return;
+        }
         CancelActiveTask();
         StartHaul(new SupplyTrip(world, vehicle, works, loaded: false));
         Start();

@@ -78,8 +78,10 @@ public partial class VillageChecks : Node
             );
             RoundTrip(path);
             game.BeginHouseTrip();
+            ChallengeChecks.Solve(game);
             Check(game.Haul == null, $"{what}: no trip starts without goods");
             game.BeginMissingSupply();
+            ChallengeChecks.Solve(game);
             var fetch = game.Haul as SupplyTrip;
             Check(
                 fetch is { Loaded: false } && fetch.Works == works && trailer.Attached,
@@ -108,6 +110,7 @@ public partial class VillageChecks : Node
             $"{what}: with goods in stock the play button sends the trailer"
         );
         game.BeginHouseTrip();
+        ChallengeChecks.Solve(game);
         var trip = game.Haul as HouseTrip;
         Check(
             trip is { Loaded: false } && trip.House == house && trip.Load == goods && trailer.Attached,
@@ -318,6 +321,11 @@ public partial class VillageChecks : Node
             );
             game.BeginVillageCollection();
             Check(
+                game.State == GameState.Challenge && game.Delivery == roadside,
+                "the apple trip asks a quiz before it replaces another expedition"
+            );
+            ChallengeChecks.Solve(game);
+            Check(
                 game.Delivery != roadside && game.Delivery?.Sender == village.Residents[0],
                 "village task replaces another expedition"
             );
@@ -361,6 +369,7 @@ public partial class VillageChecks : Node
                         ((Button)game.FindChild("VillageFruitTask", true, false)).EmitSignal(
                             BaseButton.SignalName.Pressed
                         );
+                        ChallengeChecks.Solve(game);
                         Check(
                             game.Delivery?.Sender == owner
                                 && game.Delivery.Recipient == owner
