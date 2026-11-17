@@ -28,6 +28,7 @@ public enum GameState
     BuildStatus = 17,
     WorksStatus = 18,
     SourceStatus = 19,
+    HouseMaterialOffer = 20,
 }
 
 public partial class Game : Node3D
@@ -251,6 +252,8 @@ public partial class Game : Node3D
             case GameState.HouseFruitOffer when nearby != null:
                 ui.HouseFruitOffer(nearby, world.Village.Level(nearby.HouseIndex), true);
                 return true;
+            case GameState.HouseMaterialOffer when nearby?.HouseIndex >= 0:
+                return ShowHouseMaterial();
             case GameState.FarmStatus:
                 ui.FarmStatus(world.Village, Delivery, returned);
                 return true;
@@ -429,7 +432,9 @@ public partial class Game : Node3D
         {
             if (!animal.Role.UsesDeliveryGuide)
                 continue;
-            bool target = Delivery != null && Delivery.CanDeliver && animal == Delivery.Recipient;
+            bool target =
+                Delivery != null && Delivery.CanDeliver && animal == Delivery.Recipient
+                || Haul is HouseTrip { Loaded: true } houseTrip && animal == houseTrip.Contractor;
             animal.Guide(animal.RewardAvailable || CanChooseExpedition(animal) || target, target);
         }
     }

@@ -40,7 +40,87 @@ public partial class Game
             ui.HouseFruitOffer(resident, world.Village.Level(house), true);
             return;
         }
+        if (HouseMaterial(house) != null)
+        {
+            ClearChallenge();
+            EnterInteraction(GameState.HouseMaterialOffer, resident);
+            ShowHouseMaterial();
+            SpeakHouseMaterial(resident);
+            return;
+        }
         BeginChallenge(resident);
+    }
+
+    /// <summary>
+    /// The goods the resident of a house wants for the next improvement, or null for a quiz or an apple task.
+    /// A valley without the works has no goods to haul, so its houses ask a quiz instead.
+    /// </summary>
+    private HaulLoad? HouseMaterial(int house) =>
+        world.Industry.Length == 0 || world.Village.Level(house) >= Village.Upgrades.Length
+            ? null
+            : Village.MaterialOf(world.Village.TaskAt(house));
+
+    private HouseTrip? TripOf(Animal resident) => Haul is HouseTrip trip && trip.Contractor == resident ? trip : null;
+
+    /// <summary>Shows what the resident wants and the way to fetch it: the trip, the play button or the missing raw material.</summary>
+    private bool ShowHouseMaterial()
+    {
+        if (nearby is not { HouseIndex: >= 0 } resident || HouseMaterial(resident.HouseIndex) is not { } load)
+            return false;
+        var works = GoodsWorks(load)!;
+        var trip = TripOf(resident);
+        bool ready = works.Stock >= Works.PerTrip;
+        // While a supply trip for the missing goods is under way the trailer is shown instead of a second button.
+        bool fetching = Haul is SupplyTrip supply && supply.Works == works;
+        ui.HouseMaterialOffer(
+            resident,
+            load,
+            trip ?? (fetching ? Haul : null),
+            trip == null && ready,
+            trip == null && !ready && !fetching && !works.Full ? works : null
+        );
+        return true;
+    }
+
+    private void SpeakHouseMaterial(Animal resident)
+    {
+        var load = HouseMaterial(resident.HouseIndex)!.Value;
+        var works = GoodsWorks(load)!;
+        string wanted = load == HaulLoad.Planks ? "prkna" : "cihly";
+        Speak(
+            TripOf(resident) != null ? "Přiveď mi ten náklad k domečku!"
+                : works.Stock >= Works.PerTrip ? $"Na vylepšení domečku potřebuju {wanted}. Přivezeš mi je?"
+                : $"Na vylepšení domečku potřebuju {wanted}, ale {works.Spec.Name.ToLower()} jich nemá. Pošlu tě pro surovinu!",
+            resident
+        );
+    }
+
+    /// <summary>The resident's trip: take goods from the works' stock on the trailer and tip them out in front of the house.</summary>
+    internal void BeginHouseTrip()
+    {
+        if (
+            State != GameState.HouseMaterialOffer
+            || nearby is not { HouseIndex: >= 0, RewardAvailable: true } resident
+            || HouseMaterial(resident.HouseIndex) is not { } load
+            || TripOf(resident) != null
+            || GoodsWorks(load) is not { } works
+            || works.Stock < Works.PerTrip
+        )
+            return;
+        CancelActiveTask();
+        StartHaul(new HouseTrip(world, vehicle, resident.HouseIndex, load, loaded: false));
+        Start();
+        Speak(TripInstruction(Haul!), resident);
+        SaveProgress();
+    }
+
+    /// <summary>The goods are tipped out in front of the house: the house is improved.</summary>
+    private void FinishHouseDump(HouseTrip trip)
+    {
+        var owner = trip.Contractor;
+        EndHaul();
+        CompleteHouseTask(owner);
+        SaveProgress();
     }
 
     internal void CompleteHouseQuiz(Animal resident)

@@ -248,16 +248,41 @@ public partial class Game
             vehicle.SetPose(world.Ground.At(spot.X, spot.Z, .15f), Mathf.Atan2(-toward.X, -toward.Z));
             WorldCoins.PickupEnabled = false;
         }
-        if (view is "village" or "village-upgraded" or "village-question" or "village-fruit-offer" or "village-fruit")
+        if (
+            view
+            is "village"
+                or "village-upgraded"
+                or "village-question"
+                or "village-fruit-offer"
+                or "village-fruit"
+                or "village-material-offer"
+                or "village-material-missing"
+        )
         {
             if (view == "village-upgraded")
                 world.Village.RestoreLevels(new[] { 10, 10, 10, 10 });
+            if (view is "village-material-offer" or "village-material-missing")
+            {
+                // The first house asks for goods; the works has some in stock, or none so that the raw material is shown.
+                world.Village.RestoreLevels(
+                    new[] { world.Village.Tasks(0).ToList().FindIndex(k => Village.MaterialOf(k) != null), 0, 0, 0 }
+                );
+                foreach (var works in world.Industry)
+                    works.SetStock(view == "village-material-offer" ? 6 : 0);
+            }
             if (view is "village-fruit-offer" or "village-fruit")
                 world.Village.RestoreLevels(
                     new[] { world.Village.Tasks(0).ToList().IndexOf(VillageTaskKind.Fruit), 0, 0, 0 }
                 );
             vehicle.SetPose(world.Village.Residents[0].Position + world.Village.Houses[0].Basis.Z * 3, 0);
-            if (view is "village-question" or "village-fruit-offer" or "village-fruit")
+            if (
+                view
+                is "village-question"
+                    or "village-fruit-offer"
+                    or "village-fruit"
+                    or "village-material-offer"
+                    or "village-material-missing"
+            )
                 OpenChallenge(world.Village.Residents[0]);
             if (view == "village-fruit")
                 BeginVillageCollection();

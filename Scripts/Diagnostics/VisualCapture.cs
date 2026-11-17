@@ -131,7 +131,15 @@ public partial class VisualCapture : Node
             camera.Position = focus + farm.GlobalBasis * new Vector3(18, 18, 30);
             camera.LookAt(focus);
         }
-        else if (view is "village" or "village-upgraded" or "village-question" or "village-fruit-offer")
+        else if (
+            view
+            is "village"
+                or "village-upgraded"
+                or "village-question"
+                or "village-fruit-offer"
+                or "village-material-offer"
+                or "village-material-missing"
+        )
         {
             camera.SetProcess(false);
             car.Active = false;

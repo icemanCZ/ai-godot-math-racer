@@ -50,6 +50,10 @@ public sealed class SaveData
     /// <summary>The works the active supply trip brings raw material to, or -1. Never set together with a building trip.</summary>
     public int SupplyTrip { get; set; } = -1;
     public bool SupplyTripLoaded { get; set; }
+
+    /// <summary>The house whose planks or bricks the active trailer trip fetches, or -1. Its task is the house's next one.</summary>
+    public int HouseTrip { get; set; } = -1;
+    public bool HouseTripLoaded { get; set; }
     public bool TrailerOwned { get; set; }
     public bool TrailerAttached { get; set; }
     public string TrailerPaint { get; set; } = "red";
@@ -135,6 +139,7 @@ public static class SaveStore
                 MigrateRewardOffer(data);
                 MigrateBuilds(data);
                 MigrateEventRun(data);
+                MigrateHouseTasks(data);
                 Validate(data);
                 if (data.Postcards.Length == Game.OriginalPostcardCount)
                 {
@@ -168,6 +173,7 @@ public static class SaveStore
             || HasInvalidSpecialActorState(data)
             || HasInvalidBuildState(data)
             || HasInvalidWorksState(data)
+            || HasInvalidHouseTrip(data)
             || HasInvalidPickupCount(data)
         )
             throw new JsonException("Invalid save data.");
@@ -281,7 +287,10 @@ public static class SaveStore
         // A shop shows its status while another task is under way: an expedition or a ford trip.
         || (
             data.State == GameState.TradeStatus
-            && (data.Nearby < World.FirstTraderId || (data.Sender < 0 && data.BuildTrip < 0 && data.SupplyTrip < 0))
+            && (
+                data.Nearby < World.FirstTraderId
+                || (data.Sender < 0 && data.BuildTrip < 0 && data.SupplyTrip < 0 && data.HouseTrip < 0)
+            )
         )
         || (
             data.Nearby >= World.FirstTraderId
@@ -350,6 +359,15 @@ public static class SaveStore
             )
         )
         || (
+            data.State == GameState.HouseMaterialOffer
+            && (
+                data.Nearby < World.FirstResidentId
+                || data.Nearby >= World.FarmerId
+                || SavedTask(data, data.Nearby - World.FirstResidentId)
+                    is not (VillageTaskKind.Planks or VillageTaskKind.Bricks)
+            )
+        )
+        || (
             data.Nearby >= World.FirstResidentId
             && data.Nearby < World.FirstTraderId
             && data.State is GameState.Reward or GameState.ExpeditionChoice
@@ -409,7 +427,12 @@ public static class SaveStore
         || data.BuildTrip >= BuildPlans.Count
         || (
             data.BuildTrip >= 0
-            && (data.BuildStages[data.BuildTrip] >= BuildPlans.Trips || data.Sender >= 0 || data.SupplyTrip >= 0)
+            && (
+                data.BuildStages[data.BuildTrip] >= BuildPlans.Trips
+                || data.Sender >= 0
+                || data.SupplyTrip >= 0
+                || data.HouseTrip >= 0
+            )
         )
         || (data.BuildTripLoaded && data.BuildTrip < 0)
         || (data.TrailerOwned && data.BuildStages[BuildPlans.Bridge] < BuildPlans.Trips)
@@ -431,7 +454,57 @@ public static class SaveStore
             var cargo = WorksCatalog.All[data.SupplyTrip].Input;
             return (cargo, World.AskerId(cargo, 0), data.SupplyTripLoaded);
         }
+        if (data.HouseTrip >= 0 && SavedTask(data, data.HouseTrip) is { } kind && Village.MaterialOf(kind) is { } goods)
+            return (goods, World.AskerId(goods, 0), data.HouseTripLoaded);
         return (default, -1, false);
+    }
+
+    /// <summary>The task of a house's next improvement in a saved valley; null for a finished house or damaged levels.</summary>
+    private static VillageTaskKind? SavedTask(SaveData data, int house) =>
+        data.Seed > 0
+        && data.HouseLevels is { Length: 4 } levels
+        && house is >= 0 and < 4
+        && levels[house] is >= 0 and < 10
+            ? Village.CreateTasks(data.Seed, house)[levels[house]]
+            : null;
+
+    /// <summary>
+    /// A house's trailer trip fetches the goods of its next task, so that house must still be unfinished and ask for
+    /// planks or bricks. It never runs together with an expedition or another trailer trip.
+    /// </summary>
+    private static bool HasInvalidHouseTrip(SaveData data) =>
+        data.HouseTrip < -1
+        || data.HouseTrip >= 4
+        || (data.HouseTripLoaded && data.HouseTrip < 0)
+        || (
+            data.HouseTrip >= 0
+            && (
+                data.Sender >= 0
+                || data.BuildTrip >= 0
+                || data.SupplyTrip >= 0
+                || SavedTask(data, data.HouseTrip) is not (VillageTaskKind.Planks or VillageTaskKind.Bricks)
+            )
+        );
+
+    /// <summary>
+    /// Houses used to ask only quizzes and apples. A save that waits at a house whose next task is now different
+    /// (an apple offer, or a quiz where the house now wants goods) goes back to driving, so the rest of it is kept.
+    /// </summary>
+    private static void MigrateHouseTasks(SaveData data)
+    {
+        if (data.Nearby is < World.FirstResidentId or >= World.FarmerId || data.Sender >= 0)
+            return;
+        var task = SavedTask(data, data.Nearby - World.FirstResidentId);
+        bool stale =
+            data.State == GameState.HouseFruitOffer && task != VillageTaskKind.Fruit
+            || data.State == GameState.Challenge
+                && data.Challenge is not null and not LoadChallenge
+                && Village.MaterialOf(task ?? VillageTaskKind.Math) != null;
+        if (!stale)
+            return;
+        data.State = GameState.Exploring;
+        data.Nearby = -1;
+        ClearQuestion(data);
     }
 
     /// <summary>
@@ -472,7 +545,7 @@ public static class SaveStore
         || data.WorksStock.Any(stock => stock < 0 || stock > Works.Capacity)
         || data.SupplyTrip < -1
         || data.SupplyTrip >= WorksCatalog.Count
-        || (data.SupplyTrip >= 0 && (data.BuildTrip >= 0 || data.Sender >= 0))
+        || (data.SupplyTrip >= 0 && (data.BuildTrip >= 0 || data.Sender >= 0 || data.HouseTrip >= 0))
         || (data.SupplyTrip >= 0 && data.WorksStock[data.SupplyTrip] >= Works.Capacity)
         || (data.SupplyTripLoaded && data.SupplyTrip < 0);
 

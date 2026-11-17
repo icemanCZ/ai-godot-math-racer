@@ -65,6 +65,8 @@ public partial class Game
             BuildTripLoaded = Haul is BuildTrip { Loaded: true },
             SupplyTrip = (Haul as SupplyTrip)?.WorksIndex ?? -1,
             SupplyTripLoaded = Haul is SupplyTrip { Loaded: true },
+            HouseTrip = (Haul as HouseTrip)?.House ?? -1,
+            HouseTripLoaded = Haul is HouseTrip { Loaded: true },
             WorksStock = world.WorksStock(),
             TrailerOwned = TrailerOwned,
             TrailerAttached = trailerParade,

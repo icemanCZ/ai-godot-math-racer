@@ -141,6 +141,9 @@ public partial class Village : Node3D
             House(position.X, position.Z, site.Color, yaw);
             plot = Houses[^1].Transform;
             plots.Add(plot);
+            // Material for the house is tipped out on the road verge in front of it, clear of the mailbox and the resident.
+            var drop = plot * new Vector3(-1.2f, 0, 8.4f);
+            houseDrops.Add(ground.At(drop.X, drop.Z));
             int index = Residents.Count;
             tasks[index] = CreateTasks(Settings.Seed, index);
             var resident = Animal.Create(CharacterCatalog.HouseResidents[index]);

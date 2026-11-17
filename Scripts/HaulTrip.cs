@@ -121,6 +121,27 @@ public partial class BuildTrip : HaulTrip
     }
 }
 
+/// <summary>Planks or bricks that a village resident wants for the next improvement of their house.</summary>
+public partial class HouseTrip : HaulTrip
+{
+    internal int House { get; }
+
+    internal HouseTrip(World world, Vehicle car, int house, HaulLoad load, bool loaded)
+        : base(
+            world,
+            car,
+            load,
+            world.Village.HouseDrop(house),
+            world.Village.HouseDrop(house),
+            world.Village.Residents[house],
+            loaded
+        )
+    {
+        House = house;
+        Name = "HouseTrip";
+    }
+}
+
 /// <summary>Raw material for a works: logs, soil or stones, hauled to its ring and turned into stock.</summary>
 public partial class SupplyTrip : HaulTrip
 {

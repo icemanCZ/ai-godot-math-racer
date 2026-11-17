@@ -76,18 +76,39 @@ public partial class Game
     /// </summary>
     internal void BeginMissingSupply()
     {
-        if (
-            State != GameState.BuildStatus
-            || ProjectOf(nearby) is not { Complete: false } project
-            || Haul != null
-            || StepReady(project)
-            || GoodsWorks(project.Steps[project.Stage].Cargo) is not { Full: false } works
-        )
+        Works works;
+        Animal asker;
+        if (State == GameState.BuildStatus)
+        {
+            if (
+                ProjectOf(nearby) is not { Complete: false } project
+                || Haul != null
+                || StepReady(project)
+                || GoodsWorks(project.Steps[project.Stage].Cargo) is not { Full: false } missing
+            )
+                return;
+            (works, asker) = (missing, project.Builder);
+        }
+        else if (State == GameState.HouseMaterialOffer)
+        {
+            // A resident who wants goods that the works has not made does the same: the way to the raw material.
+            if (
+                nearby is not { HouseIndex: >= 0, RewardAvailable: true } resident
+                || HouseMaterial(resident.HouseIndex) is not { } load
+                || TripOf(resident) != null
+                || GoodsWorks(load) is not { Full: false } missing
+                || missing.Stock >= Works.PerTrip
+                || (Haul is SupplyTrip supply && supply.Works == missing)
+            )
+                return;
+            (works, asker) = (missing, resident);
+        }
+        else
             return;
         CancelActiveTask();
         StartHaul(new SupplyTrip(world, vehicle, works, loaded: false));
         Start();
-        Speak(TripInstruction(Haul!), project.Builder);
+        Speak(TripInstruction(Haul!), asker);
         SaveProgress();
     }
 

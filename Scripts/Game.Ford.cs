@@ -45,6 +45,7 @@ public partial class Game
         ui.BuildQuestRequested += BeginBuildTrip;
         ui.SupplyQuestRequested += BeginSupplyTrip;
         ui.MissingSupplyRequested += BeginMissingSupply;
+        ui.HouseTripRequested += BeginHouseTrip;
         ui.LookoutRequested += BeginLookout;
         ui.TrailerToggleRequested += ToggleTrailer;
         ui.TrailerPaintSelected += SelectTrailerPaint;
@@ -210,7 +211,7 @@ public partial class Game
         trip.SetLoaded(true);
         trailer.Fill(trip.Load);
         ui.HaulHud(trip);
-        UpdateHaulGuides();
+        UpdateDeliveryGuides();
         CloseInteraction();
         Speak(TripInstruction(trip), trip.Contractor);
         SaveProgress();
@@ -238,6 +239,9 @@ public partial class Game
                 break;
             case SupplyTrip supplyTrip:
                 FinishSupplyDump(supplyTrip);
+                break;
+            case HouseTrip houseTrip:
+                FinishHouseDump(houseTrip);
                 break;
         }
     }
@@ -333,6 +337,16 @@ public partial class Game
             StartHaul(new SupplyTrip(world, vehicle, world.Industry[data.SupplyTrip], data.SupplyTripLoaded));
             trailer.Snap();
         }
+        else if (
+            data.HouseTrip >= 0
+            && data.HouseTrip < world.Village.Residents.Count
+            && HouseMaterial(data.HouseTrip) is { } material
+        )
+        {
+            trailer.SetLoad(null);
+            StartHaul(new HouseTrip(world, vehicle, data.HouseTrip, material, data.HouseTripLoaded));
+            trailer.Snap();
+        }
         else
         {
             trailer.SetLoad(null);
@@ -354,6 +368,7 @@ public partial class Game
         {
             BuildTrip { Loaded: true, FarBank: true } => "Teď odvez náklad na druhý břeh řeky. Přejeď po velkém mostě.",
             BuildTrip { Loaded: true } => "Teď odvez náklad na stavbu a vysyp ho do žlutého kruhu.",
+            HouseTrip { Loaded: true } => "Teď odvez náklad před domeček a vysyp ho do žlutého kruhu.",
             { Loaded: true } => "Teď odvez náklad do žlutého kruhu před závodem.",
             _ => trip.Load switch
             {

@@ -39,6 +39,121 @@ public partial class VillageChecks : Node
         );
     }
 
+    private bool Has(string name) => game.FindChildren(name, "", true, false).Any(node => !node.IsQueuedForDeletion());
+
+    private void Frames(int count)
+    {
+        for (int i = 0; i < count; i++)
+            game._Process(.1);
+    }
+
+    private void DriveTo(Vector3 point)
+    {
+        car.SetPose(world.Ground.At(point.X, point.Z, .15f), 0);
+        Frames(1);
+    }
+
+    /// <summary>
+    /// A resident who wants planks or bricks: the trailer fetches them from the works' stock and tips them out in
+    /// front of the house. With <paramref name="missingFirst"/> the works is empty, so the resident sends the player
+    /// for the raw material first.
+    /// </summary>
+    private void CompleteMaterialTask(int house, int level, HaulLoad goods, string path, bool missingFirst)
+    {
+        var village = world.Village;
+        var owner = village.Residents[house];
+        var works = world.Industry[(int)HaulLoads.ProductOf(goods)];
+        var trailer = game.Trailer;
+        string what = $"house {house} task {level + 1} ({goods})";
+        game.FinishInteraction();
+        works.SetStock(missingFirst ? 0 : Works.Capacity);
+        car.SetPose(owner.Position + Vector3.Right * 2, 0);
+        game.OpenChallenge(owner);
+        Check(game.State == GameState.HouseMaterialOffer, $"{what}: the resident asks for goods");
+        if (missingFirst)
+        {
+            Check(
+                Has("StartMissingSupply") && !Has("StartHouseTrip") && Has("MissingGoods"),
+                $"{what}: an empty works shows the raw material instead of the play button"
+            );
+            RoundTrip(path);
+            game.BeginHouseTrip();
+            Check(game.Haul == null, $"{what}: no trip starts without goods");
+            game.BeginMissingSupply();
+            var fetch = game.Haul as SupplyTrip;
+            Check(
+                fetch is { Loaded: false } && fetch.Works == works && trailer.Attached,
+                $"{what}: the resident sends the empty trailer for the raw material"
+            );
+            DriveTo(world.SourceFor(works.Spec.Input).Position);
+            Check(
+                game.State == GameState.Challenge && fetch!.Asker == world.SourceWorker(works.Spec.Input),
+                $"{what}: the worker at the source asks the loading question"
+            );
+            ChallengeChecks.Solve(game);
+            Check(game.Haul is { Loaded: true } && trailer.Load == works.Spec.Input, $"{what}: raw material loaded");
+            RoundTrip(path);
+            DriveTo(works.Site.Position);
+            Frames(40);
+            Check(
+                works.Stock == Works.PerLoad && game.Haul == null && village.Level(house) == level,
+                $"{what}: the works makes the goods"
+            );
+            car.SetPose(owner.Position + Vector3.Right * 2, 0);
+            game.OpenChallenge(owner);
+            Check(game.State == GameState.HouseMaterialOffer, $"{what}: back at the resident");
+        }
+        Check(
+            Has("StartHouseTrip") && !Has("MissingGoods") && !Has("StartMissingSupply"),
+            $"{what}: with goods in stock the play button sends the trailer"
+        );
+        game.BeginHouseTrip();
+        var trip = game.Haul as HouseTrip;
+        Check(
+            trip is { Loaded: false } && trip.House == house && trip.Load == goods && trailer.Attached,
+            $"{what}: the empty trailer is sent to the works"
+        );
+        Check(
+            game.State == GameState.Exploring && trip!.Asker == works.Worker && trip.Contractor == owner,
+            $"{what}: the works' worker loads it for the resident"
+        );
+        RoundTrip(path);
+        car.SetPose(owner.Position + Vector3.Right * 2, 0);
+        game.OpenChallenge(owner);
+        Check(
+            game.State == GameState.HouseMaterialOffer
+                && !Has("StartHouseTrip")
+                && game.Haul is HouseTrip { House: var tripHouse }
+                && tripHouse == house,
+            $"{what}: talking to the resident during the trip shows it and starts no second one"
+        );
+        game.FinishInteraction();
+        DriveTo(world.SourceFor(goods).Position);
+        Check(game.State == GameState.Challenge && game.CurrentChallenge != null, $"{what}: arriving asks a question");
+        if (game.CurrentChallenge is LoadChallenge load)
+            Check(load.Cargo == goods && load.IsValid(), $"{what}: the loading question matches the goods");
+        RoundTrip(path);
+        int before = works.Stock;
+        ChallengeChecks.Solve(game);
+        Check(
+            game.Haul is { Loaded: true } && trailer.Load == goods && works.Stock == before - Works.PerTrip,
+            $"{what}: goods leave the stock when loaded"
+        );
+        Check(village.Level(house) == level, $"{what}: loading alone does not improve the house");
+        RoundTrip(path);
+        DriveTo(village.HouseDrop(house));
+        Check(trailer.Dumping && !car.Active, $"{what}: the bed tips in front of the house");
+        Frames(40);
+        Check(
+            village.Level(house) == level + 1
+                && game.State == GameState.HouseReward
+                && game.Haul == null
+                && trailer.Load == null
+                && !game.TaskActive,
+            $"{what}: the delivered goods improve the house exactly once"
+        );
+    }
+
     private void GatherAll()
     {
         foreach (var point in game.Delivery!.PickupPositions)
@@ -154,7 +269,7 @@ public partial class VillageChecks : Node
                 var plan = Village.CreateTasks(seed, house);
                 if (
                     plan.Length != 10
-                    || Enum.GetValues<VillageTaskKind>().Any(kind => plan.Count(t => t == kind) is < 3 or > 4)
+                    || Enum.GetValues<VillageTaskKind>().Any(kind => plan.Count(t => t == kind) != Village.TasksPerKind)
                     || !plan.SequenceEqual(Village.CreateTasks(seed, house))
                 )
                     throw new InvalidOperationException("Invalid village task composition or unstable shuffle");
@@ -164,7 +279,29 @@ public partial class VillageChecks : Node
                     && !Village.CreateTasks(42, 0).SequenceEqual(Village.CreateTasks(42, 1)),
                 "task order varies by seed and house"
             );
-            Check(true, "512 schedules contain three tasks of each type plus one random type");
+            Check(
+                true,
+                "512 schedules contain two quizzes of each kind, two apple tasks, two of planks and two of bricks"
+            );
+            Check(
+                world.Industry.Length == WorksCatalog.Count
+                    && Village.MaterialOf(VillageTaskKind.Planks) == HaulLoad.Planks
+                    && Village.MaterialOf(VillageTaskKind.Bricks) == HaulLoad.Bricks
+                    && Village.MaterialOf(VillageTaskKind.Fruit) == null
+                    && Village.MaterialOf(VillageTaskKind.Math) == null,
+                "planks and bricks are the goods that the houses ask for"
+            );
+            for (int house = 0; house < 4; house++)
+            {
+                var drop = village.HouseDrop(house);
+                var door = village.Houses[house].GlobalPosition;
+                Check(
+                    new Vector2(drop.X - door.X, drop.Z - door.Z).Length() is > 6 and < 12
+                        && world.Routes.Distance(drop) < 5
+                        && Mathf.Abs(drop.Y - world.Ground.Height(drop.X, drop.Z)) < .05f,
+                    $"house {house} has a drop ring beside the road in front of it"
+                );
+            }
             car.SetPose(village.Residents[0].Position + Vector3.Right * 2, 0);
             game._Process(.016);
             Check(village.Residents[0].IsWaving, "resident waves at the passing player");
@@ -206,8 +343,8 @@ public partial class VillageChecks : Node
                     game.OpenChallenge(owner);
                     var kind = schedule[level];
                     Check(
-                        kind == VillageTaskKind.Fruit
-                            ? game.State == GameState.HouseFruitOffer
+                        kind == VillageTaskKind.Fruit ? game.State == GameState.HouseFruitOffer
+                            : Village.MaterialOf(kind) != null ? game.State == GameState.HouseMaterialOffer
                             : game.State == GameState.Challenge && game.CurrentChallenge != null,
                         $"house {house} task {level + 1} follows its shuffled {kind} schedule"
                     );
@@ -253,27 +390,39 @@ public partial class VillageChecks : Node
                             "all fruit must be returned and counted before the upgrade"
                         );
                     }
-                    int answer = game.CurrentChallenge!.Choices.First(game.CurrentChallenge.Accepts);
-                    game.SubmitAnswer(
-                        game.CurrentChallenge.Choices.First(choice => !game.CurrentChallenge.Accepts(choice))
-                    );
-                    Check(
-                        game.State == GameState.Challenge && village.Level(house) == level,
-                        "wrong answer preserves the task without granting an upgrade"
-                    );
-                    RoundTrip(path);
-                    var returning = game.Delivery;
-                    ChallengeChecks.Solve(game);
-                    Check(
-                        game.State == GameState.HouseReward
-                            && village.Level(house) == level + 1
-                            && game.Delivery == null,
-                        "completed task grants exactly one house upgrade"
-                    );
-                    if (returning != null)
-                        Check(!returning.CargoVisible, "fruit handover removes cargo immediately");
-                    game.SubmitAnswer(answer);
-                    Check(village.Level(house) == level + 1, "duplicate answer grants no extra upgrade");
+                    if (Village.MaterialOf(kind) is { } goods)
+                        CompleteMaterialTask(
+                            house,
+                            level,
+                            goods,
+                            path,
+                            // The first goods task of each house meets an empty works.
+                            missingFirst: level == Array.FindIndex(schedule, k => Village.MaterialOf(k) != null)
+                        );
+                    else
+                    {
+                        int answer = game.CurrentChallenge!.Choices.First(game.CurrentChallenge.Accepts);
+                        game.SubmitAnswer(
+                            game.CurrentChallenge.Choices.First(choice => !game.CurrentChallenge.Accepts(choice))
+                        );
+                        Check(
+                            game.State == GameState.Challenge && village.Level(house) == level,
+                            "wrong answer preserves the task without granting an upgrade"
+                        );
+                        RoundTrip(path);
+                        var returning = game.Delivery;
+                        ChallengeChecks.Solve(game);
+                        Check(
+                            game.State == GameState.HouseReward
+                                && village.Level(house) == level + 1
+                                && game.Delivery == null,
+                            "completed task grants exactly one house upgrade"
+                        );
+                        if (returning != null)
+                            Check(!returning.CargoVisible, "fruit handover removes cargo immediately");
+                        game.SubmitAnswer(answer);
+                        Check(village.Level(house) == level + 1, "duplicate answer grants no extra upgrade");
+                    }
                     var parts = village.Houses[house].GetNode<Node3D>("Upgrades").GetChildren().Cast<Node3D>();
                     Check(parts.Count(n => n.Visible) == level + 1, "earned house additions are visible");
                     RoundTrip(path);
@@ -301,6 +450,111 @@ public partial class VillageChecks : Node
                 SaveStore.Read(path)?.HouseLevels.All(l => l == 0) == true,
                 "old saves start with zero house upgrades"
             );
+
+            // ---- Saves around the goods tasks ----
+            int invalidFiles = 0;
+            void Rejected(Action<SaveData> damage, string what)
+            {
+                var data = game.CaptureProgress();
+                damage(data);
+                string file = DiagnosticArtifacts.PathFor($"village-checks/invalid-{invalidFiles++}.json");
+                Check(SaveStore.Write(data, file) && SaveStore.Read(file) == null, $"rejected: {what}");
+            }
+            SaveData Accepted(Action<SaveData> change, string what)
+            {
+                var data = game.CaptureProgress();
+                change(data);
+                string file = DiagnosticArtifacts.PathFor($"village-checks/valid-{invalidFiles++}.json");
+                Check(SaveStore.Write(data, file), "save written");
+                var read = SaveStore.Read(file);
+                Check(read != null, $"accepted: {what}");
+                return read!;
+            }
+            var plan0 = village.Tasks(0).ToList();
+            var plan1 = village.Tasks(1).ToList();
+            int quizLevel = plan0.FindIndex(k => Village.MaterialOf(k) == null && k != VillageTaskKind.Fruit);
+            int materialLevel = plan1.FindIndex(k => Village.MaterialOf(k) != null);
+            village.RestoreLevels(new[] { quizLevel, materialLevel, 0, 0 });
+            var clean = game.CaptureProgress();
+            Rejected(data => data.HouseTrip = 4, "a trip for a fifth house");
+            Rejected(data => data.HouseTripLoaded = true, "a loaded house trip without a house");
+            Rejected(data => data.HouseTrip = 0, "a house trip for a house whose next task is a quiz");
+            Rejected(
+                data =>
+                {
+                    data.HouseTrip = 1;
+                    data.BuildTrip = BuildPlans.Bridge;
+                },
+                "a house trip together with a building trip"
+            );
+            Rejected(
+                data =>
+                {
+                    data.HouseTrip = 1;
+                    data.SupplyTrip = 0;
+                },
+                "a house trip together with a supply trip"
+            );
+            Rejected(
+                data =>
+                {
+                    data.State = GameState.HouseMaterialOffer;
+                    data.Nearby = World.FirstResidentId;
+                },
+                "an offer of goods at a house that asks for a quiz"
+            );
+            Accepted(
+                data =>
+                {
+                    data.State = GameState.HouseMaterialOffer;
+                    data.Nearby = World.FirstResidentId + 1;
+                },
+                "an offer of goods at a house that asks for them"
+            );
+            var tripSave = Accepted(
+                data =>
+                {
+                    data.HouseTrip = 1;
+                    data.HouseTripLoaded = true;
+                },
+                "a loaded house trip"
+            );
+            game.RestoreProgress(tripSave);
+            Check(
+                game.Haul is HouseTrip { House: 1, Loaded: true }
+                    && game.Trailer.Load == Village.MaterialOf(plan1[materialLevel]),
+                "a loaded house trip comes back with its load on the trailer"
+            );
+            game.RestoreProgress(clean);
+            Check(game.Haul == null && !game.TaskActive, "a save without a trip drops the trip");
+            game.RestoreProgress(
+                Accepted(
+                    data =>
+                    {
+                        data.State = GameState.HouseFruitOffer;
+                        data.Nearby = World.FirstResidentId;
+                    },
+                    "a fruit offer at a house whose task changed to something else"
+                )
+            );
+            Check(
+                game.State == GameState.Exploring && game.Haul == null,
+                "that stale fruit offer goes back to driving"
+            );
+            car.SetPose(world.Animals[5].Position + Vector3.Right * 2, 0);
+            game.OpenChallenge(world.Animals[5]);
+            Check(game.State == GameState.Challenge, "a roadside quiz is open");
+            var staleQuiz = game.CaptureProgress();
+            staleQuiz.Nearby = World.FirstResidentId + 1;
+            string staleFile = DiagnosticArtifacts.PathFor("village-checks/stale-quiz.json");
+            Check(SaveStore.Write(staleQuiz, staleFile), "save written");
+            var migrated = SaveStore.Read(staleFile);
+            Check(
+                migrated is { State: GameState.Exploring, Nearby: -1, Challenge: null },
+                "a house quiz saved before the house asked for goods goes back to driving"
+            );
+            game.FinishInteraction();
+            village.RestoreLevels(new[] { 10, 10, 10, 10 });
             village.Residents[0].GreetPlayer(village.Residents[0].Position, false);
             Check(!village.Residents[0].IsWaving, "waving stops outside exploration");
             GD.Print("VILLAGE_CHECKS_PASSED");
