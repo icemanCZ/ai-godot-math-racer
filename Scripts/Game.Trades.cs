@@ -7,7 +7,7 @@ public partial class Game
         nearby = owner;
         ClearChallenge();
         vehicle.Active = false;
-        if (Delivery != null)
+        if (TaskActive)
         {
             State = GameState.TradeStatus;
             ui.TradeStatus(owner, Delivery);
@@ -18,7 +18,7 @@ public partial class Game
 
     internal void StartTrade()
     {
-        if (Delivery != null || nearby?.IsTrader != true)
+        if (TaskActive || nearby?.IsTrader != true)
             return;
         StartExpedition(nearby, false);
         SaveProgress();

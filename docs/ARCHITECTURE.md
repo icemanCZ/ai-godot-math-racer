@@ -14,7 +14,9 @@ MathRacer is a code-only Godot 4.7.2 .NET project. The root node in `Main.tscn` 
 | `LaunchOptions` and `Settings` | `LaunchOptions` is the only reader of the command line. `Settings` holds tuning constants and the only state that outlives a scene reload: the world seed and the quiz settings carried into a new game. |
 | `Terrain`, `Roads`, `RoadGrading` and `River` | Provide elevation, road surface and clearance data for meshes, collision, placement, navigation and driving. |
 | `Vehicle`, `FollowCamera` and `VehicleAppearance` | Handle movement, camera and cosmetic state. `VehicleModel` shares geometry between gameplay and garage previews. |
-| `Expedition` and `DrivingEvents` | Handle cargo, route guidance and vehicle courses. |
+| `Expedition` and `DrivingEvents` | Handle cargo and vehicle courses. |
+| `RouteGuide` | Plans the road route to one target and owns the road arrows and the final off-road arrow. Expeditions and ford trips each create one. |
+| `Trailer`, `Ford` and `World.Ford.cs` | The towed trailer follows the car's hitch along `World.DriveSurface` without collision of its own. `World` plans the ford, its three material sources and the beaver. `Ford` shows the work for each delivered load, and its deck becomes solid after the sixth. `Game.Ford.cs` runs the trips, which share the single task slot with expeditions (`Game.TaskActive`). |
 | `IChallenge` and generators in `Mathematics` and `Letters` | Provide question data, seeded generation and answer validation. |
 | `SaveData`, `SaveStore` and `Game.Persistence.cs` | Define the JSON data, validate and migrate it, and translate between data and live scene state. Save version 2 stores the open question in one `Challenge` field tagged with `$type`; version 1 saves are migrated on load. |
 | `Scripts/Diagnostics` | Launch headless checks, prepare screenshot views and exercise game entry points. `Game` reaches them only through `partial` hooks, and release exports (`ExportRelease`) leave the folder out of the build. |
@@ -35,7 +37,8 @@ MathRacer is a code-only Godot 4.7.2 .NET project. The root node in `Main.tscn` 
 ## Seeded worlds and saves
 
 - `WorldLayout` owns the seeded route and plot plan. `World` generates the village once to discover the settlement footprint, levels that area, then rebuilds the roads and village before spawning roadside animals. Use the shared terrain and road measurements when placing new scenery.
-- Register persistent actors in `World.RegisterActors`. The roadside animals use their array indices. Resident IDs start at 30 because older saves reserved 0–29 for roadside animals. The bandit representative has a separate ID and is restored with its encounter in `Game`.
+- Register persistent actors in `World.RegisterActors`. The roadside animals use their array indices. Resident IDs start at 30 because older saves reserved 0–29 for roadside animals. The bandit representative has a separate ID (43) and is restored with its encounter in `Game`. The beaver uses 44 and is registered by `World.PlanFord` only when the valley has a ford.
+- `World.PlanFord` runs after every older actor and pickup has its place, with its own seeded searches, so existing valleys keep their roads, characters and pickups. The new clearings still remove some trees, and because rejected candidates skip random draws, later tree positions shift. Drivable heights over the bridge and the finished ford come from `World.DriveSurface` and `World.CrossingSurface`.
 - `SaveData` contains data only. `Game.Persistence.cs` snapshots the current state, recreates active expeditions and restores cosmetics, progress and panels. When adding persisted fields, supply defaults for older saves and validate the new state in `SaveStore`. Existing numeric `GameState` values and actor IDs are part of the JSON format.
 - `SaveStore` validates each candidate before migration, uses the previous backup if the main file is damaged and writes updates through a temporary file. Diagnostic modes, captures and explicit seeds bypass the player save.
 

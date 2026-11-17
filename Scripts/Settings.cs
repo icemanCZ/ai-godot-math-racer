@@ -26,4 +26,7 @@ public static class Settings
     public const float Acceleration = 7f;
     public const float Steering = 1.65f;
     public const float InteractionRange = 8f;
+
+    /// <summary>Top speed and acceleration factor while towing a full trailer.</summary>
+    public const float LoadedTrailerFactor = .85f;
 }

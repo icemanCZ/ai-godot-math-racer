@@ -50,7 +50,11 @@ public partial class Game
         SaveProgress();
     }
 
-    private void BeginQuiz(bool handover = false)
+    /// <summary>
+    /// Opens the next enabled quiz type. With <paramref name="load"/>, an arithmetic turn becomes the
+    /// trailer loading question for that material.
+    /// </summary>
+    private void BeginQuiz(bool handover = false, HaulLoad? load = null)
     {
         QuizType type;
         do
@@ -60,6 +64,7 @@ public partial class Game
         } while (!enabledQuizzes.HasFlag(type));
         CurrentChallenge = type switch
         {
+            QuizType.Math when load is HaulLoad cargo => LoadChallenge.Create(loadRandom, cargo),
             QuizType.Math => challenges.Next(threeTermMath),
             QuizType.Letters => letterChallenges.Next(),
             QuizType.Syllables => syllableChallenges.Next(),

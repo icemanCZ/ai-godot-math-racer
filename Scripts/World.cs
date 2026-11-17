@@ -64,12 +64,14 @@ public partial class World : Node3D
         RegisterActors();
         PlaceAnimalsBesideRoads();
         SpecialPickupSpots = CreateSpecialPickupSpots();
+        PlanFord(river);
         AddChild(Plants);
         Plants.Generate(Ground, Routes, Village, Animals, p =>
             p.DistanceSquaredTo(Witch.Position) < 7 * 7
             || p.DistanceSquaredTo(Tower.Position) < 18 * 18
             || p.DistanceSquaredTo(Sorcerer.Position) < 8 * 8
             || IsPickupApproachReserved(p)
+            || IsHaulReserved(p)
         );
     }
 

@@ -88,6 +88,6 @@ public partial class World
             if (p.DistanceSquaredTo(a + edge * t) < 4.5f * 4.5f)
                 return true;
         }
-        return false;
+        return IsHaulApproachReserved(point);
     }
 }

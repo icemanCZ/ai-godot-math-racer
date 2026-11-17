@@ -60,6 +60,12 @@ public partial class Game
         {
             GolemOwned = GolemOwned,
             GolemActive = GolemActive,
+            FordStage = world.Ford?.Stage ?? 0,
+            FordTrip = Haul?.Trip ?? -1,
+            FordTripLoaded = Haul?.Loaded ?? false,
+            TrailerOwned = TrailerOwned,
+            TrailerAttached = trailerParade,
+            TrailerPaint = trailer.PaintId,
             QuizTypes = enabledQuizzes,
             NextQuiz = nextQuiz,
             ThreeTermMath = threeTermMath,
@@ -150,6 +156,7 @@ public partial class Game
         }
         lastCollected = Delivery?.Collected ?? -1;
         ui.DeliveryHud(Delivery);
+        RestoreFord(data);
         ui.AnimalCount(RemainingAnimals, world.Animals.Length);
         UpdateDeliveryGuides();
         beforePause = validEncounter ? data.State : GameState.Exploring;

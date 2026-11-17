@@ -104,6 +104,24 @@ internal sealed class SorcererRole : ActorRole
     public override void Open(Game game, Animal actor) => game.OpenSorcerer();
 }
 
+/// <summary>Bóďa the beaver, who builds a ford from six trailer loads and runs its own task marker.</summary>
+internal sealed class BeaverRole : ActorRole
+{
+    public override string Icon => "trailer";
+    public override bool UsesDeliveryGuide => false;
+
+    public override void ShowHint(GameUi ui, Animal actor) => ui.BeaverHint();
+
+    public override void Open(Game game, Animal actor) => game.OpenBeaver();
+
+    /// <summary>The beaver's only quiz is the loading question at a quarry or pit.</summary>
+    public override bool CompleteQuiz(Game game, Animal actor, bool handover)
+    {
+        game.CompleteFordLoading();
+        return true;
+    }
+}
+
 /// <summary>A resident who fills a village display, one off-road expedition per item.</summary>
 internal abstract class CollectorRole : ActorRole
 {

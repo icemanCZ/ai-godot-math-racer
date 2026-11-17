@@ -10,6 +10,7 @@ namespace MathRacer;
 [JsonDerivedType(typeof(SyllableChallenge), "syllables")]
 [JsonDerivedType(typeof(ReadingChallenge), "reading")]
 [JsonDerivedType(typeof(DeliveryChallenge), "delivery")]
+[JsonDerivedType(typeof(LoadChallenge), "load")]
 public interface IChallenge
 {
     bool Accepts(int choice);
