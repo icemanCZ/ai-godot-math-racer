@@ -8,8 +8,6 @@ namespace MathRacer.Ui;
 
 public partial class GameUi
 {
-    public event Action? SupplyQuestRequested;
-
     internal void WorksHint(int index)
     {
         talkButton.Visible = !modal.Visible;
@@ -66,7 +64,7 @@ public partial class GameUi
             Picture(content, trip.Loaded ? LoadIcon(trip.Load) : "trailer");
         else if (canStart)
         {
-            var start = IconButton("play", () => SupplyQuestRequested?.Invoke(), "StartSupplyTrip");
+            var start = IconButton("play", () => Send(new UiIntent.SupplyQuest()), "StartSupplyTrip");
             start.AccessibilityName = "Zapřáhnout vozík";
             start.GrabFocus();
         }

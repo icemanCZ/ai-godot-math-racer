@@ -9,7 +9,6 @@ using MathRacer.Buildings;
 using MathRacer.Characters;
 using MathRacer.Quizzes;
 using MathRacer.Saves;
-using MathRacer.Tasks;
 
 namespace MathRacer.Diagnostics;
 

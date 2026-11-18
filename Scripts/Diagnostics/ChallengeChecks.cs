@@ -208,8 +208,12 @@ public static class ChallengeChecks
         };
         var ui = game.GetChildren().OfType<GameUi>().Single();
         string? spoken = null;
-        ui.SpeechRequested += RecordSpeech;
-        void RecordSpeech(string label) => spoken = label;
+        ui.Intended += RecordSpeech;
+        void RecordSpeech(UiIntent intent)
+        {
+            if (intent is UiIntent.Speak speak)
+                spoken = speak.Text;
+        }
         foreach (var animal in world.Animals.Skip(1))
         {
             int before = game.RemainingAnimals;
@@ -367,7 +371,7 @@ public static class ChallengeChecks
             game.RemainingAnimals == 0 && world.Animals.All(a => !a.RewardAvailable) && car.Active,
             "all 10 visits complete and free driving remains available"
         );
-        ui.SpeechRequested -= RecordSpeech;
+        ui.Intended -= RecordSpeech;
         CheckCounter();
 
         // Verify the complete cosmetic catalogue independently of finite gameplay visits.

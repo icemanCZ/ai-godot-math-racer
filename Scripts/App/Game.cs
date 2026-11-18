@@ -153,23 +153,8 @@ public partial class Game : Node3D
     {
         AddChild(ui);
         ui.Setup();
-        ui.PlayRequested += ContinueGame;
-        ui.ResumeRequested += Resume;
-        ui.CloseInteractionRequested += CloseInteraction;
+        ui.Intended += HandleIntent;
         ui.Title(SaveStore.Initial != null);
-        ui.NewGameRequested += NewGame;
-        ui.AnswerSelected += SubmitAnswer;
-        ui.SyllablesConfirmed += ConfirmSyllables;
-        ui.SpeechRequested += Speak;
-        ui.TalkRequested += Interact;
-        ui.VillageFruitRequested += BeginVillageCollection;
-        ui.ExpeditionSelected += SelectExpedition;
-        ui.GarageRewardSelected += ConfigureCar;
-        ui.QuizTypeSelected += ToggleQuizType;
-        ui.MathLevelSelected += SetMathLevel;
-        ui.GolemToggleRequested += ToggleGolem;
-        ui.CollectorPetToggleRequested += ToggleCollectorPet;
-        ui.GolemQuestRequested += BeginGolemQuest;
     }
 
     private void Start()

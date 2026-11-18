@@ -1,0 +1,92 @@
+using Godot;
+using MathRacer.Ui;
+
+namespace MathRacer.App;
+
+public partial class Game
+{
+    /// <summary>
+    /// The one place where what the player asked for in a panel (<see cref="UiIntent"/>) becomes something the game does.
+    /// </summary>
+    private void HandleIntent(UiIntent intent)
+    {
+        switch (intent)
+        {
+            case UiIntent.Play:
+                ContinueGame();
+                break;
+            case UiIntent.NewGame:
+                NewGame();
+                break;
+            case UiIntent.Resume:
+                Resume();
+                break;
+            case UiIntent.CloseInteraction:
+                CloseInteraction();
+                break;
+            case UiIntent.Talk:
+                Interact();
+                break;
+            case UiIntent.Speak speak:
+                Speak(speak.Text);
+                break;
+            case UiIntent.Answer answer:
+                SubmitAnswer(answer.Choice);
+                break;
+            case UiIntent.ConfirmSyllables:
+                ConfirmSyllables();
+                break;
+            case UiIntent.GarageReward garage:
+                ConfigureCar(garage.Reward);
+                break;
+            case UiIntent.ToggleQuizType quiz:
+                ToggleQuizType(quiz.Type);
+                break;
+            case UiIntent.MathLevel level:
+                SetMathLevel(level.Advanced);
+                break;
+            case UiIntent.ToggleGolem:
+                ToggleGolem();
+                break;
+            case UiIntent.ToggleCollectorPet pet:
+                ToggleCollectorPet(pet.Kind);
+                break;
+            case UiIntent.VillageFruit:
+                BeginVillageCollection();
+                break;
+            case UiIntent.Expedition expedition:
+                SelectExpedition(expedition.Collection);
+                break;
+            case UiIntent.GolemQuest:
+                BeginGolemQuest();
+                break;
+            case UiIntent.BuildQuest:
+                BeginBuildTrip();
+                break;
+            case UiIntent.SupplyQuest:
+                BeginSupplyTrip();
+                break;
+            case UiIntent.MissingSupply:
+                BeginMissingSupply();
+                break;
+            case UiIntent.HouseTrip:
+                BeginHouseTrip();
+                break;
+            case UiIntent.PlotTrip:
+                BeginPlotTrip();
+                break;
+            case UiIntent.Lookout:
+                BeginLookout();
+                break;
+            case UiIntent.ToggleTrailer:
+                ToggleTrailer();
+                break;
+            case UiIntent.TrailerPaint paint:
+                SelectTrailerPaint(paint.Id);
+                break;
+            default:
+                GD.PushError($"Nothing handles {intent}.");
+                break;
+        }
+    }
+}

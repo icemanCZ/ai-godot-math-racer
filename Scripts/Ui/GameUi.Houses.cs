@@ -8,8 +8,6 @@ namespace MathRacer.Ui;
 
 public partial class GameUi
 {
-    public event Action? HouseTripRequested;
-
     /// <summary>
     /// What a house wants for its next improvement: a picture of the goods, then the trip under way, the play
     /// button that sends the trailer for them or, when the works has none, the raw material that it needs.
@@ -24,7 +22,7 @@ public partial class GameUi
             Picture(content, trip.Loaded ? LoadIcon(trip.Load) : "trailer");
         else if (canStart)
         {
-            action = IconButton("play", () => HouseTripRequested?.Invoke(), "StartHouseTrip");
+            action = IconButton("play", () => Send(new UiIntent.HouseTrip()), "StartHouseTrip");
             action.AccessibilityName = "Zapřáhnout vozík pro materiál";
         }
         else if (missing != null)
@@ -38,7 +36,7 @@ public partial class GameUi
             arrow.CustomMinimumSize = new(70, 64);
             arrow.Direction = Mathf.Pi / 2;
             Picture(need, WorksCatalog.ProductIcon(missing.Spec.Product))!.CustomMinimumSize = new(100, 84);
-            action = IconButton("play", () => MissingSupplyRequested?.Invoke(), "StartMissingSupply");
+            action = IconButton("play", () => Send(new UiIntent.MissingSupply()), "StartMissingSupply");
             action.AccessibilityName = "Zapřáhnout vozík pro surovinu";
         }
         else

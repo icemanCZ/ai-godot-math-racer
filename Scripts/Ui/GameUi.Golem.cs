@@ -25,7 +25,7 @@ public partial class GameUi
         else
         {
             Text("0 / 6", 32);
-            var start = IconButton("play", () => GolemQuestRequested?.Invoke(), "StartGolemQuest");
+            var start = IconButton("play", () => Send(new UiIntent.GolemQuest()), "StartGolemQuest");
             start.AccessibilityName = "Vyrazit pro dílky";
             start.GrabFocus();
         }

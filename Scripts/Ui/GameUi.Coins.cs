@@ -107,7 +107,7 @@ public partial class GameUi
         amount.AddThemeColorOverride("font_color", new Color("c98a16"));
         row.AddChild(amount);
         Text("Za penízky si v garáži koupíš nová vylepšení.", 20);
-        var back = IconButton("check", () => CloseInteractionRequested?.Invoke(), "TakeCoins");
+        var back = IconButton("check", () => Send(new UiIntent.CloseInteraction()), "TakeCoins");
         back.AccessibilityName = $"Získáváš {coins} penízků";
         back.GrabFocus();
     }

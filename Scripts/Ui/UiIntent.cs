@@ -1,0 +1,69 @@
+using MathRacer.Characters;
+using MathRacer.Garage;
+using MathRacer.Quizzes;
+
+namespace MathRacer.Ui;
+
+/// <summary>
+/// What the player asked for with a button or a tap on a panel. <see cref="GameUi"/> raises one of these through its
+/// single <c>Intended</c> event and <c>Game.HandleIntent</c> answers it, so a new button is a new case here and a new
+/// line in that switch, not a new event wired up in two places. The set is closed: only the types below derive from it.
+/// </summary>
+internal abstract record UiIntent
+{
+    private UiIntent() { }
+
+    // The title screen and the pause menu.
+    internal sealed record Play : UiIntent;
+
+    internal sealed record NewGame : UiIntent;
+
+    internal sealed record Resume : UiIntent;
+
+    // Leaving a panel, talking to the nearest character, the narrator.
+    internal sealed record CloseInteraction : UiIntent;
+
+    internal sealed record Talk : UiIntent;
+
+    internal sealed record Speak(string Text) : UiIntent;
+
+    // Questions.
+    internal sealed record Answer(int Choice) : UiIntent;
+
+    internal sealed record ConfirmSyllables : UiIntent;
+
+    // The garage.
+    internal sealed record GarageReward(CarReward Reward) : UiIntent;
+
+    internal sealed record ToggleQuizType(QuizType Type) : UiIntent;
+
+    internal sealed record MathLevel(bool Advanced) : UiIntent;
+
+    internal sealed record ToggleGolem : UiIntent;
+
+    internal sealed record ToggleCollectorPet(CollectorPetKind Kind) : UiIntent;
+
+    // Trips of the village and the buildings.
+    internal sealed record VillageFruit : UiIntent;
+
+    internal sealed record Expedition(bool Collection) : UiIntent;
+
+    internal sealed record GolemQuest : UiIntent;
+
+    internal sealed record BuildQuest : UiIntent;
+
+    internal sealed record SupplyQuest : UiIntent;
+
+    internal sealed record MissingSupply : UiIntent;
+
+    internal sealed record HouseTrip : UiIntent;
+
+    internal sealed record PlotTrip : UiIntent;
+
+    internal sealed record Lookout : UiIntent;
+
+    // The trailer.
+    internal sealed record ToggleTrailer : UiIntent;
+
+    internal sealed record TrailerPaint(string Id) : UiIntent;
+}

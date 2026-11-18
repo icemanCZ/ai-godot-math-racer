@@ -9,8 +9,6 @@ namespace MathRacer.Ui;
 
 public partial class GameUi
 {
-    public event Action? PlotTripRequested;
-
     internal void PlotHint(bool complete)
     {
         talkButton.Visible = !modal.Visible;
@@ -43,7 +41,7 @@ public partial class GameUi
             Picture(content, trip.Loaded ? LoadIcon(trip.Load) : "trailer");
         else if (canStart)
         {
-            var start = IconButton("play", () => PlotTripRequested?.Invoke(), "StartPlotTrip");
+            var start = IconButton("play", () => Send(new UiIntent.PlotTrip()), "StartPlotTrip");
             start.AccessibilityName = "Zapřáhnout vozík";
             start.GrabFocus();
         }
@@ -58,7 +56,7 @@ public partial class GameUi
             arrow.CustomMinimumSize = new(70, 64);
             arrow.Direction = Mathf.Pi / 2;
             Picture(need, WorksCatalog.ProductIcon(missing.Spec.Product))!.CustomMinimumSize = new(100, 84);
-            var fetch = IconButton("play", () => MissingSupplyRequested?.Invoke(), "StartMissingSupply");
+            var fetch = IconButton("play", () => Send(new UiIntent.MissingSupply()), "StartMissingSupply");
             fetch.AccessibilityName = "Zapřáhnout vozík pro surovinu";
             fetch.GrabFocus();
         }

@@ -13,12 +13,6 @@ internal readonly record struct GarageTrailer(bool Owned, bool Attached, string 
 
 public partial class GameUi
 {
-    public event Action? BuildQuestRequested;
-    public event Action? MissingSupplyRequested;
-    public event Action? LookoutRequested;
-    public event Action? TrailerToggleRequested;
-    public event Action<string>? TrailerPaintSelected;
-
     internal static string LoadIcon(HaulLoad load) =>
         load switch
         {
@@ -84,7 +78,7 @@ public partial class GameUi
             if (lookout > 0)
             {
                 // The finished tower lets the player look round the valley; the stargazer rests after each look.
-                var look = IconButton("binoculars", () => LookoutRequested?.Invoke(), "StartLookout");
+                var look = IconButton("binoculars", () => Send(new UiIntent.Lookout()), "StartLookout");
                 look.AccessibilityName = "Rozhled";
                 look.Disabled = lookout == 2;
                 if (lookout == 1)
@@ -95,7 +89,7 @@ public partial class GameUi
             Picture(content, trip.Loaded ? LoadIcon(trip.Load) : "trailer");
         else if (canStart)
         {
-            var start = IconButton("play", () => BuildQuestRequested?.Invoke(), "StartBuildTrip");
+            var start = IconButton("play", () => Send(new UiIntent.BuildQuest()), "StartBuildTrip");
             start.AccessibilityName = "Zapřáhnout vozík";
             start.GrabFocus();
         }
@@ -111,7 +105,7 @@ public partial class GameUi
             arrow.Direction = Mathf.Pi / 2;
             Picture(need, WorksCatalog.ProductIcon(missing.Spec.Product))!.CustomMinimumSize = new(100, 84);
             // The builder sends the player for the raw material right away.
-            var fetch = IconButton("play", () => MissingSupplyRequested?.Invoke(), "StartMissingSupply");
+            var fetch = IconButton("play", () => Send(new UiIntent.MissingSupply()), "StartMissingSupply");
             fetch.AccessibilityName = "Zapřáhnout vozík pro surovinu";
             fetch.GrabFocus();
         }
@@ -170,7 +164,7 @@ public partial class GameUi
             int answer = choice;
             var button = Button(
                 rejected.Contains(answer) ? $"× {answer}" : answer.ToString(),
-                () => AnswerSelected?.Invoke(answer),
+                () => Send(new UiIntent.Answer(answer)),
                 row,
                 narrate: false
             );
@@ -227,7 +221,7 @@ public partial class GameUi
             !trailer.Owned ? "Vozík · zatím nezískán"
                 : trailer.Attached ? "✓ Vozík připojený"
                 : "Připojit vozík",
-            () => TrailerToggleRequested?.Invoke()
+            () => Send(new UiIntent.ToggleTrailer())
         );
         if (trailer.Owned && garageFocus == toggle.Name)
             focus = toggle;
@@ -236,7 +230,7 @@ public partial class GameUi
             var paint = Option(
                 "GarageTrailerPaint_" + id,
                 (trailer.Owned && trailer.Paint == id ? "✓ " : "") + name,
-                () => TrailerPaintSelected?.Invoke(id)
+                () => Send(new UiIntent.TrailerPaint(id))
             );
             if (trailer.Owned && garageFocus == paint.Name)
                 focus = paint;

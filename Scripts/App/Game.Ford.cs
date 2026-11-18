@@ -28,14 +28,6 @@ public partial class Game
     {
         trailer = new Trailer(world, vehicle);
         world.AddChild(trailer);
-        ui.BuildQuestRequested += BeginBuildTrip;
-        ui.SupplyQuestRequested += BeginSupplyTrip;
-        ui.MissingSupplyRequested += BeginMissingSupply;
-        ui.HouseTripRequested += BeginHouseTrip;
-        ui.PlotTripRequested += BeginPlotTrip;
-        ui.LookoutRequested += BeginLookout;
-        ui.TrailerToggleRequested += ToggleTrailer;
-        ui.TrailerPaintSelected += SelectTrailerPaint;
     }
 
     private BuildProject? ProjectOf(Character? actor) =>

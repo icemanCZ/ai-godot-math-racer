@@ -47,7 +47,7 @@ public partial class GameUi
             if (!button.Disabled)
                 first ??= button;
         }
-        var confirm = Button("Potvrdit", () => SyllablesConfirmed?.Invoke(), group, narrate: false);
+        var confirm = Button("Potvrdit", () => Send(new UiIntent.ConfirmSyllables()), group, narrate: false);
         confirm.Name = "ConfirmSyllables";
         confirm.ActionMode = BaseButton.ActionModeEnum.Release;
         confirm.Disabled = !selection.IsComplete(question);

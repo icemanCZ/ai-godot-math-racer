@@ -129,6 +129,15 @@ public partial class World : Node3D
 
     internal Character? ActorAt(int id) => actors.TryGetValue(id, out var actor) ? actor : null;
 
+    /// <summary>
+    /// Lays out the terrain, the roads and the village, and generates the roads and the village <b>twice on purpose</b>.
+    /// The first pass only discovers where the seeded parcels are, because the village's terrain area is known only after
+    /// it has been generated. The ground under the whole settlement is then levelled, and the roads and the village are
+    /// built again on the levelled ground (the X/Z positions come out the same, only the heights differ). Nothing else
+    /// may be created or restored between the two passes, and the first village is freed completely. The world
+    /// fingerprints in <c>Tests/Worlds</c> pin the result for three seeds, and they are never regenerated: turning this
+    /// into one pass would move objects and fail them.
+    /// </summary>
     internal void GenerateVillage()
     {
         AddChild(Ground);
