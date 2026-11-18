@@ -49,14 +49,20 @@ public partial class ContentChecks : Node
             Need(world.LogYard != null, "the log yard");
             Need(world.Industry.Length == WorksCatalog.Count, "the sawmill, the brickworks and the gravel works");
             Need(world.Glassworks != null, "the glassworks");
-            Need(world.AllWorks.Count() == WorksCatalog.Total, "all four works");
+            Need(world.AllWorks.Count() == WorksCatalog.Total, "all five works");
+            Need(world.Bakery != null && world.Farm != null, "the wheat farm and the bakery");
+            Need(world.WheatField != null && world.FieldFarmer != null, "the wheat field and its farmer");
+            Need(world.Hidden.Friends.Count == HiddenFriends.Total, "the small hidden friends");
             Need(world.AllWorks.All(works => works.Worker != null), "a worker at every works");
             Need(world.SourceWorkers.All(worker => worker != null), "the workers of the first sites");
             Need(world.ExtraSources.Length == SourceCatalog.Extra.Length, "a second site for every raw material");
             Need(world.ExtraSourceWorkers.All(worker => worker != null), "the workers of the second sites");
             Need(world.Projects.Length == BuildPlans.Count, "the bridge, the mill, the tower and the jetty");
             Need(world.Projects.All(project => project?.Builder != null), "a builder for every building");
-            Need(world.Duck != null && world.WorldPets.Count == WorldPetsExpected, "the pets of the world");
+            Need(
+                world.Duck != null && world.WorldPets.Count == WorldPetsExpected,
+                $"the pets of the world ({world.WorldPets.Count} of {WorldPetsExpected})"
+            );
 
             if (missing.Count > 0)
                 throw new InvalidOperationException($"seed {Settings.Seed} lacks: {string.Join(", ", missing)}");
@@ -73,6 +79,7 @@ public partial class ContentChecks : Node
 
     private const int PlotCount = 6;
 
-    /// <summary>The duck, four raw materials, four works and the bridge, the mill and the tower.</summary>
-    private const int WorldPetsExpected = 1 + 4 + 4 + 3;
+    /// <summary>The duck, five raw materials (wheat too), every works, the bridge, the mill, the tower and a pet per hidden kind.</summary>
+    private static readonly int WorldPetsExpected =
+        1 + 5 + WorksCatalog.Total + 3 + WorldPetCatalog.DucklingDeliveries.Length + HiddenFriends.KindCount;
 }
