@@ -13,13 +13,15 @@ public partial class RoadDrivingChecks : Node
     private readonly World world;
     private readonly Vehicle car;
     private readonly List<Vector3> path = new();
-    private int route,
+    private readonly List<int> routes = new();
+    private int routeIndex,
         direction,
         progress,
         frame,
         lastProgressFrame;
     private bool started;
-    private int routeLimit;
+
+    private int route => routes[routeIndex];
 
     public RoadDrivingChecks(World world, Vehicle car)
     {
@@ -29,16 +31,18 @@ public partial class RoadDrivingChecks : Node
 
     public override void _Ready()
     {
-        routeLimit = WorldLayout.Plan.Routes.Length;
-        // "--road-driving-route=N" drives one route; "N-" drives N and every later route.
-        if (LaunchOptions.Value("--road-driving-route") is { } value)
+        car.LeavesTracks = false;
+        int count = WorldLayout.Plan.Routes.Length;
+        // "--road-driving-route=0,2,4-" drives routes 0 and 2 and, with the dash, 4 and every later route.
+        // Without it every route is driven.
+        foreach (string part in (LaunchOptions.Value("--road-driving-route") ?? "0-").Split(','))
         {
-            bool toEnd = value.EndsWith('-');
-            route = int.Parse(toEnd ? value[..^1] : value);
-            if (route < 0 || route >= routeLimit)
-                throw new ArgumentOutOfRangeException(nameof(route));
-            if (!toEnd)
-                routeLimit = route + 1;
+            bool toEnd = part.EndsWith('-');
+            int first = int.Parse(toEnd ? part[..^1] : part);
+            if (first < 0 || first >= count)
+                throw new ArgumentOutOfRangeException(nameof(part));
+            for (int i = first; i < (toEnd ? count : first + 1); i++)
+                routes.Add(i);
         }
     }
 
@@ -67,7 +71,7 @@ public partial class RoadDrivingChecks : Node
         var flatCar = new Vector2(car.Position.X, car.Position.Z);
         int nearest = progress;
         float best = float.MaxValue;
-        for (int i = Mathf.Max(0, progress - 2); i < Mathf.Min(path.Count, progress + 16); i++)
+        for (int i = Mathf.Max(0, progress - 2); i < Mathf.Min(path.Count, progress + 24); i++)
         {
             float distance = flatCar.DistanceSquaredTo(new Vector2(path[i].X, path[i].Z));
             if (distance < best)
@@ -100,13 +104,15 @@ public partial class RoadDrivingChecks : Node
         }
         if (progress >= path.Count - 3)
         {
-            GD.Print($"ROAD_DRIVEN seed={Settings.Seed} route={route} direction={direction} metres={path.Count}");
+            GD.Print(
+                $"ROAD_DRIVEN seed={Settings.Seed} route={route} direction={direction} metres={path.Count} frames={frame}"
+            );
             if (++direction == 2)
             {
                 direction = 0;
-                route++;
+                routeIndex++;
             }
-            if (route == routeLimit)
+            if (routeIndex == routes.Count)
             {
                 GD.Print("ROAD_DRIVING_CHECKS_PASSED");
                 GetTree().Quit();
@@ -116,13 +122,21 @@ public partial class RoadDrivingChecks : Node
             started = false;
             return;
         }
-        var target = path[Mathf.Min(path.Count - 1, progress + 6)] - car.Position;
+        // Drive like a player: full throttle on a straight, looking further ahead the faster the car goes.
+        int lookAhead = 6 + (int)(car.Speed * .5f);
+        var target = path[Mathf.Min(path.Count - 1, progress + lookAhead)] - car.Position;
         float desired = Mathf.Atan2(-target.X, -target.Z);
         float error = Mathf.AngleDifference(car.Heading, desired);
         float steer = Mathf.Clamp(-error * 2.5f, -1, 1);
         Input.ActionRelease("left");
         Input.ActionRelease("right");
         Input.ActionPress(steer < 0 ? "left" : "right", Mathf.Abs(steer));
-        Input.ActionPress("accelerate", Mathf.Abs(error) > .45f ? .25f : .55f);
+        float bend = Mathf.Abs(error);
+        Input.ActionPress(
+            "accelerate",
+            bend > .45f ? .25f
+                : bend > .2f ? .55f
+                : 1f
+        );
     }
 }

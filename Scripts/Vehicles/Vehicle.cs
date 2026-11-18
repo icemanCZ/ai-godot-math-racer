@@ -22,6 +22,9 @@ public partial class Vehicle : CharacterBody3D
     /// <summary>1 for an empty car; a loaded trailer lowers top speed and acceleration a little.</summary>
     internal float LoadFactor { get; set; } = 1;
     internal WheelTracks Tracks { get; } = new();
+
+    /// <summary>Whether the wheels draw tracks; a check that only drives turns this off, as it never looks at them.</summary>
+    internal bool LeavesTracks { get; set; } = true;
     private readonly Node3D model = new();
     private CollisionShape3D chassis = null!;
     private readonly System.Collections.Generic.List<Node3D> wheels = new();
@@ -193,6 +196,7 @@ public partial class Vehicle : CharacterBody3D
         model.Rotation = model.Rotation.Lerp(new Vector3(Mathf.Atan(slope), 0, bank - steer * Speed * .003f), dt * 7);
         foreach (var wheel in wheels)
             wheel.RotateX(-Speed * dt * 2);
-        Tracks.Update(dt, this, terrain, roads);
+        if (LeavesTracks)
+            Tracks.Update(dt, this, terrain, roads);
     }
 }

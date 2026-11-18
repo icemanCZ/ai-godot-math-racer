@@ -42,17 +42,20 @@ internal static class DiagnosticSuites
 
     private static DiagnosticVariant[] Routes(params string[] routes) =>
         routes
-            .Select(route => new DiagnosticVariant($"--road-driving-route={route}", $"route{route.TrimEnd('-')}"))
+            .Select(route => new DiagnosticVariant(
+                $"--road-driving-route={route}",
+                $"route{route.Replace(',', '+').TrimEnd('-')}"
+            ))
             .ToArray();
 
     /// <summary>
     /// In the order the test run starts them: roughly longest first, so that no long suite starts near the end.
-    /// Road driving is by far the longest, so each route runs in a process of its own; "4-" also covers any route
-    /// added later.
+    /// Road driving is the longest, so its routes are split over processes of similar length: the two long loops
+    /// have one each, the short ones share one; "4-" also covers any route added later.
     /// </summary>
     internal static readonly DiagnosticSuite[] All =
     {
-        new("road-driving-checks", Seeds: new[] { 1, 16 }, Variants: Routes("2", "3", "0")),
+        new("road-driving-checks", Seeds: new[] { 1, 16 }, Variants: Routes("2", "3", "0,1,4-")),
         new("smoke-test", (g, w, v) => new SmokeTest(g, w, v), NeedsStart: false, ContinuesGame: true, FixedFps: false),
         new("new-game-checks", (g, w, v) => new NewGameChecks(g, w, v), NeedsStart: false, Seeds: Seed42),
         new(
@@ -62,7 +65,6 @@ internal static class DiagnosticSuites
             ContinuesGame: true,
             Seeds: ThreeSeeds
         ),
-        new("road-driving-checks", Seeds: new[] { 1, 16 }, Variants: Routes("4-", "1")),
         new("bandit-checks", (g, w, v) => new BanditChecks(g, w, v), Seeds: Seed42),
         new("collision-checks", (g, w, v) => new CollisionChecks(v, w), NeedsStart: false, ContinuesGame: true),
         new("controller-checks", (g, w, v) => new ControllerChecks(g, w, v), NeedsStart: false),
