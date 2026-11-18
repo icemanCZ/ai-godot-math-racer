@@ -42,7 +42,7 @@ public partial class World
     {
         if (HaulLoads.IsGoods(load))
         {
-            var works = Industry[(int)HaulLoads.ProductOf(load)];
+            var works = WorksFor(HaulLoads.ProductOf(load))!;
             return new HaulSource(load, works.Site.Position, works.Site.Road);
         }
         if (HaulLoads.IsSpecial(load))
@@ -52,6 +52,94 @@ public partial class World
             return new HaulSource(load, giver.Position, road);
         }
         return load == HaulLoad.Logs ? LogYard!.Value : HaulSources[(int)load];
+    }
+
+    /// <summary>The glassworks, or null in a valley without a ford (and so without the other works).</summary>
+    internal Works? Glassworks { get; private set; }
+
+    internal const int GlassworksId = ActorIds.Glassworks;
+
+    /// <summary>Where the glassworks stands, once planned. Its footprint and the way to it are cleared of plants.</summary>
+    private WorksSite? glassSite;
+
+    /// <summary>The works that makes a product: one of the three of <see cref="Industry"/> or the glassworks; null if absent.</summary>
+    internal Works? WorksFor(Product product) =>
+        product == Product.Glass ? Glassworks
+        : (int)product < Industry.Length ? Industry[(int)product]
+        : null;
+
+    /// <summary>The works with this index in <see cref="WorksCatalog.All"/>, or null where the valley has none.</summary>
+    internal Works? WorksByIndex(int index) => index is >= 0 and < WorksCatalog.Total ? WorksFor((Product)index) : null;
+
+    /// <summary>The actor ID of the worker of the works that makes a product.</summary>
+    internal static int WorksId(Product product) =>
+        product == Product.Glass ? GlassworksId : FirstWorksId + (int)product;
+
+    /// <summary>The three works and the glassworks, where the valley has them.</summary>
+    internal IEnumerable<Works> AllWorks => Glassworks == null ? Industry : Industry.Append(Glassworks);
+
+    /// <summary>
+    /// Plans the glassworks the way the other works were planned (at the edge of the village where there is room, else
+    /// anywhere on the bank), after everything else, with its own seeded search, so the older sites do not move. It does
+    /// not reserve ground in <see cref="haulClearings"/>: the plants are generated exactly as before, and the trees,
+    /// bushes and rocks that stand where the works and its way go are taken out afterwards (<see cref="InGlassworksZone"/>).
+    /// </summary>
+    private WorksSite? PlanGlassworks(FordSite ford)
+    {
+        var random = new Random(Settings.Seed + 2360);
+        var friends = InteractionActors.ToArray();
+        Array.Clear(industryRejections);
+        if (
+            !FindSpur(random, friends, ford, true, out var road, out var ring, out var inward, WorksBand)
+            && !FindSpur(random, friends, ford, true, out road, out ring, out inward)
+        )
+        {
+            GD.Print(
+                $"GLASSWORKS_MISSING seed={Settings.Seed} rejected(bank,river,spacing,spot,footprint,path)={string.Join(",", industryRejections)}"
+            );
+            return null;
+        }
+        var right = Vector3.Up.Cross(inward);
+        var worker = Ground.At(ring.X - right.X * 4.8f + inward.X * 1.5f, ring.Z - right.Z * 4.8f + inward.Z * 1.5f);
+        glassSite = new WorksSite(WorksCatalog.GlassIndex, ring, road, inward, worker);
+        GD.Print($"GLASSWORKS_READY way={FlatDistance(road, ring):0} village={Village.PlotDistance(ring):0}");
+        return glassSite;
+    }
+
+    /// <summary>Raises the glassworks with its worker, who has the next free actor ID.</summary>
+    private void BuildGlassworks(WorksSite? site)
+    {
+        if (site == null)
+            return;
+        var works = new Works(site, Ground);
+        AddChild(works);
+        var spec = works.Spec;
+        var worker = Character.Create(spec.Worker, spec.Greeting, spec.Kind, spec.Fur);
+        worker.Role = new WorksRole(site.Index);
+        worker.DressAsWorker(spec.Hat);
+        worker.Position = site.WorkerSpot;
+        var facing = site.Position - site.WorkerSpot;
+        worker.Rotation = new Vector3(0, Mathf.Atan2(facing.X, facing.Z), 0);
+        AddChild(worker);
+        works.Worker = worker;
+        Register(GlassworksId, worker);
+        Glassworks = works;
+    }
+
+    /// <summary>
+    /// Whether a point lies on the glassworks' buildings, stock yard and raw heap, or on the field path from the road to
+    /// them. Plants that stand there are removed, so this is generous.
+    /// </summary>
+    internal bool InGlassworksZone(Vector3 p)
+    {
+        if (glassSite is not { } site)
+            return false;
+        var offset = new Vector3(p.X - site.Position.X, 0, p.Z - site.Position.Z);
+        float along = offset.Dot(site.Inward);
+        float across = offset.Dot(Vector3.Up.Cross(site.Inward));
+        if (along is >= -8 and <= 23 && Mathf.Abs(across) <= 15)
+            return true;
+        return SegmentDistance(p, site.Road, site.Position) < 5;
     }
 
     /// <summary>The stock of each works in <see cref="Product"/> order; zeros where the valley has none.</summary>
@@ -355,7 +443,7 @@ public partial class World
     /// one unless <paramref name="source"/> is the second), if there is one.
     /// </summary>
     internal Character? PickupActor(HaulLoad load, HaulSource? source = null) =>
-        HaulLoads.IsGoods(load) ? Industry[(int)HaulLoads.ProductOf(load)].Worker
+        HaulLoads.IsGoods(load) ? WorksFor(HaulLoads.ProductOf(load))!.Worker
         : HaulLoads.IsSpecial(load) ? SpecialGiver(load)
         : source is { } site && ExtraSources.Contains(site) ? ExtraSourceWorker(load)
         : SourceWorker(load);
@@ -382,7 +470,7 @@ public partial class World
         if (load == HaulLoad.Flag)
             return new[] { ToymakerId };
         if (HaulLoads.IsGoods(load))
-            return new[] { FirstWorksId + (int)HaulLoads.ProductOf(load) };
+            return new[] { WorksId(HaulLoads.ProductOf(load)) };
         int first = SourceCatalog.IndexOf(load) >= 0 ? FirstSourceId + SourceCatalog.IndexOf(load) : BuilderId(project);
         int extra = SourceCatalog.ExtraIndexOf(load);
         return extra < 0 ? new[] { first } : new[] { first, FirstExtraSourceId + extra };

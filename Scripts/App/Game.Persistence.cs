@@ -132,12 +132,14 @@ public partial class Game
                 GemCount = world.Village.GemCount,
                 ToyCount = world.Village.ToyCount,
                 TradeCounts = (int[])world.Village.TradeCounts.Clone(),
+                Glazed = world.Village.GlazedFlags,
             },
             Buildings = new BuildingsSave
             {
                 Stages = BuildStages(),
                 PlotStages = PlotStages(),
                 WorksStock = world.WorksStock(),
+                GlassStock = world.Glassworks?.Stock ?? 0,
                 TrailerOwned = TrailerOwned,
                 TrailerAttached = trailerParade,
                 TrailerPaint = trailer.PaintId,
@@ -167,6 +169,7 @@ public partial class Game
                 Solved = banditSolved,
                 Cooldown = banditCooldown,
             },
+            Hauls = new HaulsSave { Raw = world.Tally.RawCounts(), Works = world.Tally.WorksCounts() },
         };
 
     internal void RestoreProgress(SaveData data)
@@ -278,6 +281,7 @@ public partial class Game
         for (int i = 0; i < world.Animals.Length; i++)
             world.Animals[i].SetRewardAvailable(data.Roadside.Animals[i]);
         world.Village.RestoreLevels(data.Village.HouseLevels);
+        world.Village.RestoreGlazed(data.Village.Glazed);
         world.Village.RestoreTrades(data.Village.TradeCounts);
         world.Village.RestoreFarm(data.Village.FarmCount);
         world.Village.RestoreGarden(data.Village.GardenCount);

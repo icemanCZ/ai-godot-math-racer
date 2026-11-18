@@ -41,6 +41,21 @@ public partial class Village : Node3D
 
     public void Upgrade(int house) => SetLevel(house, levels[house] + 1);
 
+    private readonly bool[] glazed = new bool[4];
+
+    /// <summary>Whether the resident of a finished house has been given glasses from the glassworks.</summary>
+    public bool IsGlazed(int house) => glazed[house];
+
+    public void Glaze(int house) => glazed[house] = levels[house] >= Upgrades.Length;
+
+    public bool[] GlazedFlags => (bool[])glazed.Clone();
+
+    public void RestoreGlazed(bool[]? saved)
+    {
+        for (int i = 0; i < glazed.Length; i++)
+            glazed[i] = saved != null && i < saved.Length && saved[i] && levels[i] >= Upgrades.Length;
+    }
+
     private Terrain ground = null!;
     private Roads roads = null!;
     private readonly List<Transform3D> plots = new();

@@ -43,6 +43,9 @@ public sealed class SaveData
     public PostcardsSave Postcards { get; set; } = new();
     public EventsSave Events { get; set; } = new();
     public BanditsSave Bandits { get; set; } = new();
+
+    /// <summary>The loads hauled so far, which earn the pets of the sources and the works. Added after version 5 began.</summary>
+    public HaulsSave Hauls { get; set; } = new();
 }
 
 /// <summary>The car: where it stands and how it looks.</summary>
@@ -126,6 +129,9 @@ public sealed class VillageSave
     public int GemCount { get; set; }
     public int ToyCount { get; set; }
     public int[] TradeCounts { get; set; } = new int[3];
+
+    /// <summary>Houses whose resident has been given glasses after the tenth improvement.</summary>
+    public bool[] Glazed { get; set; } = new bool[4];
 }
 
 /// <summary>The four buildings, the six building plots, the works and the trailer.</summary>
@@ -140,9 +146,22 @@ public sealed class BuildingsSave
     /// <summary>Goods stored at the sawmill, brickworks and gravel works, 0–12 each.</summary>
     public int[] WorksStock { get; set; } = new int[3];
 
+    /// <summary>Glasses stored at the glassworks, 0–12. A save from before the glassworks has none.</summary>
+    public int GlassStock { get; set; }
+
     public bool TrailerOwned { get; set; }
     public bool TrailerAttached { get; set; }
     public string TrailerPaint { get; set; } = "red";
+}
+
+/// <summary>
+/// The loads that were hauled: each raw material that was tipped out (stones, soil, sand, logs) and each load a works
+/// took in (sawmill, brickworks, gravel works, glassworks). A save from before the counts has zeros.
+/// </summary>
+public sealed class HaulsSave
+{
+    public int[] Raw { get; set; } = new int[4];
+    public int[] Works { get; set; } = new int[4];
 }
 
 /// <summary>The golem and the companions that follow the car.</summary>

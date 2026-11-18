@@ -338,7 +338,7 @@ public partial class GameUi
                 pet.CreatePreviewModel(),
                 pet.IsOwned,
                 pet.IsActive,
-                $"{pet.Collector.DisplayName} · {pet.Count} / {pet.Goal}",
+                pet.GarageHint,
                 () => Send(new UiIntent.ToggleCollectorPet(pet.Kind))
             );
         var golemPreview = GolemModel.Create();

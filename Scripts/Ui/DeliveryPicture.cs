@@ -187,6 +187,28 @@ public partial class DeliveryPicture : Control
                             DrawRect(new Rect2(p - new Vector2(10, 6), new Vector2(20, 12)), new Color("c4623f"));
                             DrawRect(new Rect2(p - new Vector2(8, 4), new Vector2(16, 3)), new Color("e0a384"));
                             break;
+                        case "glass":
+                            DrawColoredPolygon(
+                                new Vector2[]
+                                {
+                                    p + new Vector2(-9, -10),
+                                    p + new Vector2(9, -10),
+                                    p + new Vector2(6, 10),
+                                    p + new Vector2(-6, 10),
+                                },
+                                new Color("5b8a99")
+                            );
+                            DrawColoredPolygon(
+                                new Vector2[]
+                                {
+                                    p + new Vector2(-7, -8),
+                                    p + new Vector2(7, -8),
+                                    p + new Vector2(5, 8),
+                                    p + new Vector2(-5, 8),
+                                },
+                                new Color("cfeaf4")
+                            );
+                            break;
                         case "gravel":
                             Oval(p, new(12, 9), new("8f8a7d"));
                             Oval(p + new Vector2(-2, -2), new(9, 6), new("b9b4a5"));
@@ -286,6 +308,26 @@ public partial class DeliveryPicture : Control
                     3 + i % 3,
                     new Color(i % 2 == 0 ? "8f8a7d" : "d3cebf")
                 );
+        }
+        else if (Icon == "glass")
+        {
+            // Three tumblers in a row, wider at the top, each with a little water in it.
+            foreach (int x in new[] { 40, 90, 140 })
+            {
+                DrawColoredPolygon(
+                    new Vector2[] { new(x - 24, 36), new(x + 24, 36), new(x + 18, 124), new(x - 18, 124) },
+                    ink
+                );
+                DrawColoredPolygon(
+                    new Vector2[] { new(x - 20, 42), new(x + 20, 42), new(x + 15, 118), new(x - 15, 118) },
+                    new Color("cfeaf4")
+                );
+                DrawColoredPolygon(
+                    new Vector2[] { new(x - 17, 80), new(x + 17, 80), new(x + 15, 118), new(x - 15, 118) },
+                    new Color("8fd3ea")
+                );
+                DrawLine(new(x - 12, 50), new(x - 10, 72), new Color("ffffff"), 3);
+            }
         }
         else if (Icon == "binoculars")
         {

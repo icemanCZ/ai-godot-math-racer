@@ -351,7 +351,11 @@ public partial class Game : Node3D
             bool target =
                 Delivery != null && Delivery.CanDeliver && animal == Delivery.Recipient
                 || Haul is { House: >= 0, Loaded: true } houseTrip && animal == houseTrip.Contractor;
-            animal.Guide(animal.RewardAvailable || CanChooseExpedition(animal) || target, target);
+            bool glassOrder =
+                Haul == null
+                && animal.Role is HouseResidentRole { House: var house }
+                && HouseMaterial(house) == HaulLoad.Glass;
+            animal.Guide(animal.RewardAvailable || CanChooseExpedition(animal) || target || glassOrder, target);
         }
     }
 

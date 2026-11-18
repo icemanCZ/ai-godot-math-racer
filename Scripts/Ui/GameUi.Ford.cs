@@ -26,6 +26,7 @@ public partial class GameUi
             HaulLoad.Fabric => "fabric",
             HaulLoad.Capstone => "capstone",
             HaulLoad.Flag => "flag",
+            HaulLoad.Glass => "glass",
             _ => "sand",
         };
 

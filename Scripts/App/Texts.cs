@@ -247,6 +247,15 @@ internal static class Texts
     public static string HouseNeedsButNone(string wanted, string works) =>
         $"Na vylepšení domečku potřebuju {wanted}, ale {works} jich nemá. Pošlu tě pro surovinu!";
 
+    public const string HouseNeedsGlasses = "Chystám oslavu domečku! Přivezeš mi skleničky ze sklárny?";
+
+    public const string HouseNeedsGlassesButNone =
+        "Chystám oslavu domečku, ale ve sklárně ještě žádné skleničky nemají. Pošlu tě pro písek!";
+
+    public const string JedSVozikemProSklenickyDo = "Jeď s vozíkem pro skleničky do sklárny.";
+
+    public static string GlassesParty(int coins) => $"Oslava domečku!  +{coins}  ·  Skleničky";
+
     public static string NewUpgrade(string upgrade) => $"Nové vylepšení: {upgrade}";
 
     public static string CoinsTotal(int total) => $"Penízky: {total}";

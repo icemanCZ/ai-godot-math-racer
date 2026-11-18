@@ -34,6 +34,16 @@ generates the world again and compares it line by line: characters, village, plo
 roads, terrain and trees. A saved game stores only the seed, so a change here changes the valleys of existing
 games. The files were made by the code before the refactoring.
 
+`Worlds/seed-N.glassworks.txt` is the same kind of file for what was added to the world later: the glassworks and its worker.
+It is planned after everything else and its trees are cleared after generation (`Vegetation.ClearArea`), so that the older files stay as they are; the world-fingerprint check compares both files.
+
+## Fields added to version 5 afterwards
+
+A committed v5 file is "exactly what the game writes", so a field that was added later would break that check. Such a field has a
+default and is listed in `LegacySaves.AddedAfterVersion5`; the check takes it out of what the game writes when the old file does not have
+it. So far: `Hauls` (the loads hauled, which earn the pets of the sources and works), `Buildings.GlassStock` and `Village.Glazed`.
+`world-pet-checks` also loads a save made without them.
+
 ## Other checks that guard saves
 
 - `--contract-checks`: the numbers of `GameState`, the actor ID ranges and which role each ID has, and that

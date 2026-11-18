@@ -343,18 +343,26 @@ public partial class VisualCapture : Node
             camera.Position = plot.Position + toStreet * 11 + right * 7 + Vector3.Up * 6;
             camera.LookAt(plot.Position + Vector3.Up * 2 + toStreet * 1.5f);
         }
-        else if (view is "sawmill" or "brickworks" or "gravel-works" or "works-full" && world.Industry.Length > 0)
+        else if (
+            view is "sawmill" or "brickworks" or "gravel-works" or "glassworks" or "works-full"
+            && world.Industry.Length > 0
+        )
         {
             // The ring, the buildings and the stock yard seen from the approach side, from above.
             camera.SetProcess(false);
-            var works = world.Industry[
-                view switch
-                {
-                    "brickworks" => 1,
-                    "gravel-works" => 2,
-                    _ => 0,
-                }
-            ];
+            var works =
+                view == "glassworks" && world.Glassworks is { } glass
+                    ? glass
+                    : world.Industry[
+                        view switch
+                        {
+                            "brickworks" => 1,
+                            "gravel-works" => 2,
+                            _ => 0,
+                        }
+                    ];
+            if (view == "glassworks")
+                works.SetStock(8);
             var site = works.Site;
             var right = Vector3.Up.Cross(site.Inward);
             camera.Position = site.Position - site.Inward * 15 + right * 13 + Vector3.Up * 11;

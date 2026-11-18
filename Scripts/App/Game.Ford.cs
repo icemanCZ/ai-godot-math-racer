@@ -35,9 +35,7 @@ public partial class Game
 
     /// <summary>The works that makes a goods load, or null for any other load.</summary>
     private Works? GoodsWorks(HaulLoad load) =>
-        HaulLoads.IsGoods(load) && (int)HaulLoads.ProductOf(load) < world.Industry.Length
-            ? world.Industry[(int)HaulLoads.ProductOf(load)]
-            : null;
+        HaulLoads.IsGoods(load) ? world.WorksFor(HaulLoads.ProductOf(load)) : null;
 
     /// <summary>Whether the next delivery of a project can be fetched: goods need units in the works' stock.</summary>
     private bool StepReady(BuildProject project) =>
@@ -111,7 +109,7 @@ public partial class Game
             project.Builder.Guide(Haul == null && !project.Complete);
         foreach (var plot in world.Village.BuildPlots)
             plot.Resident.Guide(Haul == null && !plot.Complete);
-        foreach (var works in world.Industry)
+        foreach (var works in world.AllWorks)
             works.Worker.Guide(true);
         foreach (var worker in world.AllSourceWorkers)
             worker.Guide(
@@ -197,6 +195,7 @@ public partial class Game
     internal void FinishBuildDump(HaulTrip trip)
     {
         var project = trip.Project!;
+        world.Tally.AddRaw(trip.Load);
         project.SetStage(trip.Step + 1);
         project.Builder.Celebrate();
         if (project.Complete)
@@ -206,7 +205,7 @@ public partial class Game
         }
         CelebrateAt(
             project.DropFor(trip.Step) + Vector3.Up * 2,
-            Texts.BuilderThanks(project.Builder.DisplayName, project.Stage, BuildProject.Trips)
+            WithPets(Texts.BuilderThanks(project.Builder.DisplayName, project.Stage, BuildProject.Trips), EarnPets())
         );
         // The next load waits until the player asks the builder for it again.
         EndHaul();
@@ -219,16 +218,17 @@ public partial class Game
     {
         EndHaul();
         PayBuildReward(project);
+        string? pets = EarnPets();
         if (project.Index == BuildPlans.Bridge)
         {
             TrailerOwned = true;
             trailerParade = false;
-            CelebrateAt(project.Focus, Texts.MostJeHotovyVozikJeTvuj);
+            CelebrateAt(project.Focus, WithPets(Texts.MostJeHotovyVozikJeTvuj, pets));
             Speak(Texts.HuraMostJeHotovyTedMuzes, project.Builder);
         }
         else
         {
-            CelebrateAt(project.Focus, Texts.BuildDone(BuildCoins, BuildItemName(project.Index)));
+            CelebrateAt(project.Focus, WithPets(Texts.BuildDone(BuildCoins, BuildItemName(project.Index)), pets));
             Speak(Texts.HuraJeHotovoMocDekuju, project.Builder);
         }
         var outward = followCamera.GlobalPosition - project.Focus;
@@ -265,13 +265,10 @@ public partial class Game
         TrailerOwned = world.Ford is { Passable: true } && data.Buildings.TrailerOwned;
         trailerParade = TrailerOwned && data.Buildings.TrailerAttached;
         trailer.SetPaint(data.Buildings.TrailerPaint);
-        if (world.Duck is { } duck)
-        {
-            duck.Disabled = duck.IsOwned && data.Companions.DisabledPets.Contains(duck.Kind.ToString());
-            PlaceCollectorPet(duck);
-        }
+        RestoreWorldPets(data);
         foreach (var works in world.Industry)
             works.SetStock(data.Buildings.WorksStock[works.Site.Index]);
+        world.Glassworks?.SetStock(data.Buildings.GlassStock);
         world.Village.RestorePlots(data.Buildings.PlotStages!);
         trailer.SetLoad(null);
         if (data.Task.Trip is { } saved && TripTarget(saved) is { } target)
@@ -293,9 +290,7 @@ public partial class Game
             TripKinds.Build
                 when saved.Index >= 0 && saved.Index < world.Projects.Length && !world.Projects[saved.Index].Complete =>
                 world.Projects[saved.Index],
-            TripKinds.Supply when saved.Index >= 0 && saved.Index < world.Industry.Length => world.Industry[
-                saved.Index
-            ],
+            TripKinds.Supply when world.WorksByIndex(saved.Index) is { } supplied => supplied,
             TripKinds.Plot
                 when saved.Index >= 0
                     && saved.Index < world.Village.BuildPlots.Count
@@ -332,6 +327,7 @@ public partial class Game
                 HaulLoad.Planks => Texts.JedSVozikemProPrknaNa,
                 HaulLoad.Bricks => Texts.JedSVozikemProCihlyDo,
                 HaulLoad.Gravel => Texts.JedSVozikemProSterkDo,
+                HaulLoad.Glass => Texts.JedSVozikemProSklenickyDo,
                 HaulLoad.Fabric => Texts.JedSVozikemProLatkuK,
                 HaulLoad.Capstone => Texts.JedSVozikemProKamenKe,
                 HaulLoad.Flag => Texts.JedSVozikemProVlajeckuK,

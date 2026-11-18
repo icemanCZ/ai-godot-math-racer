@@ -13,6 +13,9 @@ public enum Product
     Planks = 0,
     Bricks = 1,
     Gravel = 2,
+
+    /// <summary>The glassworks, which stands apart from the original three: it makes glasses from sand.</summary>
+    Glass = 3,
 }
 
 /// <summary>One kind of works: what it takes in, what it stores and who runs it.</summary>
@@ -35,15 +38,22 @@ internal sealed record WorksSpec(
         {
             Product.Planks => "sawmill",
             Product.Bricks => "brickworks",
-            _ => "gravelworks",
+            Product.Gravel => "gravelworks",
+            _ => "glassworks",
         };
 }
 
 internal static class WorksCatalog
 {
+    /// <summary>The works of the first valleys: the sawmill, the brickworks and the gravel works (IDs 45–47, stock of the save).</summary>
     public const int Count = 3;
 
-    /// <summary>Indexed by <see cref="Product"/>: the sawmill, the brickworks and the gravel works.</summary>
+    /// <summary>The glassworks follows them, has an actor ID and a stock of its own and is placed after everything else.</summary>
+    public const int GlassIndex = 3;
+
+    public const int Total = 4;
+
+    /// <summary>Indexed by <see cref="Product"/>: the sawmill, the brickworks, the gravel works and the glassworks.</summary>
     public static readonly WorksSpec[] All =
     {
         new(
@@ -82,6 +92,18 @@ internal static class WorksCatalog
             "d9d4c6",
             "4aa3d9"
         ),
+        new(
+            Product.Glass,
+            HaulLoad.Sand,
+            "Sklárna",
+            "SKLÁRNA",
+            "Skleničky",
+            "Králice Sklenářka",
+            "Přivez mi písek, vyfouknu z něj skleničky.",
+            0,
+            "d9cfe6",
+            "6bc4d9"
+        ),
     };
 
     public static string ProductIcon(Product product) =>
@@ -89,7 +111,8 @@ internal static class WorksCatalog
         {
             Product.Planks => "planks",
             Product.Bricks => "bricks",
-            _ => "gravel",
+            Product.Gravel => "gravel",
+            _ => "glass",
         };
 
     /// <summary>The works that processes a raw load: logs go to the sawmill, soil to the brickworks, stones to the gravel works.</summary>
@@ -280,6 +303,9 @@ public partial class Works : Node3D
             case (int)Product.Bricks:
                 BuildBrickworks(building);
                 break;
+            case (int)Product.Glass:
+                BuildGlassworks(building);
+                break;
             default:
                 BuildGravelWorks(building);
                 break;
@@ -435,6 +461,28 @@ public partial class Works : Node3D
         exhaust = Emitter(new(1.8f, y + 9.7f, z + 2.2f), new Color(.55f, .55f, .58f, .55f), 1.4f, 2.4f);
     }
 
+    private void BuildGlassworks(float y)
+    {
+        const float z = BuildingZ;
+        // A pale hall with a glass roof, a furnace glowing orange in front and a tall chimney.
+        Art.Block(this, new(0, y + 1.7f, z + .5f), new(7, 3.4f, 5), "d9d2c4");
+        Art.Block(this, new(0, y + 3.5f, z + .5f), new(7.4f, .3f, 5.4f), "6f8b96");
+        for (int i = 0; i < 5; i++)
+            Art.Block(this, new(-2.8f + i * 1.4f, y + 3.85f, z + .5f), new(1.2f, .5f, 4.6f), "bfe3ee");
+        Art.Block(this, new(0, y + 1.1f, z - 2.02f), new(2.4f, 2.2f, .12f), "3a2a26");
+        Art.Block(this, new(0, y + .75f, z - 2.0f), new(1.3f, .7f, .1f), "ff9a3d");
+        foreach (float x in new[] { -2.5f, 2.5f })
+            Art.Block(this, new(x, y + 1.8f, z - 2.03f), new(1.2f, 1.1f, .1f), "9ed5df");
+        Art.Cylinder(this, new(-2.2f, y + 6, z + 2.4f), .6f, .45f, 5.2f, "8f8a7d");
+        Art.Cylinder(this, new(-2.2f, y + 8.7f, z + 2.4f), .55f, .55f, .3f, "5a646b");
+        // Finished glasses stand on a table at the door.
+        Art.Block(this, new(3.4f, y + .5f, z - 3.4f), new(1.6f, .1f, 1), "8d6a46");
+        foreach (float x in new[] { 2.8f, 3.4f, 4f })
+            Art.Cylinder(this, new(x, y + .75f, z - 3.4f), .13f, .17f, .38f, "cfeaf4");
+        Obstacles.Box(this, new(0, y + 1.7f, z + .5f), new(7.2f, 3.4f, 5.2f));
+        exhaust = Emitter(new(-2.2f, y + 9, z + 2.4f), new Color(.8f, .85f, .88f, .5f), 1.2f, 2.2f);
+    }
+
     private void BuildGravelWorks(float y)
     {
         const float z = BuildingZ;
@@ -478,6 +526,7 @@ public partial class Works : Node3D
         {
             Product.Planks => "bba87f",
             Product.Bricks => "9d9382",
+            Product.Glass => "b9c4c9",
             _ => "8e8a7d",
         };
         float width = 3 * 2.3f + .8f;
@@ -525,6 +574,20 @@ public partial class Works : Node3D
                     Art.Block(slot, new(0, lift + band, 0), new(1.64f, .04f, 1.44f), "e0a384");
                 break;
             }
+            case Product.Glass:
+            {
+                // A tray of glasses: six pale-blue tumblers, two rows to a layer.
+                float lift = layer * .5f;
+                Art.Block(slot, new(0, lift + .04f, 0), new(1.9f, .08f, 1.7f), "8d6a46");
+                for (int i = 0; i < 6; i++)
+                {
+                    float x = -.55f + i % 3 * .55f,
+                        z = -.38f + i / 3 * .76f;
+                    Art.Cylinder(slot, new(x, lift + .3f, z), .13f, .17f, .44f, "cfeaf4");
+                    Art.Cylinder(slot, new(x, lift + .17f, z), .12f, .13f, .2f, "8fd3ea");
+                }
+                break;
+            }
             default:
                 if (layer == 0)
                 {
@@ -559,6 +622,11 @@ public partial class Works : Node3D
                 Art.Ball(this, new(RawX, y + .6f, RawZ), new(3.2f, 1.7f, 2.8f), "8a6142");
                 Art.Ball(this, new(RawX - 1, y + .4f, RawZ + 1), new(1.9f, 1.1f, 1.7f), "6f4b33");
                 Art.Ball(this, new(RawX + 1.2f, y + .4f, RawZ - .8f), new(1.7f, 1, 1.5f), "9c7150");
+                break;
+            case HaulLoad.Sand:
+                Art.Ball(this, new(RawX, y + .55f, RawZ), new(3.4f, 1.5f, 2.9f), "e3c98a");
+                Art.Ball(this, new(RawX - 1, y + .35f, RawZ + 1), new(2f, 1, 1.8f), "d6b873");
+                Art.Ball(this, new(RawX + 1.2f, y + .35f, RawZ - .8f), new(1.8f, .9f, 1.6f), "ecd79e");
                 break;
             default:
                 for (int i = 0; i < 6; i++)

@@ -34,10 +34,30 @@ internal static class WorldFingerprint
 
     internal static string FileFor(int seed) => Path.Combine(Folder, $"seed-{seed}.txt");
 
+    /// <summary>
+    /// What was added to the world after those files were made: the glassworks, which is placed after the plants so that
+    /// nothing in the first files moves. It has a file of its own, kept the same way.
+    /// </summary>
+    internal static string GlassworksFileFor(int seed) => Path.Combine(Folder, $"seed-{seed}.glassworks.txt");
+
+    internal static List<string> GlassworksLines(World world)
+    {
+        var lines = new List<string> { $"seed {Settings.Seed}" };
+        if (world.Glassworks is { } works)
+        {
+            lines.Add($"glassworks {P(works.Site.Position)} road {P(works.Site.Road)} inward {P(works.Site.Inward)}");
+            lines.Add($"actor {world.ActorId(works.Worker)} {works.Worker.DisplayName} {P(works.Worker.Position)}");
+        }
+        else
+            lines.Add("glassworks none");
+        return lines;
+    }
+
     internal static List<string> Lines(World world)
     {
         var lines = new List<string> { $"seed {Settings.Seed}" };
-        foreach (var actor in world.InteractionActors)
+        // The glassworks' worker belongs to the file of the glassworks, which was made later.
+        foreach (var actor in world.InteractionActors.Where(a => world.ActorId(a) < ActorIds.Glassworks))
             lines.Add(
                 $"actor {world.ActorId(actor)} {actor.Role.GetType().Name} {actor.DisplayName} {P(actor.Position)}"
             );
@@ -94,6 +114,14 @@ public partial class WorldFingerprintWriter : Node
                 File.WriteAllLines(path, WorldFingerprint.Lines(world));
                 GD.Print($"WROTE: {path}");
             }
+            string glassworks = WorldFingerprint.GlassworksFileFor(Settings.Seed);
+            if (File.Exists(glassworks))
+                GD.Print($"KEPT: {glassworks} already exists and stays as it is");
+            else
+            {
+                File.WriteAllLines(glassworks, WorldFingerprint.GlassworksLines(world));
+                GD.Print($"WROTE: {glassworks}");
+            }
             GetTree().Quit();
         }
         catch (Exception error)
@@ -121,8 +149,13 @@ public partial class WorldFingerprintChecks : Node
             string path = WorldFingerprint.FileFor(Settings.Seed);
             if (!File.Exists(path))
                 throw new InvalidOperationException($"No fingerprint for seed {Settings.Seed}: {path}");
-            var expected = File.ReadAllLines(path);
-            var actual = WorldFingerprint.Lines(world);
+            string glassworksPath = WorldFingerprint.GlassworksFileFor(Settings.Seed);
+            if (!File.Exists(glassworksPath))
+                throw new InvalidOperationException(
+                    $"No glassworks fingerprint for seed {Settings.Seed}: {glassworksPath}"
+                );
+            var expected = File.ReadAllLines(path).Concat(File.ReadAllLines(glassworksPath)).ToArray();
+            var actual = WorldFingerprint.Lines(world).Concat(WorldFingerprint.GlassworksLines(world)).ToList();
             var different = new List<string>();
             for (int i = 0; i < Math.Max(expected.Length, actual.Count); i++)
             {
@@ -249,7 +282,8 @@ public partial class ContractChecks : Node
                 && ActorIds.FirstExtraSource == 54
                 && ActorIds.LastSource == 57
                 && ActorIds.FirstPlotResident == 58
-                && ActorIds.LastPlotResident == 63,
+                && ActorIds.LastPlotResident == 63
+                && ActorIds.Glassworks == 64,
             "the actor ID ranges are the ones saved games use"
         );
 
@@ -272,7 +306,7 @@ public partial class ContractChecks : Node
                 : id == World.WitchId ? nameof(WitchRole)
                 : id == World.SorcererId ? nameof(SorcererRole)
                 : World.IsBuilder(id) ? nameof(BuilderRole)
-                : id >= World.FirstWorksId && id <= World.LastWorksId ? nameof(WorksRole)
+                : id >= World.FirstWorksId && id <= World.LastWorksId || id == World.GlassworksId ? nameof(WorksRole)
                 : id >= World.FirstSourceId && id <= World.LastSourceId ? nameof(SourceRole)
                 : World.IsPlotResident(id) ? nameof(PlotResidentRole)
                 : "(no actor may have this ID)";
@@ -284,7 +318,10 @@ public partial class ContractChecks : Node
             if (actor.Role is BuilderRole builder)
                 Check(builder.Project == World.BuilderProject(id), $"builder ID {id} builds project {builder.Project}");
             if (actor.Role is WorksRole works)
-                Check(works.Index == id - World.FirstWorksId, $"works worker ID {id} serves works {works.Index}");
+                Check(
+                    works.Index == (id == World.GlassworksId ? WorksCatalog.GlassIndex : id - World.FirstWorksId),
+                    $"works worker ID {id} serves works {works.Index}"
+                );
             if (actor.Role is PlotResidentRole plot)
                 Check(
                     plot.Plot.Index == id - World.FirstPlotResidentId,

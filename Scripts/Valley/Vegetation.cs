@@ -55,7 +55,8 @@ public partial class Vegetation : Node3D
         Roads roads,
         Village village,
         Character[] animals,
-        System.Func<Vector3, bool> pickupReserved
+        System.Func<Vector3, bool> pickupReserved,
+        System.Func<Vector3, bool>? cleared = null
     )
     {
         ground = terrain;
@@ -173,6 +174,8 @@ public partial class Vegetation : Node3D
             }
         }
         GenerateNatureDetails(terrain, roads, Reserved);
+        if (cleared != null)
+            ClearArea(cleared);
         var meshes = new Dictionary<string, Mesh>
         {
             ["leaf"] = new SphereMesh
@@ -343,6 +346,31 @@ public partial class Vegetation : Node3D
         return surface.Commit();
     }
 
+    /// <summary>The area that was cleared after the plants were placed, or null.</summary>
+    private System.Func<Vector3, bool>? clearedArea;
+
+    /// <summary>
+    /// Takes out the plants that stand in an area that is built on afterwards (the glassworks): the trees, bushes, flowers
+    /// and rocks there are made invisible and their collision is freed. They are planted first all the same, so no other
+    /// plant moves, and <see cref="TreePositions"/> keeps listing the trees as they were generated.
+    /// </summary>
+    private void ClearArea(System.Func<Vector3, bool> inside)
+    {
+        clearedArea = inside;
+        foreach (var batch in batches.Values)
+            for (int i = 0; i < batch.Count; i++)
+            {
+                var origin = batch[i].Transform.Origin;
+                if (inside(origin))
+                    batch[i] = (new Transform3D(Basis.Identity.Scaled(Vector3.Zero), origin), batch[i].Wind);
+            }
+        foreach (var body in GetChildren().OfType<StaticBody3D>().Where(body => inside(body.Position)).ToList())
+        {
+            treeVisuals.Remove(body.GetInstanceId());
+            body.QueueFree();
+        }
+    }
+
     internal bool NearTrunk(Vector3 p, float clearance)
     {
         var cell = new Vector2I(Mathf.FloorToInt(p.X / 5), Mathf.FloorToInt(p.Z / 5));
@@ -350,7 +378,10 @@ public partial class Vegetation : Node3D
         for (int z = -1; z <= 1; z++)
             if (treePositions.TryGetValue(cell + new Vector2I(x, z), out var nearby))
                 foreach (var other in nearby)
-                    if (new Vector2(other.X - p.X, other.Z - p.Z).LengthSquared() < clearance * clearance)
+                    if (
+                        new Vector2(other.X - p.X, other.Z - p.Z).LengthSquared() < clearance * clearance
+                        && clearedArea?.Invoke(other) != true
+                    )
                         return true;
         return false;
     }

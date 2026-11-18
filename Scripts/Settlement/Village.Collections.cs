@@ -73,8 +73,16 @@ public partial class Village
     private void GenerateCollectorPets()
     {
         var pets = new List<CollectorPet>();
-        // The duck belongs to the jetty, not to a collector: the world creates it.
-        foreach (var kind in Enum.GetValues<CollectorPetKind>().Where(kind => kind != CollectorPetKind.Duck))
+        // Only these four belong to a collector; the duck and the pets of the world are created by the world.
+        foreach (
+            var kind in new[]
+            {
+                CollectorPetKind.Farm,
+                CollectorPetKind.Garden,
+                CollectorPetKind.Gems,
+                CollectorPetKind.Toys,
+            }
+        )
         {
             var pet = new CollectorPet(kind, this);
             var collector = pet.Collector;

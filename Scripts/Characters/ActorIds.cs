@@ -57,4 +57,7 @@ internal static class ActorIds
     public const int FirstPlotResident = LastSource + 1;
 
     public const int LastPlotResident = FirstPlotResident + PlotPlans.Count - 1;
+
+    /// <summary>The worker of the glassworks, which a valley gets after everything else (no actor has an ID between).</summary>
+    public const int Glassworks = LastPlotResident + 1;
 }

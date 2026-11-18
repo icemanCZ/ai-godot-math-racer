@@ -1,13 +1,16 @@
+using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using MathRacer.Characters;
+using MathRacer.Saves;
 using MathRacer.Valley;
 
 namespace MathRacer.App;
 
 public partial class Game
 {
-    private const int GolemWanderIndex = 5;
+    /// <summary>The golem wanders after the pets, so its slot is the one past the last pet kind.</summary>
+    private static readonly int GolemWanderIndex = System.Enum.GetValues<CollectorPetKind>().Length;
 
     private struct CompanionWander
     {
@@ -18,6 +21,43 @@ public partial class Game
     private readonly CompanionWander[] companionWanders = new CompanionWander[GolemWanderIndex + 1];
     private readonly RandomNumberGenerator companionRandom = new() { Seed = (ulong)Settings.Seed + 710 };
     private float companionStopTime;
+
+    /// <summary>The pets of the world that the player already owns, so that only a new one is announced.</summary>
+    private readonly HashSet<CollectorPetKind> earnedPets = new();
+
+    /// <summary>
+    /// Announces the pets of the world that were earned just now (a count reached its goal or a building was finished):
+    /// each appears beside the car. Returns the text for the celebration, or null when there is no new pet.
+    /// </summary>
+    private string? EarnPets()
+    {
+        string? text = null;
+        foreach (var pet in world.WorldPets)
+        {
+            if (!pet.IsOwned || !earnedPets.Add(pet.Kind))
+                continue;
+            PlaceCollectorPet(pet);
+            text = text == null ? Texts.NewPet(pet.DisplayName) : $"{text}  ·  {pet.DisplayName}";
+        }
+        return text;
+    }
+
+    /// <summary>Adds the text of a new pet under a celebration message, if the player earned one.</summary>
+    private static string WithPets(string message, string? pets) => pets == null ? message : $"{message}\n{pets}";
+
+    /// <summary>Takes the pets of the world from a restored game: who is owned, who was switched off, where each stands.</summary>
+    private void RestoreWorldPets(SaveData data)
+    {
+        world.Tally.Restore(data.Hauls.Raw, data.Hauls.Works);
+        earnedPets.Clear();
+        foreach (var pet in world.WorldPets)
+        {
+            pet.Disabled = pet.IsOwned && data.Companions.DisabledPets.Contains(pet.Kind.ToString());
+            PlaceCollectorPet(pet);
+            if (pet.IsOwned)
+                earnedPets.Add(pet.Kind);
+        }
+    }
 
     private void ToggleCollectorPet(CollectorPetKind kind)
     {

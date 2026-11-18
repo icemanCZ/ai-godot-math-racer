@@ -14,16 +14,14 @@ namespace MathRacer.App;
 /// </summary>
 public partial class Game
 {
-    private Works? WorksOf(Character? actor) =>
-        actor?.Role is WorksRole role && role.Index < world.Industry.Length ? world.Industry[role.Index] : null;
+    private Works? WorksOf(Character? actor) => actor?.Role is WorksRole role ? world.WorksByIndex(role.Index) : null;
 
     /// <summary>The works that a source worker supplies.</summary>
     private Works? WorksOfSource(Character? actor)
     {
         if (actor?.Role is not SourceRole role)
             return null;
-        int index = WorksCatalog.ForInput(role.Load);
-        return index >= 0 && index < world.Industry.Length ? world.Industry[index] : null;
+        return world.WorksByIndex(WorksCatalog.ForInput(role.Load));
     }
 
     internal void OpenWorks(Character worker)
@@ -44,8 +42,8 @@ public partial class Game
 
     internal void OpenSource(Character worker)
     {
-        // The sand pit's worker has no works to supply: he only greets the driver.
-        if (worker.Role is SourceRole { Load: HaulLoad.Sand })
+        // Where the valley has no glassworks the sand pit's worker has no works to supply: he only greets the driver.
+        if (worker.Role is SourceRole { Load: HaulLoad.Sand } && WorksOfSource(worker) == null)
         {
             Speak(worker.Greeting, worker);
             return;
@@ -117,7 +115,7 @@ public partial class Game
         {
             // A resident who wants goods that the works has not made does the same: the way to the raw material.
             if (
-                nearby is not { Role: HouseResidentRole { House: var house }, RewardAvailable: true } resident
+                nearby is not { Role: HouseResidentRole { House: var house } } resident
                 || HouseMaterial(house) is not { } load
                 || TripOf(resident) != null
                 || GoodsWorks(load) is not { Full: false } missing
@@ -141,8 +139,13 @@ public partial class Game
     {
         var works = trip.Works!;
         works.Deliver();
+        world.Tally.AddRaw(trip.Load);
+        world.Tally.AddWorks(works.Site.Index);
         works.Worker.Celebrate();
-        CelebrateAt(works.Site.Position + Vector3.Up * 2, $"{works.Spec.Goods}  {works.Stock} / {Works.Capacity}");
+        CelebrateAt(
+            works.Site.Position + Vector3.Up * 2,
+            WithPets($"{works.Spec.Goods}  {works.Stock} / {Works.Capacity}", EarnPets())
+        );
         EndHaul();
         Speak(works.Full ? Texts.SkladJePlnyDekuju2 : Texts.DekujuAzBudesChtitPrivezDalsi2, works.Worker);
         SaveProgress();

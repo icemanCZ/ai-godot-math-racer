@@ -76,12 +76,31 @@ internal static class TrailerModel
         parts.Piles[(int)HaulLoad.Fabric] = FabricRolls();
         parts.Piles[(int)HaulLoad.Capstone] = Capstone();
         parts.Piles[(int)HaulLoad.Flag] = FlagPole();
+        parts.Piles[(int)HaulLoad.Glass] = GlassCrates();
         foreach (var pile in parts.Piles)
         {
             pile.Visible = false;
             parts.Load.AddChild(pile);
         }
         return parts;
+    }
+
+    /// <summary>Two trays of pale-blue tumblers stand on the bed.</summary>
+    private static Node3D GlassCrates()
+    {
+        var crates = new Node3D { Name = "Glass" };
+        foreach (float z in new[] { -.45f, .45f })
+        {
+            Art.Block(crates, new(0, .08f, z), new(1.3f, .1f, .8f), "8d6a46");
+            for (int i = 0; i < 6; i++)
+            {
+                float x = -.42f + i % 3 * .42f,
+                    dz = -.18f + i / 3 * .36f;
+                Art.Cylinder(crates, new(x, .32f, z + dz), .1f, .13f, .38f, "cfeaf4");
+                Art.Cylinder(crates, new(x, .22f, z + dz), .09f, .1f, .18f, "8fd3ea");
+            }
+        }
+        return crates;
     }
 
     /// <summary>Six logs lie along the bed in a pyramid, with their pale ends towards the back.</summary>

@@ -73,6 +73,39 @@ internal static class LegacySaves
         ("BanditCooldown", "Bandits", "Cooldown"),
     };
 
+    /// <summary>
+    /// Fields that were added to version 5 after its committed saves were made, and that the flat saves never had: the
+    /// counts of hauled loads, the glassworks' stock and the houses that were given glasses. Each has a default, so a file
+    /// without it loads as before and the game writes it from then on. A new optional field of the current version is
+    /// listed here, with the section it belongs to, instead of changing a committed save.
+    /// </summary>
+    internal static readonly (string Section, string Field)[] AddedAfterVersion5 =
+    {
+        ("Hauls", "Raw"),
+        ("Hauls", "Works"),
+        ("Buildings", "GlassStock"),
+        ("Village", "Glazed"),
+    };
+
+    /// <summary>
+    /// The JSON the game writes for a save, as it would be in a file made before the fields of
+    /// <see cref="AddedAfterVersion5"/> existed: those that the committed <paramref name="original"/> lacks are taken out.
+    /// </summary>
+    internal static JsonNode WithoutAddedFields(JsonNode written, JsonObject original)
+    {
+        var copy = written.DeepClone().AsObject();
+        foreach (var (section, field) in AddedAfterVersion5)
+        {
+            bool inFile = original[section] is JsonObject saved && saved.ContainsKey(field);
+            if (inFile || copy[section] is not JsonObject target)
+                continue;
+            target.Remove(field);
+            if (target.Count == 0)
+                copy.Remove(section);
+        }
+        return copy;
+    }
+
     /// <summary>The save as an older game wrote it: the sections flattened to the fields they came from.</summary>
     internal static JsonObject FromCurrent(SaveData data, int version = SaveDataV4.LastVersion)
     {
@@ -120,7 +153,11 @@ internal static class LegacySaves
             )
             .OrderBy(pair => pair.Section)
             .ThenBy(pair => pair.Field);
-        var mapped = Fields.Select(f => (f.Section, f.Field)).OrderBy(pair => pair.Section).ThenBy(pair => pair.Field);
+        var mapped = Fields
+            .Select(f => (f.Section, f.Field))
+            .Concat(AddedAfterVersion5)
+            .OrderBy(pair => pair.Section)
+            .ThenBy(pair => pair.Field);
         return current.SequenceEqual(mapped);
     }
 }

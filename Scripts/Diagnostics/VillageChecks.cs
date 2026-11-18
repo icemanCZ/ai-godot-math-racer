@@ -447,11 +447,20 @@ public partial class VillageChecks : Node
                     game.FinishInteraction();
                 }
                 game.OpenChallenge(owner);
+                // A valley with a glassworks adds one order for glasses after the tenth task; the others only thank.
                 Check(
-                    game.State == GameState.HouseReward && !owner.RewardAvailable,
-                    "completed house offers thanks without further tasks"
+                    game.State == (world.Glassworks != null ? GameState.HouseMaterialOffer : GameState.HouseReward)
+                        && !owner.RewardAvailable,
+                    "completed house offers thanks (or the glasses order) without further tasks"
                 );
                 game.FinishInteraction();
+                if (world.Glassworks != null)
+                {
+                    world.Village.Glaze(house);
+                    game.OpenChallenge(owner);
+                    Check(game.State == GameState.HouseReward, "a house that has its glasses only offers thanks");
+                    game.FinishInteraction();
+                }
             }
             Check(
                 game.RemainingAnimals == remaining

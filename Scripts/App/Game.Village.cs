@@ -32,6 +32,15 @@ public partial class Game
             ui.HouseCollection(resident, Delivery.Collected);
             return;
         }
+        if (HouseMaterial(house) == HaulLoad.Glass)
+        {
+            // The tenth improvement is done, and the resident asks for glasses for a housewarming.
+            ClearChallenge();
+            EnterInteraction(GameState.HouseMaterialOffer, resident);
+            ShowHouseMaterial();
+            SpeakHouseMaterial(resident);
+            return;
+        }
         if (!resident.RewardAvailable)
         {
             EnterInteraction(GameState.HouseReward, resident);
@@ -58,12 +67,15 @@ public partial class Game
 
     /// <summary>
     /// The goods the resident of a house wants for the next improvement, or null for a quiz or an apple task.
-    /// A valley without the works has no goods to haul, so its houses ask a quiz instead.
+    /// A valley without the works has no goods to haul, so its houses ask a quiz instead. A finished house asks for glasses
+    /// once, if the valley has a glassworks.
     /// </summary>
     private HaulLoad? HouseMaterial(int house) =>
-        world.Industry.Length == 0 || world.Village.Level(house) >= Village.Upgrades.Length
-            ? null
-            : Village.MaterialOf(world.Village.TaskAt(house));
+        world.Industry.Length == 0 ? null
+        : world.Village.Level(house) >= Village.Upgrades.Length
+            ? world.Glassworks != null && !world.Village.IsGlazed(house) ? HaulLoad.Glass
+                : null
+        : Village.MaterialOf(world.Village.TaskAt(house));
 
     private HaulTrip? TripOf(Character resident) =>
         Haul is { House: >= 0 } trip && trip.Contractor == resident ? trip : null;
@@ -96,9 +108,11 @@ public partial class Game
         var load = HouseMaterial(((HouseResidentRole)resident.Role).House)!.Value;
         var works = GoodsWorks(load)!;
         string wanted = load == HaulLoad.Planks ? Texts.Prkna : Texts.Cihly;
+        bool glass = load == HaulLoad.Glass;
         Speak(
             TripOf(resident) != null ? Texts.PrivedMiTenNakladKDomecku
-                : works.Stock >= Works.PerTrip ? Texts.HouseNeeds(wanted)
+                : works.Stock >= Works.PerTrip ? (glass ? Texts.HouseNeedsGlasses : Texts.HouseNeeds(wanted))
+                : glass ? Texts.HouseNeedsGlassesButNone
                 : Texts.HouseNeedsButNone(wanted, works.Spec.Name.ToLower()),
             resident
         );
@@ -111,7 +125,7 @@ public partial class Game
     {
         if (
             State != GameState.HouseMaterialOffer
-            || nearby is not { Role: HouseResidentRole { House: var house }, RewardAvailable: true } resident
+            || nearby is not { Role: HouseResidentRole { House: var house } } resident
             || HouseMaterial(house) is not { } load
             || TripOf(resident) != null
             || GoodsWorks(load) is not { } works
@@ -131,8 +145,27 @@ public partial class Game
     {
         var owner = trip.Contractor;
         EndHaul();
-        CompleteHouseTask(owner);
+        if (trip.Load == HaulLoad.Glass)
+            CompleteGlassOrder(owner);
+        else
+            CompleteHouseTask(owner);
         SaveProgress();
+    }
+
+    /// <summary>The glasses stand in front of the finished house: the resident pays and holds a housewarming.</summary>
+    private void CompleteGlassOrder(Character owner)
+    {
+        int house = ((HouseResidentRole)owner.Role).House;
+        world.Village.Glaze(house);
+        AddCoins(HouseTaskCoins);
+        nearby = owner;
+        CelebrateCompletion(owner, Texts.GlassesParty(HouseTaskCoins));
+        ClearChallenge();
+        deliveryReward = false;
+        EnterInteraction(GameState.HouseReward);
+        ui.HouseReward(owner, world.Village.Level(house));
+        ShowCelebrationView();
+        UpdateDeliveryGuides();
     }
 
     internal void CompleteHouseQuiz(Character resident)

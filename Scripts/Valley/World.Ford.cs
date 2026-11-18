@@ -6,6 +6,7 @@ using MathRacer.App;
 using MathRacer.Buildings;
 using MathRacer.Characters;
 using MathRacer.Graphics;
+using MathRacer.Tasks;
 
 namespace MathRacer.Valley;
 
@@ -31,9 +32,18 @@ public partial class World
     /// <summary>The jetty's duck: a companion owned once the jetty is finished; null without a jetty.</summary>
     internal CollectorPet? Duck { get; private set; }
 
-    /// <summary>The collectors' pets and the duck.</summary>
+    /// <summary>The loads hauled so far, which earn the pets of the sources and of the works.</summary>
+    internal HaulTally Tally { get; } = new();
+
+    private readonly List<CollectorPet> worldPets = new();
+    private IReadOnlyList<CollectorPet>? allPets;
+
+    /// <summary>The pets that hauling and building earn, the duck first; empty without a ford.</summary>
+    internal IReadOnlyList<CollectorPet> WorldPets => worldPets;
+
+    /// <summary>The collectors' pets, then the pets of the world.</summary>
     internal IReadOnlyList<CollectorPet> AllPets =>
-        Duck == null ? Village.CollectorPets : Village.CollectorPets.Append(Duck).ToList();
+        allPets ??= worldPets.Count == 0 ? Village.CollectorPets : Village.CollectorPets.Concat(worldPets).ToList();
 
     /// <summary>The beaver's bridge, or null when the seeded valley has no suitable crossing.</summary>
     internal Ford? Ford { get; private set; }
@@ -136,6 +146,7 @@ public partial class World
         var industry = PlanIndustry(site);
         var builds = PlanBuilds(site);
         var extras = PlanExtraSources(site, sources, industry);
+        var glass = industry == null ? null : PlanGlassworks(site);
         if (builds != null)
             Ground.Grade(builds.Grading, (x, z) => Routes.Distance(new Vector3(x, 0, z)));
         river.AddBankRocks(Ground, site.Z);
@@ -153,8 +164,9 @@ public partial class World
             BuildHaulSource(extra, extra: true);
             BuildExtraSourceWorker(extra);
         }
-        BuildTracks(site, sources, extras, industry, builds);
+        BuildTracks(site, sources, extras, industry, builds, glass);
         BuildIndustry(industry);
+        BuildGlassworks(glass);
         Beaver = Character.Create(
             "Bobr Bóďa",
             "Postavíme most přes řeku? Přivez mi štěrk, cihly a prkna.",
@@ -515,7 +527,8 @@ public partial class World
         HaulSource[] sources,
         HaulSource[] extras,
         IndustryPlan? industry,
-        BuildPlan? builds
+        BuildPlan? builds,
+        WorksSite? glass
     )
     {
         Tracks = new Tracks { Name = "Tracks" };
@@ -551,6 +564,11 @@ public partial class World
                 Tracks.Line(works.Road, works.Position, WorksPathHalfWidth, Tracks.Kind.Path);
                 Tracks.Pad(works.Position, 6, Tracks.Kind.Path);
             }
+        }
+        if (glass != null)
+        {
+            Tracks.Line(glass.Road, glass.Position, WorksPathHalfWidth, Tracks.Kind.Path);
+            Tracks.Pad(glass.Position, 6, Tracks.Kind.Path);
         }
         if (builds != null)
             foreach (var build in builds.Sites)

@@ -372,6 +372,7 @@ public partial class World
         duck.SetHome(Ground.At(spot.X, spot.Z), Mathf.Atan2(jetty.Site.Inward.X, jetty.Site.Inward.Z));
         AddChild(duck);
         Duck = duck;
+        AddWorldPet(duck);
     }
 
     /// <summary>Places the mill, the tower and the jetty with their builders, after the terrain has been cut for them.</summary>

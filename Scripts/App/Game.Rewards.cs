@@ -40,15 +40,13 @@ public partial class Game
 
     /// <summary>
     /// Pays the reward for a finished mill, tower or jetty: coins and a garage item (the bridge has its trailer).
-    /// The jetty also brings a duck, which needs nothing here: it belongs to anyone whose jetty is finished.
+    /// The pet of the building (the jetty's duck too) is announced by the caller, <c>EarnPets</c>.
     /// </summary>
     private void PayBuildReward(BuildProject project)
     {
         if (project.Index == BuildPlans.Bridge)
             return;
         AddCoins(BuildCoins);
-        if (project is Jetty && world.Duck is { } duck)
-            PlaceCollectorPet(duck);
         if (BuildItem(project.Index) is { } item)
             economy.Owned.Add(item);
     }

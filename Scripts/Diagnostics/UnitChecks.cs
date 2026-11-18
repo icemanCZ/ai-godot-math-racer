@@ -84,7 +84,10 @@ internal static class UnitChecks
             );
             var original = JsonNode.Parse(File.ReadAllText(file))!.AsObject();
             if (folder.EndsWith("v5"))
-                Check(JsonNode.DeepEquals(JsonNode.Parse(json), original), $"{name} is what the game writes");
+                Check(
+                    JsonNode.DeepEquals(LegacySaves.WithoutAddedFields(JsonNode.Parse(json)!, original), original),
+                    $"{name} is what the game writes"
+                );
             if (folder.EndsWith("v4"))
             {
                 var flat = LegacySaves.FromCurrent(data, SaveDataV4.LastVersion);
@@ -215,12 +218,14 @@ internal static class UnitChecks
             ActorIds.FirstSource,
             ActorIds.FirstExtraSource,
             ActorIds.FirstPlotResident,
+            ActorIds.Glassworks,
         };
         Check(starts.Zip(starts.Skip(1), (a, b) => a < b).All(ok => ok), "the actor ID ranges follow one another");
         Check(
             ActorIds.LastWorks < ActorIds.FirstBuilder
                 && ActorIds.LastBuilder < ActorIds.FirstSource
-                && ActorIds.LastSource < ActorIds.FirstPlotResident,
+                && ActorIds.LastSource < ActorIds.FirstPlotResident
+                && ActorIds.LastPlotResident < ActorIds.Glassworks,
             "the ranges of workers, builders and sources do not overlap"
         );
         Check(

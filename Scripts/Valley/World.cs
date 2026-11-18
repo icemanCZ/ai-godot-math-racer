@@ -81,13 +81,20 @@ public partial class World : Node3D
         var witch = Witch.Position;
         var tower = Tower.Position;
         var sorcerer = Sorcerer.Position;
-        Plants.Generate(Ground, Routes, Village, Animals, p =>
-            p.DistanceSquaredTo(witch) < WorldTuning.WitchTreeClearing * WorldTuning.WitchTreeClearing
-            || p.DistanceSquaredTo(tower) < WorldTuning.TowerTreeClearing * WorldTuning.TowerTreeClearing
-            || p.DistanceSquaredTo(sorcerer) < WorldTuning.SorcererTreeClearing * WorldTuning.SorcererTreeClearing
-            || IsPickupApproachReserved(p)
-            || IsHaulReserved(p)
+        Plants.Generate(
+            Ground,
+            Routes,
+            Village,
+            Animals,
+            p =>
+                p.DistanceSquaredTo(witch) < WorldTuning.WitchTreeClearing * WorldTuning.WitchTreeClearing
+                || p.DistanceSquaredTo(tower) < WorldTuning.TowerTreeClearing * WorldTuning.TowerTreeClearing
+                || p.DistanceSquaredTo(sorcerer) < WorldTuning.SorcererTreeClearing * WorldTuning.SorcererTreeClearing
+                || IsPickupApproachReserved(p)
+                || IsHaulReserved(p),
+            InGlassworksZone
         );
+        CreateWorldPets();
         Ground.BuildMeshes();
         Roads.ReleaseFieldCache();
     }

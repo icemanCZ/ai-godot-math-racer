@@ -16,12 +16,27 @@ internal enum CollectorPetKind
 
     /// <summary>The jetty's duck: owned once the jetty is finished, not by a collection.</summary>
     Duck,
+
+    // Pets of the world, not of a collector. Each is owned by hauling: ten loads of a raw material, ten loads taken in
+    // by a works (twenty pieces made) or the completion of a building. The names are saved, so they never change.
+    Logs,
+    Stones,
+    Soil,
+    Sand,
+    Sawmill,
+    Brickworks,
+    GravelWorks,
+    Glassworks,
+    Bridge,
+    Mill,
+    Tower,
 }
 
 internal sealed partial class CollectorPet : Node3D
 {
-    private readonly Village village;
+    private readonly Village? village;
     private readonly Func<int>? externalCount;
+    private readonly string? reward;
     private readonly Node3D model = new();
     private readonly List<(Node3D Foot, int Swing)> feet = new();
     private Vector3 home;
@@ -31,15 +46,18 @@ internal sealed partial class CollectorPet : Node3D
     internal CollectorPetKind Kind { get; }
     internal Character Collector { get; }
     internal string DisplayName { get; }
-    internal string RewardHint => $"Odměna za všech {Goal}: {DisplayName}.";
+    internal string RewardHint => $"Odměna za {reward ?? $"všech {Goal}"}: {DisplayName}.";
+
+    /// <summary>The line under the pet in the garage: who it belongs to and how far the reward is.</summary>
+    internal string GarageHint => $"{Collector.DisplayName} · {Count} / {Goal}";
     internal int Goal { get; }
     internal int Count =>
         Kind switch
         {
-            CollectorPetKind.Farm => village.FarmCount,
-            CollectorPetKind.Garden => village.GardenCount,
-            CollectorPetKind.Gems => village.GemCount,
-            CollectorPetKind.Toys => village.ToyCount,
+            CollectorPetKind.Farm => village!.FarmCount,
+            CollectorPetKind.Garden => village!.GardenCount,
+            CollectorPetKind.Gems => village!.GemCount,
+            CollectorPetKind.Toys => village!.ToyCount,
             _ => externalCount!(),
         };
     internal bool IsOwned => Count >= Goal;

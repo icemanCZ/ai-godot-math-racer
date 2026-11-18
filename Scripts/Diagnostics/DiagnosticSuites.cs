@@ -84,6 +84,7 @@ internal static class DiagnosticSuites
         new("trade-checks", (g, w, v) => new TradeChecks(g, w, v), Seeds: ThreeSeeds),
         new("collection-checks", (g, w, v) => new CollectionChecks(g, w, v), Seeds: Seed42),
         new("collector-pet-checks", (g, w, v) => new CollectorPetChecks(g, w, v), Seeds: Seed42),
+        new("world-pet-checks", (g, w, v) => new WorldPetChecks(g, w, v), Seeds: ThreeSeeds),
         new("garden-checks", (g, w, v) => new GardenChecks(g, w, v), Seeds: Seed42),
         new("farm-checks", (g, w, v) => new FarmChecks(g, w, v), Seeds: Seed42),
         new("save-checks", (g, w, v) => new SaveChecks(g, w, v), Seeds: Seed42),
