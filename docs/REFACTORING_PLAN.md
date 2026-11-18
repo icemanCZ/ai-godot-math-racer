@@ -41,7 +41,7 @@ Každá hra uložená jakoukoli dřívější verzí (včetně verzí 1, 2 a 3 f
 | 2 | Sjednocení trailerových tras (`HaulTrip`) + uložení `Trip` (verze 4) | 2 | 4–6 dnů | střední |
 | 3 | Vytažení stavu z `Game` do malých objektů | 1, 3 | 5–8 dnů | střední až vyšší |
 | 4 | Sekce v `SaveData`, řetěz migrací (verze 5) | 5 | 3–4 dny | střední |
-| 5 | Úklid: přejmenování `Animal`, texty, magická čísla, čisté testy | 4, 6, 8 | 3–5 dnů | nízké |
+| 5 | Úklid: **složky a jmenné prostory**, přejmenování `Animal`, texty, magická čísla, čisté testy | 4, 6, 8 | 5–8 dnů | nízké; přesun souborů střední (viz 5.0) |
 
 Pořadí je dané závislostmi: fáze 2 potřebuje fixtury (0) a čisté role (1), fáze 3 potřebuje sjednocené trasy (2), fáze 4 staví na tom, že každý podsystém umí sám říct, co ukládá (3).
 
@@ -216,7 +216,51 @@ Poznámky:
 
 ## Fáze 5: úklid (nálezy 4, 6, 8)
 
-Dělá se podle potřeby, každá položka samostatně.
+Každá položka je samostatný krok a samostatný commit. Pořadí je pevné jen u 5.0: ostatní položky přesouvají a přejmenovávají soubory, takže se nejdřív uspořádají složky.
+
+### 5.0 Složky a jmenné prostory
+
+**Dnes:** všech 161 souborů je v jednom jmenném prostoru `MathRacer`, 110 z nich leží plochých ve `Scripts/`. Podsložky jsou jen `Diagnostics`, `Customization`, `Letters` a `Mathematics`.
+
+**Cíl:** složka je jmenný prostor. `Scripts/Saves/SaveStore.cs` má `namespace MathRacer.Saves;`. Jedna úroveň, žádné vnořování.
+
+| Složka a jmenný prostor | Soubory | Počet |
+| --- | --- | --- |
+| `App` (`MathRacer.App`) | `Game.cs` a všechny `Game.*.cs` (partialy zůstávají pohromadě), `GameControls`, `Interaction`, `Settings`, `LaunchOptions` | 26 |
+| `Ui` | `GameUi.cs` a `GameUi.*.cs`, `DeliveryPicture`, `TaskMarker` | 13 |
+| `Graphics` | `Art`, `Obstacles`, `Celebration` | 3 |
+| `Quizzes` | dnešní `Mathematics/*` a `Letters/*`, `QuizSession` (podsložky zůstanou) | 9 |
+| `Saves` | `SaveData`, `SaveDataV4`, `SaveMigrations`, `SaveRules`, `SaveStore` | 5 |
+| `Valley` | `World.*`, `WorldLayout`, `WorldCoins`, `Terrain`, `Roads`, `RoadGrading`, `River`, `RiverCourse`, `Tracks`, `Vegetation*`, `Grass`, `Puddles`, `Atmosphere`, `Weather`, `Wildlife`, `WildAnimal` | 22 |
+| `Settlement` | `Village.*`, `HousePlot`, `PlotPlans` | 12 |
+| `Buildings` | `BuildProject`, `BuildPlans`, `SitedProject`, `Mill`, `Lookout`, `Jetty`, `Ford`, `Boat`, `Works` | 9 |
+| `Tasks` | `HaulTrip`, `TripTarget`, `Expedition`, `RouteGuide`, `TaskSlot`, `DrivingEvents` (jízdní kurzy jsou časované úkoly) | 6 |
+| `Vehicles` | `Vehicle`, `VehicleModel`, `FollowCamera`, `WheelTracks`, `Trailer` | 5 |
+| `Garage` | dnešní `Customization/*`, `Economy` | 8 |
+| `Characters` | `Animal`, `ActorRoles`, `ActorIds`, `CharacterCatalog`, `CollectorPet`, `Golem`, `RoadsideProgress` | 7 |
+| `Diagnostics` | zůstává, jak je (kvůli `Compile Remove` v `.csproj` pro vydání) | 36 |
+
+Návrh jsem zkusil na všech souborech: každý patří právě do jedné složky a žádný jmenný prostor nemá stejné jméno jako existující typ. To je podmínka, ne detail: jmenný prostor `World`, `Village` nebo `Game` by se srazil s třídami stejného jména, proto `Valley`, `Settlement` a `App`. (Knihovna z bodu „Čisté testy“ níže se tedy nesmí jmenovat `MathRacer.Core` ani `MathRacer.App`; navrhuji `MathRacer.Logic`.)
+
+**Postup**
+
+1. **Nástroj.** Skript přesune každý `.cs` společně s jeho `.uid` (`git mv`, takže `git log --follow` drží historii), přepíše `namespace` a doplní `using` podle chyb překladače (index typ → jmenný prostor, opakuje se, dokud se projekt nesestaví). `global using` se **nepoužije**, zakrylo by závislosti, kvůli kterým se to celé dělá.
+2. **Jeden commit „jen přesun“,** beze změny logiky, aby šel zkontrolovat jako přejmenování.
+3. **Cesty.** `Main.tscn` ukazuje na `res://Scripts/Game.cs` a změní se na `res://Scripts/App/Game.cs`. Opravit cesty v `contract-checks` (čte `res://Scripts/Diagnostics/...`, ta zůstává), `docs/ARCHITECTURE.md` (tabulka modulů dostane cesty) a `CLAUDE.md`.
+4. **Hlídač.** Nová kontrola v `contract-checks`: jmenný prostor každého `.cs` ve `Scripts/` je `MathRacer.<složka>`, žádná složka nemá jméno existujícího typu a nový soubor ve `Scripts/` bez složky selže.
+5. **Ověření.** Celá sada (`./build.ps1 -Test`), sestavení vydání (`dotnet build -c ExportRelease`; dnes bez chyb, proto je to dobrá kontrola), fixtury a otisky světa beze změny a načtení kopie skutečného uložení. Pokud jsou nainstalované exportní šablony, i `./build.ps1 -Export`.
+
+**Proč uložené hry přesun nepoznají:** jmenný prostor se do uložení nezapisuje. Otázky mají v souboru textové identifikátory (`"math"`, `"letters"`, `"load"`…), výčty se ukládají jako čísla a role v otisku světa se jmenují bez prostoru.
+
+**Rizika a opatření**
+
+- **Paralelní větve a worktrees upravují stejné soubory.** Git pozná přejmenování, ale řádky `namespace` a `using` se v každém souboru změní, takže konflikty jsou jisté. Proto dělat 5.0 v klidu: ostatní větve nejdřív sloučit, nebo je po přesunu přebasovat. Žádná funkční práce se v době přesunu nepřidává.
+- **Soubory `.uid`** se musí přesunout společně se skripty, jinak Godot vygeneruje nové a odkazy podle uid se ztratí.
+- **Cache `.godot/`:** po přesunu spustit import (`./test.ps1 -Build`).
+- **Cykly mezi složkami** přesun nevytvoří, jen je zviditelní: například `Saves` čte konstanty z `App` a `Valley` a `App` čte `Saves`. Seznam cyklů se zapíše do přílohy. Pravidla směru závislostí se **nepřidávají** hned: test, který by cykly zakázal, by vynutil obcházení. Přidají se, až budou cykly vyřešené.
+- **Odhad:** 1–2 dny včetně nástroje a hlídače.
+
+### Ostatní položky
 
 - **Přejmenovat `Animal` na `Character`** (`Actor`). Čistě mechanicky, vlastním commitem, až po fázi 3, aby diff nezakryl logiku.
 - **Texty na jedno místo.** Postupně vynést české texty z `Game*.cs` a `GameUi*.cs` do `Texts.cs` (statické členy podle funkce). Cílem není překlad, ale oddělení textu od logiky a jednodušší kontrola jazyka.
@@ -224,7 +268,7 @@ Dělá se podle potřeby, každá položka samostatně.
 - **Magická čísla** z `Game`, `World` a vegetace (vzdálenosti vyhrazených míst, poloměry) do `WorldTuning` v `Settings.cs`.
 - **Čisté testy.** Dvě možnosti, rozhodnout se po fázi 4:
   - (a) režim `--unit-checks` v enginu pro `ChallengeGenerator`, `SaveStore.Validate` a migrace, bez generování světa, trvá vteřiny;
-  - (b) knihovna `MathRacer.Core` bez závislosti na Godotu (`Mathematics`, `Letters`, `SaveData`, validace, katalogy) a testovací projekt xUnit. Kvalitnější, ale musí se oddělit typy závislé na `Godot` (`Vector3` v datech, `ProjectSettings` v `SaveStore.SavePath`).
+  - (b) knihovna `MathRacer.Logic` bez závislosti na Godotu (`Mathematics`, `Letters`, `SaveData`, validace, katalogy) a testovací projekt xUnit. Kvalitnější, ale musí se oddělit typy závislé na `Godot` (`Vector3` v datech, `ProjectSettings` v `SaveStore.SavePath`).
 - **`World.GenerateVillage`** (dvojí generování vesnice): zdokumentovat jako záměr a přidat test, že rozmístění je shodné s verzí před refaktoringem; samotnou logiku neměnit, pokud neprokáže problém s výkonem.
 
 ---
@@ -250,6 +294,7 @@ Nepotvrzeno během review, nic se nespouštělo. Každou věc potvrdit nebo vyvr
 | Místa s ručním výčtem druhů tras | `Departure`, `FinishDump`, `RestoreBuilds`, `CaptureProgress`, `SaveStore` | 4 zbývají (viz fáze 2), `FinishDump`, `CaptureProgress` a `RestoreBuilds` už ne |
 | `Is…` příznaky a odvozené indexy v `Animal` | 8 + 2 (`TradeIndex`, `HouseIndex`) | 0 |
 | Místa, kde se registruje diagnostika | 2 (`Game.Diagnostics.cs`, `build.ps1`) | 1 |
+| Soubory ve `Scripts/` bez vlastní složky | 110 | 0 (hlídá `contract-checks`) |
 | Doba `./build.ps1 -Test` | základ z fáze 0 | ≤ +10 % |
 
 ## Rizika a jejich ošetření
@@ -259,5 +304,5 @@ Nepotvrzeno během review, nic se nespouštělo. Každou věc potvrdit nebo vyvr
 | Rozbité staré uložené hry (nepřijatelné) | brány z kapitoly „Nepřekročitelná podmínka“: nedotknutelné fixtury všech verzí, test pokračování ve hře, otisk světa, zálohy před přepsáním, ruční test na skutečném souboru, migrace se nemažou |
 | Regrese chování při přesunu stavu z `Game` | po každém kroku celá sada testů, přesun bez změn logiky |
 | Rozjetý rozsah fáze 3 | každý krok 3.1–3.6 je samostatný PR; po kroku 3.4 lze skončit a zbytek odložit |
-| Konflikty s paralelní funkční prací | fáze 2 a 3 dělat v době, kdy se nepřidávají nové aktivity; nové věci dělat až nad hotovým `ITripTarget` |
+| Konflikty s paralelní funkční prací | fáze 2 a 3 dělat v době, kdy se nepřidávají nové aktivity; nové věci dělat až nad hotovým `ITripTarget`. Přesun do složek (5.0) mění řádky `namespace` a `using` ve všech souborech, takže ostatní větve nejdřív sloučit nebo po přesunu přebasovat |
 | Nové uložené hry ve starší verzi hry | přijato, nic se neřeší; starší sestavení může nový soubor odmítnout. Při vydání o tom stačí vědět, před návratem ke staré verzi je potřeba záloha `progress.v<N>.bak` |
