@@ -151,7 +151,7 @@ public partial class PlotChecks : Node
                 );
                 game.BeginPlotTrip();
                 ChallengeChecks.Solve(game);
-                var trip = game.Haul as PlotTrip;
+                var trip = game.Haul;
                 Check(
                     trip is { Loaded: false } && trip.Plot == plot && trip.Step == step && trailer.Attached,
                     $"plot {plot.Index}: delivery {step + 1} sends the empty trailer"
@@ -213,7 +213,7 @@ public partial class PlotChecks : Node
             var needed = world.Industry[(int)HaulLoads.ProductOf(PlotPlans.CargoOf(0))];
             game.BeginMissingSupply();
             ChallengeChecks.Solve(game);
-            var fetch = game.Haul as SupplyTrip;
+            var fetch = game.Haul;
             Check(
                 fetch is { Loaded: false } && fetch.Works == needed && trailer.Attached,
                 "the newcomer sends the empty trailer for the raw material"
@@ -237,13 +237,12 @@ public partial class PlotChecks : Node
             game.OpenPlot(first.Resident);
             game.BeginPlotTrip();
             ChallengeChecks.Solve(game);
-            Check(game.Haul is PlotTrip, "a trip starts");
+            Check(game.Haul is { Plot: not null }, "a trip starts");
             game.OpenPlot(first.Resident);
             Check(!Has("StartPlotTrip"), "talking to the newcomer during the trip starts no second one");
             game.FinishInteraction();
             var withoutTrip = game.CaptureProgress();
-            withoutTrip.PlotTrip = -1;
-            withoutTrip.PlotTripLoaded = false;
+            withoutTrip.Trip = null;
             game.RestoreProgress(withoutTrip);
             Check(game.Haul == null && trailer.Load == null, "a save without the trip ends it");
 
@@ -363,7 +362,7 @@ public partial class PlotChecks : Node
             System.IO.File.WriteAllText(oldPath, oldSave.ToJsonString());
             var old = SaveStore.Read(oldPath);
             Check(
-                old != null && old.PlotStages.All(stage => stage == 0) && old.PlotTrip == -1,
+                old != null && old.PlotStages.All(stage => stage == 0) && old.Trip == null,
                 "a save from before the plots loads with empty plots"
             );
             game.RestoreProgress(old!);
@@ -428,10 +427,7 @@ public partial class PlotChecks : Node
             game.BeginPlotTrip();
             ChallengeChecks.Solve(game);
             RoundTrip("an empty trailer on its way");
-            Check(
-                game.Haul is PlotTrip { Loaded: false, Plot: var restored } && restored == second,
-                "the trip comes back"
-            );
+            Check(game.Haul is { Loaded: false, Plot: { } restored } && restored == second, "the trip comes back");
             var cargoNow = PlotPlans.CargoOf(0);
             var workSource = world.SourceFor(cargoNow);
             car.SetPose(world.Ground.At(workSource.Position.X, workSource.Position.Z, .15f), 0);
@@ -439,7 +435,7 @@ public partial class PlotChecks : Node
             RoundTrip("the question at the works");
             ChallengeChecks.Solve(game);
             RoundTrip("a full trailer on its way to the plot");
-            Check(game.Haul is PlotTrip { Loaded: true }, "the loaded trip comes back");
+            Check(game.Haul is { Plot: not null, Loaded: true }, "the loaded trip comes back");
 
             GD.Print("PLOT_CHECKS_PASSED");
             GetTree().Quit();

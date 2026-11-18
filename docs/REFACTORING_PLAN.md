@@ -111,6 +111,16 @@ Použití: `Game.Village.cs` (8), `Game.cs` (7), `Expedition.cs` (6), `World.cs`
 
 ## Fáze 2: sjednocení trailerových tras (nález 2)
 
+**Stav: provedeno.** Odchylky od návrhu níže:
+
+- `HaulTrip` je jedna třída; `ITripTarget` mají `BuildProject`, `HousePlot`, `Works` a nový `HouseTripTarget`. `HaulTrip` má typované přístupy `Project`, `Plot`, `Works`, `House`, `Step`, `FarBank`, kterými se pozná, co trasa obsluhuje.
+- `FinishDump` je na cíli (`ITripTarget.FinishDump`) a jen volá `Game.FinishBuildDump` a spol. Kód odměn a oslav zůstal v `Game.*.cs`.
+- Panely `OpenBuilder`, `OpenPlot`, `OpenHouse` a `OpenWorks` se **nesjednotily**: liší se kontrolami i texty a jejich sloučení by změnilo chování. Společné je jen zahájení trasy (`Game.Trips.cs`: `StartTrip`) a návrat po kvízu (`StartDeparture`, tabulka `PanelTrips`).
+- `Departure` zůstal výčtem, protože se ukládá (`SaveData.Departure`); `PendingDeparture` s uzávěrem by se po načtení nedal obnovit.
+- Uložení: `SaveData.Trip` (verze 4). Staré páry polí zůstaly jen pro čtení jako `int?`/`bool?` a `MigrateTrips` je převádí. Fixtury verze 4 jsou v `Tests/Saves/v4/`, složka `v3` se nezměnila a načítá se přes migraci.
+- **Ruční zkouška na skutečném souboru** (kopie `progress.json`, verze 3, bez trasy, postup ve stavbách i v zásobách dílen): načetla se, přemigrovala na verzi 4, obnova a znovu zachycení daly stejné uložení a hra běžela dál. Originál zůstal beze změny. Provedl to nástroj `--load-save-checks --seed=N --save-file=PATH`, který načítá jen kopii. Při načtení projektu v `build.ps1` se navíc sám vytvořil `progress.v3.bak`, tedy ochrana z fáze 0 funguje na skutečném souboru.
+- Po refaktoringu zbývají místa, která o druzích tras vědí: `Game.TripTarget` (obnova ze save), `SaveStore.HasInvalidTrip` a `ActiveTripAsker`, `Game.PanelTrips`, `Game.TripInstruction`. `CaptureProgress`, `HaulTrip`, `FinishDump` a `SaveData` se pro nový druh nemění.
+
 Dnes: `BuildTrip`, `HouseTrip`, `PlotTrip`, `SupplyTrip`; čtyři trojice `Open…` / `Begin…Trip(bool)` / `Finish…Dump`; ruční `switch` v `StartDeparture` a `FinishDump`; ruční větve v `RestoreBuilds`; v `SaveData` osm polí; čtyři validátory a `ActiveTripAsker` v `SaveStore`.
 
 ### Cílový návrh
@@ -218,8 +228,8 @@ Nepotvrzeno během review, nic se nespouštělo. Každou věc potvrdit nebo vyvr
 | --- | --- | --- |
 | Řádky `Game` (všechny partialy) | 5 388 | ≤ 2 500 (z toho `Game.cs` ≤ 1 200) |
 | Soubory dotčené novým druhem trasy | 21 | ≤ 5 |
-| Pole tras ve `SaveData` | 8 | 1 (`Trip`) |
-| Místa s ručním výčtem druhů tras | `Departure`, `FinishDump`, `RestoreBuilds`, `CaptureProgress`, `SaveStore` | 0 |
+| Pole tras ve `SaveData` | 8 | 1 (`Trip`) — splněno |
+| Místa s ručním výčtem druhů tras | `Departure`, `FinishDump`, `RestoreBuilds`, `CaptureProgress`, `SaveStore` | 4 zbývají (viz fáze 2), `FinishDump`, `CaptureProgress` a `RestoreBuilds` už ne |
 | `Is…` příznaky a odvozené indexy v `Animal` | 8 + 2 (`TradeIndex`, `HouseIndex`) | 0 |
 | Místa, kde se registruje diagnostika | 2 (`Game.Diagnostics.cs`, `build.ps1`) | 1 |
 | Doba `./build.ps1 -Test` | základ z fáze 0 | ≤ +10 % |

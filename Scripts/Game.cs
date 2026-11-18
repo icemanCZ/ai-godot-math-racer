@@ -439,7 +439,7 @@ public partial class Game : Node3D
                 continue;
             bool target =
                 Delivery != null && Delivery.CanDeliver && animal == Delivery.Recipient
-                || Haul is HouseTrip { Loaded: true } houseTrip && animal == houseTrip.Contractor;
+                || Haul is { House: >= 0, Loaded: true } houseTrip && animal == houseTrip.Contractor;
             animal.Guide(animal.RewardAvailable || CanChooseExpedition(animal) || target, target);
         }
     }

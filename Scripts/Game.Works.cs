@@ -69,7 +69,7 @@ public partial class Game
         if (State != GameState.SourceStatus || WorksOfSource(nearby) is not { } works || Haul != null || works.Full)
             return;
         CancelActiveTask();
-        StartHaul(new SupplyTrip(world, vehicle, works, loaded: false));
+        StartHaul(new HaulTrip(world, vehicle, works, 0, loaded: false));
         Start();
         Haul!.Arrived = true;
         BeginLoading();
@@ -118,7 +118,7 @@ public partial class Game
                 || TripOf(resident) != null
                 || GoodsWorks(load) is not { Full: false } missing
                 || missing.Stock >= Works.PerTrip
-                || (Haul is SupplyTrip supply && supply.Works == missing)
+                || (Haul is { Works: { } supply } && supply == missing)
             )
                 return;
             (works, asker) = (missing, resident);
@@ -130,16 +130,12 @@ public partial class Game
             AskBeforeDeparture(Departure.Missing);
             return;
         }
-        CancelActiveTask();
-        StartHaul(new SupplyTrip(world, vehicle, works, loaded: false));
-        Start();
-        Speak(TripInstruction(Haul!), asker);
-        SaveProgress();
+        StartTrip(works, asker);
     }
 
-    private void FinishSupplyDump(SupplyTrip trip)
+    internal void FinishSupplyDump(HaulTrip trip)
     {
-        var works = trip.Works;
+        var works = trip.Works!;
         works.Deliver();
         works.Worker.Celebrate();
         CelebrateAt(works.Site.Position + Vector3.Up * 2, $"{works.Spec.Goods}  {works.Stock} / {Works.Capacity}");

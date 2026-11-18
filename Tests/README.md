@@ -9,7 +9,7 @@ Each file is a save written by the game itself (`./run.ps1`-style launch with `-
 each situation a player can quit in: driving, every kind of quiz, an expedition at several points, every kind of
 trailer trip empty and loaded, each panel, a bandit encounter, a course run, and a save with a lot of progress.
 
-- `v3/` is the format of the game before the refactoring (`SaveData.CurrentVersion = 3`).
+- `v3/` is the format of the game before the refactoring (`SaveData.CurrentVersion = 3`). The game now writes version 4 (`v4/`), and `--save-fixture-checks` loads both folders: a v3 file goes through the migrations, a v4 file loads as it is.
 - A new save format gets **its own folder** (`v4`, `v5`), made by the new code. The old folders stay exactly as they
   are, so every version of the format keeps being loaded by the newest game.
 - `--save-fixture-checks --seed=42` loads every file, restores it, checks that the game captures the same save back,
@@ -22,6 +22,9 @@ trailer trip empty and loaded, each panel, a bandit encounter, a course run, and
 The six `quiz-before-…-trip` fixtures were added after the game learnt to keep the trip that waits for an open quiz
 (`SaveData.Departure`, `SaveData.DepartureState`). The saves made before that have no such field and load as before.
 They are made by the new code but have the same format version 3, because the fields are optional.
+
+`v4/` has the same 39 situations as `v3/`, made by the game that writes the trailer trip as one `Trip` instead of a
+pair of fields for each kind. `v3/` was not touched: a save of the old format still has to load into the new game.
 
 ## `Worlds/seed-N.txt` – what a seed places in the world
 

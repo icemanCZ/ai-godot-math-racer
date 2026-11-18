@@ -11,10 +11,11 @@ namespace MathRacer;
 public sealed class SaveData
 {
     /// <summary>
+    /// Version 4 keeps the trailer trip in <see cref="Trip"/> instead of a pair of fields for each kind of trip.
     /// Version 3 pays coins instead of offering car rewards. Version 2 stores the open question in
-    /// <see cref="Challenge"/>; version 1 used one field per kind.
+    /// <see cref="Challenge"/>; version 1 used one field per kind. Older versions are migrated when they are read.
     /// </summary>
-    public const int CurrentVersion = 3;
+    public const int CurrentVersion = 4;
 
     public PostcardProgress?[] Postcards { get; set; } = new PostcardProgress?[Game.PostcardCount];
     public int PostcardPage { get; set; } = -1;
@@ -40,27 +41,44 @@ public sealed class SaveData
     /// <summary>Deliveries made to the bridge, the mill, the tower and the jetty, 0–10 each; null in older saves.</summary>
     public int[]? BuildStages { get; set; }
 
-    /// <summary>The building of the active trailer trip, whose step is its stage, or -1.</summary>
-    public int BuildTrip { get; set; } = -1;
-    public bool BuildTripLoaded { get; set; }
+    /// <summary>
+    /// The trailer trip under way, or null: what it is for (<see cref="TripKinds"/>), which one of its kind, and
+    /// whether the load is aboard. Never set together with an expedition.
+    /// </summary>
+    public SavedTrip? Trip { get; set; }
+
+    // Before version 4 each kind of trip had a pair of fields. They are read only to migrate older saves into Trip
+    // (MigrateTrips), which empties them, so a save of the current version never writes them.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? BuildTrip { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? BuildTripLoaded { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? SupplyTrip { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? SupplyTripLoaded { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? HouseTrip { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? HouseTripLoaded { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? PlotTrip { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? PlotTripLoaded { get; set; }
 
     /// <summary>Goods stored at the sawmill, brickworks and gravel works (<see cref="Product"/> order), 0–12 each.</summary>
     public int[] WorksStock { get; set; } = new int[3];
 
-    /// <summary>The works the active supply trip brings raw material to, or -1. Never set together with a building trip.</summary>
-    public int SupplyTrip { get; set; } = -1;
-    public bool SupplyTripLoaded { get; set; }
-
-    /// <summary>The house whose planks or bricks the active trailer trip fetches, or -1. Its task is the house's next one.</summary>
-    public int HouseTrip { get; set; } = -1;
-    public bool HouseTripLoaded { get; set; }
-
     /// <summary>Deliveries made to each of the six building plots, 0–6; zeros in saves from before the plots.</summary>
     public int[] PlotStages { get; set; } = new int[PlotPlans.Count];
 
-    /// <summary>The plot whose next delivery the active trailer trip fetches, or -1. Never set together with another trip.</summary>
-    public int PlotTrip { get; set; } = -1;
-    public bool PlotTripLoaded { get; set; }
     public bool TrailerOwned { get; set; }
     public bool TrailerAttached { get; set; }
     public string TrailerPaint { get; set; } = "red";
@@ -132,6 +150,19 @@ public sealed class SaveData
     public DeliveryChallenge? DeliveryQuestion { get; set; }
 }
 
+/// <summary>A trailer trip under way: the delivery it fetches is the next one of its target.</summary>
+public sealed class SavedTrip
+{
+    /// <summary>One of <see cref="TripKinds"/>.</summary>
+    public string Kind { get; set; } = "";
+
+    /// <summary>The project, works, house or plot, by its index among those of its kind.</summary>
+    public int Index { get; set; }
+
+    /// <summary>Whether the load is already on the trailer.</summary>
+    public bool Loaded { get; set; }
+}
+
 public static class SaveStore
 {
     private const int LegacyAnimalCount = 30;
@@ -178,6 +209,7 @@ public static class SaveStore
         MigrateLegacyQuestion(data);
         MigrateRewardOffer(data);
         MigrateBuilds(data);
+        MigrateTrips(data);
         MigrateEventRun(data);
         MigrateHouseTasks(data);
         Validate(data);
@@ -260,7 +292,7 @@ public static class SaveStore
             || HasInvalidPlotState(data)
             || HasInvalidBuildState(data)
             || HasInvalidWorksState(data)
-            || HasInvalidHouseTrip(data)
+            || HasInvalidTrip(data)
             || HasInvalidPickupCount(data)
         )
             throw new JsonException("Invalid save data.");
@@ -553,18 +585,6 @@ public static class SaveStore
         data.BuildStages == null
         || data.BuildStages.Length != BuildPlans.Count
         || data.BuildStages.Any(stage => stage < 0 || stage > BuildPlans.Trips)
-        || data.BuildTrip < -1
-        || data.BuildTrip >= BuildPlans.Count
-        || (
-            data.BuildTrip >= 0
-            && (
-                data.BuildStages[data.BuildTrip] >= BuildPlans.Trips
-                || data.Sender >= 0
-                || data.SupplyTrip >= 0
-                || data.HouseTrip >= 0
-            )
-        )
-        || (data.BuildTripLoaded && data.BuildTrip < 0)
         || (data.TrailerOwned && data.BuildStages[BuildPlans.Bridge] < BuildPlans.Trips)
         || (data.TrailerAttached && !data.TrailerOwned)
         || data.TrailerPaint == null
@@ -572,51 +592,44 @@ public static class SaveStore
         || HasInvalidAsker(data);
 
     /// <summary>
-    /// The progress of the six building plots and the trailer trip for one of them. A trip fetches the plot's next
-    /// delivery, so that plot must be unfinished, and it never runs together with an expedition or another trip.
+    /// The progress of the six building plots, each 0–6 deliveries.
     /// </summary>
     private static bool HasInvalidPlotState(SaveData data) =>
         data.PlotStages == null
         || data.PlotStages.Length != PlotPlans.Count
-        || data.PlotStages.Any(stage => stage < 0 || stage > PlotPlans.Trips)
-        || data.PlotTrip < -1
-        || data.PlotTrip >= PlotPlans.Count
-        || (data.PlotTripLoaded && data.PlotTrip < 0)
-        || (
-            data.PlotTrip >= 0
-            && (
-                data.PlotStages[data.PlotTrip] >= PlotPlans.Trips
-                || data.Sender >= 0
-                || data.BuildTrip >= 0
-                || data.SupplyTrip >= 0
-                || data.HouseTrip >= 0
-            )
-        );
+        || data.PlotStages.Any(stage => stage < 0 || stage > PlotPlans.Trips);
 
-    /// <summary>The cargo and the character who asks about it for the active trailer trip, or (-1, -1) without one.</summary>
+    /// <summary>The cargo and the characters who may ask about it for the active trailer trip, or none without one.</summary>
     private static (HaulLoad Cargo, int[] Askers, bool Loaded) ActiveTripAsker(SaveData data)
     {
-        if (data.BuildTrip is >= 0 and < BuildPlans.Count && data.BuildStages![data.BuildTrip] < BuildPlans.Trips)
+        if (data.Trip is not { } trip)
+            return (default, Array.Empty<int>(), false);
+        switch (trip.Kind)
         {
-            var cargo = BuildPlans.For(data.BuildTrip)[data.BuildStages![data.BuildTrip]].Cargo;
-            return (cargo, World.AskerIds(cargo, data.BuildTrip), data.BuildTripLoaded);
+            case TripKinds.Build
+                when trip.Index is >= 0 and < BuildPlans.Count
+                    && data.BuildStages is { Length: BuildPlans.Count } buildStages
+                    && buildStages[trip.Index] is >= 0 and < BuildPlans.Trips:
+            {
+                var cargo = BuildPlans.For(trip.Index)[buildStages[trip.Index]].Cargo;
+                return (cargo, World.AskerIds(cargo, trip.Index), trip.Loaded);
+            }
+            case TripKinds.Supply when trip.Index is >= 0 and < WorksCatalog.Count:
+            {
+                var cargo = WorksCatalog.All[trip.Index].Input;
+                return (cargo, World.AskerIds(cargo, 0), trip.Loaded);
+            }
+            case TripKinds.Plot
+                when trip.Index is >= 0 and < PlotPlans.Count
+                    && data.PlotStages is { Length: PlotPlans.Count } plotStages
+                    && plotStages[trip.Index] is >= 0 and < PlotPlans.Trips:
+            {
+                var cargo = PlotPlans.CargoOf(plotStages[trip.Index]);
+                return (cargo, World.AskerIds(cargo, 0), trip.Loaded);
+            }
+            case TripKinds.House when SavedTask(data, trip.Index) is { } kind && Village.MaterialOf(kind) is { } goods:
+                return (goods, World.AskerIds(goods, 0), trip.Loaded);
         }
-        if (data.SupplyTrip is >= 0 and < WorksCatalog.Count)
-        {
-            var cargo = WorksCatalog.All[data.SupplyTrip].Input;
-            return (cargo, World.AskerIds(cargo, 0), data.SupplyTripLoaded);
-        }
-        if (
-            data.PlotTrip is >= 0 and < PlotPlans.Count
-            && data.PlotStages is { Length: PlotPlans.Count } plotStages
-            && plotStages[data.PlotTrip] is >= 0 and < PlotPlans.Trips
-        )
-        {
-            var cargo = PlotPlans.CargoOf(plotStages[data.PlotTrip]);
-            return (cargo, World.AskerIds(cargo, 0), data.PlotTripLoaded);
-        }
-        if (data.HouseTrip >= 0 && SavedTask(data, data.HouseTrip) is { } kind && Village.MaterialOf(kind) is { } goods)
-            return (goods, World.AskerIds(goods, 0), data.HouseTripLoaded);
         return (default, Array.Empty<int>(), false);
     }
 
@@ -630,22 +643,28 @@ public static class SaveStore
             : null;
 
     /// <summary>
-    /// A house's trailer trip fetches the goods of its next task, so that house must still be unfinished and ask for
-    /// planks or bricks. It never runs together with an expedition or another trailer trip.
+    /// A trailer trip fetches the next delivery of its target, so that target must exist and be unfinished: a
+    /// building or plot with deliveries left, a works that is not full, a house that asks for planks or bricks. It
+    /// never runs together with an expedition.
     /// </summary>
-    private static bool HasInvalidHouseTrip(SaveData data) =>
-        data.HouseTrip < -1
-        || data.HouseTrip >= 4
-        || (data.HouseTripLoaded && data.HouseTrip < 0)
-        || (
-            data.HouseTrip >= 0
-            && (
-                data.Sender >= 0
-                || data.BuildTrip >= 0
-                || data.SupplyTrip >= 0
-                || SavedTask(data, data.HouseTrip) is not (VillageTaskKind.Planks or VillageTaskKind.Bricks)
-            )
-        );
+    private static bool HasInvalidTrip(SaveData data)
+    {
+        if (data.Trip is not { } trip)
+            return false;
+        if (data.Sender >= 0)
+            return true;
+        return trip.Kind switch
+        {
+            TripKinds.Build => trip.Index is < 0 or >= BuildPlans.Count
+                || data.BuildStages![trip.Index] >= BuildPlans.Trips,
+            TripKinds.Supply => trip.Index is < 0 or >= WorksCatalog.Count
+                || data.WorksStock[trip.Index] >= Works.Capacity,
+            TripKinds.House => trip.Index is < 0 or >= 4
+                || SavedTask(data, trip.Index) is not (VillageTaskKind.Planks or VillageTaskKind.Bricks),
+            TripKinds.Plot => trip.Index is < 0 or >= PlotPlans.Count || data.PlotStages[trip.Index] >= PlotPlans.Trips,
+            _ => true,
+        };
+    }
 
     /// <summary>
     /// Houses used to ask only quizzes and apples. A save that waits at a house whose next task is now different
@@ -705,18 +724,12 @@ public static class SaveStore
     }
 
     /// <summary>
-    /// The stock of the three works, the trailer trip one of them sent and the worker met at the moment.
-    /// The stock never exceeds the yard. A supply trip is started by, and its question asked by, the worker at the source.
+    /// The stock of the three works, which never exceeds the yard.
     /// </summary>
     private static bool HasInvalidWorksState(SaveData data) =>
         data.WorksStock == null
         || data.WorksStock.Length != WorksCatalog.Count
-        || data.WorksStock.Any(stock => stock < 0 || stock > Works.Capacity)
-        || data.SupplyTrip < -1
-        || data.SupplyTrip >= WorksCatalog.Count
-        || (data.SupplyTrip >= 0 && (data.BuildTrip >= 0 || data.Sender >= 0 || data.HouseTrip >= 0))
-        || (data.SupplyTrip >= 0 && data.WorksStock[data.SupplyTrip] >= Works.Capacity)
-        || (data.SupplyTripLoaded && data.SupplyTrip < 0);
+        || data.WorksStock.Any(stock => stock < 0 || stock > Works.Capacity);
 
     private static bool HasInvalidPickupCount(SaveData data) =>
         (
@@ -785,7 +798,7 @@ public static class SaveStore
     {
         if (data.Version != 2)
             return;
-        data.Version = SaveData.CurrentVersion;
+        data.Version = 3;
         if (data.State != GameState.Reward || !data.DeliveryReward)
             return;
         bool trade = data.Sender >= World.FirstTraderId && data.Sender < World.WitchId;
@@ -814,6 +827,45 @@ public static class SaveStore
         data.FordStage = 0;
         data.FordTrip = -1;
         data.FordTripLoaded = false;
+    }
+
+    /// <summary>
+    /// Before version 4 each kind of trailer trip had a pair of fields. A save with one trip gets it as
+    /// <see cref="SaveData.Trip"/>. A save with two trips, a loaded flag without a trip or a number that is not a
+    /// trip stays damaged, so that validation refuses it as it always did.
+    /// </summary>
+    private static void MigrateTrips(SaveData data)
+    {
+        var trips = new System.Collections.Generic.List<SavedTrip>();
+        bool damaged = false;
+        void Take(string kind, int? index, bool? loaded)
+        {
+            if (index is null or -1)
+                damaged |= loaded == true;
+            else if (index < -1)
+                damaged = true;
+            else
+                trips.Add(
+                    new SavedTrip
+                    {
+                        Kind = kind,
+                        Index = index.Value,
+                        Loaded = loaded == true,
+                    }
+                );
+        }
+        Take(TripKinds.Build, data.BuildTrip, data.BuildTripLoaded);
+        Take(TripKinds.Supply, data.SupplyTrip, data.SupplyTripLoaded);
+        Take(TripKinds.House, data.HouseTrip, data.HouseTripLoaded);
+        Take(TripKinds.Plot, data.PlotTrip, data.PlotTripLoaded);
+        data.BuildTrip = data.SupplyTrip = data.HouseTrip = data.PlotTrip = null;
+        data.BuildTripLoaded = data.SupplyTripLoaded = data.HouseTripLoaded = data.PlotTripLoaded = null;
+        if (damaged || trips.Count > 1 || (trips.Count == 1 && data.Trip != null))
+            data.Trip = new SavedTrip { Kind = "damaged", Index = -1 };
+        else if (trips.Count == 1)
+            data.Trip = trips[0];
+        if (data.Version == 3)
+            data.Version = 4;
     }
 
     /// <summary>

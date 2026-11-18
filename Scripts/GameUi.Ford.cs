@@ -51,7 +51,7 @@ public partial class GameUi
     internal void BuilderPanel(
         Animal builder,
         BuildProject project,
-        BuildTrip? trip,
+        HaulTrip? trip,
         bool canStart,
         Works? missing,
         int lookout = 0

@@ -129,7 +129,7 @@ public partial class FordChecks : Node
             game.BeginBuildTrip();
             ChallengeChecks.Solve(game);
             Check(
-                game.Haul is BuildTrip { Step: 0, Loaded: false }
+                game.Haul is { Project: not null, Step: 0, Loaded: false }
                     && trailer.Attached
                     && game.State == GameState.Exploring,
                 "first trip hitches an empty trailer"
@@ -148,7 +148,7 @@ public partial class FordChecks : Node
             game.BeginBuildTrip();
             ChallengeChecks.Solve(game);
             Check(
-                game.Haul is BuildTrip { Step: 0, Loaded: false } && game.Delivery == null && trailer.Attached,
+                game.Haul is { Project: not null, Step: 0, Loaded: false } && game.Delivery == null && trailer.Attached,
                 "accepting the ford trip cancels the expedition and hitches the trailer again"
             );
             game.FinishInteraction();
@@ -162,7 +162,7 @@ public partial class FordChecks : Node
 
             for (int trip = 0; trip < Ford.Trips; trip++)
             {
-                var haul = (BuildTrip)game.Haul!;
+                var haul = game.Haul!;
                 Check(haul.Step == trip && !haul.Loaded, $"trip {trip + 1} heads for its source");
                 car.SetPose(world.Ground.At(haul.Source.Position.X, haul.Source.Position.Z, .15f), 0);
                 Frames(1);
@@ -213,7 +213,9 @@ public partial class FordChecks : Node
                     game.BeginBuildTrip();
                     ChallengeChecks.Solve(game);
                     Check(
-                        game.Haul is BuildTrip { Loaded: false } next && next.Step == trip + 1 && trailer.Attached,
+                        game.Haul is { Project: not null, Loaded: false } next
+                            && next.Step == trip + 1
+                            && trailer.Attached,
                         "confirming starts the next trip"
                     );
                 }
@@ -258,15 +260,14 @@ public partial class FordChecks : Node
             // A word quiz replaces the loading count when arithmetic is off.
             var words = game.CaptureProgress();
             words.BuildStages = new[] { 2, 0, 0, 0 };
-            words.BuildTrip = BuildPlans.Bridge;
-            words.BuildTripLoaded = false;
+            words.Trip = new SavedTrip { Kind = TripKinds.Build, Index = BuildPlans.Bridge };
             words.TrailerOwned = false;
             words.TrailerAttached = false;
             words.QuizTypes = QuizType.Letters;
             Check(SaveStore.Write(words, path) && SaveStore.Read(path) != null, "partial ford save accepted");
             game.RestoreProgress(SaveStore.Read(path)!);
             Check(
-                ford.Stage == 2 && !ford.Passable && game.Haul is BuildTrip { Step: 2 } && trailer.Attached,
+                ford.Stage == 2 && !ford.Passable && game.Haul is { Project: not null, Step: 2 } && trailer.Attached,
                 "a saved trip restores the ford and the trailer"
             );
             car.SetPose(world.Ground.At(game.Haul!.Source.Position.X, game.Haul.Source.Position.Z, .15f), 0);
@@ -286,8 +287,7 @@ public partial class FordChecks : Node
             {
                 var legacy = game.CaptureProgress();
                 legacy.BuildStages = null;
-                legacy.BuildTrip = -1;
-                legacy.BuildTripLoaded = false;
+                legacy.Trip = null;
                 legacy.FordStage = stage;
                 legacy.FordTrip = trip;
                 legacy.TrailerOwned = stage == 6;
@@ -299,8 +299,6 @@ public partial class FordChecks : Node
                 legacy.Collection = false;
                 legacy.Picked = Array.Empty<bool>();
                 legacy.Arrived = false;
-                legacy.SupplyTrip = -1;
-                legacy.SupplyTripLoaded = false;
                 return legacy;
             }
             SaveData? MigratedSave(SaveData legacy, string name)
@@ -317,7 +315,7 @@ public partial class FordChecks : Node
             Check(halfway is { BuildStages: [5, 0, 0, 0] }, "a half-built bridge keeps its share of the work");
             var tripUnderWay = MigratedSave(Legacy(2, trip: 2), "legacy-trip");
             Check(
-                tripUnderWay is { BuildStages: [3, 0, 0, 0], BuildTrip: -1, FordTrip: -1 },
+                tripUnderWay is { BuildStages: [3, 0, 0, 0], Trip: null, FordTrip: -1 },
                 "a trip under way in an old save is dropped"
             );
             game.RestoreProgress(finished!);

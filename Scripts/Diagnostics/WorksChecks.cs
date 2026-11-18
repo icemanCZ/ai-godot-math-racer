@@ -225,10 +225,10 @@ public partial class WorksChecks : Node
                 Check(game.State == GameState.SourceStatus, $"the {spec.Input} worker opens a panel");
                 Check(HasStartButton(), $"the {spec.Input} worker offers the next load");
                 game.BeginSupplyTrip();
-                var trip = game.Haul as SupplyTrip;
+                var trip = game.Haul;
                 Check(
                     trip is { Loaded: false }
-                        && trip.WorksIndex == works.Site.Index
+                        && trip.Target.Index == works.Site.Index
                         && trailer.Attached
                         && game.State == GameState.Challenge
                         && game.CurrentChallenge != null,
@@ -333,7 +333,7 @@ public partial class WorksChecks : Node
             );
             game.BeginSupplyTrip();
             Check(
-                game.Haul is SupplyTrip { Loaded: false } second
+                game.Haul is { Works: not null, Loaded: false } second
                     && second.Source == secondQuarry
                     && second.Asker == quarryWorker
                     && game.State == GameState.Challenge,
@@ -359,7 +359,7 @@ public partial class WorksChecks : Node
             car.SetPose(world.Ground.At(clayWorker.Position.X + 2, clayWorker.Position.Z, .15f), 0);
             game.OpenSource(clayWorker);
             game.BeginSupplyTrip();
-            Check(game.Haul is SupplyTrip, "the clay pit worker sends the trailer");
+            Check(game.Haul is { Works: not null }, "the clay pit worker sends the trailer");
             game.FinishInteraction();
             game.OpenChallenge(world.Village.Farmer);
             Check(
@@ -373,7 +373,10 @@ public partial class WorksChecks : Node
             car.SetPose(world.Ground.At(clayWorker.Position.X + 2, clayWorker.Position.Z, .15f), 0);
             game.OpenSource(clayWorker);
             game.BeginSupplyTrip();
-            Check(game.Haul is SupplyTrip && game.Delivery == null, "accepting a supply trip cancels the expedition");
+            Check(
+                game.Haul is { Works: not null } && game.Delivery == null,
+                "accepting a supply trip cancels the expedition"
+            );
             game.FinishInteraction();
             RoundTrip("supply trip under way");
 

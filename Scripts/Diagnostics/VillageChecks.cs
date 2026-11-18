@@ -82,7 +82,7 @@ public partial class VillageChecks : Node
             Check(game.Haul == null, $"{what}: no trip starts without goods");
             game.BeginMissingSupply();
             ChallengeChecks.Solve(game);
-            var fetch = game.Haul as SupplyTrip;
+            var fetch = game.Haul;
             Check(
                 fetch is { Loaded: false } && fetch.Works == works && trailer.Attached,
                 $"{what}: the resident sends the empty trailer for the raw material"
@@ -111,7 +111,7 @@ public partial class VillageChecks : Node
         );
         game.BeginHouseTrip();
         ChallengeChecks.Solve(game);
-        var trip = game.Haul as HouseTrip;
+        var trip = game.Haul;
         Check(
             trip is { Loaded: false } && trip.House == house && trip.Load == goods && trailer.Attached,
             $"{what}: the empty trailer is sent to the works"
@@ -126,7 +126,7 @@ public partial class VillageChecks : Node
         Check(
             game.State == GameState.HouseMaterialOffer
                 && !Has("StartHouseTrip")
-                && game.Haul is HouseTrip { House: var tripHouse }
+                && game.Haul is { House: var tripHouse }
                 && tripHouse == house,
             $"{what}: talking to the resident during the trip shows it and starts no second one"
         );
@@ -530,7 +530,7 @@ public partial class VillageChecks : Node
             );
             game.RestoreProgress(tripSave);
             Check(
-                game.Haul is HouseTrip { House: 1, Loaded: true }
+                game.Haul is { House: 1, Loaded: true }
                     && game.Trailer.Load == Village.MaterialOf(plan1[materialLevel]),
                 "a loaded house trip comes back with its load on the trailer"
             );

@@ -153,7 +153,7 @@ public partial class BuildChecks : Node
                 );
                 game.BeginBuildTrip();
                 ChallengeChecks.Solve(game);
-                var trip = game.Haul as BuildTrip;
+                var trip = game.Haul;
                 Check(
                     trip is { Loaded: false } && trip.Project == project && trip.Step == step && trailer.Attached,
                     $"delivery {step + 1} of the {name} sends the empty trailer"
@@ -241,7 +241,7 @@ public partial class BuildChecks : Node
             Check(Has("StartMissingSupply"), "the miller offers to send the player for the raw material");
             game.BeginMissingSupply();
             ChallengeChecks.Solve(game);
-            var fetch = game.Haul as SupplyTrip;
+            var fetch = game.Haul;
             Check(
                 fetch is { Loaded: false } && fetch.Works == needed && trailer.Attached,
                 "the miller sends the empty trailer for the material of the missing goods"
@@ -357,8 +357,14 @@ public partial class BuildChecks : Node
                 "a building with eleven deliveries"
             );
             Rejected(data => data.BuildStages = new[] { 0, 1 }, "progress for only two buildings");
-            Rejected(data => data.BuildTrip = BuildPlans.Count, "a trip for a fifth building");
-            Rejected(data => data.BuildTrip = BuildPlans.Mill, "a trip to a finished building");
+            Rejected(
+                data => data.Trip = new SavedTrip { Kind = TripKinds.Build, Index = BuildPlans.Count },
+                "a trip for a fifth building"
+            );
+            Rejected(
+                data => data.Trip = new SavedTrip { Kind = TripKinds.Build, Index = BuildPlans.Mill },
+                "a trip to a finished building"
+            );
             Rejected(
                 data =>
                 {

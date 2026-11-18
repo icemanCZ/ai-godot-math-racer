@@ -61,15 +61,15 @@ public partial class Game
             GolemOwned = GolemOwned,
             GolemActive = GolemActive,
             BuildStages = BuildStages(),
-            BuildTrip = (Haul as BuildTrip)?.Project.Index ?? -1,
-            BuildTripLoaded = Haul is BuildTrip { Loaded: true },
-            SupplyTrip = (Haul as SupplyTrip)?.WorksIndex ?? -1,
-            SupplyTripLoaded = Haul is SupplyTrip { Loaded: true },
-            HouseTrip = (Haul as HouseTrip)?.House ?? -1,
-            HouseTripLoaded = Haul is HouseTrip { Loaded: true },
+            Trip = Haul is { } haul
+                ? new SavedTrip
+                {
+                    Kind = haul.Target.Kind,
+                    Index = haul.Target.Index,
+                    Loaded = haul.Loaded,
+                }
+                : null,
             PlotStages = PlotStages(),
-            PlotTrip = (Haul as PlotTrip)?.Plot.Index ?? -1,
-            PlotTripLoaded = Haul is PlotTrip { Loaded: true },
             WorksStock = world.WorksStock(),
             TrailerOwned = TrailerOwned,
             TrailerAttached = trailerParade,

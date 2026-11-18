@@ -88,7 +88,7 @@ public partial class Game
     {
         if (ProjectOf(nearby) is not { } project)
             return;
-        var trip = Haul is BuildTrip current && current.Project == project ? current : null;
+        var trip = Haul != null && Haul.Project == project ? Haul : null;
         bool free = Haul == null && !project.Complete;
         bool ready = StepReady(project);
         ui.BuilderPanel(
@@ -117,11 +117,7 @@ public partial class Game
             AskBeforeDeparture(Departure.Build);
             return;
         }
-        CancelActiveTask();
-        StartHaul(new BuildTrip(world, vehicle, project, project.Stage, loaded: false));
-        Start();
-        Speak(TripInstruction(Haul!), project.Builder);
-        SaveProgress();
+        StartTrip(project);
     }
 
     private void StartHaul(HaulTrip trip)
@@ -245,26 +241,12 @@ public partial class Game
             vehicle.Active = true;
         if (Haul != trip)
             return;
-        switch (trip)
-        {
-            case BuildTrip buildTrip:
-                FinishBuildDump(buildTrip);
-                break;
-            case SupplyTrip supplyTrip:
-                FinishSupplyDump(supplyTrip);
-                break;
-            case HouseTrip houseTrip:
-                FinishHouseDump(houseTrip);
-                break;
-            case PlotTrip plotTrip:
-                FinishPlotDump(plotTrip);
-                break;
-        }
+        trip.Target.FinishDump(this, trip);
     }
 
-    private void FinishBuildDump(BuildTrip trip)
+    internal void FinishBuildDump(HaulTrip trip)
     {
-        var project = trip.Project;
+        var project = trip.Project!;
         project.SetStage(trip.Step + 1);
         project.Builder.Celebrate();
         if (project.Complete)
@@ -341,46 +323,39 @@ public partial class Game
         foreach (var works in world.Industry)
             works.SetStock(data.WorksStock[works.Site.Index]);
         world.Village.RestorePlots(data.PlotStages!);
-        if (data.BuildTrip >= 0 && data.BuildTrip < world.Projects.Length && !world.Projects[data.BuildTrip].Complete)
+        trailer.SetLoad(null);
+        if (data.Trip is { } saved && TripTarget(saved) is { } target)
         {
-            var project = world.Projects[data.BuildTrip];
-            trailer.SetLoad(null);
-            StartHaul(new BuildTrip(world, vehicle, project, project.Stage, data.BuildTripLoaded));
-            trailer.Snap();
-        }
-        else if (data.SupplyTrip >= 0 && data.SupplyTrip < world.Industry.Length)
-        {
-            trailer.SetLoad(null);
-            StartHaul(new SupplyTrip(world, vehicle, world.Industry[data.SupplyTrip], data.SupplyTripLoaded));
-            trailer.Snap();
-        }
-        else if (
-            data.PlotTrip >= 0
-            && data.PlotTrip < world.Village.BuildPlots.Count
-            && !world.Village.BuildPlots[data.PlotTrip].Complete
-        )
-        {
-            var plot = world.Village.BuildPlots[data.PlotTrip];
-            trailer.SetLoad(null);
-            StartHaul(new PlotTrip(world, vehicle, plot, plot.Stage, data.PlotTripLoaded));
-            trailer.Snap();
-        }
-        else if (
-            data.HouseTrip >= 0
-            && data.HouseTrip < world.Village.Residents.Count
-            && HouseMaterial(data.HouseTrip) is { } material
-        )
-        {
-            trailer.SetLoad(null);
-            StartHaul(new HouseTrip(world, vehicle, data.HouseTrip, material, data.HouseTripLoaded));
+            StartHaul(new HaulTrip(world, vehicle, target, target.NextStep, saved.Loaded));
             trailer.Snap();
         }
         else
-        {
-            trailer.SetLoad(null);
             trailer.Attach(trailerParade);
-        }
     }
+
+    /// <summary>
+    /// What a saved trip is for, or null when it no longer has a target that needs a delivery: a finished building or
+    /// plot, or a house that asks for something else now.
+    /// </summary>
+    private ITripTarget? TripTarget(SavedTrip saved) =>
+        saved.Kind switch
+        {
+            TripKinds.Build
+                when saved.Index >= 0 && saved.Index < world.Projects.Length && !world.Projects[saved.Index].Complete =>
+                world.Projects[saved.Index],
+            TripKinds.Supply when saved.Index >= 0 && saved.Index < world.Industry.Length => world.Industry[
+                saved.Index
+            ],
+            TripKinds.Plot
+                when saved.Index >= 0
+                    && saved.Index < world.Village.BuildPlots.Count
+                    && !world.Village.BuildPlots[saved.Index].Complete => world.Village.BuildPlots[saved.Index],
+            TripKinds.House
+                when saved.Index >= 0
+                    && saved.Index < world.Village.Residents.Count
+                    && HouseMaterial(saved.Index) is { } material => new HouseTripTarget(world, saved.Index, material),
+            _ => null,
+        };
 
     /// <summary>The deliveries made to each of the four buildings; zeros for buildings this valley lacks.</summary>
     private int[] BuildStages()
@@ -394,10 +369,10 @@ public partial class Game
     private static string TripInstruction(HaulTrip trip) =>
         trip switch
         {
-            BuildTrip { Loaded: true, FarBank: true } => "Teď odvez náklad na druhý břeh řeky. Přejeď po velkém mostě.",
-            BuildTrip { Loaded: true } => "Teď odvez náklad na stavbu a vysyp ho do žlutého kruhu.",
-            HouseTrip { Loaded: true } => "Teď odvez náklad před domeček a vysyp ho do žlutého kruhu.",
-            PlotTrip { Loaded: true } => "Teď odvez náklad na parcelu a vysyp ho do žlutého kruhu.",
+            { Loaded: true, FarBank: true } => "Teď odvez náklad na druhý břeh řeky. Přejeď po velkém mostě.",
+            { Loaded: true, Project: not null } => "Teď odvez náklad na stavbu a vysyp ho do žlutého kruhu.",
+            { Loaded: true, House: >= 0 } => "Teď odvez náklad před domeček a vysyp ho do žlutého kruhu.",
+            { Loaded: true, Plot: not null } => "Teď odvez náklad na parcelu a vysyp ho do žlutého kruhu.",
             { Loaded: true } => "Teď odvez náklad do žlutého kruhu před závodem.",
             _ => trip.Load switch
             {

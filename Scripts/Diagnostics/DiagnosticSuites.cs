@@ -94,7 +94,8 @@ internal static class DiagnosticSuites
         new("garage-checks", (g, w, v) => new GarageChecks(g, w, v), Seeds: Seed42),
         new("delivery-checks", (g, w, v) => new DeliveryChecks(g, w, v), Seeds: ThreeSeeds),
         new("road-audit", Seeds: new[] { 1, 2, 42, 44, 53, 7421 }, FixedFps: false),
-        // Tools that write the files in Tests; they are not part of the test run.
+        // Tools that are not part of the test run: they write the files in Tests, or look at one save file.
+        new("load-save-checks", (g, w, v) => new LoadSaveChecks(g, w, v), InSuite: false),
         new("save-fixtures", (g, w, v) => new SaveFixtures(g, w, v), InSuite: false),
         new("write-world-fingerprint", (g, w, v) => new WorldFingerprintWriter(w), NeedsStart: false, InSuite: false),
     };

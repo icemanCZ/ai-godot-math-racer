@@ -5,10 +5,11 @@ namespace MathRacer;
 
 /// <summary>
 /// One trailer trip: drive to a source, answer the loading question, then tip the load out at the drop
-/// point. The contractor (the beaver or a works' worker) asks the question and thanks the driver. Road
+/// point. The contractor (the beaver, a works' worker, a resident or a newcomer) asks the question and thanks the
+/// driver. What the trip is for, and what the finished delivery does, comes from its <see cref="Target"/>. Road
 /// arrows and the target ring belong to this node.
 /// </summary>
-public abstract partial class HaulTrip : Node3D
+public sealed partial class HaulTrip : Node3D
 {
     private readonly World world;
     private readonly RouteGuide guide;
@@ -16,8 +17,13 @@ public abstract partial class HaulTrip : Node3D
     private readonly Vector3 dropRoad;
     private Node3D? target;
 
+    internal ITripTarget Target { get; }
+
+    /// <summary>The delivery of the target this trip brings: its stage when the trip began, 0 where there are no steps.</summary>
+    internal int Step { get; }
+
     internal HaulLoad Load { get; }
-    internal Animal Contractor { get; }
+    internal Animal Contractor => Target.Contractor;
 
     /// <summary>The character who loads the cargo and asks the loading question: the source worker, else the contractor.</summary>
     internal Animal Asker => world.PickupActor(Load, Source) ?? Contractor;
@@ -32,30 +38,33 @@ public abstract partial class HaulTrip : Node3D
     internal Vector3 Waypoint => guide.Waypoint;
 
     /// <summary>Short text for the HUD, such as the number of the trip; empty when there is none.</summary>
-    internal virtual string Counter => "";
+    internal string Counter => Target.CounterFor(Step);
 
     /// <summary>Whether the loaded trailer is taken to the contractor (shown in the HUD) rather than elsewhere.</summary>
-    internal virtual bool DropsAtContractor => true;
+    internal bool DropsAtContractor => Target.DropsAtContractor(Step);
+
+    // What the kinds of trip hold, for the code that is about one of them.
+    internal BuildProject? Project => Target as BuildProject;
+    internal HousePlot? Plot => Target as HousePlot;
+    internal Works? Works => Target as Works;
+    internal int House => Target is HouseTripTarget house ? house.House : -1;
+
+    /// <summary>The delivery of a building goes to the far bank of the river.</summary>
+    internal bool FarBank => Project is { } project && project.Steps[Step].FarBank;
 
     private Vector3 RoadApproach => !Loaded ? Source.Road : dropRoad;
 
-    private protected HaulTrip(
-        World world,
-        Vehicle car,
-        HaulLoad load,
-        Vector3 dropPoint,
-        Vector3 dropRoad,
-        Animal contractor,
-        bool loaded
-    )
+    internal HaulTrip(World world, Vehicle car, ITripTarget target, int step, bool loaded)
     {
         this.world = world;
-        this.dropPoint = dropPoint;
-        this.dropRoad = dropRoad;
-        Load = load;
-        Source = world.NearestSource(load, car.Position);
-        Contractor = contractor;
+        Target = target;
+        Step = step;
+        Load = target.LoadFor(step);
+        dropPoint = target.DropFor(step);
+        dropRoad = target.DropRoadFor(step);
+        Source = world.NearestSource(Load, car.Position);
         Loaded = loaded;
+        Name = char.ToUpperInvariant(target.Kind[0]) + target.Kind[1..] + "Trip";
         guide = new RouteGuide(world, car, this, () => Destination);
         guide.Retarget(RoadApproach);
     }
@@ -111,84 +120,5 @@ public abstract partial class HaulTrip : Node3D
             return;
         var p = Destination;
         target.Position = new Vector3(p.X, world.Ground.Height(p.X, p.Z), p.Z);
-    }
-}
-
-/// <summary>One of the ten deliveries to a building.</summary>
-public partial class BuildTrip : HaulTrip
-{
-    internal BuildProject Project { get; }
-    internal int Step { get; }
-    internal bool FarBank => Project.Steps[Step].FarBank;
-
-    internal override string Counter => $"{Step + 1} / {BuildProject.Trips}";
-    internal override bool DropsAtContractor => !FarBank;
-
-    internal BuildTrip(World world, Vehicle car, BuildProject project, int step, bool loaded)
-        : base(
-            world,
-            car,
-            project.Steps[step].Cargo,
-            project.DropFor(step),
-            project.DropRoadFor(step),
-            project.Builder,
-            loaded
-        )
-    {
-        Project = project;
-        Step = step;
-        Name = "BuildTrip";
-    }
-}
-
-/// <summary>Planks or bricks that a village resident wants for the next improvement of their house.</summary>
-public partial class HouseTrip : HaulTrip
-{
-    internal int House { get; }
-
-    internal HouseTrip(World world, Vehicle car, int house, HaulLoad load, bool loaded)
-        : base(
-            world,
-            car,
-            load,
-            world.Village.HouseDrop(house),
-            world.Village.HouseDrop(house),
-            world.Village.Residents[house],
-            loaded
-        )
-    {
-        House = house;
-        Name = "HouseTrip";
-    }
-}
-
-/// <summary>One of the six deliveries of goods to a building plot, tipped out on the ring in front of its lot.</summary>
-public partial class PlotTrip : HaulTrip
-{
-    internal HousePlot Plot { get; }
-    internal int Step { get; }
-
-    internal override string Counter => $"{Step + 1} / {HousePlot.Trips}";
-
-    internal PlotTrip(World world, Vehicle car, HousePlot plot, int step, bool loaded)
-        : base(world, car, PlotPlans.CargoOf(step), plot.Drop, plot.Road, plot.Resident, loaded)
-    {
-        Plot = plot;
-        Step = step;
-        Name = "PlotTrip";
-    }
-}
-
-/// <summary>Raw material for a works: logs, soil or stones, hauled to its ring and turned into stock.</summary>
-public partial class SupplyTrip : HaulTrip
-{
-    internal Works Works { get; }
-    internal int WorksIndex => Works.Site.Index;
-
-    internal SupplyTrip(World world, Vehicle car, Works works, bool loaded)
-        : base(world, car, works.Spec.Input, works.Site.Position, works.Site.Road, works.Worker, loaded)
-    {
-        Works = works;
-        Name = "SupplyTrip";
     }
 }

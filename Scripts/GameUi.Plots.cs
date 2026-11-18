@@ -18,7 +18,7 @@ public partial class GameUi
     /// play button, the trip under way, or, when the goods for the next delivery are not made yet, the raw material
     /// that the works needs.
     /// </summary>
-    internal void PlotPanel(Animal resident, HousePlot plot, PlotTrip? trip, bool canStart, Works? missing)
+    internal void PlotPanel(Animal resident, HousePlot plot, HaulTrip? trip, bool canStart, Works? missing)
     {
         Clear();
         Text(resident.DisplayName, 30);

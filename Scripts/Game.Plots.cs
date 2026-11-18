@@ -14,7 +14,7 @@ public partial class Game
 
     private HousePlot? PlotOf(Animal? actor) => (actor?.Role as PlotResidentRole)?.Plot;
 
-    private PlotTrip? TripOf(HousePlot plot) => Haul is PlotTrip trip && trip.Plot == plot ? trip : null;
+    private HaulTrip? TripOf(HousePlot plot) => Haul != null && Haul.Plot == plot ? Haul : null;
 
     /// <summary>The goods the plot's next delivery needs, or null once the house is finished.</summary>
     private static HaulLoad? NextLoad(HousePlot plot) => plot.Complete ? null : PlotPlans.CargoOf(plot.Stage);
@@ -77,17 +77,13 @@ public partial class Game
             AskBeforeDeparture(Departure.Plot);
             return;
         }
-        CancelActiveTask();
-        StartHaul(new PlotTrip(world, vehicle, plot, plot.Stage, loaded: false));
-        Start();
-        Speak(TripInstruction(Haul!), plot.Resident);
-        SaveProgress();
+        StartTrip(plot);
     }
 
     /// <summary>The load is tipped out on the plot: the house rises another stage, the last one lets the newcomer in.</summary>
-    private void FinishPlotDump(PlotTrip trip)
+    internal void FinishPlotDump(HaulTrip trip)
     {
-        var plot = trip.Plot;
+        var plot = trip.Plot!;
         plot.SetStage(trip.Step + 1, walkIn: true);
         plot.Resident.Celebrate();
         if (plot.Complete)

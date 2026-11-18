@@ -14,7 +14,11 @@ internal static class SaveFixtureFiles
     /// <summary>Saves written by the game itself; they are never edited or regenerated (see Tests/Saves/README.md).</summary>
     internal static string Root => ProjectSettings.GlobalizePath("res://Tests/Saves");
 
-    internal const string CurrentFolder = "v3";
+    /// <summary>The folder of the format the game writes now; the folders of older formats stay as they are.</summary>
+    internal const string CurrentFolder = "v4";
+
+    /// <summary>One folder for each version of the save format that fixtures were made with.</summary>
+    internal static readonly string[] Folders = { "v3", "v4" };
 
     /// <summary>The seed every fixture was made with.</summary>
     internal const int Seed = 42;
@@ -327,7 +331,7 @@ public partial class SaveFixtures : Node
         Require(game.State == GameState.Challenge, "a quiz comes before the trip");
         Save("quiz-before-build-trip");
         ChallengeChecks.Solve(game);
-        Require(game.Haul is BuildTrip { Loaded: false }, "the trip starts empty");
+        Require(game.Haul is { Project: not null, Loaded: false }, "the trip starts empty");
         Save("build-trip-empty");
         DriveTo(game.Haul!.Source.Position);
         Require(game.State == GameState.Challenge, "arriving at the source asks the loading question");
@@ -419,7 +423,7 @@ public partial class SaveFixtures : Node
         Save("source-panel");
         game.BeginSupplyTrip();
         Require(
-            game.Haul is SupplyTrip { Loaded: false } && game.State == GameState.Challenge,
+            game.Haul is { Works: not null, Loaded: false } && game.State == GameState.Challenge,
             "the loading question comes at once"
         );
         Save("supply-loading-question");
@@ -427,7 +431,7 @@ public partial class SaveFixtures : Node
         car.SetPose(world.Village.Center + Vector3.Right * 30, 0);
         Frames(2);
         Require(
-            game.Haul is SupplyTrip { Loaded: false } && game.State == GameState.Exploring,
+            game.Haul is { Works: not null, Loaded: false } && game.State == GameState.Exploring,
             "the empty trip goes on"
         );
         Save("supply-trip-empty");
@@ -469,7 +473,7 @@ public partial class SaveFixtures : Node
         Save("house-material-panel");
         game.BeginHouseTrip();
         ChallengeChecks.Solve(game);
-        Require(game.Haul is HouseTrip { Loaded: false }, "the house trip starts empty");
+        Require(game.Haul is { House: >= 0, Loaded: false }, "the house trip starts empty");
         Save("house-trip-empty");
         DriveTo(game.Haul!.Source.Position);
         ChallengeChecks.Solve(game);
@@ -487,7 +491,7 @@ public partial class SaveFixtures : Node
             Save("plot-panel");
         game.BeginPlotTrip();
         ChallengeChecks.Solve(game);
-        Require(game.Haul is PlotTrip { Loaded: false }, "the plot trip starts empty");
+        Require(game.Haul is { Plot: not null, Loaded: false }, "the plot trip starts empty");
         if (save && plot.Index == 0 && plot.Stage == 0)
             Save("plot-trip-empty");
         DriveTo(game.Haul!.Source.Position);
@@ -589,6 +593,7 @@ public partial class SaveFixtureChecks : Node
     private readonly World world;
     private readonly Vehicle car;
     private SaveData baseline = null!;
+    private int savedFiles;
 
     public SaveFixtureChecks(Game game, World world, Vehicle car)
     {
@@ -622,7 +627,11 @@ public partial class SaveFixtureChecks : Node
             await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
             baseline = game.CaptureProgress();
             var missing = SaveFixtureFiles
-                .Required.Where(name => !File.Exists(SaveFixtureFiles.Path(SaveFixtureFiles.CurrentFolder, name)))
+                .Folders.SelectMany(folder =>
+                    SaveFixtureFiles
+                        .Required.Where(name => !File.Exists(SaveFixtureFiles.Path(folder, name)))
+                        .Select(name => folder + "/" + name)
+                )
                 .ToList();
             Check(
                 missing.Count == 0,
@@ -643,7 +652,10 @@ public partial class SaveFixtureChecks : Node
                 used++;
                 await Continue(name, data);
             }
-            Check(used >= SaveFixtureFiles.Required.Length, $"{used} fixtures of seed {Settings.Seed} were checked");
+            Check(
+                used >= SaveFixtureFiles.Required.Length * SaveFixtureFiles.Folders.Length,
+                $"{used} fixtures of seed {Settings.Seed} were checked"
+            );
             GD.Print("SAVE_FIXTURE_CHECKS_PASSED");
             GetTree().Quit();
         }
@@ -661,7 +673,7 @@ public partial class SaveFixtureChecks : Node
         {
             var copy = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(data))!;
             damage(copy);
-            string path = DiagnosticArtifacts.PathFor("save-fixture-checks/damaged-departure.json");
+            string path = DiagnosticArtifacts.PathFor($"save-fixture-checks/damaged-departure-{savedFiles++}.json");
             Check(SaveStore.Write(copy, path) && SaveStore.Read(path) == null, $"a save is rejected: {what}");
         }
         Rejected(save => save.Departure = 99, "a trip that does not exist waits for the quiz");
@@ -678,10 +690,76 @@ public partial class SaveFixtureChecks : Node
         Rejected(save => save.HandoverQuiz = true, "a trip waits for a handover quiz");
     }
 
+    /// <summary>
+    /// The trip of a save is one object of a kind that exists, for a target that needs a delivery, and a save of
+    /// the older format with a pair of fields for each kind of trip still loads into it.
+    /// </summary>
+    private void CheckTripSaves(SaveData data)
+    {
+        var trip = data.Trip!;
+        SaveData Copy() => JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(data))!;
+        SaveData? Reloaded(SaveData copy)
+        {
+            // A file of its own each time: a damaged file would fall back to the backup of the one before.
+            string path = DiagnosticArtifacts.PathFor($"save-fixture-checks/trip-save-{savedFiles++}.json");
+            return SaveStore.Write(copy, path) ? SaveStore.Read(path) : null;
+        }
+        void Rejected(Action<SaveData> damage, string what)
+        {
+            var copy = Copy();
+            damage(copy);
+            Check(Reloaded(copy) == null, $"a save is rejected: {what}");
+        }
+        Rejected(
+            save => save.Trip = new SavedTrip { Kind = "bogus", Index = 0 },
+            "a trip of a kind that does not exist"
+        );
+        Rejected(save => save.Trip!.Index = BuildPlans.Count, "a trip to a fifth building");
+        Rejected(save => save.Trip!.Index = -1, "a trip to no building");
+        Rejected(save => save.Sender = 3, "a trip together with an expedition");
+
+        // A save of version 3 has a pair of fields for each kind of trip.
+        var old = Copy();
+        old.Version = 3;
+        old.Trip = null;
+        old.BuildTrip = trip.Index;
+        old.BuildTripLoaded = trip.Loaded;
+        var migrated = Reloaded(old);
+        Check(
+            migrated is { Version: SaveData.CurrentVersion, Trip: { } moved, BuildTrip: null, BuildTripLoaded: null }
+                && moved.Kind == trip.Kind
+                && moved.Index == trip.Index
+                && moved.Loaded == trip.Loaded,
+            "a version 3 save with a building trip migrates to Trip"
+        );
+        Check(
+            migrated != null && !JsonSerializer.Serialize(migrated).Contains("\"BuildTrip\""),
+            "a migrated save is written without the old trip fields"
+        );
+        var two = Copy();
+        two.Version = 3;
+        two.Trip = null;
+        two.BuildTrip = trip.Index;
+        two.SupplyTrip = 0;
+        Check(Reloaded(two) == null, "a version 3 save with two trips is rejected");
+        var loadedWithoutTrip = Copy();
+        loadedWithoutTrip.Version = 3;
+        loadedWithoutTrip.Trip = null;
+        loadedWithoutTrip.PlotTripLoaded = true;
+        Check(Reloaded(loadedWithoutTrip) == null, "a version 3 save with a loaded trailer and no trip is rejected");
+        var invalidNumber = Copy();
+        invalidNumber.Version = 3;
+        invalidNumber.Trip = null;
+        invalidNumber.HouseTrip = -2;
+        Check(Reloaded(invalidNumber) == null, "a version 3 save with a trip number below -1 is rejected");
+    }
+
     private async Task Continue(string name, SaveData data)
     {
         if (name.EndsWith("quiz-before-build-trip"))
             RejectDamagedDepartures(data);
+        if (name.EndsWith("/build-trip-loaded"))
+            CheckTripSaves(data);
         game.RestoreProgress(baseline);
         game.RestoreProgress(data);
         Check(
@@ -712,10 +790,10 @@ public partial class SaveFixtureChecks : Node
         // A quiz that was open before a trip still starts the trip once it is solved.
         bool? started = name[(name.LastIndexOf('/') + 1)..] switch
         {
-            "quiz-before-build-trip" => game.Haul is BuildTrip { Loaded: false },
-            "quiz-before-plot-trip" => game.Haul is PlotTrip { Loaded: false },
-            "quiz-before-house-trip" => game.Haul is HouseTrip { Loaded: false },
-            "quiz-before-missing-supply" => game.Haul is SupplyTrip { Loaded: false },
+            "quiz-before-build-trip" => game.Haul is { Project: not null, Loaded: false },
+            "quiz-before-plot-trip" => game.Haul is { Plot: not null, Loaded: false },
+            "quiz-before-house-trip" => game.Haul is { House: >= 0, Loaded: false },
+            "quiz-before-missing-supply" => game.Haul is { Works: not null, Loaded: false },
             "quiz-before-golem-trip" => game.Delivery is { Golem: true },
             "quiz-before-fruit-trip" => game.Delivery is { Collection: true, Golem: false },
             _ => null,
