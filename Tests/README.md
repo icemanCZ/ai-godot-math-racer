@@ -40,3 +40,6 @@ games. The files were made by the code before the refactoring.
   `Game.ShowPanel` has a panel for every interaction state.
 - `--save-checks`: round trips, migrations from versions 1 and 2, damaged files, and the copies that the game
   keeps of a save it cannot load or one from an older version (`progress.vN.bak`, `progress.nenacteno-HASH.json`).
+- `--unit-checks`: about a second, no valley is generated. Every committed save of every version loads and round trips
+  (a v5 file is exactly what the game writes, a v4 file loses no field), 16 damaged saves are refused, every kind of question
+  has the right number of right answers and the same questions for one seed, and the actor ID ranges do not overlap.

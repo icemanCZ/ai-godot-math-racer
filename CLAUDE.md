@@ -51,3 +51,8 @@ game. Details are in `Tests/README.md` and `docs/REFACTORING_PLAN.md`.
   `Game` forwards to them. New per-frame work is registered in `Game.Systems.cs`, a new interaction state registers its
   panel in `Game.Panels.cs`, a new character is a role in `ActorRoles.cs` with its ID in `ActorIds.cs`, and a new kind of
   trailer trip is an `ITripTarget` (`TripTarget.cs`).
+- A new button in a panel is a record in `UiIntent.cs` and a case in `Game.HandleIntent` (`Game.Intents.cs`); `GameUi` has one
+  event, `Intended`, and no panel calls the game. A fixed Czech text goes into `Texts.cs`. A distance that places something in
+  the valley is named in `WorldTuning` and changing it moves objects, so the world fingerprints fail on purpose.
+- `unit-checks` (about a second, no valley) reads every committed save and the question generators; run it first
+  (`./test.ps1 -Suite unit`) after touching saves or questions.
