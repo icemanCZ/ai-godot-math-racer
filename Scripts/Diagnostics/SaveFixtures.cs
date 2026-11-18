@@ -159,7 +159,7 @@ public partial class SaveFixtures : Node
 
     private void DriveTo(Vector3 point) => TripDriver.DriveTo(game, world, car, point);
 
-    private void Near(Animal actor) => car.SetPose(world.Ground.At(actor.Position.X + 2, actor.Position.Z, .15f), 0);
+    private void Near(Character actor) => car.SetPose(world.Ground.At(actor.Position.X + 2, actor.Position.Z, .15f), 0);
 
     private void Reset() => game.RestoreProgress(baseline);
 

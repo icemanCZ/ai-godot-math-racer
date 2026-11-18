@@ -133,7 +133,7 @@ public partial class Village
         Path(plot.Drop, road, 3.4f);
         plot.WaitSpot = ApproachSpot(plot.WaitSpot);
         plot.HomeSpot = ApproachSpot(plot.HomeSpot);
-        var resident = Animal.Create(CharacterCatalog.PlotResidents[index]);
+        var resident = Character.Create(CharacterCatalog.PlotResidents[index]);
         resident.Role = new PlotResidentRole(plot);
         AddChild(resident);
         resident.Rotation = new Vector3(0, plot.Rotation.Y, 0);

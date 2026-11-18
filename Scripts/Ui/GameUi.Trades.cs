@@ -6,14 +6,14 @@ namespace MathRacer.Ui;
 
 public partial class GameUi
 {
-    public void TradeHint(Animal owner)
+    public void TradeHint(Character owner)
     {
         talkButton.Visible = !modal.Visible;
         talkButton.Text =
             (controller ? "A · " : "E · ") + (owner.Role is TraderRole shop ? Village.TradeSigns[shop.Index] : "");
     }
 
-    public void TradeStatus(Animal owner, Expedition? expedition)
+    public void TradeStatus(Character owner, Expedition? expedition)
     {
         Clear();
         Text(owner.DisplayName, 30);

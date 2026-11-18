@@ -77,7 +77,7 @@ public partial class PlotChecks : Node
                 string file = DiagnosticArtifacts.PathFor($"plot-checks/invalid-{invalidFiles++}.json");
                 Check(SaveStore.Write(data, file) && SaveStore.Read(file) == null, $"rejected: {what}");
             }
-            void Near(Animal resident)
+            void Near(Character resident)
             {
                 car.SetPose(world.Ground.At(resident.Position.X + 2, resident.Position.Z, .15f), 0);
             }

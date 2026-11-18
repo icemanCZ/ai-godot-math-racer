@@ -14,11 +14,11 @@ namespace MathRacer.App;
 /// </summary>
 public partial class Game
 {
-    private Works? WorksOf(Animal? actor) =>
+    private Works? WorksOf(Character? actor) =>
         actor?.Role is WorksRole role && role.Index < world.Industry.Length ? world.Industry[role.Index] : null;
 
     /// <summary>The works that a source worker supplies.</summary>
-    private Works? WorksOfSource(Animal? actor)
+    private Works? WorksOfSource(Character? actor)
     {
         if (actor?.Role is not SourceRole role)
             return null;
@@ -26,7 +26,7 @@ public partial class Game
         return index >= 0 && index < world.Industry.Length ? world.Industry[index] : null;
     }
 
-    internal void OpenWorks(Animal worker)
+    internal void OpenWorks(Character worker)
     {
         if (WorksOf(worker) is not { } works)
             return;
@@ -42,7 +42,7 @@ public partial class Game
             ui.WorksPanel(nearby!, works, Haul, canStart: false);
     }
 
-    internal void OpenSource(Animal worker)
+    internal void OpenSource(Character worker)
     {
         // The sand pit's worker has no works to supply: he only greets the driver.
         if (worker.Role is SourceRole { Load: HaulLoad.Sand })
@@ -89,7 +89,7 @@ public partial class Game
     private void BeginMissingSupply(bool quizzed)
     {
         Works works;
-        Animal asker;
+        Character asker;
         if (State == GameState.BuildStatus)
         {
             if (

@@ -11,7 +11,7 @@ public sealed partial class HousePlot : ITripTarget
 {
     string ITripTarget.Kind => TripKinds.Plot;
     int ITripTarget.Index => Index;
-    Animal ITripTarget.Contractor => Resident;
+    Character ITripTarget.Contractor => Resident;
     int ITripTarget.NextStep => Stage;
 
     HaulLoad ITripTarget.LoadFor(int step) => PlotPlans.CargoOf(step);

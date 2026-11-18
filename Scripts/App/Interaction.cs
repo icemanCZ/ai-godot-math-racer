@@ -15,7 +15,7 @@ internal sealed class Interaction
     public GameState BeforePause { get; set; }
 
     /// <summary>The character the player is talking to or is next to.</summary>
-    public Animal? Nearby { get; set; }
+    public Character? Nearby { get; set; }
 
     /// <summary>The state a save records: the one before a pause, since a pause is never saved.</summary>
     public GameState Resting => State == GameState.Paused ? BeforePause : State;
@@ -25,7 +25,7 @@ internal sealed class Interaction
         state is not (GameState.Title or GameState.Exploring or GameState.Paused);
 
     /// <summary>Switches to an interaction state, with the character it is about when there is one.</summary>
-    public void Enter(GameState state, Animal? actor = null)
+    public void Enter(GameState state, Character? actor = null)
     {
         if (actor != null)
             Nearby = actor;

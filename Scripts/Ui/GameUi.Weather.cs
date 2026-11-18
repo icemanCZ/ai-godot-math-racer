@@ -12,7 +12,7 @@ public partial class GameUi
         talkButton.Text = controller ? "A · Čarodějnice" : "E · Čarodějnice";
     }
 
-    internal void WeatherChoice(Animal witch, Action<WeatherKind> select)
+    internal void WeatherChoice(Character witch, Action<WeatherKind> select)
     {
         Clear();
         Text(witch.DisplayName, 30);

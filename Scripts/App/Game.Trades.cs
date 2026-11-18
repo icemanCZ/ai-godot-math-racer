@@ -4,7 +4,7 @@ namespace MathRacer.App;
 
 public partial class Game
 {
-    internal void OpenTrade(Animal owner)
+    internal void OpenTrade(Character owner)
     {
         nearby = owner;
         ClearChallenge();

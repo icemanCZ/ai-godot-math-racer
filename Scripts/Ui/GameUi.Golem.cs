@@ -14,7 +14,7 @@ public partial class GameUi
         talkButton.Text = controller ? "A · Černokněžník" : "E · Černokněžník";
     }
 
-    internal void Sorcerer(Animal sorcerer, Expedition? delivery, bool owned)
+    internal void Sorcerer(Character sorcerer, Expedition? delivery, bool owned)
     {
         Clear();
         Text(sorcerer.DisplayName, 30);

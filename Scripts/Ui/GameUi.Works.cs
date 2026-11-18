@@ -37,7 +37,7 @@ public partial class GameUi
     /// shows the stock and, at the source, the play button sends the trailer. The button is missing while another
     /// trailer trip is under way and when the stock is full.
     /// </summary>
-    internal void WorksPanel(Animal speaker, Works works, HaulTrip? trip, bool canStart)
+    internal void WorksPanel(Character speaker, Works works, HaulTrip? trip, bool canStart)
     {
         var spec = works.Spec;
         Clear();

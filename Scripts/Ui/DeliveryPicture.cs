@@ -8,7 +8,7 @@ namespace MathRacer.Ui;
 public partial class DeliveryPicture : Control
 {
     public string Icon { get; init; } = "";
-    public Animal? Animal { get; init; }
+    public Character? Character { get; init; }
     public int Count { get; init; } = 1;
     public int FilledCount { get; set; } = -1;
     public float Direction { get; set; }
@@ -39,15 +39,15 @@ public partial class DeliveryPicture : Control
         DrawSetTransform((Size - new Vector2(180, 150) * scale) / 2, 0, Vector2.One * scale);
         Color ink = new("3c5960"),
             green = new("70b765");
-        if (Animal != null)
+        if (Character != null)
         {
-            var fur = new Color(Animal.FurColor);
+            var fur = new Color(Character.FurColor);
             foreach (int sign in new[] { -1, 1 })
             {
-                Oval(new(90 + sign * 31, Animal.Kind == 0 ? 35 : 48), new(17, Animal.Kind == 0 ? 33 : 20), fur);
+                Oval(new(90 + sign * 31, Character.Kind == 0 ? 35 : 48), new(17, Character.Kind == 0 ? 33 : 20), fur);
                 Oval(
-                    new(90 + sign * 31, Animal.Kind == 0 ? 35 : 48),
-                    new(8, Animal.Kind == 0 ? 23 : 10),
+                    new(90 + sign * 31, Character.Kind == 0 ? 35 : 48),
+                    new(8, Character.Kind == 0 ? 23 : 10),
                     new("eab4ad")
                 );
             }

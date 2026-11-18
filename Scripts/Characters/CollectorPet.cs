@@ -29,7 +29,7 @@ internal sealed partial class CollectorPet : Node3D
     private float phase;
 
     internal CollectorPetKind Kind { get; }
-    internal Animal Collector { get; }
+    internal Character Collector { get; }
     internal string DisplayName { get; }
     internal string RewardHint => $"Odměna za všech {Goal}: {DisplayName}.";
     internal int Goal { get; }
@@ -51,7 +51,7 @@ internal sealed partial class CollectorPet : Node3D
     /// A collector's pet counts the collector's collection. The duck instead counts the deliveries made to the jetty
     /// through <paramref name="count"/> and belongs to <paramref name="owner"/>, the fisherman.
     /// </summary>
-    internal CollectorPet(CollectorPetKind kind, Village village, Func<int>? count = null, Animal? owner = null)
+    internal CollectorPet(CollectorPetKind kind, Village village, Func<int>? count = null, Character? owner = null)
     {
         this.village = village;
         externalCount = count;

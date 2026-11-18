@@ -17,7 +17,7 @@ public partial class Game
         ui.Challenge(CurrentChallenge!, quiz.Rejected, quiz.Selection, InBanditQuiz ? banditSolved + 1 : 0);
     }
 
-    internal void OpenHouse(Animal resident)
+    internal void OpenHouse(Character resident)
     {
         int house = ((HouseResidentRole)resident.Role).House;
         if (Delivery?.Sender == resident)
@@ -65,7 +65,7 @@ public partial class Game
             ? null
             : Village.MaterialOf(world.Village.TaskAt(house));
 
-    private HaulTrip? TripOf(Animal resident) =>
+    private HaulTrip? TripOf(Character resident) =>
         Haul is { House: >= 0 } trip && trip.Contractor == resident ? trip : null;
 
     /// <summary>Shows what the resident wants and the way to fetch it: the trip, the play button or the missing raw material.</summary>
@@ -91,7 +91,7 @@ public partial class Game
         return true;
     }
 
-    private void SpeakHouseMaterial(Animal resident)
+    private void SpeakHouseMaterial(Character resident)
     {
         var load = HouseMaterial(((HouseResidentRole)resident.Role).House)!.Value;
         var works = GoodsWorks(load)!;
@@ -135,7 +135,7 @@ public partial class Game
         SaveProgress();
     }
 
-    internal void CompleteHouseQuiz(Animal resident)
+    internal void CompleteHouseQuiz(Character resident)
     {
         CompleteHouseTask(resident);
         SaveProgress();
@@ -154,7 +154,7 @@ public partial class Game
         BeginQuiz();
     }
 
-    private void CompleteHouseTask(Animal owner)
+    private void CompleteHouseTask(Character owner)
     {
         int house = ((HouseResidentRole)owner.Role).House;
         world.Village.Upgrade(house);

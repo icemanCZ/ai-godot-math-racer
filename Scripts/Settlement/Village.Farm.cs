@@ -39,7 +39,7 @@ public partial class Village
         "lišku Ryšku",
         "srnku Hvězdičku",
     };
-    public Animal Farmer { get; private set; } = null!;
+    public Character Farmer { get; private set; } = null!;
     public Node3D FarmBuilding { get; private set; } = null!;
     public int FarmCount => farmAnimals.Count;
     private Transform3D farmPlot;
@@ -66,7 +66,7 @@ public partial class Village
         }
         Art.Sign(FarmBuilding, new(0, 4.1f, 3.7f), "FARMA", 42);
         farmProgress = Art.Sign(FarmBuilding, new(11.5f, 3.8f, 0), $"Zvířátka: 0 / {FarmKinds.Length}", 28);
-        Farmer = Animal.Create("Farmář Tonda", "Pomůžeš mi najít zvířátka pro naši farmu?", 2, "c5a170");
+        Farmer = Character.Create("Farmář Tonda", "Pomůžeš mi najít zvířátka pro naši farmu?", 2, "c5a170");
         Farmer.Role = new FarmerRole();
         AddChild(Farmer);
         var spot = farmPlot * new Vector3(-1.8f, 0, 6.1f);

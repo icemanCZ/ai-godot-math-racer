@@ -34,7 +34,7 @@ internal interface ITripTarget
     int Index { get; }
 
     /// <summary>The character who sends the trailer and thanks the driver.</summary>
-    Animal Contractor { get; }
+    Character Contractor { get; }
 
     /// <summary>The delivery a trip started now brings: the stage of a building or plot, 0 for the others.</summary>
     int NextStep { get; }
@@ -74,7 +74,7 @@ internal sealed class HouseTripTarget : ITripTarget
 
     public string Kind => TripKinds.House;
     public int Index => House;
-    public Animal Contractor => world.Village.Residents[House];
+    public Character Contractor => world.Village.Residents[House];
     public int NextStep => 0;
 
     public HaulLoad LoadFor(int step) => load;

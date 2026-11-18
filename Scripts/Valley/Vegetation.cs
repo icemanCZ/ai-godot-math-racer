@@ -54,7 +54,7 @@ public partial class Vegetation : Node3D
         Terrain terrain,
         Roads roads,
         Village village,
-        Animal[] animals,
+        Character[] animals,
         System.Func<Vector3, bool> pickupReserved
     )
     {

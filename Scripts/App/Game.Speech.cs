@@ -14,7 +14,7 @@ public partial class Game
 
     private void Speak(string text) => Speak(text, null);
 
-    private void Speak(string text, Animal? speaker)
+    private void Speak(string text, Character? speaker)
     {
         if (!DisplayServer.HasFeature(DisplayServer.Feature.TextToSpeech))
             return;
@@ -43,7 +43,7 @@ public partial class Game
             DisplayServer.TtsStop();
     }
 
-    private static string QuizInstruction(Animal actor, IChallenge question)
+    private static string QuizInstruction(Character actor, IChallenge question)
     {
         string instruction = question switch
         {

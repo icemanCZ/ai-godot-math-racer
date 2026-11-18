@@ -39,7 +39,7 @@ public partial class Game
             ShowPanel(State, returned: true);
     }
 
-    private void CelebrateCompletion(Animal owner, string message, bool unload = false, Node3D? building = null)
+    private void CelebrateCompletion(Character owner, string message, bool unload = false, Node3D? building = null)
     {
         owner.Celebrate();
         var position =

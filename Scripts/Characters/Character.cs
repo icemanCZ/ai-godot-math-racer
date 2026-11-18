@@ -4,7 +4,7 @@ using MathRacer.Ui;
 
 namespace MathRacer.Characters;
 
-public partial class Animal : Node3D
+public partial class Character : Node3D
 {
     /// <summary>Assigned before the character enters the scene; roadside friends keep the default.</summary>
     internal ActorRole Role { get; set; } = RoadsideFriendRole.Instance;
@@ -82,11 +82,11 @@ public partial class Animal : Node3D
         taskMarker.Visible = available;
     }
 
-    internal static Animal Create(CharacterSpec spec) => Create(spec.Name, spec.Greeting, spec.Kind, spec.Fur);
+    internal static Character Create(CharacterSpec spec) => Create(spec.Name, spec.Greeting, spec.Kind, spec.Fur);
 
-    public static Animal Create(string name, string greeting, int kind, string? furColor = null)
+    public static Character Create(string name, string greeting, int kind, string? furColor = null)
     {
-        var a = new Animal { DisplayName = name, Greeting = greeting };
+        var a = new Character { DisplayName = name, Greeting = greeting };
         a.model = new Node3D();
         a.AddChild(a.model);
         string color = furColor

@@ -48,7 +48,7 @@ public sealed partial class HousePlot : Node3D
     public bool Complete => Stage >= Trips;
 
     /// <summary>The newcomer who waits on the lot and moves into the finished house.</summary>
-    internal Animal Resident { get; set; } = null!;
+    internal Character Resident { get; set; } = null!;
 
     /// <summary>The road point from which the way to the lot starts.</summary>
     internal Vector3 Road { get; }

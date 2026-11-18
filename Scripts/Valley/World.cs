@@ -27,7 +27,7 @@ public partial class World : Node3D
 
     internal static bool IsPlotResident(int id) => id is >= FirstPlotResidentId and <= LastPlotResidentId;
 
-    private readonly SortedList<int, Animal> actors = new();
+    private readonly SortedList<int, Character> actors = new();
     public Terrain Ground { get; } = new();
     public Roads Routes { get; private set; } = new();
     public Village Village { get; private set; } = new();
@@ -35,11 +35,11 @@ public partial class World : Node3D
     public Grass Grass { get; } = new();
     public Wildlife Wildlife { get; } = new();
     internal Atmosphere Atmosphere { get; } = new();
-    internal Animal Witch { get; private set; } = null!;
-    internal Animal Sorcerer { get; private set; } = null!;
+    internal Character Witch { get; private set; } = null!;
+    internal Character Sorcerer { get; private set; } = null!;
     internal Node3D Tower { get; private set; } = null!;
-    public Animal[] Animals { get; private set; } = System.Array.Empty<Animal>();
-    internal IEnumerable<Animal> InteractionActors => actors.Values;
+    public Character[] Animals { get; private set; } = System.Array.Empty<Character>();
+    internal IEnumerable<Character> InteractionActors => actors.Values;
     internal Vector3[] SpecialPickupSpots { get; private set; } = System.Array.Empty<Vector3>();
 
     public void Generate()
@@ -64,10 +64,10 @@ public partial class World : Node3D
         }
         PlaceWitch();
         PlaceSorcerer();
-        var animals = new List<Animal>();
+        var animals = new List<Character>();
         foreach (var spec in CharacterCatalog.RoadsideFriends)
         {
-            var animal = Animal.Create(spec);
+            var animal = Character.Create(spec);
             AddChild(animal);
             animals.Add(animal);
         }
@@ -111,7 +111,7 @@ public partial class World : Node3D
     }
 
     /// <summary>Registers a character under its saved ID; an ID that is already taken is a mistake in the numbering.</summary>
-    private void Register(int id, Animal actor)
+    private void Register(int id, Character actor)
     {
         if (!actors.TryAdd(id, actor))
             throw new System.InvalidOperationException(
@@ -119,7 +119,7 @@ public partial class World : Node3D
             );
     }
 
-    internal int ActorId(Animal actor)
+    internal int ActorId(Character actor)
     {
         foreach (var (id, registered) in actors)
             if (registered == actor)
@@ -127,7 +127,7 @@ public partial class World : Node3D
         return -1;
     }
 
-    internal Animal? ActorAt(int id) => actors.TryGetValue(id, out var actor) ? actor : null;
+    internal Character? ActorAt(int id) => actors.TryGetValue(id, out var actor) ? actor : null;
 
     internal void GenerateVillage()
     {
@@ -206,7 +206,7 @@ public partial class World : Node3D
 
     private void PlaceWitch()
     {
-        Witch = Animal.Create("Čarodějnice Bára", "Vyřeš příklad a vyber, jaké počasí mám přičarovat.", 2, "b6a2c8");
+        Witch = Character.Create("Čarodějnice Bára", "Vyřeš příklad a vyber, jaké počasí mám přičarovat.", 2, "b6a2c8");
         Witch.Role = new WitchRole();
         Witch.DressAsWitch();
         var villageEdge = Village.TerrainArea.Grow(6);

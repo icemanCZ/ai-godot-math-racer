@@ -22,8 +22,8 @@ public sealed record DeliveryChallenge(string Cargo, int Answer) : IChallenge
 /// <summary>A roadside delivery. Navigation follows the connected road samples, including the bridge.</summary>
 public partial class Expedition : Node3D
 {
-    public Animal Sender { get; }
-    public Animal Recipient { get; }
+    public Character Sender { get; }
+    public Character Recipient { get; }
     public bool Collection { get; }
     public bool Farm => Sender.Role is FarmerRole;
     public bool Garden => Sender.Role is GardenerRole;
@@ -67,7 +67,7 @@ public partial class Expedition : Node3D
     /// on saved progress, so a restored expedition matches the one that was saved. Traders count their
     /// finished orders to vary repeat trips; residents follow the roadside friends.
     /// </summary>
-    private static int TripNumber(World world, Animal sender) =>
+    private static int TripNumber(World world, Character sender) =>
         sender.Role switch
         {
             TraderRole trader => trader.Index + world.Village.TradeCounts[trader.Index],
@@ -75,7 +75,7 @@ public partial class Expedition : Node3D
             _ => Array.IndexOf(world.Animals, sender),
         };
 
-    public Expedition(World world, Vehicle car, Animal sender, bool collection, bool[]? restoredPickups = null)
+    public Expedition(World world, Vehicle car, Character sender, bool collection, bool[]? restoredPickups = null)
     {
         this.world = world;
         this.car = car;

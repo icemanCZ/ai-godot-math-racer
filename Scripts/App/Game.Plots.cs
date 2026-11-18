@@ -16,7 +16,7 @@ public partial class Game
     /// <summary>Coins paid when a house is finished and its resident has moved in.</summary>
     internal const int PlotCoins = 10;
 
-    private HousePlot? PlotOf(Animal? actor) => (actor?.Role as PlotResidentRole)?.Plot;
+    private HousePlot? PlotOf(Character? actor) => (actor?.Role as PlotResidentRole)?.Plot;
 
     private HaulTrip? TripOf(HousePlot plot) => Haul != null && Haul.Plot == plot ? Haul : null;
 
@@ -27,7 +27,7 @@ public partial class Game
     private bool PlotStepReady(HousePlot plot) =>
         NextLoad(plot) is { } load && GoodsWorks(load) is { } works && works.Stock >= Works.PerTrip;
 
-    internal void OpenPlot(Animal resident)
+    internal void OpenPlot(Character resident)
     {
         if (PlotOf(resident) is not { } plot)
             return;

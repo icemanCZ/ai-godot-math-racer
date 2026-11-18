@@ -5,7 +5,7 @@ namespace MathRacer.App;
 /// <summary>Farm, garden, museum and playground: one off-road expedition per display item.</summary>
 public partial class Game
 {
-    internal void OpenCollector(Animal owner, CollectorRole role)
+    internal void OpenCollector(Character owner, CollectorRole role)
     {
         nearby = owner;
         ClearChallenge();
@@ -25,7 +25,7 @@ public partial class Game
         BeginQuiz();
     }
 
-    internal void StartCollectorExpedition(Animal owner, CollectorRole role)
+    internal void StartCollectorExpedition(Character owner, CollectorRole role)
     {
         if (Delivery?.Sender == owner || role.Count(world.Village) >= role.Total)
             return;

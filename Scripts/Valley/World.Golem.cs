@@ -51,7 +51,7 @@ public partial class World
         }
         if (float.IsNegativeInfinity(best))
             throw new InvalidOperationException("No place for the sorcerer's tower.");
-        Sorcerer = Animal.Create(
+        Sorcerer = Character.Create(
             "Černokněžník Baltazar",
             "Přivez šest dílků golema a získáš malého kamaráda.",
             2,

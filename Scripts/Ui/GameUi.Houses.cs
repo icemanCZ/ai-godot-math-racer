@@ -14,7 +14,7 @@ public partial class GameUi
     /// What a house wants for its next improvement: a picture of the goods, then the trip under way, the play
     /// button that sends the trailer for them or, when the works has none, the raw material that it needs.
     /// </summary>
-    internal void HouseMaterialOffer(Animal resident, HaulLoad load, HaulTrip? trip, bool canStart, Works? missing)
+    internal void HouseMaterialOffer(Character resident, HaulLoad load, HaulTrip? trip, bool canStart, Works? missing)
     {
         Clear();
         Text(resident.DisplayName, 30);

@@ -11,7 +11,7 @@ public partial class Works : ITripTarget
 {
     string ITripTarget.Kind => TripKinds.Supply;
     int ITripTarget.Index => Site.Index;
-    Animal ITripTarget.Contractor => Worker;
+    Character ITripTarget.Contractor => Worker;
     int ITripTarget.NextStep => 0;
 
     HaulLoad ITripTarget.LoadFor(int step) => Spec.Input;

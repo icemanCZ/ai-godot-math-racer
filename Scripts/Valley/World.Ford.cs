@@ -37,7 +37,7 @@ public partial class World
 
     /// <summary>The beaver's bridge, or null when the seeded valley has no suitable crossing.</summary>
     internal Ford? Ford { get; private set; }
-    internal Animal? Beaver { get; private set; }
+    internal Character? Beaver { get; private set; }
 
     /// <summary>Field paths to the sources and the roads to both bridge ends; null without a ford.</summary>
     internal Tracks? Tracks { get; private set; }
@@ -155,7 +155,12 @@ public partial class World
         }
         BuildTracks(site, sources, extras, industry, builds);
         BuildIndustry(industry);
-        Beaver = Animal.Create("Bobr Bóďa", "Postavíme most přes řeku? Přivez mi štěrk, cihly a prkna.", 2, "9a6a46");
+        Beaver = Character.Create(
+            "Bobr Bóďa",
+            "Postavíme most přes řeku? Přivez mi štěrk, cihly a prkna.",
+            2,
+            "9a6a46"
+        );
         Beaver.Role = new BuilderRole(BuildPlans.Bridge);
         Ford.Builder = Beaver;
         Projects = new BuildProject[] { Ford };
@@ -295,7 +300,7 @@ public partial class World
         Vector3 spot,
         bool farBank,
         float side,
-        Animal[] friends,
+        Character[] friends,
         float maxDistance,
         int maxTries,
         bool checkSlope = true
@@ -326,11 +331,11 @@ public partial class World
 
     // The actors' positions are read once: Position is a call into the engine, and the searches below test every
     // actor thousands of times. The actors do not move while the world is planned.
-    private Animal[]? spotsOf;
+    private Character[]? spotsOf;
     private Vector2[] actorSpots = Array.Empty<Vector2>();
     private Vector2? towerSpot;
 
-    private Vector2[] ActorSpots(Animal[] friends)
+    private Vector2[] ActorSpots(Character[] friends)
     {
         if (!ReferenceEquals(spotsOf, friends))
         {
@@ -366,7 +371,7 @@ public partial class World
         new Vector2(spot.X - x, spot.Y - z).Length() < distance;
 
     // Every test below is a pure predicate, so the cheap ones come first and the answer stays the same.
-    private bool FreeHaulSpot(Vector3 spot, Animal[] friends, float roadClearance, VillageBand? band = null) =>
+    private bool FreeHaulSpot(Vector3 spot, Character[] friends, float roadClearance, VillageBand? band = null) =>
         new Vector2(spot.X, spot.Z).Length() < Settings.PlayableRadius - 15
         && !River.OnBridge(spot.X, spot.Z)
         && Mathf.Abs(spot.Z - River.BridgeZ) > 14
@@ -381,7 +386,7 @@ public partial class World
     private static readonly float[] Laterals = { -3.5f, 0, 3.5f };
 
     /// <summary>A car-wide path without steep ground, buildings, other approaches or (unless entering it) water.</summary>
-    private bool ClearHaulPath(Vector3 from, Vector3 to, Animal[] friends, bool toWater, bool checkSlope = true)
+    private bool ClearHaulPath(Vector3 from, Vector3 to, Character[] friends, bool toWater, bool checkSlope = true)
     {
         var edge = to - from;
         edge.Y = 0;

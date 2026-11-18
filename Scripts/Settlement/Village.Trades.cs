@@ -10,7 +10,7 @@ public partial class Village
 {
     public static readonly string[] TradeCargo = { "bread", "parcel", "cake" };
     public static readonly string[] TradeSigns = { "PEKAŘSTVÍ", "OBCHOD", "CUKRÁRNA" };
-    public List<Animal> Traders { get; } = new();
+    public List<Character> Traders { get; } = new();
     public List<Node3D> Shops { get; } = new();
     public int[] TradeCounts { get; private set; } = new int[3];
 
@@ -44,7 +44,7 @@ public partial class Village
             var display = new Node3D { Position = new(.8f, 4.7f, 0), Scale = Vector3.One * 2.5f };
             shop.AddChild(display);
             Expedition.AddCargo(display, Vector3.Zero, TradeCargo[i]);
-            var owner = Animal.Create(spec);
+            var owner = Character.Create(spec);
             owner.Role = new TraderRole(i);
             Traders.Add(owner);
             AddChild(owner);

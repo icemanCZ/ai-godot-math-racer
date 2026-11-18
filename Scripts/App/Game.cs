@@ -54,7 +54,7 @@ public partial class Game : Node3D
     private readonly World world = new();
     private readonly Vehicle vehicle = new();
     private readonly GameUi ui = new();
-    private Animal? nearby
+    private Character? nearby
     {
         get => interaction.Nearby;
         set => interaction.Nearby = value;
@@ -180,7 +180,7 @@ public partial class Game : Node3D
     }
 
     /// <summary>Stops the car and switches to an interaction state.</summary>
-    private void EnterInteraction(GameState state, Animal? actor = null)
+    private void EnterInteraction(GameState state, Character? actor = null)
     {
         interaction.Enter(state, actor);
         vehicle.Active = false;
@@ -323,7 +323,7 @@ public partial class Game : Node3D
         ShowGarage();
     }
 
-    internal void OfferDelivery(Animal sender)
+    internal void OfferDelivery(Character sender)
     {
         if (State != GameState.Exploring || !roadside.CanStart(sender, Delivery))
             return;
@@ -340,7 +340,7 @@ public partial class Game : Node3D
         StartExpedition(nearby, collection);
     }
 
-    private void StartExpedition(Animal sender, bool collection)
+    private void StartExpedition(Character sender, bool collection)
     {
         CancelActiveTask();
         tasks.Begin(new Expedition(world, vehicle, sender, collection));
@@ -352,7 +352,7 @@ public partial class Game : Node3D
         Speak(ExpeditionInstruction(Delivery), sender);
     }
 
-    private bool CanChooseExpedition(Animal animal) => roadside.CanStart(animal, Delivery);
+    private bool CanChooseExpedition(Character animal) => roadside.CanStart(animal, Delivery);
 
     private void UpdateDeliveryGuides()
     {
@@ -407,14 +407,14 @@ public partial class Game : Node3D
         Speak(QuizInstruction(nearby, CurrentChallenge), nearby);
     }
 
-    internal void OpenChallenge(Animal animal)
+    internal void OpenChallenge(Character animal)
     {
         if (State != GameState.Exploring)
             return;
         animal.Role.Open(this, animal);
     }
 
-    internal void OpenRoadsideFriend(Animal animal)
+    internal void OpenRoadsideFriend(Character animal)
     {
         if (!animal.RewardAvailable)
         {
@@ -426,7 +426,7 @@ public partial class Game : Node3D
         BeginChallenge(animal);
     }
 
-    private void BeginChallenge(Animal animal)
+    private void BeginChallenge(Character animal)
     {
         nearby = animal;
         vehicle.Active = false;

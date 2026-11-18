@@ -30,10 +30,10 @@ public sealed partial class HaulTrip : Node3D
     internal int Step { get; }
 
     internal HaulLoad Load { get; }
-    internal Animal Contractor => Target.Contractor;
+    internal Character Contractor => Target.Contractor;
 
     /// <summary>The character who loads the cargo and asks the loading question: the source worker, else the contractor.</summary>
-    internal Animal Asker => world.PickupActor(Load, Source) ?? Contractor;
+    internal Character Asker => world.PickupActor(Load, Source) ?? Contractor;
     internal bool Loaded { get; private set; }
 
     /// <summary>Set on reaching the current target; cleared when the car leaves it again.</summary>

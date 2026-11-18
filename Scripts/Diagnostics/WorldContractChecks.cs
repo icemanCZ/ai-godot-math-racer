@@ -253,7 +253,7 @@ public partial class ContractChecks : Node
             "the actor ID ranges are the ones saved games use"
         );
 
-        var seen = new Dictionary<int, Animal>();
+        var seen = new Dictionary<int, Character>();
         foreach (var actor in world.InteractionActors)
         {
             int id = world.ActorId(actor);

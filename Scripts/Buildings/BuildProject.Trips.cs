@@ -11,7 +11,7 @@ public abstract partial class BuildProject : ITripTarget
 {
     string ITripTarget.Kind => TripKinds.Build;
     int ITripTarget.Index => Index;
-    Animal ITripTarget.Contractor => Builder;
+    Character ITripTarget.Contractor => Builder;
     int ITripTarget.NextStep => Stage;
 
     HaulLoad ITripTarget.LoadFor(int step) => Steps[step].Cargo;

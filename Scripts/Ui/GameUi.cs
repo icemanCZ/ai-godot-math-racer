@@ -493,14 +493,14 @@ public partial class GameUi : CanvasLayer
         }
     }
 
-    public void HouseReward(Animal animal, int level)
+    public void HouseReward(Character animal, int level)
     {
         Clear();
         Text($"✓  {level} / {Village.Upgrades.Length}", 34);
         BackButton().GrabFocus();
     }
 
-    public void HouseCollection(Animal animal, int collected)
+    public void HouseCollection(Character animal, int collected)
     {
         Clear();
         Picture(content, "apple", count: 3);
@@ -508,7 +508,7 @@ public partial class GameUi : CanvasLayer
         BackButton().GrabFocus();
     }
 
-    public void HouseFruitOffer(Animal animal, int level, bool canStart)
+    public void HouseFruitOffer(Character animal, int level, bool canStart)
     {
         Clear();
         Picture(content, "apple", count: 3);
@@ -522,7 +522,7 @@ public partial class GameUi : CanvasLayer
         BackButton();
     }
 
-    public void ExpeditionChoice(Animal animal, VehicleAppearance appearance)
+    public void ExpeditionChoice(Character animal, VehicleAppearance appearance)
     {
         Clear();
         talkButton.Hide();
@@ -935,7 +935,7 @@ public partial class GameUi : CanvasLayer
         talkButton.Text = (controller ? "A · " : "E · ") + (toys ? "Hračkář" : "Sběratel drahokamů");
     }
 
-    public void CollectionStatus(Village village, Animal owner, Expedition? expedition, bool returned = false)
+    public void CollectionStatus(Village village, Character owner, Expedition? expedition, bool returned = false)
     {
         bool toys = owner.Role is ExhibitCollectorRole { Toys: true };
         int count = village.CollectionCount(toys);
@@ -994,7 +994,7 @@ public partial class GameUi : CanvasLayer
             : available ? (controller ? "Stiskni A pro úkol a odměnu" : "Stiskni E nebo mezerník pro úkol a odměnu")
             : "Toto zvířátko už jsi navštívil. Sleduj další otazníky!";
 
-    private DeliveryPicture? Picture(Container parent, string icon, Animal? animal = null, int count = 1)
+    private DeliveryPicture? Picture(Container parent, string icon, Character? animal = null, int count = 1)
     {
         if (icon == "car")
         {
@@ -1013,7 +1013,7 @@ public partial class GameUi : CanvasLayer
         var picture = new DeliveryPicture
         {
             Icon = icon,
-            Animal = animal,
+            Character = animal,
             Count = count,
             CustomMinimumSize = new(150, 125),
         };
@@ -1080,7 +1080,7 @@ public partial class GameUi : CanvasLayer
         directionPicture = Picture(deliveryHud, "arrow");
         directionPicture!.CustomMinimumSize = new(80, 80);
         Control? destination =
-            delivery.CanDeliver ? new DeliveryPicture { Animal = delivery.Recipient }
+            delivery.CanDeliver ? new DeliveryPicture { Character = delivery.Recipient }
             : delivery.Garden ? new WordPicture { PictureId = "flower" }
             : delivery.SpecialCollection || delivery.Golem ? null
             : new DeliveryPicture { Icon = delivery.Cargo };

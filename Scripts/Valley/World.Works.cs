@@ -192,7 +192,7 @@ public partial class World
     /// </summary>
     private bool FindSpur(
         Random random,
-        Animal[] friends,
+        Character[] friends,
         FordSite ford,
         bool works,
         out Vector3 road,
@@ -246,7 +246,7 @@ public partial class World
     private bool WorksFootprintFits(
         Vector3 ring,
         Vector3 inward,
-        Animal[] friends,
+        Character[] friends,
         SpurRules rules,
         VillageBand? band = null
     )
@@ -328,40 +328,40 @@ public partial class World
     private const float ExtraSourceGap = 110;
 
     /// <summary>The workers of the quarry, the clay pit and the log yard, in <see cref="SourceCatalog"/> order.</summary>
-    internal Animal?[] SourceWorkers { get; } = new Animal?[SourceCatalog.Count];
+    internal Character?[] SourceWorkers { get; } = new Character?[SourceCatalog.Count];
 
     /// <summary>The workers of the second quarry, clay pit, sand pit and log yard, in <see cref="SourceCatalog.Extra"/> order.</summary>
-    internal Animal?[] ExtraSourceWorkers { get; } = new Animal?[SourceCatalog.Extra.Length];
+    internal Character?[] ExtraSourceWorkers { get; } = new Character?[SourceCatalog.Extra.Length];
 
     /// <summary>The worker of the first site of a raw material, or null where nobody works (the sand pit).</summary>
-    internal Animal? SourceWorker(HaulLoad load)
+    internal Character? SourceWorker(HaulLoad load)
     {
         int index = SourceCatalog.IndexOf(load);
         return index < 0 ? null : SourceWorkers[index];
     }
 
     /// <summary>The worker of the second site of a raw material, or null where the valley has none.</summary>
-    internal Animal? ExtraSourceWorker(HaulLoad load)
+    internal Character? ExtraSourceWorker(HaulLoad load)
     {
         int index = SourceCatalog.ExtraIndexOf(load);
         return index < 0 ? null : ExtraSourceWorkers[index];
     }
 
     /// <summary>Every worker at a raw-material site, first sites before second ones.</summary>
-    internal IEnumerable<Animal> AllSourceWorkers => SourceWorkers.Concat(ExtraSourceWorkers).OfType<Animal>();
+    internal IEnumerable<Character> AllSourceWorkers => SourceWorkers.Concat(ExtraSourceWorkers).OfType<Character>();
 
     /// <summary>
     /// The character who asks the loading question for a load: the worker of the site it is loaded at (the first
     /// one unless <paramref name="source"/> is the second), if there is one.
     /// </summary>
-    internal Animal? PickupActor(HaulLoad load, HaulSource? source = null) =>
+    internal Character? PickupActor(HaulLoad load, HaulSource? source = null) =>
         HaulLoads.IsGoods(load) ? Industry[(int)HaulLoads.ProductOf(load)].Worker
         : HaulLoads.IsSpecial(load) ? SpecialGiver(load)
         : source is { } site && ExtraSources.Contains(site) ? ExtraSourceWorker(load)
         : SourceWorker(load);
 
     /// <summary>The collector who hands over a special load: the farmer gives cloth, the gem collector a stone, the toymaker a flag.</summary>
-    internal Animal SpecialGiver(HaulLoad load) =>
+    internal Character SpecialGiver(HaulLoad load) =>
         load switch
         {
             HaulLoad.Fabric => Village.Farmer,
@@ -389,14 +389,14 @@ public partial class World
     }
 
     /// <summary>Places a worker beside the loading spot of a quarry, clay pit, sand pit or log yard.</summary>
-    private Animal PlaceSourceWorker(HaulSource source, SourceSpec spec, int id)
+    private Character PlaceSourceWorker(HaulSource source, SourceSpec spec, int id)
     {
         var inward = source.Position - source.Road;
         inward.Y = 0;
         inward = inward.Normalized();
         var across = inward.Cross(Vector3.Up);
         var spot = source.Position - across * 3.4f + inward * 1.2f;
-        var worker = Animal.Create(spec.Name, spec.Greeting, spec.Kind, spec.Fur);
+        var worker = Character.Create(spec.Name, spec.Greeting, spec.Kind, spec.Fur);
         worker.Role = new SourceRole(source.Load);
         worker.DressAsWorker(spec.Hat);
         worker.Position = Ground.At(spot.X, spot.Z);
@@ -441,7 +441,7 @@ public partial class World
             var works = new Works(site, Ground);
             AddChild(works);
             var spec = works.Spec;
-            var worker = Animal.Create(spec.Worker, spec.Greeting, spec.Kind, spec.Fur);
+            var worker = Character.Create(spec.Worker, spec.Greeting, spec.Kind, spec.Fur);
             worker.Role = new WorksRole(site.Index);
             worker.DressAsWorker(spec.Hat);
             worker.Position = site.WorkerSpot;

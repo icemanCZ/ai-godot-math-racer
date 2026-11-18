@@ -187,7 +187,7 @@ public partial class Works : Node3D
 
     internal WorksSite Site { get; }
     internal WorksSpec Spec => WorksCatalog.All[Site.Index];
-    internal Animal Worker { get; set; } = null!;
+    internal Character Worker { get; set; } = null!;
     public int Stock { get; private set; }
     public bool Full => Stock >= Capacity;
 

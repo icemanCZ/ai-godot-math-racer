@@ -38,7 +38,7 @@ public partial class Game
         ui.TrailerPaintSelected += SelectTrailerPaint;
     }
 
-    private BuildProject? ProjectOf(Animal? actor) =>
+    private BuildProject? ProjectOf(Character? actor) =>
         actor?.Role is BuilderRole role && role.Project < world.Projects.Length ? world.Projects[role.Project] : null;
 
     /// <summary>The works that makes a goods load, or null for any other load.</summary>
@@ -53,7 +53,7 @@ public partial class Game
         || !HaulLoads.IsGoods(project.Steps[project.Stage].Cargo)
         || GoodsWorks(project.Steps[project.Stage].Cargo) is { } works && works.Stock >= Works.PerTrip;
 
-    internal void OpenBuilder(Animal builder)
+    internal void OpenBuilder(Character builder)
     {
         if (ProjectOf(builder) is not { } project)
             return;

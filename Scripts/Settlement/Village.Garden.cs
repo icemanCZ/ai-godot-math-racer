@@ -39,7 +39,7 @@ public partial class Village
         "dc78c7",
         "746fdb",
     };
-    public Animal Gardener { get; private set; } = null!;
+    public Character Gardener { get; private set; } = null!;
     public Node3D GardenBuilding { get; private set; } = null!;
     public int GardenCount => gardenFlowers.Count;
     private Transform3D gardenPlot;
@@ -61,7 +61,7 @@ public partial class Village
         Art.Block(GardenBuilding, new(1.4f, 2, 2.7f), new(1.2f, 1.1f, .1f), "a8dfeb");
         Art.Sign(GardenBuilding, new(0, 4.5f, 0), "ZAHRADNICTVÍ", 34);
         gardenProgress = Art.Sign(GardenBuilding, new(10, 3.3f, 0), $"Květiny: 0 / {FlowerNames.Length}", 28);
-        Gardener = Animal.Create("Zahradník Vítek", "Přivezeš mi květiny do zahrádky?", 0, "a9d8b3");
+        Gardener = Character.Create("Zahradník Vítek", "Přivezeš mi květiny do zahrádky?", 0, "a9d8b3");
         Gardener.Role = new GardenerRole();
         AddChild(Gardener);
         var spot = gardenPlot * new Vector3(-1.6f, 0, 5.8f);

@@ -22,7 +22,7 @@ public partial class Village : Node3D
         "Větrná korouhvička",
         "Slavnostní výzdoba",
     };
-    public List<Animal> Residents { get; } = new();
+    public List<Character> Residents { get; } = new();
     internal IReadOnlyList<CollectorPet> CollectorPets { get; private set; } = System.Array.Empty<CollectorPet>();
     public List<Node3D> Houses { get; } = new();
     private readonly List<Node3D> decorations = new();
@@ -150,7 +150,7 @@ public partial class Village : Node3D
             houseDrops.Add(ground.At(drop.X, drop.Z));
             int index = Residents.Count;
             tasks[index] = CreateTasks(Settings.Seed, index);
-            var resident = Animal.Create(CharacterCatalog.HouseResidents[index]);
+            var resident = Character.Create(CharacterCatalog.HouseResidents[index]);
             resident.Role = new HouseResidentRole(index);
             AddChild(resident);
             Residents.Add(resident);

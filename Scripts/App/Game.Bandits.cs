@@ -18,7 +18,7 @@ public partial class Game
     private readonly record struct BanditSite(Vector3 Road, Vector3 Verge, Vector3 Cover, Vector3 Along);
 
     private BanditSite[] banditSites = Array.Empty<BanditSite>();
-    private readonly Animal[] bandits = new Animal[3];
+    private readonly Character[] bandits = new Character[3];
     private int banditSite = -1;
     private int banditSolved;
     private float banditCooldown;
@@ -72,7 +72,7 @@ public partial class Game
         banditSites = sites.ToArray();
         for (int i = 0; i < bandits.Length; i++)
         {
-            var bandit = Animal.Create("", "", i, new[] { "d4af92", "c87963", "9c806e" }[i]);
+            var bandit = Character.Create("", "", i, new[] { "d4af92", "c87963", "9c806e" }[i]);
             bandit.DressAsBandit(new[] { "9664a8", "bd7068", "648baa" }[i]);
             world.AddChild(bandit);
             bandit.Guide(false);

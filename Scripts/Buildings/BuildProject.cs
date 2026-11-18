@@ -16,7 +16,7 @@ public abstract partial class BuildProject : Node3D
     internal int Index { get; }
 
     /// <summary>The character who gives the work: the beaver, the miller, the stargazer or the fisherman.</summary>
-    internal Animal Builder { get; set; } = null!;
+    internal Character Builder { get; set; } = null!;
 
     /// <summary>Deliveries made so far.</summary>
     public int Stage { get; private set; }

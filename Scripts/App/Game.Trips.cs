@@ -32,7 +32,7 @@ public partial class Game
     /// Starts the trailer trip of a target: the task under way is replaced, the empty trailer is hitched and the
     /// speaker tells the player where to go.
     /// </summary>
-    private void StartTrip(ITripTarget target, Animal speaker)
+    private void StartTrip(ITripTarget target, Character speaker)
     {
         CancelActiveTask();
         StartHaul(new HaulTrip(world, vehicle, target, target.NextStep, loaded: false));

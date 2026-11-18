@@ -180,7 +180,7 @@ public partial class World
     private (BuildSite Site, List<Terrain.GradedPiece> Grading)? FindBuildSite(
         int project,
         Random random,
-        Animal[] friends,
+        Character[] friends,
         FordSite ford,
         VillageBand? band = null
     )
@@ -263,7 +263,7 @@ public partial class World
     /// </summary>
     private (BuildSite Site, List<Terrain.GradedPiece> Grading)? FindJettySite(
         Random random,
-        Animal[] friends,
+        Character[] friends,
         FordSite ford
     )
     {
@@ -364,7 +364,7 @@ public partial class World
     }
 
     /// <summary>The jetty's duck waits beside the fisherman until the jetty is finished.</summary>
-    private void CreateDuck(Jetty jetty, Animal fisherman)
+    private void CreateDuck(Jetty jetty, Character fisherman)
     {
         var duck = new CollectorPet(CollectorPetKind.Duck, Village, () => jetty.Stage, fisherman);
         var right = Vector3.Up.Cross(jetty.Site.Inward);
@@ -391,7 +391,7 @@ public partial class World
             };
             AddChild(project);
             var spec = BuilderCatalog.All[site.Project]!;
-            var builder = Animal.Create(spec.Name, spec.Greeting, spec.Kind, spec.Fur);
+            var builder = Character.Create(spec.Name, spec.Greeting, spec.Kind, spec.Fur);
             builder.Role = new BuilderRole(site.Project);
             builder.DressAsWorker(spec.Hat);
             builder.Position = site.BuilderSpot;

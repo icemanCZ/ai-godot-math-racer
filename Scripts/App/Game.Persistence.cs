@@ -17,12 +17,12 @@ public partial class Game
     private string lastSave = "";
     private GameState lastSavedState = GameState.Title;
 
-    private int ActorId(Animal? actor) =>
+    private int ActorId(Character? actor) =>
         actor == null ? -1
         : actor == bandits[0] ? BanditActorId
         : world.ActorId(actor);
 
-    private Animal? ActorAt(int id) => id == BanditActorId ? bandits[0] : world.ActorAt(id);
+    private Character? ActorAt(int id) => id == BanditActorId ? bandits[0] : world.ActorAt(id);
 
     internal void NewGame()
     {

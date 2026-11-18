@@ -21,12 +21,12 @@ internal abstract class ActorRole
     /// <summary>Whether the talk prompt appears even without a pending quiz or expedition choice.</summary>
     public virtual bool InvitesTalk(bool expeditionActive) => false;
 
-    public virtual void ShowHint(GameUi ui, Animal actor) { }
+    public virtual void ShowHint(GameUi ui, Character actor) { }
 
-    public abstract void Open(Game game, Animal actor);
+    public abstract void Open(Game game, Character actor);
 
     /// <summary>Continues after the character's quiz is solved. Returns false to use the roadside reward flow.</summary>
-    public virtual bool CompleteQuiz(Game game, Animal actor, bool handover) => false;
+    public virtual bool CompleteQuiz(Game game, Character actor, bool handover) => false;
 }
 
 /// <summary>A roadside friend: an opening quiz, then a delivery or apple collection with a car reward.</summary>
@@ -36,7 +36,7 @@ internal sealed class RoadsideFriendRole : ActorRole
 
     private RoadsideFriendRole() { }
 
-    public override void Open(Game game, Animal actor) => game.OpenRoadsideFriend(actor);
+    public override void Open(Game game, Character actor) => game.OpenRoadsideFriend(actor);
 }
 
 /// <summary>A village resident whose house improves with each finished task.</summary>
@@ -50,11 +50,11 @@ internal sealed class HouseResidentRole : ActorRole
 
     public override bool InvitesTalk(bool expeditionActive) => true;
 
-    public override void ShowHint(GameUi ui, Animal actor) => ui.HouseHint();
+    public override void ShowHint(GameUi ui, Character actor) => ui.HouseHint();
 
-    public override void Open(Game game, Animal actor) => game.OpenHouse(actor);
+    public override void Open(Game game, Character actor) => game.OpenHouse(actor);
 
-    public override bool CompleteQuiz(Game game, Animal actor, bool handover)
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
     {
         // A handover belongs to the expedition; Game finishes it.
         if (handover)
@@ -73,11 +73,11 @@ internal sealed class TraderRole : ActorRole
 
     public override string Icon => "hand";
 
-    public override void ShowHint(GameUi ui, Animal actor) => ui.TradeHint(actor);
+    public override void ShowHint(GameUi ui, Character actor) => ui.TradeHint(actor);
 
-    public override void Open(Game game, Animal actor) => game.OpenTrade(actor);
+    public override void Open(Game game, Character actor) => game.OpenTrade(actor);
 
-    public override bool CompleteQuiz(Game game, Animal actor, bool handover)
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
     {
         game.StartTrade();
         return true;
@@ -89,11 +89,11 @@ internal sealed class WitchRole : ActorRole
     public override string Icon => "cloud";
     public override bool UsesDeliveryGuide => false;
 
-    public override void ShowHint(GameUi ui, Animal actor) => ui.WitchHint();
+    public override void ShowHint(GameUi ui, Character actor) => ui.WitchHint();
 
-    public override void Open(Game game, Animal actor) => game.OpenWeatherChallenge();
+    public override void Open(Game game, Character actor) => game.OpenWeatherChallenge();
 
-    public override bool CompleteQuiz(Game game, Animal actor, bool handover)
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
     {
         game.OfferWeatherChoice();
         return true;
@@ -105,9 +105,9 @@ internal sealed class SorcererRole : ActorRole
     public override string Icon => "sorcerer";
     public override bool UsesDeliveryGuide => false;
 
-    public override void ShowHint(GameUi ui, Animal actor) => ui.SorcererHint();
+    public override void ShowHint(GameUi ui, Character actor) => ui.SorcererHint();
 
-    public override void Open(Game game, Animal actor) => game.OpenSorcerer();
+    public override void Open(Game game, Character actor) => game.OpenSorcerer();
 }
 
 /// <summary>
@@ -130,12 +130,12 @@ internal sealed class BuilderRole : ActorRole
         };
     public override bool UsesDeliveryGuide => false;
 
-    public override void ShowHint(GameUi ui, Animal actor) => ui.BuilderHint(Project);
+    public override void ShowHint(GameUi ui, Character actor) => ui.BuilderHint(Project);
 
-    public override void Open(Game game, Animal actor) => game.OpenBuilder(actor);
+    public override void Open(Game game, Character actor) => game.OpenBuilder(actor);
 
     /// <summary>A builder's only quiz is the loading question for a raw load that has no worker of its own.</summary>
-    public override bool CompleteQuiz(Game game, Animal actor, bool handover)
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
     {
         game.CompleteHaulLoading();
         return true;
@@ -157,12 +157,12 @@ internal sealed class PlotResidentRole : ActorRole
 
     public override bool InvitesTalk(bool expeditionActive) => true;
 
-    public override void ShowHint(GameUi ui, Animal actor) => ui.PlotHint(Plot.Complete);
+    public override void ShowHint(GameUi ui, Character actor) => ui.PlotHint(Plot.Complete);
 
-    public override void Open(Game game, Animal actor) => game.OpenPlot(actor);
+    public override void Open(Game game, Character actor) => game.OpenPlot(actor);
 
     /// <summary>A newcomer asks no quiz of their own: the loading questions come from the works' workers.</summary>
-    public override bool CompleteQuiz(Game game, Animal actor, bool handover)
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
     {
         game.CompleteHaulLoading();
         return true;
@@ -182,11 +182,11 @@ internal sealed class WorksRole : ActorRole
     public override string Icon => WorksCatalog.All[Index].Icon;
     public override bool UsesDeliveryGuide => false;
 
-    public override void ShowHint(GameUi ui, Animal actor) => ui.WorksHint(Index);
+    public override void ShowHint(GameUi ui, Character actor) => ui.WorksHint(Index);
 
-    public override void Open(Game game, Animal actor) => game.OpenWorks(actor);
+    public override void Open(Game game, Character actor) => game.OpenWorks(actor);
 
-    public override bool CompleteQuiz(Game game, Animal actor, bool handover)
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
     {
         game.CompleteHaulLoading();
         return true;
@@ -209,11 +209,11 @@ internal sealed class SourceRole : ActorRole
     public override string Icon => SourceCatalog.IconOf(Load);
     public override bool UsesDeliveryGuide => false;
 
-    public override void ShowHint(GameUi ui, Animal actor) => ui.SourceHint(Load);
+    public override void ShowHint(GameUi ui, Character actor) => ui.SourceHint(Load);
 
-    public override void Open(Game game, Animal actor) => game.OpenSource(actor);
+    public override void Open(Game game, Character actor) => game.OpenSource(actor);
 
-    public override bool CompleteQuiz(Game game, Animal actor, bool handover)
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
     {
         game.CompleteHaulLoading();
         return true;
@@ -227,9 +227,9 @@ internal abstract class CollectorRole : ActorRole
 
     public override bool InvitesTalk(bool expeditionActive) => !expeditionActive;
 
-    public override void Open(Game game, Animal actor) => game.OpenCollector(actor, this);
+    public override void Open(Game game, Character actor) => game.OpenCollector(actor, this);
 
-    public override bool CompleteQuiz(Game game, Animal actor, bool handover)
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
     {
         game.StartCollectorExpedition(actor, this);
         return true;
@@ -251,7 +251,7 @@ internal abstract class CollectorRole : ActorRole
     public abstract void ShowStatus(
         GameUi ui,
         Village village,
-        Animal owner,
+        Character owner,
         Expedition? expedition,
         bool returned = false
     );
@@ -259,7 +259,7 @@ internal abstract class CollectorRole : ActorRole
 
 internal sealed class FarmerRole : CollectorRole
 {
-    public override void ShowHint(GameUi ui, Animal actor) => ui.FarmHint();
+    public override void ShowHint(GameUi ui, Character actor) => ui.FarmHint();
 
     public override int Count(Village village) => village.FarmCount;
 
@@ -273,7 +273,7 @@ internal sealed class FarmerRole : CollectorRole
     public override void ShowStatus(
         GameUi ui,
         Village village,
-        Animal owner,
+        Character owner,
         Expedition? expedition,
         bool returned = false
     ) => ui.FarmStatus(village, expedition, returned);
@@ -281,7 +281,7 @@ internal sealed class FarmerRole : CollectorRole
 
 internal sealed class GardenerRole : CollectorRole
 {
-    public override void ShowHint(GameUi ui, Animal actor) => ui.GardenHint();
+    public override void ShowHint(GameUi ui, Character actor) => ui.GardenHint();
 
     public override int Count(Village village) => village.GardenCount;
 
@@ -295,7 +295,7 @@ internal sealed class GardenerRole : CollectorRole
     public override void ShowStatus(
         GameUi ui,
         Village village,
-        Animal owner,
+        Character owner,
         Expedition? expedition,
         bool returned = false
     ) => ui.GardenStatus(village, expedition, returned);
@@ -308,7 +308,7 @@ internal sealed class ExhibitCollectorRole : CollectorRole
 
     public ExhibitCollectorRole(bool toys) => Toys = toys;
 
-    public override void ShowHint(GameUi ui, Animal actor) => ui.CollectionHint(Toys);
+    public override void ShowHint(GameUi ui, Character actor) => ui.CollectionHint(Toys);
 
     public override int Count(Village village) => village.CollectionCount(Toys);
 
@@ -323,7 +323,7 @@ internal sealed class ExhibitCollectorRole : CollectorRole
     public override void ShowStatus(
         GameUi ui,
         Village village,
-        Animal owner,
+        Character owner,
         Expedition? expedition,
         bool returned = false
     ) => ui.CollectionStatus(village, owner, expedition, returned);

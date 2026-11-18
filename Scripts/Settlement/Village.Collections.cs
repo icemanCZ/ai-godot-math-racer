@@ -55,8 +55,8 @@ public partial class Village
         "letadélko",
         "plachetnici",
     };
-    public Animal GemCollector { get; private set; } = null!;
-    public Animal Toymaker { get; private set; } = null!;
+    public Character GemCollector { get; private set; } = null!;
+    public Character Toymaker { get; private set; } = null!;
     public Node3D MuseumBuilding { get; private set; } = null!;
     public Node3D ToyBuilding { get; private set; } = null!;
     public int GemCount => gemDisplays.Count;
@@ -86,7 +86,7 @@ public partial class Village
         CollectorPets = pets;
     }
 
-    internal CollectorPet PetFor(Animal collector) => CollectorPets.First(p => p.Collector == collector);
+    internal CollectorPet PetFor(Character collector) => CollectorPets.First(p => p.Collector == collector);
 
     private void GenerateCollections()
     {
@@ -124,7 +124,7 @@ public partial class Village
                     28
                 )
             );
-            var owner = Animal.Create(
+            var owner = Character.Create(
                 toys ? "Hračkář Pepa" : "Sběratel drahokamů Jáchym",
                 "Přivezeš mi něco do sbírky?",
                 toys ? 2 : 1,

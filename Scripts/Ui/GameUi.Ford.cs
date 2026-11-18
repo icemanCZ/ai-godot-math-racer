@@ -54,7 +54,7 @@ public partial class GameUi
     /// that the works needs.
     /// </summary>
     internal void BuilderPanel(
-        Animal builder,
+        Character builder,
         BuildProject project,
         HaulTrip? trip,
         bool canStart,
@@ -137,7 +137,7 @@ public partial class GameUi
         directionPicture!.CustomMinimumSize = new(80, 80);
         Control destination =
             trip.Loaded && trip.DropsAtContractor
-                ? new DeliveryPicture { Animal = trip.Contractor }
+                ? new DeliveryPicture { Character = trip.Contractor }
                 : new DeliveryPicture { Icon = LoadIcon(trip.Load) };
         destination.CustomMinimumSize = new(80, 80);
         deliveryHud.AddChild(destination);
