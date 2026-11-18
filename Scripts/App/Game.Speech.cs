@@ -47,7 +47,7 @@ public partial class Game
     {
         string instruction = question switch
         {
-            SyllableChallenge => "nejprve vybrala slabiky",
+            SyllableChallenge => Texts.NejprveVybralaSlabiky,
             LetterChallenge => Texts.NejprveVybralaObrazekPodlePrvnihoPismene,
             ReadingChallenge => Texts.NejprvePrecetlaSlovoAVybralaObrazek,
             DeliveryChallenge => Texts.SpocitalaNaklad,
@@ -62,13 +62,13 @@ public partial class Game
         string task = expedition switch
         {
             { Golem: true } => Texts.PrivezSestDilkuGolema,
-            { Farm: true } => $"přivez {expedition.FarmName}",
-            { Garden: true } => $"přivez {expedition.FlowerName}",
-            { Gems: true } or { Toys: true } => $"přivez {expedition.CollectionName}",
+            { Farm: true } => Texts.Bring(expedition.FarmName),
+            { Garden: true } => Texts.Bring(expedition.FlowerName),
+            { Gems: true } or { Toys: true } => Texts.Bring(expedition.CollectionName),
             { Collection: true } => Texts.PrivezTriJablka,
-            _ => $"rozvez {DeliveryCargoInstruction(expedition.Cargo, expedition.Amount)}",
+            _ => Texts.Deliver(DeliveryCargoInstruction(expedition.Cargo, expedition.Amount)),
         };
-        return $"Teď prosím {task}.";
+        return Texts.PleaseNow(task);
     }
 
     private static string DeliveryCargoInstruction(string cargo, int amount)
@@ -78,9 +78,9 @@ public partial class Game
             "bread" => (Texts.JedenKusPeciva, Texts.TytoDvaKusyPeciva, Texts.TytoTriKusyPeciva),
             "parcel" => (Texts.JedenBalicek, Texts.TytoDvaBalicky, Texts.TytoTriBalicky),
             "cake" => (Texts.JedenKolacek, Texts.TytoDvaKolacky, Texts.TytoTriKolacky),
-            "carrot" => ("jednu mrkev", Texts.TytoDveMrkve, Texts.TytoTriMrkve),
-            "apple" => ("jedno jablko", Texts.TatoDveJablka, Texts.TatoTriJablka),
-            _ => ("jednu sklenici medu", Texts.TytoDveSkleniceMedu, Texts.TytoTriSkleniceMedu),
+            "carrot" => (Texts.JednuMrkev, Texts.TytoDveMrkve, Texts.TytoTriMrkve),
+            "apple" => (Texts.JednoJablko, Texts.TatoDveJablka, Texts.TatoTriJablka),
+            _ => (Texts.JednuSkleniciMedu, Texts.TytoDveSkleniceMedu, Texts.TytoTriSkleniceMedu),
         };
         return amount switch
         {

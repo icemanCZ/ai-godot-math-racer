@@ -36,8 +36,8 @@ public partial class Game
             2
         ),
         new(
-            "Farma mezi loukami",
-            "Na silnici u farmy",
+            Texts.FarmaMeziLoukami,
+            Texts.NaSilniciUFarmy,
             "far-ma",
             new[] { "postcard-farm", "postcard-village", "postcard-bridge" },
             0
@@ -87,7 +87,7 @@ public partial class Game
         var square = world.Village.Square;
         albumStop = square.ToGlobal(new Vector3(0, 0, 4.4f));
         PostcardMarker(square, new Vector3(0, 3.3f, 4.4f));
-        Art.Sign(square, new Vector3(0, 2.35f, 4.4f), "Album pohlednic", 38);
+        Art.Sign(square, new Vector3(0, 2.35f, 4.4f), Texts.AlbumPohlednic, 38);
 
         var bridge = new Vector3(River.CenterX(River.BridgeZ), River.BridgeHeight, River.BridgeZ);
         var village = square.GlobalPosition;

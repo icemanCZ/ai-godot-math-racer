@@ -38,11 +38,7 @@ public partial class Game
         var owner = nearby!;
         var pet = world.Village.PetFor(owner);
         int count = pet.Count + 1;
-        CelebrateCompletion(
-            owner,
-            count == pet.Goal ? $"Nový mazlíček: {pet.DisplayName}!" : role.DeliveredMessage,
-            true
-        );
+        CelebrateCompletion(owner, count == pet.Goal ? Texts.NewPet(pet.DisplayName) : role.DeliveredMessage, true);
         EndExpedition(refreshUi: false);
         role.Restore(world.Village, count);
         AddCoins(CollectorDeliveryCoins);

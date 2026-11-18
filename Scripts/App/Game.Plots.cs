@@ -97,7 +97,7 @@ public partial class Game
         }
         CelebrateAt(
             plot.Drop + Vector3.Up * 2,
-            $"{plot.Resident.DisplayName} děkuje!  {plot.Stage} / {HousePlot.Trips}"
+            Texts.BuilderThanks(plot.Resident.DisplayName, plot.Stage, HousePlot.Trips)
         );
         // The next load waits until the player asks the newcomer for it again.
         EndHaul();
@@ -110,7 +110,7 @@ public partial class Game
     {
         EndHaul();
         AddCoins(PlotCoins);
-        CelebrateAt(plot.Focus, $"Domeček je hotový! {plot.Resident.DisplayName} se nastěhoval.  +{PlotCoins}");
+        CelebrateAt(plot.Focus, Texts.PlotDone(plot.Resident.DisplayName, PlotCoins));
         Speak(Texts.HuraDomecekJeHotovyTedTu, plot.Resident);
         var outward = followCamera.GlobalPosition - plot.Focus;
         outward.Y = 0;

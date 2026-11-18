@@ -68,7 +68,7 @@ public partial class GameUi
     internal void CoinCount(int total, int gained)
     {
         coinCount.Text = total.ToString();
-        coinHud.AccessibilityName = $"Penízky: {total}";
+        coinHud.AccessibilityName = Texts.CoinsTotal(total);
         if (gained <= 0 || !IsInsideTree())
             return;
         coinGain.Text = $"+{gained}";
@@ -109,7 +109,7 @@ public partial class GameUi
         row.AddChild(amount);
         Text(Texts.ZaPenizkySiVGaraziKoupis, 20);
         var back = IconButton("check", () => Send(new UiIntent.CloseInteraction()), "TakeCoins");
-        back.AccessibilityName = $"Získáváš {coins} penízků";
+        back.AccessibilityName = Texts.CoinsGained(coins);
         back.GrabFocus();
     }
 }

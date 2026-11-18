@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Godot;
+using MathRacer.App;
 using MathRacer.Characters;
 using MathRacer.Garage;
 using MathRacer.Settlement;
@@ -33,7 +34,7 @@ public partial class GameUi
         if (canStart)
         {
             var start = IconButton("play", () => Send(new UiIntent.VillageFruit()), "VillageFruitTask");
-            start.AccessibilityName = "Vyrazit pro ovoce";
+            start.AccessibilityName = Texts.VyrazitProOvoce;
         }
         else
             Text("…", 34);

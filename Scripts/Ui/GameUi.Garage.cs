@@ -154,7 +154,7 @@ public partial class GameUi
                 button.AddThemeStyleboxOverride("normal", Style("62747a", 20));
             if (icon != null)
             {
-                string status = $"{label} · {(active ? "zapnuto" : "vypnuto")}";
+                string status = Texts.Switch(label, active);
                 button.AccessibilityName = status;
                 button.TooltipText = status;
                 var image = new DeliveryPicture { Icon = icon, MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -237,10 +237,8 @@ public partial class GameUi
                 if (price is int cost)
                 {
                     // A price tag between the preview and the button.
-                    button.AccessibilityName = $"Koupit {name} za {cost} penízků";
-                    button.TooltipText = affordable
-                        ? $"Koupit za {cost} penízků"
-                        : $"Stojí {cost} penízků. Sbírej penízky ve světě a plň úkoly.";
+                    button.AccessibilityName = Texts.BuyNamed(name, cost);
+                    button.TooltipText = affordable ? Texts.BuyFor(cost) : Texts.PriceHint(cost);
                     var tag = new HBoxContainer
                     {
                         Name = "Price_" + reward.ButtonName,

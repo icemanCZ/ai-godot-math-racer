@@ -206,7 +206,7 @@ public partial class Game
         }
         CelebrateAt(
             project.DropFor(trip.Step) + Vector3.Up * 2,
-            $"{project.Builder.DisplayName} děkuje!  {project.Stage} / {BuildProject.Trips}"
+            Texts.BuilderThanks(project.Builder.DisplayName, project.Stage, BuildProject.Trips)
         );
         // The next load waits until the player asks the builder for it again.
         EndHaul();
@@ -228,7 +228,7 @@ public partial class Game
         }
         else
         {
-            CelebrateAt(project.Focus, $"Stavba je hotová!  +{BuildCoins}  ·  {BuildItemName(project.Index)}");
+            CelebrateAt(project.Focus, Texts.BuildDone(BuildCoins, BuildItemName(project.Index)));
             Speak(Texts.HuraJeHotovoMocDekuju, project.Builder);
         }
         var outward = followCamera.GlobalPosition - project.Focus;

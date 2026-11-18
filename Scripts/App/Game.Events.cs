@@ -122,8 +122,8 @@ public partial class Game
             CelebrateAt(
                 vehicle.Position,
                 beat
-                    ? $"{DrivingEvents.Title(finished)} — porazil jsi ducha! Čas {result} s"
-                    : $"{DrivingEvents.Title(finished)} — krásná jízda! Čas {result} s, duch měl {DrivingEvents.FormatTime(ghostTime)} s"
+                    ? Texts.CourseBeat(DrivingEvents.Title(finished), result)
+                    : Texts.CourseFinished(DrivingEvents.Title(finished), result, DrivingEvents.FormatTime(ghostTime))
             );
             AddCoins(CourseCoins + (beat ? GhostCoins : 0));
             SaveProgress();
@@ -131,13 +131,17 @@ public partial class Game
         if (Events.Active >= 0)
         {
             float distance = vehicle.Position.DistanceTo(Events.Points[Events.Active, Events.Next]);
-            string hud =
-                $"Brána {Events.Next + 1} / {DrivingEvents.GateCount} · {distance:0} m\nČas {DrivingEvents.FormatTime(Events.Elapsed)} s";
+            string hud = Texts.CourseHud(
+                Events.Next + 1,
+                DrivingEvents.GateCount,
+                distance,
+                DrivingEvents.FormatTime(Events.Elapsed)
+            );
             if (!float.IsNaN(Events.Gap))
                 hud +=
                     Events.Gap <= 0
-                        ? $"\nPřed duchem o {DrivingEvents.FormatTime(-Events.Gap)} s"
-                        : $"\nZa duchem o {DrivingEvents.FormatTime(Events.Gap)} s";
+                        ? Texts.AheadOfGhost(DrivingEvents.FormatTime(-Events.Gap))
+                        : Texts.BehindGhost(DrivingEvents.FormatTime(Events.Gap));
             ui.EventHud(hud);
             ui.EventHint(Texts.UkoncitJizdu);
         }
@@ -146,7 +150,10 @@ public partial class Game
             int course = Events.Nearby(vehicle.Position);
             ui.EventHud(
                 course >= 0
-                    ? $"{DrivingEvents.Title(course)}\nPoraz ducha: {DrivingEvents.FormatTime(Events.GhostTime(course))} s"
+                    ? Texts.CourseGhostTime(
+                        DrivingEvents.Title(course),
+                        DrivingEvents.FormatTime(Events.GhostTime(course))
+                    )
                     : ""
             );
             if (course >= 0 && nearby == null && !AtGarage)

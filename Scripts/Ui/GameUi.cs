@@ -226,7 +226,7 @@ public partial class GameUi : CanvasLayer
     {
         Clear();
         Text(Texts.KouzelneUdoli, 34);
-        Text($"Seed údolí: {Settings.Seed}", 20);
+        Text(Texts.ValleySeed(Settings.Seed), 20);
         Button(saved ? Texts.Pokracovat : Texts.Hrat, () => Send(new UiIntent.Play())).GrabFocus();
         Button(Texts.NovaHra, () => Send(new UiIntent.NewGame())).Name = "NewGame";
         if (saved)
@@ -240,7 +240,7 @@ public partial class GameUi : CanvasLayer
         Button(Texts.Pokracovat, () => Send(new UiIntent.Resume())).GrabFocus();
         Button(Texts.NovaHra, () => Send(new UiIntent.NewGame())).Name = "NewGame";
         Text(Texts.NovaHraNahradiUlozenyPostup, 18);
-        Button("Konec hry", () => GetTree().Quit());
+        Button(Texts.KonecHry, () => GetTree().Quit());
     }
 
     public void LoadingWorld()
@@ -256,7 +256,7 @@ public partial class GameUi : CanvasLayer
     }
 
     public void AnimalCount(int remaining, int total) =>
-        animalCount.Text = remaining == 0 ? Texts.VsechnaZviratkaNavstivena : $"Zbývá zvířátek: {remaining} / {total}";
+        animalCount.Text = remaining == 0 ? Texts.VsechnaZviratkaNavstivena : Texts.AnimalsLeft(remaining, total);
 
     public void Hint(bool visible, bool available) =>
         hint.Text =

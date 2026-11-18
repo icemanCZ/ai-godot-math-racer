@@ -4,8 +4,9 @@ namespace MathRacer.App;
 /// The fixed Czech texts of the game: menus, hints, what the characters say, the names of the postcards. A text lives
 /// here instead of in the code that shows it, so the language can be proofread in one file and the code says what
 /// happens, not what is written. The names are made from the text itself (without diacritics), which keeps them unique;
-/// a text that is edited may keep its name. Texts with numbers or names inside (<c>$"..."</c>) are still where they are
-/// used, and so are the texts of the data classes (the catalogue of characters, the courses, the village).
+/// a text that is edited may keep its name. Texts with numbers or names inside are methods. The texts of data tables
+/// (the catalogue of characters, the works, the village, the word lists of the questions) stay beside the colours and
+/// numbers of their entry.
 /// </summary>
 internal static class Texts
 {
@@ -196,4 +197,71 @@ internal static class Texts
     public const string StiskniENeboMezernikProUkol = "Stiskni E nebo mezerník pro úkol a odměnu";
     public const string TotoZviratkoUzJsiNavstivilSleduj = "Toto zvířátko už jsi navštívil. Sleduj další otazníky!";
     public const string Zpet = "Zpět";
+
+    // Words and phrases without diacritics
+    public const string FarmaMeziLoukami = "Farma mezi loukami";
+    public const string NaSilniciUFarmy = "Na silnici u farmy";
+    public const string AlbumPohlednic = "Album pohlednic";
+    public const string NejprveVybralaSlabiky = "nejprve vybrala slabiky";
+    public const string JednuMrkev = "jednu mrkev";
+    public const string JednoJablko = "jedno jablko";
+    public const string JednuSkleniciMedu = "jednu sklenici medu";
+    public const string Prkna = "prkna";
+    public const string Cihly = "cihly";
+    public const string AFarma = "A · Farma";
+    public const string EFarma = "E · Farma";
+    public const string VyrazitProOvoce = "Vyrazit pro ovoce";
+    public const string KonecHry = "Konec hry";
+
+    // Texts with values inside. A value that has to be worked out first (a time, a title) is passed in as the text.
+    public static string NewPet(string name) => $"Nový mazlíček: {name}!";
+
+    public static string CourseBeat(string course, string time) => $"{course} — porazil jsi ducha! Čas {time} s";
+
+    public static string CourseFinished(string course, string time, string ghostTime) =>
+        $"{course} — krásná jízda! Čas {time} s, duch měl {ghostTime} s";
+
+    public static string CourseHud(int gate, int gates, float distance, string time) =>
+        $"Brána {gate} / {gates} · {distance:0} m\nČas {time} s";
+
+    public static string AheadOfGhost(string gap) => $"\nPřed duchem o {gap} s";
+
+    public static string BehindGhost(string gap) => $"\nZa duchem o {gap} s";
+
+    public static string CourseGhostTime(string course, string ghostTime) => $"{course}\nPoraz ducha: {ghostTime} s";
+
+    public static string BuilderThanks(string name, int stage, int trips) => $"{name} děkuje!  {stage} / {trips}";
+
+    public static string BuildDone(int coins, string item) => $"Stavba je hotová!  +{coins}  ·  {item}";
+
+    public static string PlotDone(string name, int coins) => $"Domeček je hotový! {name} se nastěhoval.  +{coins}";
+
+    public static string Bring(string what) => $"přivez {what}";
+
+    public static string Deliver(string what) => $"rozvez {what}";
+
+    public static string PleaseNow(string task) => $"Teď prosím {task}.";
+
+    public static string HouseNeeds(string wanted) => $"Na vylepšení domečku potřebuju {wanted}. Přivezeš mi je?";
+
+    public static string HouseNeedsButNone(string wanted, string works) =>
+        $"Na vylepšení domečku potřebuju {wanted}, ale {works} jich nemá. Pošlu tě pro surovinu!";
+
+    public static string NewUpgrade(string upgrade) => $"Nové vylepšení: {upgrade}";
+
+    public static string CoinsTotal(int total) => $"Penízky: {total}";
+
+    public static string CoinsGained(int coins) => $"Získáváš {coins} penízků";
+
+    public static string ValleySeed(int seed) => $"Seed údolí: {seed}";
+
+    public static string AnimalsLeft(int remaining, int total) => $"Zbývá zvířátek: {remaining} / {total}";
+
+    public static string Switch(string label, bool on) => $"{label} · {(on ? "zapnuto" : "vypnuto")}";
+
+    public static string BuyNamed(string name, int cost) => $"Koupit {name} za {cost} penízků";
+
+    public static string BuyFor(int cost) => $"Koupit za {cost} penízků";
+
+    public static string PriceHint(int cost) => $"Stojí {cost} penízků. Sbírej penízky ve světě a plň úkoly.";
 }

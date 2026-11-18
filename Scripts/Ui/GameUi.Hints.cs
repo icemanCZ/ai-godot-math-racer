@@ -26,7 +26,7 @@ public partial class GameUi
     public void FarmHint()
     {
         talkButton.Visible = !modal.Visible;
-        talkButton.Text = controller ? "A · Farma" : "E · Farma";
+        talkButton.Text = controller ? Texts.AFarma : Texts.EFarma;
     }
 
     public void GardenHint()

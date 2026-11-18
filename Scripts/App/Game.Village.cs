@@ -95,11 +95,11 @@ public partial class Game
     {
         var load = HouseMaterial(((HouseResidentRole)resident.Role).House)!.Value;
         var works = GoodsWorks(load)!;
-        string wanted = load == HaulLoad.Planks ? "prkna" : "cihly";
+        string wanted = load == HaulLoad.Planks ? Texts.Prkna : Texts.Cihly;
         Speak(
             TripOf(resident) != null ? Texts.PrivedMiTenNakladKDomecku
-                : works.Stock >= Works.PerTrip ? $"Na vylepšení domečku potřebuju {wanted}. Přivezeš mi je?"
-                : $"Na vylepšení domečku potřebuju {wanted}, ale {works.Spec.Name.ToLower()} jich nemá. Pošlu tě pro surovinu!",
+                : works.Stock >= Works.PerTrip ? Texts.HouseNeeds(wanted)
+                : Texts.HouseNeedsButNone(wanted, works.Spec.Name.ToLower()),
             resident
         );
     }
@@ -163,7 +163,7 @@ public partial class Game
         string upgrade = Village.Upgrades[world.Village.Level(house) - 1];
         CelebrateCompletion(
             owner,
-            $"Nové vylepšení: {upgrade}",
+            Texts.NewUpgrade(upgrade),
             unload: Delivery?.Sender == owner,
             building: world.Village.Houses[house]
         );
