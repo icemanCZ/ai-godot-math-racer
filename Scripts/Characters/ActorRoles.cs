@@ -170,7 +170,7 @@ internal sealed class PlotResidentRole : ActorRole
 }
 
 /// <summary>
-/// The worker at the sawmill, brickworks or gravel works. They show the stock and, for building trips, load the
+/// The worker at the sawmill, brickworks, gravel works or glassworks. They show the stock and, for building trips, load the
 /// goods and ask the loading question from afar. Raw-material trips are started by the worker at the source.
 /// </summary>
 internal sealed class WorksRole : ActorRole
@@ -201,7 +201,7 @@ internal sealed class SourceRole : ActorRole
 {
     public HaulLoad Load { get; }
 
-    /// <summary>Position in <see cref="SourceCatalog.All"/>; -1 for the sand pit's worker, who has no works.</summary>
+    /// <summary>Position in <see cref="SourceCatalog.All"/>; -1 for the sand pit's worker, whose sand goes to the glassworks.</summary>
     public int Index => SourceCatalog.IndexOf(Load);
 
     public SourceRole(HaulLoad load) => Load = load;

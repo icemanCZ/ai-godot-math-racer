@@ -111,11 +111,9 @@ public partial class Game
             plot.Resident.Guide(Haul == null && !plot.Complete);
         foreach (var works in world.AllWorks)
             works.Worker.Guide(true);
+        // The sand pit's worker supplies the glassworks like the others supply their works.
         foreach (var worker in world.AllSourceWorkers)
-            worker.Guide(
-                worker.Role is SourceRole { Load: HaulLoad.Sand }
-                    || Haul == null && WorksOfSource(worker) is { Full: false }
-            );
+            worker.Guide(Haul == null && WorksOfSource(worker) is { Full: false });
     }
 
     private void TickHaul(double delta)

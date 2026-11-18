@@ -8,7 +8,7 @@ using MathRacer.Tasks;
 namespace MathRacer.App;
 
 /// <summary>
-/// The sawmill, brickworks and gravel works. The worker at each raw-material site sends the trailer to the works
+/// The sawmill, brickworks, gravel works and glassworks. The worker at each raw-material site sends the trailer to the works
 /// and asks the loading question on the spot; every load tipped on the works' ring adds goods to the visible stock.
 /// The goods wait for the buildings.
 /// </summary>

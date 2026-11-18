@@ -16,7 +16,7 @@ internal static class CharacterCatalog
     private const string ResidentGreeting = "Pomůžeš mi zkrášlit domeček?";
     private const string PlotGreeting = "Chtěl bych tady bydlet! Přivezeš mi materiál na domeček?";
     private const string TraderGreeting =
-        "Vyřeš příklad a rozvez mou objednávku.\nZa doručení si vybereš odměnu pro auto!";
+        "Vyřeš příklad a rozvez mou objednávku.\nZa doručení dostaneš penízky na vylepšení auta!";
 
     private static readonly string[] SpeciesNames = { "Králíček", "Liška", "Medvěd" };
 
@@ -84,7 +84,7 @@ internal static class CharacterCatalog
             friends.Add(
                 new(
                     $"{SpeciesNames[kind]} {GivenNames[kind][i / 3]}",
-                    "Ahoj! Vyřeš příklad a vyber si odměnu.",
+                    "Ahoj! Vyřeš příklad a vyděláš si penízky.",
                     kind,
                     FurColors[kind][(i / 3 + 1) % 3]
                 )

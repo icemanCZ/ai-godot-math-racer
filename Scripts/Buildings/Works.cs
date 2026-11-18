@@ -126,7 +126,7 @@ internal static class SourceCatalog
 {
     public const int Count = 3;
 
-    /// <summary>The quarry, the clay pit and the log yard. The sand pit has no worker: only the bridge uses sand.</summary>
+    /// <summary>The quarry, the clay pit and the log yard. The first sand pit has no worker; the second one's is in <see cref="Extra"/>.</summary>
     public static readonly SourceSpec[] All =
     {
         new(HaulLoad.Stones, "Králíček lomař Kvido", "Naložím ti kamení pro štěrkovnu.", 0, "b9c2c9", "8f8f8a"),
@@ -138,13 +138,20 @@ internal static class SourceCatalog
 
     /// <summary>
     /// The workers at the second site of each raw material, in <see cref="ExtraLoads"/> order. The sand pit's worker
-    /// has no works to send the trailer to: he loads the sand for the bridge and asks the loading question.
+    /// sends the sand to the glassworks, like the others send theirs to their works, and loads the sand for the bridge.
     /// </summary>
     public static readonly SourceSpec[] Extra =
     {
         new(HaulLoad.Stones, "Zajíc lomař Zdeněk", "Tady je druhý lom. Naložím ti kamení.", 0, "c9c4d0", "7f7f7a"),
         new(HaulLoad.Soil, "Liška hlinař Honza", "Tady je druhé hliniště. Naložím ti hlínu.", 1, "d6925f", "b46a3a"),
-        new(HaulLoad.Sand, "Medvěd písečník Pepík", "Naložím ti písek na stavbu mostu.", 2, "c9a96a", "e0c46a"),
+        new(
+            HaulLoad.Sand,
+            "Medvěd písečník Pepík",
+            "Naložím ti písek pro sklárnu i na stavbu mostu.",
+            2,
+            "c9a96a",
+            "e0c46a"
+        ),
         new(
             HaulLoad.Logs,
             "Králík dřevorubec Dušan",
@@ -160,7 +167,7 @@ internal static class SourceCatalog
 
     public static int ExtraIndexOf(HaulLoad load) => Array.IndexOf(ExtraLoads, load);
 
-    /// <summary>The task-marker icon of a raw-material site; the sand pit has one too, though it has no worker.</summary>
+    /// <summary>The task-marker icon of a raw-material site; the first sand pit has one too, though it has no worker.</summary>
     public static string IconOf(HaulLoad load) =>
         load switch
         {
@@ -178,7 +185,7 @@ internal static class SourceCatalog
 internal sealed record WorksSite(int Index, Vector3 Position, Vector3 Road, Vector3 Inward, Vector3 WorkerSpot);
 
 /// <summary>
-/// The sawmill, brickworks or gravel works. Every load tipped on its ring is turned into
+/// The sawmill, brickworks, gravel works or glassworks. Every load tipped on its ring is turned into
 /// <see cref="PerLoad"/> units of goods. The stock stands on the yard beside the ring, one stack or heap
 /// per unit, so the player can see how much is stored. Local +Z points away from the road.
 /// </summary>
