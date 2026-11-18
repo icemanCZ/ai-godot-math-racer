@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Godot;
+using MathRacer.Garage;
 using MathRacer.Valley;
 
 namespace MathRacer.Vehicles;
@@ -30,6 +31,7 @@ public partial class WheelTracks : MeshInstance3D
     private readonly Vector3[] previousSide = new Vector3[2];
     private readonly float[] along = new float[2];
     private bool connected;
+    private TrailStamps? stamps;
     private float time;
     internal int SegmentCount => segments.Count;
     internal float DistanceRecorded => along[0] + along[1];
@@ -61,10 +63,33 @@ public partial class WheelTracks : MeshInstance3D
 
     internal void Break() => connected = false;
 
+    internal TrailStamps? Stamps => stamps;
+
+    private TrailStamps AddStamps()
+    {
+        var node = new TrailStamps { Name = "TrailStamps" };
+        AddChild(node);
+        return node;
+    }
+
     internal void Update(float dt, Vehicle car, Terrain terrain, Roads roads)
     {
         time += dt;
         material.SetShaderParameter("track_time", time);
+        // A trail of flowers, hearts or stars from the garage takes the place of the tyre marks.
+        stamps ??= AddStamps();
+        string trail = car.Appearance.CurrentTrailId;
+        stamps.Update(dt, car, terrain, roads, trail);
+        if (trail != CarTrail.Plain.Id)
+        {
+            connected = false;
+            if (segments.Count > 0)
+            {
+                segments.Clear();
+                Rebuild();
+            }
+            return;
+        }
         bool dirty = false;
         while (segments.Count > 0 && time - segments.Peek().Born > Lifetime)
         {

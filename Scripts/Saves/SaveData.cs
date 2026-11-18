@@ -65,6 +65,9 @@ public sealed class VehicleSave
     public string Look { get; set; } = "";
     public string Model { get; set; } = "classic";
     public string[] Accessories { get; set; } = Array.Empty<string>();
+
+    /// <summary>The stamps the wheels leave (<see cref="CarTrail"/>); the plain tyre marks in a save from before trails.</summary>
+    public string Trail { get; set; } = CarTrail.Plain.Id;
 }
 
 /// <summary>The coins and the garage items that were bought.</summary>

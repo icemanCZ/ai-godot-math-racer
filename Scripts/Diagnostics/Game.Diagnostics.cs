@@ -172,7 +172,7 @@ public partial class Game
             vehicle.SetPose(owner.Position + Vector3.Right * 3, 0);
             CompleteHouseTask(owner);
         }
-        if (view is "garage" or "garage-shop")
+        if (view is "garage" or "garage-shop" or "garage-trails")
         {
             vehicle.SetPose(world.Village.GarageEntrance, 0);
             // Enough coins for a paint or an accessory, but not a model, shows both price states.
@@ -180,6 +180,8 @@ public partial class Game
             OpenGarage();
             if (view == "garage-shop" && FindChild("GarageScroll", true, false) is ScrollContainer scroll)
                 scroll.SetDeferred(ScrollContainer.PropertyName.ScrollVertical, 290);
+            if (view == "garage-trails" && FindChild("GarageScroll", true, false) is ScrollContainer bottom)
+                bottom.SetDeferred(ScrollContainer.PropertyName.ScrollVertical, 9999);
         }
         if (view == "coins")
         {

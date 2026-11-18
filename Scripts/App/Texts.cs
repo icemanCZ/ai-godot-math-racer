@@ -48,6 +48,8 @@ internal static class Texts
     public const string PodivejSeCoVsechnoJeV =
         "Podívej se, co všechno je v údolí! Zlaté sloupy ukazují mince a modré kamarády.";
 
+    public const string StopyKol = "Stopy kol";
+
     // Game.Hidden: the small friends who hide beside the roads
     public static string HiddenName(HiddenKind kind) =>
         kind switch

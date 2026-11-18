@@ -73,6 +73,7 @@ public partial class Game
                 Heading = vehicle.Heading,
                 Look = vehicle.Appearance.CurrentLookId,
                 Model = vehicle.Appearance.CurrentModelId,
+                Trail = vehicle.Appearance.CurrentTrailId,
                 Accessories = CarAccessory
                     .Catalogue.Where(a => vehicle.Appearance.HasAccessory(a.Id))
                     .Select(a => a.Id)
@@ -279,6 +280,7 @@ public partial class Game
     private void RestoreCarLook(SaveData data)
     {
         vehicle.Appearance.ApplyModel(data.Vehicle.Model);
+        vehicle.Appearance.ApplyTrail(data.Vehicle.Trail);
         vehicle.Appearance.Apply(CarLook.Catalogue.FirstOrDefault(l => l.Id == data.Vehicle.Look) ?? CarLook.All[0]);
         foreach (var accessory in CarAccessory.Catalogue)
             if (vehicle.Appearance.HasAccessory(accessory.Id) != data.Vehicle.Accessories.Contains(accessory.Id))

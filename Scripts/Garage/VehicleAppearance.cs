@@ -77,6 +77,15 @@ public sealed class VehicleAppearance
 
     public string CurrentLookId { get; private set; } = CarLook.All[0].Id;
 
+    /// <summary>What the wheels leave behind: <see cref="CarTrail.Plain"/> or the id of a stamp.</summary>
+    public string CurrentTrailId { get; private set; } = CarTrail.Plain.Id;
+
+    public void ApplyTrail(string? id)
+    {
+        if (CarTrail.IsKnown(id))
+            CurrentTrailId = id!;
+    }
+
     public void RegisterBody(MeshInstance3D mesh) => body.Add(mesh);
 
     public void RegisterRoof(MeshInstance3D mesh) => roof.Add(mesh);

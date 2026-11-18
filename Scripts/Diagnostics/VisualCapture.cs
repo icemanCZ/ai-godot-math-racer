@@ -174,7 +174,7 @@ public partial class VisualCapture : Node
             camera.Position = focus + building.GlobalBasis * new Vector3(12, 8, 19);
             camera.LookAt(focus);
         }
-        else if (view is "garage" or "garage-shop") { }
+        else if (view is "garage" or "garage-shop" or "garage-trails") { }
         else if (view == "coins" && world.GetNodeOrNull<WorldCoins>("WorldCoins") is { } coins)
         {
             camera.SetProcess(false);
@@ -218,6 +218,28 @@ public partial class VisualCapture : Node
             var focus = car.Position + Vector3.Back * 3;
             camera.Position = focus + new Vector3(7, 11, 10);
             camera.LookAt(focus);
+        }
+        else if (view is "trail-flowers" or "trail-hearts" or "trail-stars")
+        {
+            // The car drives with a bought trail and looks back at what its wheels left on the road.
+            car.Appearance.ApplyTrail(view[6..]);
+            Input.ActionPress("accelerate");
+            await ToSignal(GetTree().CreateTimer(2.2), SceneTreeTimer.SignalName.Timeout);
+            Input.ActionRelease("accelerate");
+            Input.ActionPress("brake");
+            await ToSignal(GetTree().CreateTimer(.6), SceneTreeTimer.SignalName.Timeout);
+            camera.SetProcess(false);
+            var focus = car.Position + Vector3.Back * 4;
+            camera.Position = focus + new Vector3(4, 5.5f, 9);
+            camera.LookAt(focus);
+        }
+        else if (view == "ducklings" && world.Duck is { } duck)
+        {
+            // The duck of the jetty and its three ducklings waiting beside the fisherman.
+            camera.SetProcess(false);
+            car.Active = false;
+            camera.Position = duck.Position + duck.Basis * new Vector3(0, 2.2f, 7);
+            camera.LookAt(duck.Position + duck.Basis * new Vector3(-1, .6f, 0));
         }
         else if (view == "wildlife")
         {

@@ -39,6 +39,11 @@ internal enum CollectorPetKind
     Ladybug,
     Hedgehog,
     Frog,
+
+    // The three ducklings that follow the jetty's duck, one for every third delivery to the jetty.
+    Duckling1,
+    Duckling2,
+    Duckling3,
 }
 
 internal sealed partial class CollectorPet : Node3D

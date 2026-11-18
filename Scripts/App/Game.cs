@@ -297,9 +297,21 @@ public partial class Game : Node3D
     {
         if (State != GameState.Garage)
             return;
-        // An item not owned yet is bought first and then equipped like an owned one.
+        // An item not owned yet is bought first and then equipped like an owned one; the plain tyre marks are free.
+        if (reward.IsTrail && reward.Id == CarTrail.Plain.Id)
+        {
+            vehicle.Appearance.ApplyTrail(reward.Id);
+            ShowGarage();
+            return;
+        }
         if (!OwnedRewards.Contains(reward) && !BuyCarItem(reward))
             return;
+        if (reward.IsTrail)
+        {
+            vehicle.Appearance.ApplyTrail(reward.Id);
+            ShowGarage();
+            return;
+        }
         if (reward.IsModel)
             vehicle.Appearance.ApplyModel(reward.Id);
         else if (reward.IsAccessory)

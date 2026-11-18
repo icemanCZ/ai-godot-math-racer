@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text.Json;
 using MathRacer.App;
 using MathRacer.Buildings;
+using MathRacer.Garage;
 using MathRacer.Quizzes;
 using MathRacer.Settlement;
 using MathRacer.Tasks;
@@ -36,6 +37,7 @@ internal static class SaveRules
         ("glassworks and glazed houses", HasInvalidGlass),
         ("bakery and houses given bread", HasInvalidBread),
         ("small friends found", HasInvalidHidden),
+        ("wheel trail", HasInvalidTrail),
         ("trailer trip", HasInvalidTrip),
         ("expedition cargo", HasInvalidPickupCount),
     };
@@ -455,6 +457,14 @@ internal static class SaveRules
             .Any(house =>
                 data.Village.Baked[house] && (!data.Village.Glazed[house] || data.Village.HouseLevels[house] < 10)
             );
+
+    /// <summary>The trail on the wheels is the plain one or a stamp that was bought.</summary>
+    private static bool HasInvalidTrail(SaveData data) =>
+        !CarTrail.IsKnown(data.Vehicle.Trail)
+        || (
+            data.Vehicle.Trail != CarTrail.Plain.Id
+            && !data.Economy.Owned.Contains(new CarReward(data.Vehicle.Trail, false, false, true))
+        );
 
     /// <summary>The found friends are numbers of the friends that exist, each listed once.</summary>
     private static bool HasInvalidHidden(SaveData data) =>

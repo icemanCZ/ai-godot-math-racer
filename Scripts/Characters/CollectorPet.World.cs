@@ -68,6 +68,34 @@ internal static class WorldPetCatalog
             _ => Frog,
         };
 
+    // The ducklings of the jetty's duck: one for every third delivery to the jetty, the duck itself for the tenth.
+    public static readonly WorldPetSpec Duckling1 = new(
+        CollectorPetKind.Duckling1,
+        "Kachňátko Žlutka",
+        "3 dodávky na molo"
+    );
+    public static readonly WorldPetSpec Duckling2 = new(
+        CollectorPetKind.Duckling2,
+        "Kachňátko Pírko",
+        "6 dodávek na molo"
+    );
+    public static readonly WorldPetSpec Duckling3 = new(
+        CollectorPetKind.Duckling3,
+        "Kachňátko Bublinka",
+        "9 dodávek na molo"
+    );
+
+    /// <summary>The deliveries to the jetty that earn each duckling, in the order of the ducklings.</summary>
+    public static readonly int[] DucklingDeliveries = { 3, 6, 9 };
+
+    public static WorldPetSpec ForDuckling(int index) =>
+        index switch
+        {
+            0 => Duckling1,
+            1 => Duckling2,
+            _ => Duckling3,
+        };
+
     public static WorldPetSpec ForSource(HaulLoad load) =>
         load switch
         {
@@ -107,7 +135,14 @@ internal sealed partial class CollectorPet
     /// A pet of the world: it belongs to <paramref name="owner"/>, who stands where the pet waits, and is owned once
     /// <paramref name="count"/> reaches <paramref name="goal"/>. <paramref name="index"/> picks its place in the trail.
     /// </summary>
-    internal CollectorPet(WorldPetSpec spec, Character owner, Func<int> count, int goal, int index)
+    internal CollectorPet(
+        WorldPetSpec spec,
+        Character owner,
+        Func<int> count,
+        int goal,
+        int index,
+        Vector3? trail = null
+    )
     {
         externalCount = count;
         reward = spec.Reward;
@@ -116,7 +151,7 @@ internal sealed partial class CollectorPet
         Collector = owner;
         DisplayName = spec.Name;
         Goal = goal;
-        TrailOffset = WorldPetCatalog.Trail(index);
+        TrailOffset = trail ?? WorldPetCatalog.Trail(index);
         AddChild(model);
         switch (spec.Kind)
         {
@@ -158,6 +193,11 @@ internal sealed partial class CollectorPet
                 break;
             case CollectorPetKind.Frog:
                 BuildFrog();
+                break;
+            case CollectorPetKind.Duckling1:
+            case CollectorPetKind.Duckling2:
+            case CollectorPetKind.Duckling3:
+                BuildDuckling();
                 break;
             case CollectorPetKind.Bridge:
                 BuildBridge();
@@ -399,6 +439,22 @@ internal sealed partial class CollectorPet
             Foot(new(side * .26f, .26f, .08f), .26f, .14f, "5aa84b", side);
         }
         Ball(new(0, .4f, .42f), new(.4f, .04f, .05f), "7a3a3a");
+    }
+
+    private void BuildDuckling()
+    {
+        // A fluffy yellow chick of a duck, small enough to run in a row behind its mother.
+        Ball(new(0, .5f, -.04f), new(.7f, .6f, .84f), "ffd84a");
+        Ball(new(0, .86f, .22f), new(.48f, .46f, .46f), "ffe27a");
+        Ball(new(0, .78f, .5f), new(.22f, .1f, .22f), "f58a2f");
+        Ball(new(0, .52f, -.5f), new(.2f, .2f, .24f), "ffcc33");
+        foreach (int side in new[] { -1, 1 })
+        {
+            Ball(new(side * .34f, .54f, -.06f), new(.16f, .28f, .5f), "f2c53a").RotateZ(side * .4f);
+            Foot(new(side * .14f, .24f, .0f), .24f, .1f, "f58a2f", side);
+        }
+        Eyes(.1f, .92f, .36f);
+        model.Scale = Vector3.One * .62f;
     }
 
     private void BuildBridge()

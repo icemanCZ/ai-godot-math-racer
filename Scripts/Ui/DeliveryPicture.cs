@@ -1,6 +1,7 @@
 using System.Linq;
 using Godot;
 using MathRacer.Characters;
+using MathRacer.Garage;
 
 namespace MathRacer.Ui;
 
@@ -619,6 +620,33 @@ public partial class DeliveryPicture : Control
                     },
                     new Color("ffe27a")
                 );
+        }
+        else if (Icon.StartsWith("trail-"))
+        {
+            // A bit of road with what the rear wheels leave on it: tyre marks, or flowers, hearts or stars.
+            string trail = Icon[6..];
+            var road = Enumerable
+                .Range(0, 20)
+                .Select(i => new Vector2(14 + i * 8, 76 + 20 * Mathf.Sin(i / 19f * Mathf.Tau)))
+                .ToArray();
+            DrawPolyline(road, new Color("ecd49a"), 62, true);
+            if (trail == "tyres")
+                foreach (float side in new[] { -11f, 11f })
+                    for (int i = 0; i + 1 < road.Length; i += 2)
+                        DrawLine(
+                            road[i] + Vector2.Down * side,
+                            road[i + 1] + Vector2.Down * side,
+                            new Color("8a7757"),
+                            6,
+                            true
+                        );
+            else
+                for (int i = 1; i < road.Length - 1; i += 3)
+                {
+                    var centre = road[i] + Vector2.Down * (i % 2 == 0 ? 11 : -11);
+                    foreach (var piece in TrailShapes.Of(trail))
+                        DrawColoredPolygon(piece.Outline.Select(p => centre + p * 15).ToArray(), piece.Color);
+                }
         }
         else if (Icon == "quiz-letters")
         {
