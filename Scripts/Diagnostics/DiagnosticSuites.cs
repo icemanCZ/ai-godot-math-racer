@@ -56,7 +56,8 @@ internal static class DiagnosticSuites
             "track-checks",
             (g, w, v) => new WheelTrackChecks(v, w.Ground, w.Routes),
             NeedsStart: false,
-            ContinuesGame: true
+            ContinuesGame: true,
+            Seeds: ThreeSeeds
         ),
         new("road-driving-checks", Seeds: new[] { 1, 16 }, Variants: Routes("4-", "1")),
         new("bandit-checks", (g, w, v) => new BanditChecks(g, w, v), Seeds: Seed42),

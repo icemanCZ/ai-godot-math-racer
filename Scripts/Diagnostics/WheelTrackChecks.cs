@@ -2,7 +2,8 @@ using Godot;
 
 namespace MathRacer;
 
-// Reproduce driving right from spawn with several steering strengths.
+// Reproduce driving right from spawn with several steering strengths. A hard turn can end against a tree beside the
+// road, and after five seconds the car is put back on the road. That jump is not driving, so it is not a gap in the tracks.
 public partial class WheelTrackChecks : Node
 {
     private readonly Vehicle car;
@@ -13,6 +14,7 @@ public partial class WheelTrackChecks : Node
         scenario,
         failures;
     private float previousRecorded;
+    private bool movedByReset;
     private Vector3 previousPosition;
 
     public WheelTrackChecks(Vehicle car, Terrain terrain, Roads roads)
@@ -20,6 +22,7 @@ public partial class WheelTrackChecks : Node
         this.car = car;
         this.terrain = terrain;
         this.roads = roads;
+        car.PoseReset += () => movedByReset = true;
     }
 
     public override void _PhysicsProcess(double delta)
@@ -32,6 +35,7 @@ public partial class WheelTrackChecks : Node
             Input.ActionPress("right", steering[scenario]);
             previousRecorded = car.Tracks.DistanceRecorded;
             previousPosition = car.Position;
+            movedByReset = false;
         }
         if (frame == 90)
             Input.ActionRelease("right");
@@ -39,7 +43,13 @@ public partial class WheelTrackChecks : Node
         {
             var displacement = car.Position.DistanceTo(previousPosition);
             bool dryLand = River.Distance(car.Position.X, car.Position.Z) > River.HalfWidth(car.Position.Z) + 4;
-            if (dryLand && displacement > .7f && displacement < 10 && car.Tracks.DistanceRecorded <= previousRecorded)
+            if (
+                !movedByReset
+                && dryLand
+                && displacement > .7f
+                && displacement < 10
+                && car.Tracks.DistanceRecorded <= previousRecorded
+            )
             {
                 failures++;
                 var p = car.Position;
@@ -49,6 +59,7 @@ public partial class WheelTrackChecks : Node
             }
             previousRecorded = car.Tracks.DistanceRecorded;
             previousPosition = car.Position;
+            movedByReset = false;
         }
         if (frame < 900)
             return;

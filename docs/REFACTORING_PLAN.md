@@ -170,7 +170,7 @@ Odchylky a čísla, pro úplnost:
 - `ShowPanel` už není `switch`, ale slovník `GameState → panel`. Kontrola v `contract-checks` se tím změnila z čtení zdrojového kódu na dotaz do registru (`Game.HasPanel`).
 - `Interaction` je jen stav a přechody pauzy. `EnterInteraction`, `Resume` a `TogglePause` zůstaly v `Game`, protože zastavují auto a ukazují panel.
 - `Economy` a `Interaction` jsou malé; větší užitek mají `QuizSession` (generátory a rotace bez scény) a `TaskSlot` (vkládání a odebírání úkolu ze scény na jednom místě).
-- **Nalezeno cestou, není z refaktoringu:** `track-checks` selhává na seedech 42 a 1706514621 (`TRACK_GAP … gaps=1`) už na původním commitu `c742645`. `build.ps1` ho spouští s náhodným seedem, proto dosud procházel jen náhodou. Zdroj chyby jsem nehledal.
+- **Nalezeno cestou, není z refaktoringu, vyřešeno:** `track-checks` selhával na některých náhodných seedech (42, 1706514621) už na původním commitu `c742645`. Příčina byla v testu, ne ve stopách kol: při plném zatočení doprava auto narazí do kmene stromu asi 10 m od startu, zaklíní se a po pěti vteřinách ho `Vehicle` vrátí na start; ten skok o 9 m test vyhodnotil jako mezeru ve stopách. Test teď skoky způsobené `PoseReset` přeskakuje a v registru má pevné seedy 1, 42 a 7421. Prošel i na seedech 1–64.
 
 Princip: **přesun, ne přepis.** Každý objekt vezme pole a metody, které dnes leží v `Game`, a `Game` na něj jen deleguje. Pořadí od nejmenšího rizika:
 
