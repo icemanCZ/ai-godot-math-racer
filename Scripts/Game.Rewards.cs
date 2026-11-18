@@ -13,7 +13,8 @@ public partial class Game
     private bool MillFinished => world.Projects.Length > BuildPlans.Mill && world.Projects[BuildPlans.Mill].Complete;
 
     /// <summary>Coins a finished shop order brings: the baker pays more once the mill is built.</summary>
-    internal int TradeReward(Animal shop) => TradeCoins + (shop.TradeIndex == 0 && MillFinished ? BakerBonus : 0);
+    internal int TradeReward(Animal shop) =>
+        TradeCoins + (shop.Role is TraderRole { Index: 0 } && MillFinished ? BakerBonus : 0);
 
     /// <summary>The garage item that a finished building brings, or null: flour sack, binoculars or the water paint.</summary>
     internal static CarReward? BuildItem(int project) =>

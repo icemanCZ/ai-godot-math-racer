@@ -56,6 +56,7 @@ public partial class Game
         departure = trip;
         BeginQuiz();
     }
+
     private SyllableSelection syllableSelection;
 
     private void ToggleQuizType(QuizType type)

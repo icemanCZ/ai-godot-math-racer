@@ -83,6 +83,8 @@ Co fixtury **nepokrývají** (vědomě, aby fáze 0 zůstala hotová): rozdělan
 
 ## Fáze 1: rychlé zisky
 
+**Stav: provedeno** (1a, 1b i 1c). Odchylky od plánu: `Animal` ztratila všech 8 příznaků i oba indexy (`IsCollectionOwner` nikdo nepoužíval); `World.FarmerId` a ostatní názvy zůstaly jako aliasy `ActorIds`, aby se nemuselo přepisovat 89 míst; seznam diagnostik drží i hodnoty `NeedsStart`, `ContinuesGame` a `FixedFps`, které byly dřív rozeseté po `Game.Diagnostics.cs` a `build.ps1`.
+
 ### 1a. Role místo `Is…` příznaků (nález 4)
 
 Použití: `Game.Village.cs` (8), `Game.cs` (7), `Expedition.cs` (6), `World.cs` (2), `Game.Trades.cs` (2), po jednom v `GameUi*.cs`, `Game.Works/Rewards/Postcards/Events.cs`, `DrivingEvents.cs`; v diagnostice `FarmChecks`, `GardenChecks`, `TradeChecks`.

@@ -14,7 +14,7 @@ public partial class Game
 
     internal void OpenHouse(Animal resident)
     {
-        int house = resident.HouseIndex;
+        int house = ((HouseResidentRole)resident.Role).House;
         if (Delivery?.Sender == resident)
         {
             if (Delivery.CanDeliver)
@@ -65,7 +65,10 @@ public partial class Game
     /// <summary>Shows what the resident wants and the way to fetch it: the trip, the play button or the missing raw material.</summary>
     private bool ShowHouseMaterial()
     {
-        if (nearby is not { HouseIndex: >= 0 } resident || HouseMaterial(resident.HouseIndex) is not { } load)
+        if (
+            nearby is not { Role: HouseResidentRole { House: var house } } resident
+            || HouseMaterial(house) is not { } load
+        )
             return false;
         var works = GoodsWorks(load)!;
         var trip = TripOf(resident);
@@ -84,7 +87,7 @@ public partial class Game
 
     private void SpeakHouseMaterial(Animal resident)
     {
-        var load = HouseMaterial(resident.HouseIndex)!.Value;
+        var load = HouseMaterial(((HouseResidentRole)resident.Role).House)!.Value;
         var works = GoodsWorks(load)!;
         string wanted = load == HaulLoad.Planks ? "prkna" : "cihly";
         Speak(
@@ -102,8 +105,8 @@ public partial class Game
     {
         if (
             State != GameState.HouseMaterialOffer
-            || nearby is not { HouseIndex: >= 0, RewardAvailable: true } resident
-            || HouseMaterial(resident.HouseIndex) is not { } load
+            || nearby is not { Role: HouseResidentRole { House: var house }, RewardAvailable: true } resident
+            || HouseMaterial(house) is not { } load
             || TripOf(resident) != null
             || GoodsWorks(load) is not { } works
             || works.Stock < Works.PerTrip
@@ -115,7 +118,7 @@ public partial class Game
             return;
         }
         CancelActiveTask();
-        StartHaul(new HouseTrip(world, vehicle, resident.HouseIndex, load, loaded: false));
+        StartHaul(new HouseTrip(world, vehicle, house, load, loaded: false));
         Start();
         Speak(TripInstruction(Haul!), resident);
         SaveProgress();
@@ -140,10 +143,8 @@ public partial class Game
     {
         if (
             State != GameState.HouseFruitOffer
-            || nearby == null
-            || nearby.HouseIndex < 0
-            || !nearby.RewardAvailable
-            || world.Village.TaskAt(nearby.HouseIndex) != VillageTaskKind.Fruit
+            || nearby is not { Role: HouseResidentRole { House: var house }, RewardAvailable: true }
+            || world.Village.TaskAt(house) != VillageTaskKind.Fruit
         )
             return;
         // The apple trip starts only after a solved quiz.
@@ -194,7 +195,7 @@ public partial class Game
 
     private void CompleteHouseTask(Animal owner)
     {
-        int house = owner.HouseIndex;
+        int house = ((HouseResidentRole)owner.Role).House;
         world.Village.Upgrade(house);
         AddCoins(HouseTaskCoins);
         nearby = owner;

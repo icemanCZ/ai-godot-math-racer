@@ -45,7 +45,7 @@ public partial class FarmChecks : Node
             }
             var village = world.Village;
             Check(
-                village.Houses.Count == 4 && village.Residents.Count == 4 && village.Farmer.IsFarmer,
+                village.Houses.Count == 4 && village.Residents.Count == 4 && village.Farmer.Role is FarmerRole,
                 "farm adds a dedicated resident without replacing houses"
             );
             Check(

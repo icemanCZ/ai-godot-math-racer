@@ -199,8 +199,8 @@ public partial class Game : Node3D
             CancelPostcardPhoto();
         if (State == GameState.Reward && deliveryReward && Delivery != null)
         {
-            if (Delivery.Sender.IsTrader)
-                world.Village.TradeCounts[Delivery.Sender.TradeIndex]++;
+            if (Delivery.Sender.Role is TraderRole shop)
+                world.Village.TradeCounts[shop.Index]++;
             EndExpedition();
         }
         deliveryReward = false;
@@ -245,16 +245,16 @@ public partial class Game : Node3D
             case GameState.Garage:
                 ShowGarage();
                 return true;
-            case GameState.HouseReward when nearby != null:
-                ui.HouseReward(nearby, world.Village.Level(nearby.HouseIndex));
+            case GameState.HouseReward when nearby is { Role: HouseResidentRole house }:
+                ui.HouseReward(nearby, world.Village.Level(house.House));
                 return true;
             case GameState.HouseCollection when Delivery != null:
                 ui.HouseCollection(Delivery.Sender, Delivery.Collected);
                 return true;
-            case GameState.HouseFruitOffer when nearby != null:
-                ui.HouseFruitOffer(nearby, world.Village.Level(nearby.HouseIndex), true);
+            case GameState.HouseFruitOffer when nearby is { Role: HouseResidentRole house }:
+                ui.HouseFruitOffer(nearby, world.Village.Level(house.House), true);
                 return true;
-            case GameState.HouseMaterialOffer when nearby?.HouseIndex >= 0:
+            case GameState.HouseMaterialOffer when nearby?.Role is HouseResidentRole:
                 return ShowHouseMaterial();
             case GameState.FarmStatus:
                 ui.FarmStatus(world.Village, Delivery, returned);
@@ -459,7 +459,7 @@ public partial class Game : Node3D
             CompleteGolemQuest();
             return;
         }
-        if (Delivery.Sender.IsTrader)
+        if (Delivery.Sender.Role is TraderRole)
         {
             CompleteTrade();
             return;
@@ -584,7 +584,7 @@ public partial class Game : Node3D
         }
         if (nearby.Role.CompleteQuiz(this, nearby, handover))
             return;
-        if (handover && Delivery?.Sender.HouseIndex >= 0)
+        if (handover && Delivery?.Sender.Role is HouseResidentRole)
         {
             CompleteHouseTask(Delivery.Sender);
             EndExpedition();

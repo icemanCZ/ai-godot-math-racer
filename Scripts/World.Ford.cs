@@ -8,14 +8,14 @@ namespace MathRacer;
 public partial class World
 {
     // 43 is the bandit representative's save ID in Game.
-    internal const int BeaverId = 44;
+    internal const int BeaverId = ActorIds.Beaver;
 
     /// <summary>The actor ID of the character who gives the work for a building (the beaver for the bridge).</summary>
     internal static int BuilderId(int project) =>
         project == BuildPlans.Bridge ? BeaverId : FirstBuilderId + project - 1;
 
-    internal const int FirstBuilderId = 48;
-    internal const int LastBuilderId = FirstBuilderId + BuildPlans.Count - 2;
+    internal const int FirstBuilderId = ActorIds.FirstBuilder;
+    internal const int LastBuilderId = ActorIds.LastBuilder;
 
     internal static bool IsBuilder(int id) => id == BeaverId || id is >= FirstBuilderId and <= LastBuilderId;
 
@@ -160,7 +160,7 @@ public partial class World
         var facing = site.NearDump - site.BeaverSpot;
         Beaver.Rotation = new(0, Mathf.Atan2(facing.X, facing.Z), 0);
         AddChild(Beaver);
-        actors.Add(BeaverId, Beaver);
+        Register(BeaverId, Beaver);
         BuildProjects(builds);
     }
 

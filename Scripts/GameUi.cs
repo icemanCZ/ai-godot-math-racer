@@ -930,7 +930,7 @@ public partial class GameUi : CanvasLayer
 
     public void CollectionStatus(Village village, Animal owner, Expedition? expedition, bool returned = false)
     {
-        bool toys = owner.IsToymaker;
+        bool toys = owner.Role is ExhibitCollectorRole { Toys: true };
         int count = village.CollectionCount(toys);
         Clear();
         Text(owner.DisplayName, 30);

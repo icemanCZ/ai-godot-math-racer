@@ -19,18 +19,18 @@ public partial class Expedition : Node3D
     public Animal Sender { get; }
     public Animal Recipient { get; }
     public bool Collection { get; }
-    public bool Farm => Sender.IsFarmer;
-    public bool Garden => Sender.IsGardener;
-    public bool Gems => Sender.IsGemCollector;
-    public bool Toys => Sender.IsToymaker;
-    public bool Golem => Sender.IsSorcerer;
+    public bool Farm => Sender.Role is FarmerRole;
+    public bool Garden => Sender.Role is GardenerRole;
+    public bool Gems => Sender.Role is ExhibitCollectorRole { Toys: false };
+    public bool Toys => Sender.Role is ExhibitCollectorRole { Toys: true };
+    public bool Golem => Sender.Role is SorcererRole;
     public bool SpecialCollection => Farm || Garden || Gems || Toys || Golem;
     public int ItemIndex { get; }
     public string FarmName => Village.FarmNames[ItemIndex];
     public string FlowerName => Village.FlowerNames[ItemIndex];
     public string CollectionName => Village.CollectionNames(Toys)[ItemIndex];
     public string Cargo =>
-        Sender.IsTrader ? Village.TradeCargo[Sender.TradeIndex]
+        Sender.Role is TraderRole shop ? Village.TradeCargo[shop.Index]
         : Collection ? "apple"
         : Sender.Kind == 0 ? "carrot"
         : Sender.Kind == 1 ? "apple"

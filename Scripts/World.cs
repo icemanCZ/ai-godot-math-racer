@@ -7,19 +7,19 @@ public partial class World : Node3D
 {
     public const int QuestAnimalCount = 10;
 
-    // World actor IDs are persisted. The gap before residents covers legacy roadside animals.
-    internal const int FirstResidentId = 30;
-    internal const int FarmerId = 34;
-    internal const int GardenerId = 35;
-    internal const int GemCollectorId = 36;
-    internal const int ToymakerId = 37;
-    internal const int FirstTraderId = 38;
-    internal const int WitchId = 41;
-    internal const int SorcererId = 42;
+    // World actor IDs are persisted; the numbers live in ActorIds and these are aliases of them.
+    internal const int FirstResidentId = ActorIds.FirstResident;
+    internal const int FarmerId = ActorIds.Farmer;
+    internal const int GardenerId = ActorIds.Gardener;
+    internal const int GemCollectorId = ActorIds.GemCollector;
+    internal const int ToymakerId = ActorIds.Toymaker;
+    internal const int FirstTraderId = ActorIds.FirstTrader;
+    internal const int WitchId = ActorIds.Witch;
+    internal const int SorcererId = ActorIds.Sorcerer;
 
     // The newcomers of the building plots take the IDs after the last source worker.
-    internal const int FirstPlotResidentId = LastSourceId + 1;
-    internal const int LastPlotResidentId = FirstPlotResidentId + PlotPlans.Count - 1;
+    internal const int FirstPlotResidentId = ActorIds.FirstPlotResident;
+    internal const int LastPlotResidentId = ActorIds.LastPlotResident;
 
     internal static bool IsPlotResident(int id) => id is >= FirstPlotResidentId and <= LastPlotResidentId;
 
@@ -91,19 +91,28 @@ public partial class World : Node3D
     private void RegisterActors()
     {
         for (int i = 0; i < Animals.Length; i++)
-            actors.Add(i, Animals[i]);
+            Register(i, Animals[i]);
         foreach (var resident in Village.Residents)
-            actors.Add(FirstResidentId + resident.HouseIndex, resident);
-        actors.Add(FarmerId, Village.Farmer);
-        actors.Add(GardenerId, Village.Gardener);
-        actors.Add(GemCollectorId, Village.GemCollector);
-        actors.Add(ToymakerId, Village.Toymaker);
+            Register(FirstResidentId + ((HouseResidentRole)resident.Role).House, resident);
+        Register(FarmerId, Village.Farmer);
+        Register(GardenerId, Village.Gardener);
+        Register(GemCollectorId, Village.GemCollector);
+        Register(ToymakerId, Village.Toymaker);
         foreach (var trader in Village.Traders)
-            actors.Add(FirstTraderId + trader.TradeIndex, trader);
-        actors.Add(WitchId, Witch);
-        actors.Add(SorcererId, Sorcerer);
+            Register(FirstTraderId + ((TraderRole)trader.Role).Index, trader);
+        Register(WitchId, Witch);
+        Register(SorcererId, Sorcerer);
         foreach (var plot in Village.BuildPlots)
-            actors.Add(FirstPlotResidentId + plot.Index, plot.Resident);
+            Register(FirstPlotResidentId + plot.Index, plot.Resident);
+    }
+
+    /// <summary>Registers a character under its saved ID; an ID that is already taken is a mistake in the numbering.</summary>
+    private void Register(int id, Animal actor)
+    {
+        if (!actors.TryAdd(id, actor))
+            throw new System.InvalidOperationException(
+                $"Actor ID {id} belongs to {actors[id].DisplayName}, so {actor.DisplayName} cannot be registered under it."
+            );
     }
 
     internal int ActorId(Animal actor)

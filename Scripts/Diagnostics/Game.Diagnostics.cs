@@ -8,6 +8,16 @@ public partial class Game
 {
     partial void RunDiagnosticsBeforeWorld(ref bool handled)
     {
+        if (LaunchOptions.Has("--list-checks"))
+        {
+            // build.ps1 reads the suites of the test run from here.
+            handled = true;
+            SetProcess(false);
+            foreach (string suite in DiagnosticSuites.ListForTestRun())
+                GD.Print("DIAGNOSTIC_SUITE " + suite);
+            GetTree().Quit();
+            return;
+        }
         if (!LaunchOptions.Has("--road-audit"))
             return;
         handled = true;
@@ -54,10 +64,7 @@ public partial class Game
     {
         var args = LaunchOptions.Args;
         return (args.Contains("--play") && !args.Contains("--view=title"))
-            || args.Contains("--smoke-test")
-            || args.Contains("--track-checks")
-            || args.Contains("--collision-checks")
-            || args.Contains("--weather-checks");
+            || DiagnosticSuites.All.Any(suite => suite.ContinuesGame && DiagnosticSuites.Requested(suite));
     }
 
     partial void AttachDiagnostics(FollowCamera camera)
@@ -70,119 +77,14 @@ public partial class Game
             )
         )
             WorldCoins.PickupEnabled = false;
-        if (args.Contains("--contract-checks"))
-            AddChild(new ContractChecks(world));
-        if (args.Contains("--world-fingerprint-checks"))
-            AddChild(new WorldFingerprintChecks(world));
-        if (args.Contains("--write-world-fingerprint"))
-            AddChild(new WorldFingerprintWriter(world));
-        if (args.Contains("--save-fixtures"))
+        foreach (var suite in DiagnosticSuites.All)
         {
-            Start();
-            AddChild(new SaveFixtures(this, world, vehicle));
+            if (suite.Create == null || !DiagnosticSuites.Requested(suite))
+                continue;
+            if (suite.NeedsStart)
+                Start();
+            AddChild(suite.Create(this, world, vehicle));
         }
-        if (args.Contains("--save-fixture-checks"))
-        {
-            Start();
-            AddChild(new SaveFixtureChecks(this, world, vehicle));
-        }
-        if (args.Contains("--golem-checks"))
-        {
-            Start();
-            AddChild(new GolemChecks(this, world, vehicle));
-        }
-        if (args.Contains("--ford-checks"))
-        {
-            Start();
-            AddChild(new FordChecks(this, world, vehicle));
-        }
-        if (args.Contains("--build-checks"))
-        {
-            Start();
-            AddChild(new BuildChecks(this, world, vehicle));
-        }
-        if (args.Contains("--plot-checks"))
-        {
-            Start();
-            AddChild(new PlotChecks(this, world, vehicle));
-        }
-        if (args.Contains("--works-checks"))
-        {
-            Start();
-            AddChild(new WorksChecks(this, world, vehicle));
-        }
-        if (args.Contains("--weather-checks"))
-            AddChild(new WeatherChecks(this, world, vehicle));
-        if (args.Contains("--bandit-checks"))
-        {
-            Start();
-            AddChild(new BanditChecks(this, world, vehicle));
-        }
-        if (args.Contains("--collision-checks"))
-            AddChild(new CollisionChecks(vehicle, world));
-        if (args.Contains("--track-checks"))
-            AddChild(new WheelTrackChecks(vehicle, world.Ground, world.Routes));
-        if (args.Contains("--smoke-test"))
-            AddChild(new SmokeTest(this, world, vehicle));
-        if (args.Contains("--controller-checks"))
-            AddChild(new ControllerChecks(this, world, vehicle));
-        if (args.Contains("--delivery-checks"))
-        {
-            Start();
-            AddChild(new DeliveryChecks(this, world, vehicle));
-        }
-        if (args.Contains("--garage-checks"))
-        {
-            Start();
-            AddChild(new GarageChecks(this, world, vehicle));
-        }
-        if (args.Contains("--village-checks"))
-        {
-            Start();
-            AddChild(new VillageChecks(this, world, vehicle));
-        }
-        if (args.Contains("--farm-checks"))
-        {
-            Start();
-            AddChild(new FarmChecks(this, world, vehicle));
-        }
-        if (args.Contains("--garden-checks"))
-        {
-            Start();
-            AddChild(new GardenChecks(this, world, vehicle));
-        }
-        if (args.Contains("--trade-checks"))
-        {
-            Start();
-            AddChild(new TradeChecks(this, world, vehicle));
-        }
-        if (args.Contains("--collection-checks"))
-        {
-            Start();
-            AddChild(new CollectionChecks(this, world, vehicle));
-        }
-        if (args.Contains("--collector-pet-checks"))
-        {
-            Start();
-            AddChild(new CollectorPetChecks(this, world, vehicle));
-        }
-        if (args.Contains("--save-checks"))
-        {
-            Start();
-            AddChild(new SaveChecks(this, world, vehicle));
-        }
-        if (args.Contains("--postcard-checks"))
-        {
-            Start();
-            AddChild(new PostcardChecks(this, world, vehicle));
-        }
-        if (args.Contains("--event-checks"))
-        {
-            Start();
-            AddChild(new EventChecks(this, world, vehicle));
-        }
-        if (args.Contains("--new-game-checks"))
-            AddChild(new NewGameChecks(this, world, vehicle));
         if (args.Contains("--capture"))
         {
             string view = args.FirstOrDefault(arg => arg.StartsWith("--view="))?[7..] ?? "gameplay";

@@ -67,7 +67,7 @@ public partial class GardenChecks : Node
                 "some terrain targets now use longer approaches"
             );
             Check(
-                village.Houses.Count == 4 && village.Residents.Count == 4 && village.Gardener.IsGardener,
+                village.Houses.Count == 4 && village.Residents.Count == 4 && village.Gardener.Role is GardenerRole,
                 "garden adds a dedicated resident without replacing houses"
             );
             Check(

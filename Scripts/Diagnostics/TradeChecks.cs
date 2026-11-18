@@ -80,7 +80,7 @@ public partial class TradeChecks : Node
                 Check(
                     game.Delivery is { Collection: false, CargoVisible: true }
                         && game.State == GameState.Exploring
-                        && game.Delivery.Cargo == Village.TradeCargo[owner.TradeIndex],
+                        && game.Delivery.Cargo == Village.TradeCargo[((TraderRole)owner.Role).Index],
                     "correct answer immediately loads the trade cargo"
                 );
                 var target = game.Delivery!.Recipient;
@@ -131,7 +131,7 @@ public partial class TradeChecks : Node
                     "taking the coins unloads the cargo"
                 );
                 Check(
-                    world.Village.TradeCounts[owner.TradeIndex] == trip / 3 + 1,
+                    world.Village.TradeCounts[((TraderRole)owner.Role).Index] == trip / 3 + 1,
                     "completion counted once and trader offers repeat trips"
                 );
                 RoundTrip();

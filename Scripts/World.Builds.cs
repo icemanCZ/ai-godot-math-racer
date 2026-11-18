@@ -396,7 +396,7 @@ public partial class World
             builder.Rotation = new Vector3(0, Mathf.Atan2(facing.X, facing.Z), 0);
             AddChild(builder);
             project.Builder = builder;
-            actors.Add(BuilderId(site.Project), builder);
+            Register(BuilderId(site.Project), builder);
             projects[site.Project] = project;
             if (project is Jetty jetty)
                 CreateDuck(jetty, builder);

@@ -19,7 +19,7 @@ public partial class Game
 
     internal void StartTrade()
     {
-        if (nearby?.IsTrader != true || Delivery?.Sender == nearby)
+        if (nearby?.Role is not TraderRole || Delivery?.Sender == nearby)
             return;
         StartExpedition(nearby, false);
         SaveProgress();
@@ -27,7 +27,7 @@ public partial class Game
 
     private void CompleteTrade()
     {
-        if (Delivery == null || !Delivery.Sender.IsTrader || deliveryReward)
+        if (Delivery == null || Delivery.Sender.Role is not TraderRole || deliveryReward)
             return;
         deliveryReward = true;
         ClearChallenge();

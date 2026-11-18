@@ -56,7 +56,7 @@ public partial class DrivingEvents : Node3D
     internal void Generate(World world)
     {
         this.world = world;
-        var actors = world.InteractionActors.Where(actor => !actor.IsWitch && !actor.IsSorcerer).ToArray();
+        var actors = world.InteractionActors.Where(actor => actor.Role is not (WitchRole or SorcererRole)).ToArray();
         for (int course = 0; course < 2; course++)
         {
             // Use the outer countryside loops, with the entire course clear of the village.

@@ -11,15 +11,15 @@ internal sealed record IndustryPlan(HaulSource LogYard, WorksSite[] Sites);
 public partial class World
 {
     // The sawmill, brickworks and gravel works workers follow the beaver (44).
-    internal const int FirstWorksId = 45;
-    internal const int LastWorksId = FirstWorksId + WorksCatalog.Count - 1;
+    internal const int FirstWorksId = ActorIds.FirstWorks;
+    internal const int LastWorksId = ActorIds.LastWorks;
 
     // The workers at the quarry, the clay pit and the log yard follow the builders (48–50, planned for later).
-    internal const int FirstSourceId = 51;
+    internal const int FirstSourceId = ActorIds.FirstSource;
 
     // The workers at the second sites (quarry, clay pit, sand pit, log yard) follow them.
-    internal const int FirstExtraSourceId = FirstSourceId + SourceCatalog.Count;
-    internal const int LastSourceId = FirstExtraSourceId + 4 - 1;
+    internal const int FirstExtraSourceId = ActorIds.FirstExtraSource;
+    internal const int LastSourceId = ActorIds.LastSource;
     internal const float WorksPathHalfWidth = 3;
 
     /// <summary>Works keep at least this far from the other places haul sites have taken.</summary>
@@ -400,7 +400,7 @@ public partial class World
         var facing = source.Position - worker.Position;
         worker.Rotation = new Vector3(0, Mathf.Atan2(facing.X, facing.Z), 0);
         AddChild(worker);
-        actors.Add(id, worker);
+        Register(id, worker);
         return worker;
     }
 
@@ -446,7 +446,7 @@ public partial class World
             worker.Rotation = new Vector3(0, Mathf.Atan2(facing.X, facing.Z), 0);
             AddChild(worker);
             works.Worker = worker;
-            actors.Add(FirstWorksId + site.Index, worker);
+            Register(FirstWorksId + site.Index, worker);
             built.Add(works);
         }
         Industry = built.ToArray();

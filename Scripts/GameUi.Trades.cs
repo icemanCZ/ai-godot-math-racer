@@ -5,7 +5,8 @@ public partial class GameUi
     public void TradeHint(Animal owner)
     {
         talkButton.Visible = !modal.Visible;
-        talkButton.Text = (controller ? "A · " : "E · ") + Village.TradeSigns[owner.TradeIndex];
+        talkButton.Text =
+            (controller ? "A · " : "E · ") + (owner.Role is TraderRole shop ? Village.TradeSigns[shop.Index] : "");
     }
 
     public void TradeStatus(Animal owner, Expedition? expedition)

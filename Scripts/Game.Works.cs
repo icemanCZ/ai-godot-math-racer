@@ -113,8 +113,8 @@ public partial class Game
         {
             // A resident who wants goods that the works has not made does the same: the way to the raw material.
             if (
-                nearby is not { HouseIndex: >= 0, RewardAvailable: true } resident
-                || HouseMaterial(resident.HouseIndex) is not { } load
+                nearby is not { Role: HouseResidentRole { House: var house }, RewardAvailable: true } resident
+                || HouseMaterial(house) is not { } load
                 || TripOf(resident) != null
                 || GoodsWorks(load) is not { Full: false } missing
                 || missing.Stock >= Works.PerTrip

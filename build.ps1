@@ -6,55 +6,49 @@
 )
 . "$PSScriptRoot/scripts-common.ps1"
 
-function New-GameTestCase([string]$Mode, [int[]]$Seeds = @(0), [string]$Argument = '', [string]$Suffix = '') {
+function New-GameTestCase([string]$Mode, [int[]]$Seeds = @(0), [string]$Argument = '', [string]$Suffix = '', [bool]$FixedFps = $true) {
     foreach ($seed in $Seeds) {
         $label = if ($seed) { "$Mode-$seed" } else { $Mode }
         if ($Suffix) { $label = "$label-$Suffix" }
-        [PSCustomObject]@{ Mode = $Mode; Seed = $seed; Label = $label; Argument = $Argument }
+        $extra = if ($Argument) { " $Argument" } else { '' }
+        [PSCustomObject]@{ Mode = $Mode; Seed = $seed; Label = $label; Argument = $extra; FixedFps = $FixedFps }
     }
 }
 
-# Road driving is by far the longest scenario, so each route runs as its own process.
-# The "4-" part also covers any route added later.
-function New-RoadDrivingCases([string[]]$Routes, [int[]]$Seeds = @(1, 16)) {
-    foreach ($route in $Routes) {
-        New-GameTestCase 'road-driving-checks' $Seeds " --road-driving-route=$route" "route$($route.TrimEnd('-'))"
+# The suites of the test run are listed in Scripts/Diagnostics/DiagnosticSuites.cs, in the order they should start
+# (roughly longest first, so no long scenario starts near the end of the run). The game prints them as JSON.
+function Get-GameTestCases([string]$Godot) {
+    # Godot reports leaked resources on stderr when it quits this early, which PowerShell would treat as an error.
+    $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = $Godot
+    $startInfo.WorkingDirectory = $PSScriptRoot
+    $startInfo.Arguments = '--headless --path "{0}" -- --list-checks' -f $PSScriptRoot
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $process = [System.Diagnostics.Process]::Start($startInfo)
+    $errorText = $process.StandardError.ReadToEndAsync()
+    $output = $process.StandardOutput.ReadToEnd() -split "`r?`n"
+    $process.WaitForExit()
+    if ($process.ExitCode -ne 0) { throw "Výpis kontrol selhal (kód $($process.ExitCode)): $($errorText.Result)" }
+    $process.Dispose()
+    $lines = @($output | Where-Object { "$_".StartsWith('DIAGNOSTIC_SUITE ') })
+    if ($lines.Count -eq 0) { throw 'Hra nevypsala seznam kontrol (DIAGNOSTIC_SUITE).' }
+    $suites = @($lines | ForEach-Object { "$_".Substring('DIAGNOSTIC_SUITE '.Length) | ConvertFrom-Json })
+    foreach ($suite in $suites) {
+        $seeds = @($suite.seeds | ForEach-Object { [int]$_ })
+        if ($seeds.Count -eq 0) { $seeds = @(0) }
+        $variants = @($suite.variants)
+        if ($variants.Count -eq 0) { $variants = @([PSCustomObject]@{ argument = ''; suffix = '' }) }
+        foreach ($variant in $variants) {
+            New-GameTestCase $suite.mode $seeds $variant.argument $variant.suffix ([bool]$suite.fixedFps)
+        }
     }
 }
 
 function Invoke-GameTests([string]$Godot, [int]$JobCount) {
-    # Roughly longest first, so no long scenario starts near the end of the run.
-    $cases = @(
-        New-RoadDrivingCases '2', '3', '0'
-        New-GameTestCase 'smoke-test'
-        New-GameTestCase 'new-game-checks' 42
-        New-GameTestCase 'track-checks'
-        New-RoadDrivingCases '4-', '1'
-        New-GameTestCase 'bandit-checks' 42
-        New-GameTestCase 'collision-checks'
-        New-GameTestCase 'controller-checks'
-        New-GameTestCase 'village-checks' 42
-        New-GameTestCase 'golem-checks' 42
-        New-GameTestCase 'ford-checks' 1,42,7421
-        New-GameTestCase 'works-checks' 1,42,7421
-        New-GameTestCase 'build-checks' 1,42,7421
-        New-GameTestCase 'plot-checks' 1,42,7421
-        New-GameTestCase 'weather-checks' 42
-        New-GameTestCase 'postcard-checks' 42
-        New-GameTestCase 'event-checks' 1,42,7421
-        New-GameTestCase 'trade-checks' 1,42,7421
-        New-GameTestCase 'collection-checks' 42
-        New-GameTestCase 'collector-pet-checks' 42
-        New-GameTestCase 'garden-checks' 42
-        New-GameTestCase 'farm-checks' 42
-        New-GameTestCase 'save-checks' 42
-        New-GameTestCase 'save-fixture-checks' 42
-        New-GameTestCase 'world-fingerprint-checks' 1,42,7421
-        New-GameTestCase 'contract-checks' 1,42,7421
-        New-GameTestCase 'garage-checks' 42
-        New-GameTestCase 'delivery-checks' 1,42,7421
-        New-GameTestCase 'road-audit' 1,2,42,44,53,7421
-    )
+    $cases = @(Get-GameTestCases $Godot)
     $runId = '{0}-{1}' -f (Get-Date -Format 'yyyyMMdd-HHmmss'), [Guid]::NewGuid().ToString('N').Substring(0, 8)
     $runDirectory = Join-Path $PSScriptRoot "artifacts/game-tests/$runId"
     $active = [System.Collections.Generic.List[object]]::new()
@@ -70,7 +64,7 @@ function Invoke-GameTests([string]$Godot, [int]$JobCount) {
                 $caseDirectory = Join-Path $runDirectory $case.Label
                 New-Item -ItemType Directory -Path $caseDirectory -Force | Out-Null
                 $log = Join-Path $caseDirectory 'godot.log'
-                $fpsArgument = if ($case.Mode -notin 'road-audit', 'smoke-test') { ' --fixed-fps 60' } else { '' }
+                $fpsArgument = if ($case.FixedFps) { ' --fixed-fps 60' } else { '' }
                 $seedArgument = if ($case.Seed) { " --seed=$($case.Seed)" } else { '' }
                 $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
                 $startInfo.FileName = $Godot

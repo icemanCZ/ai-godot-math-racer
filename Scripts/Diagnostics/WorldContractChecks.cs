@@ -197,6 +197,7 @@ public partial class ContractChecks : Node
             CheckGameStates();
             CheckActorIds();
             CheckPanels();
+            CheckDiagnosticSuites();
             GD.Print("CONTRACT_CHECKS_PASSED");
             GetTree().Quit();
         }
@@ -220,25 +221,25 @@ public partial class ContractChecks : Node
     private void CheckActorIds()
     {
         Check(
-            World.FirstResidentId == 30
-                && World.FarmerId == 34
-                && World.GardenerId == 35
-                && World.GemCollectorId == 36
-                && World.ToymakerId == 37
-                && World.FirstTraderId == 38
-                && World.WitchId == 41
-                && World.SorcererId == 42
-                && Game.BanditActorId == 43
-                && World.BeaverId == 44
-                && World.FirstWorksId == 45
-                && World.LastWorksId == 47
-                && World.FirstBuilderId == 48
-                && World.LastBuilderId == 50
-                && World.FirstSourceId == 51
-                && World.FirstExtraSourceId == 54
-                && World.LastSourceId == 57
-                && World.FirstPlotResidentId == 58
-                && World.LastPlotResidentId == 63,
+            ActorIds.FirstResident == 30
+                && ActorIds.Farmer == 34
+                && ActorIds.Gardener == 35
+                && ActorIds.GemCollector == 36
+                && ActorIds.Toymaker == 37
+                && ActorIds.FirstTrader == 38
+                && ActorIds.Witch == 41
+                && ActorIds.Sorcerer == 42
+                && ActorIds.Bandit == 43
+                && ActorIds.Beaver == 44
+                && ActorIds.FirstWorks == 45
+                && ActorIds.LastWorks == 47
+                && ActorIds.FirstBuilder == 48
+                && ActorIds.LastBuilder == 50
+                && ActorIds.FirstSource == 51
+                && ActorIds.FirstExtraSource == 54
+                && ActorIds.LastSource == 57
+                && ActorIds.FirstPlotResident == 58
+                && ActorIds.LastPlotResident == 63,
             "the actor ID ranges are the ones saved games use"
         );
 
@@ -322,5 +323,38 @@ public partial class ContractChecks : Node
                 continue;
             Check(body.Contains($"GameState.{state}"), $"Game.ShowPanel shows a panel for {state}");
         }
+    }
+
+    /// <summary>
+    /// Every suite in <c>Scripts/Diagnostics</c> is listed in <see cref="DiagnosticSuites"/>, so that the game can start
+    /// it and the test run includes it. Helpers that are not suites on their own are named here.
+    /// </summary>
+    private static void CheckDiagnosticSuites()
+    {
+        // A static class is a helper that other suites call. RoadDrivingChecks is started by the road driving run
+        // itself, and WorldContractChecks holds several suites under other names.
+        string[] helpers = { "RoadDrivingChecks", "WorldContractChecks" };
+        string source = File.ReadAllText(
+            ProjectSettings.GlobalizePath("res://Scripts/Diagnostics/DiagnosticSuites.cs")
+        );
+        string folder = ProjectSettings.GlobalizePath("res://Scripts/Diagnostics");
+        foreach (string file in Directory.GetFiles(folder, "*.cs").Order())
+        {
+            string name = Path.GetFileNameWithoutExtension(file);
+            if (
+                !(name.EndsWith("Checks") || name == "SmokeTest")
+                || helpers.Contains(name)
+                || File.ReadAllText(file).Contains($"static class {name}")
+            )
+                continue;
+            Check(source.Contains($"new {name}("), $"the suite {name} is listed in DiagnosticSuites");
+        }
+        var modes = DiagnosticSuites.All.Where(suite => suite.Create != null).Select(suite => suite.Mode).ToArray();
+        Check(modes.Distinct().Count() == modes.Length, "every suite has a flag of its own");
+        foreach (var suite in DiagnosticSuites.All.Where(suite => suite.InSuite))
+            Check(
+                suite.Mode.EndsWith("-checks") || suite.Mode is "smoke-test" or "road-audit",
+                $"{suite.Mode} is a flag that leaves the player's save alone"
+            );
     }
 }

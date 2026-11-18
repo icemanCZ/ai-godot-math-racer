@@ -46,7 +46,7 @@ public partial class Game
         if (building != null)
         {
             followCamera.ShowMoment(building.GlobalPosition + Vector3.Up * 3, building.GlobalBasis.Z);
-            int upgrade = world.Village.Level(owner.HouseIndex) - 1;
+            int upgrade = world.Village.Level(((HouseResidentRole)owner.Role).House) - 1;
             highlightedPart = building.GetNode<Node3D>("Upgrades").GetChild<Node3D>(upgrade);
         }
         else if (unload)

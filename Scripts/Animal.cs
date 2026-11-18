@@ -6,16 +6,6 @@ public partial class Animal : Node3D
 {
     /// <summary>Assigned before the character enters the scene; roadside friends keep the default.</summary>
     internal ActorRole Role { get; set; } = RoadsideFriendRole.Instance;
-    public bool IsFarmer => Role is FarmerRole;
-    public bool IsWitch => Role is WitchRole;
-    public bool IsSorcerer => Role is SorcererRole;
-    public bool IsGardener => Role is GardenerRole;
-    public bool IsGemCollector => Role is ExhibitCollectorRole { Toys: false };
-    public bool IsToymaker => Role is ExhibitCollectorRole { Toys: true };
-    public bool IsCollectionOwner => Role is ExhibitCollectorRole;
-    public int TradeIndex => Role is TraderRole trader ? trader.Index : -1;
-    public bool IsTrader => Role is TraderRole;
-    public int HouseIndex => Role is HouseResidentRole resident ? resident.House : -1;
     private Node3D wavingArm = null!;
     internal bool IsWaving { get; private set; }
 

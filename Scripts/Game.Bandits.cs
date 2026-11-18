@@ -6,7 +6,7 @@ namespace MathRacer;
 
 public partial class Game
 {
-    internal const int BanditActorId = 43;
+    internal const int BanditActorId = ActorIds.Bandit;
     internal const int BanditQuestionCount = 3;
     internal const int MaxBanditSites = 8;
     private const float BanditRunTime = 1.15f;
