@@ -1,5 +1,6 @@
 using Godot;
 using MathRacer.Buildings;
+using MathRacer.Valley;
 
 namespace MathRacer.App;
 
@@ -14,6 +15,7 @@ public partial class Game
     internal const float LookoutCooldown = 60;
     internal const float RadarSeconds = 14;
 
+    private int constellationsShown;
     private float lookoutTime;
     private float lookoutRest;
 
@@ -41,13 +43,22 @@ public partial class Game
         lookoutRest = LookoutCooldown;
         var platform = tower.Position + tower.Site.Inward * 12 + Vector3.Up * (tower.PlatformHeight + 1.8f);
         float facing = Mathf.Atan2(tower.Site.Inward.X, tower.Site.Inward.Z);
-        followCamera.ShowPanorama(platform, LookoutSeconds, facing);
+        // On a starry night the stargazer lifts the view to the sky and, halfway round, shows a picture made of stars.
+        bool starry = Weather.StarsOut;
+        followCamera.ShowPanorama(platform, LookoutSeconds, facing, starry ? .5f : -.16f);
         WorldCoins.Flash(RadarSeconds);
         foreach (var animal in world.Animals)
             if (animal.RewardAvailable)
                 animal.Ping(RadarSeconds);
         tower.Builder.Celebrate();
-        Speak(Texts.PodivejSeCoVsechnoJeV, tower.Builder);
+        if (starry)
+        {
+            var picture = Constellation.All[constellationsShown++ % Constellation.All.Count];
+            world.Atmosphere.ShowConstellation(picture, facing + Mathf.Pi, LookoutSeconds);
+            Speak(Texts.Souhvezdi(picture.Name, picture.Stars.Length), tower.Builder);
+        }
+        else
+            Speak(Texts.PodivejSeCoVsechnoJeV, tower.Builder);
     }
 
     private void TickLookout(float delta)

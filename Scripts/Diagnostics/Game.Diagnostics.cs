@@ -194,6 +194,8 @@ public partial class Game
             view
             is "village"
                 or "village-upgraded"
+                or "village-evening"
+                or "village-night"
                 or "village-question"
                 or "village-fruit-offer"
                 or "village-fruit"
@@ -203,6 +205,13 @@ public partial class Game
         {
             if (view == "village-upgraded")
                 world.Village.RestoreLevels(new[] { 10, 10, 10, 10 });
+            if (view is "village-evening" or "village-night")
+            {
+                // Finished houses whose residents were given glasses, in the evening or at night.
+                world.Village.RestoreLevels(new[] { 10, 10, 10, 10 });
+                world.Village.RestoreGlazed(new[] { true, true, true, false });
+                Weather.Begin(view == "village-night" ? WeatherKind.Night : WeatherKind.Evening, instant: true);
+            }
             if (view is "village-material-offer" or "village-material-missing")
             {
                 // The first house asks for goods; the works has some in stock, or none so that the raw material is shown.
@@ -232,6 +241,14 @@ public partial class Game
                 ChallengeChecks.Solve(this);
             }
         }
+        if (view == "weather-choice")
+        {
+            vehicle.SetPose(world.Witch.Position + world.Witch.Basis.Z * 3 + Vector3.Up * .2f, 0);
+            OpenWeatherChallenge();
+            ChallengeChecks.Solve(this);
+        }
+        if (view is "night-drive" or "evening-drive" or "constellation")
+            Weather.Begin(view == "evening-drive" ? WeatherKind.Evening : WeatherKind.Night, instant: true);
         if (view == "task-choice")
         {
             OpenChallenge(world.Animals[0]);

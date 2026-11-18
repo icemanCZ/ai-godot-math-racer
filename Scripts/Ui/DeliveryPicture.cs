@@ -544,6 +544,45 @@ public partial class DeliveryPicture : Control
                 );
             }
         }
+        else if (Icon == "evening")
+        {
+            // A low sun sitting on the hills, with a few rays above it.
+            var centre = new Vector2(90, 100);
+            DrawCircle(centre, 28, new Color("ff9e66"), true, -1, true);
+            for (int i = 0; i < 5; i++)
+            {
+                var direction = Vector2.Right.Rotated(Mathf.Pi + (i + 1) * Mathf.Pi / 6);
+                DrawLine(centre + direction * 37, centre + direction * 49, new Color("ffc27a"), 7, true);
+            }
+            DrawRect(new Rect2(20, 100, 140, 36), ink);
+            DrawLine(new(24, 100), new(156, 100), Colors.White, 6, true);
+        }
+        else if (Icon == "night")
+        {
+            // A sleepy moon with rosy cheeks and a couple of stars.
+            var moon = new Color("fff0b8");
+            DrawCircle(new(84, 82), 40, moon, true, -1, true);
+            DrawArc(new(70, 78), 8, .15f, Mathf.Pi - .15f, 12, ink, 4, true);
+            DrawArc(new(98, 78), 8, .15f, Mathf.Pi - .15f, 12, ink, 4, true);
+            DrawArc(new(84, 90), 9, .3f, Mathf.Pi - .3f, 12, ink, 4, true);
+            DrawCircle(new(62, 93), 6, new Color("f4a29b"), true, -1, true);
+            DrawCircle(new(106, 93), 6, new Color("f4a29b"), true, -1, true);
+            foreach (var (x, y, r) in new[] { (140f, 40f, 11f), (150f, 96f, 8f), (30f, 34f, 7f) })
+                DrawColoredPolygon(
+                    new Vector2[]
+                    {
+                        new(x, y - r),
+                        new(x + r * .3f, y - r * .3f),
+                        new(x + r, y),
+                        new(x + r * .3f, y + r * .3f),
+                        new(x, y + r),
+                        new(x - r * .3f, y + r * .3f),
+                        new(x - r, y),
+                        new(x - r * .3f, y - r * .3f),
+                    },
+                    new Color("ffe27a")
+                );
+        }
         else if (Icon == "quiz-letters")
         {
             DrawPolyline(new Vector2[] { new(53, 114), new(90, 34), new(127, 114) }, Colors.White, 12, true);

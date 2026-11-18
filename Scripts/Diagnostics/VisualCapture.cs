@@ -44,6 +44,16 @@ public partial class VisualCapture : Node
                 camera.LookAt(focus + Vector3.Up * .6f);
             }
         }
+        else if (view == "constellation")
+        {
+            // The view from the tower at night: the line of sight is lifted and a picture of stars hangs ahead.
+            camera.SetProcess(false);
+            car.Active = false;
+            var eye = car.Position + Vector3.Up * 6;
+            camera.Position = eye;
+            camera.LookAt(eye + new Vector3(0, .5f, 1) * 60);
+            world.Atmosphere.ShowConstellation(Constellation.All[0], 0, 8);
+        }
         else if (view == "square")
         {
             camera.SetProcess(false);
@@ -140,6 +150,8 @@ public partial class VisualCapture : Node
             view
             is "village"
                 or "village-upgraded"
+                or "village-evening"
+                or "village-night"
                 or "village-question"
                 or "village-fruit-offer"
                 or "village-material-offer"
@@ -405,6 +417,7 @@ public partial class VisualCapture : Node
             && !view.StartsWith("collection-")
             && !view.StartsWith("delivery-")
             && view != "gameplay"
+            && view is not ("night-drive" or "evening-drive" or "weather-choice" or "constellation")
             && view != "title"
             && view != "challenge"
             && view != "letters"

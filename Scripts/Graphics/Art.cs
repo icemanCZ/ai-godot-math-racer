@@ -104,6 +104,25 @@ public static class Art
         return m;
     }
 
+    /// <summary>A block that shines by itself and ignores the light of the day: a window with the lamp on.</summary>
+    public static MeshInstance3D Lamp(Node3D parent, Vector3 pos, Vector3 scale, string color)
+    {
+        string key = "lamp:" + color;
+        if (!Materials.TryGetValue(key, out var material))
+        {
+            material = new StandardMaterial3D
+            {
+                AlbedoColor = new Color(color).SrgbToLinear(),
+                ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+            };
+            Materials[key] = material;
+        }
+        var lamp = Block(parent, pos, scale, color);
+        lamp.MaterialOverride = material;
+        lamp.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
+        return lamp;
+    }
+
     public static MeshInstance3D Ball(Node3D parent, Vector3 pos, Vector3 scale, string color) =>
         Mesh(parent, Sphere, pos, scale, color);
 

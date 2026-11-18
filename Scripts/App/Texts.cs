@@ -46,6 +46,9 @@ internal static class Texts
     public const string PodivejSeCoVsechnoJeV =
         "Podívej se, co všechno je v údolí! Zlaté sloupy ukazují mince a modré kamarády.";
 
+    public static string Souhvezdi(string name, int stars) =>
+        $"Podívej, hvězdy! Souhvězdí {name}.\nSpočítej si je: má {stars} hvězdiček.";
+
     // Game.Plots
     public const string MocDekujuZaDomecekBydliSe = "Moc děkuju za domeček! Bydlí se mi tu skvěle.";
     public const string PrivezesMiDalsiMaterial = "Přivezeš mi další materiál?";
@@ -179,6 +182,8 @@ internal static class Texts
     public const string Dest = "Déšť";
     public const string Vitr = "Vítr";
     public const string Bourka = "Bouřka";
+    public const string Vecer = "Večer";
+    public const string Noc = "Hvězdná noc";
 
     // GameUi.Works
     public const string Hliniste = "Hliniště";
