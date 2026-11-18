@@ -64,8 +64,28 @@ public partial class Game
     {
         var args = LaunchOptions.Args;
         // Checks expect exact coin totals, so the scattered coins only pay out where a check turns them on.
-        if (args.Any(arg => arg.EndsWith("-checks") || arg == "--smoke-test"))
+        if (
+            args.Any(arg =>
+                arg.EndsWith("-checks") || arg is "--smoke-test" or "--save-fixtures" or "--write-world-fingerprint"
+            )
+        )
             WorldCoins.PickupEnabled = false;
+        if (args.Contains("--contract-checks"))
+            AddChild(new ContractChecks(world));
+        if (args.Contains("--world-fingerprint-checks"))
+            AddChild(new WorldFingerprintChecks(world));
+        if (args.Contains("--write-world-fingerprint"))
+            AddChild(new WorldFingerprintWriter(world));
+        if (args.Contains("--save-fixtures"))
+        {
+            Start();
+            AddChild(new SaveFixtures(this, world, vehicle));
+        }
+        if (args.Contains("--save-fixture-checks"))
+        {
+            Start();
+            AddChild(new SaveFixtureChecks(this, world, vehicle));
+        }
         if (args.Contains("--golem-checks"))
         {
             Start();

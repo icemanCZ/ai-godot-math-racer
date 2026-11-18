@@ -25,6 +25,76 @@ public partial class SaveChecks : Node
         GD.Print("PASS: " + message);
     }
 
+    /// <summary>
+    /// A save the game cannot load, or one written by an older version, is copied aside before the first autosave
+    /// of the new game can replace it. The copies are made once and are never overwritten.
+    /// </summary>
+    private void CheckPreservedCopies()
+    {
+        string directory = Path.GetDirectoryName(DiagnosticArtifacts.PathFor("save-checks/preserve/x"))!;
+        if (Directory.Exists(directory))
+            Directory.Delete(directory, true);
+        Directory.CreateDirectory(directory);
+        string path = Path.Combine(directory, "progress.json");
+        string[] Copies() =>
+            Directory
+                .GetFiles(directory)
+                .Select(file => Path.GetFileName(file))
+                .Where(name => name != "progress.json")
+                .Order()
+                .ToArray();
+
+        // A current save needs no copy.
+        Check(SaveStore.Write(game.CaptureProgress(), path), "current save written");
+        SaveStore.Preserve(path);
+        Check(Copies().Length == 0, "a current save is not copied");
+
+        // A save of an older version is kept as progress.vN.bak, once, even if the file changes afterwards.
+        var older = game.CaptureProgress();
+        older.Version = 2;
+        Check(SaveStore.Write(older, path), "older save written");
+        SaveStore.Preserve(path);
+        Check(
+            Copies().Contains("progress.v2.bak")
+                && File.ReadAllText(Path.Combine(directory, "progress.v2.bak")) == File.ReadAllText(path),
+            "a save of an older version is copied to progress.v2.bak"
+        );
+        string kept = File.ReadAllText(Path.Combine(directory, "progress.v2.bak"));
+        File.WriteAllText(path, File.ReadAllText(path).Replace("\"Coins\":", "\"Coins\":1"));
+        SaveStore.Preserve(path);
+        Check(
+            File.ReadAllText(Path.Combine(directory, "progress.v2.bak")) == kept,
+            "an existing progress.v2.bak is never overwritten"
+        );
+
+        // A file that cannot be loaded at all is kept under a name made from its content.
+        File.Delete(Path.Combine(directory, "progress.v2.bak"));
+        File.WriteAllText(path, "{\"Version\":3,\"Seed\":-5}");
+        File.WriteAllText(path + ".bak", "{}");
+        SaveStore.Preserve(path);
+        var unreadable = Copies().Where(f => f.StartsWith("progress.nenacteno-")).ToArray();
+        Check(
+            unreadable.Length == 1
+                && File.ReadAllText(Path.Combine(directory, unreadable[0])) == File.ReadAllText(path),
+            "a save that cannot be loaded is copied to progress.nenacteno-HASH.json"
+        );
+        SaveStore.Preserve(path);
+        Check(
+            Copies().Count(f => f.StartsWith("progress.nenacteno-")) == 1,
+            "the same unreadable save is not copied again at the next start"
+        );
+
+        // The primary file is damaged but the backup works: the damaged file is still set aside.
+        File.Delete(Path.Combine(directory, unreadable[0]));
+        Check(SaveStore.Write(game.CaptureProgress(), path + ".bak"), "backup written");
+        File.WriteAllText(path, "{broken");
+        SaveStore.Preserve(path);
+        Check(
+            Copies().Any(f => f.StartsWith("progress.nenacteno-")),
+            "a damaged primary file is set aside even when the backup can be loaded"
+        );
+    }
+
     public override void _Ready()
     {
         try
@@ -242,6 +312,7 @@ public partial class SaveChecks : Node
                     && car.Position.Y >= villageGround,
                 "old village position below the leveled terrain restores above ground without moving horizontally"
             );
+            CheckPreservedCopies();
             GD.Print("SAVE_CHECKS_PASSED");
             GetTree().Quit();
         }

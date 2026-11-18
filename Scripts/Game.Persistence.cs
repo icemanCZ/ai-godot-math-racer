@@ -78,6 +78,10 @@ public partial class Game
             NextQuiz = nextQuiz,
             ThreeTermMath = threeTermMath,
             HandoverQuiz = handoverQuiz,
+            Departure = (int)departure,
+            DepartureState = departure is Departure.Build or Departure.Plot or Departure.House or Departure.Missing
+                ? departureState
+                : GameState.Title,
             BanditSite = banditSite,
             BanditSolved = banditSolved,
             BanditCooldown = banditCooldown,
@@ -168,6 +172,9 @@ public partial class Game
         }
         rejectedAnswers.Clear();
         rejectedAnswers.UnionWith(data.Rejected);
+        // The trip that waits for the open quiz to be solved; without a question there is none.
+        departure = CurrentChallenge != null ? (Departure)data.Departure : Departure.None;
+        departureState = data.DepartureState;
         deliveryReward = data.DeliveryReward;
         if (data.Sender >= 0)
         {

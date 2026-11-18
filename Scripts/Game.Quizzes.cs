@@ -31,8 +31,11 @@ public partial class Game
     private int nextQuiz;
     private bool handoverQuiz;
 
-    /// <summary>The trip that starts once the quiz now on screen is solved.</summary>
-    private enum Departure
+    /// <summary>
+    /// The trip that starts once the quiz now on screen is solved. SaveData persists these numbers, so a value is
+    /// never renumbered or reused.
+    /// </summary>
+    internal enum Departure
     {
         None,
         Golem,

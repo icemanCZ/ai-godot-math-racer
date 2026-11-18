@@ -70,6 +70,15 @@ public sealed class SaveData
     public bool ThreeTermMath { get; set; }
     public int NextQuiz { get; set; }
     public bool HandoverQuiz { get; set; }
+
+    /// <summary>
+    /// The trip that starts when the open quiz is solved (<see cref="Game.Departure"/>), or 0. Saves from before
+    /// this field have none, so a quiz asked before a trip lost its trip when the game was closed.
+    /// </summary>
+    public int Departure { get; set; }
+
+    /// <summary>The panel that offered the trip, for the kinds of trip that return to one; otherwise Title.</summary>
+    public GameState DepartureState { get; set; }
     public int BanditSite { get; set; } = -1;
     public int BanditSolved { get; set; }
     public float BanditCooldown { get; set; }
@@ -129,8 +138,16 @@ public static class SaveStore
 
     public static bool Enabled => LaunchOptions.UsesPlayerSave;
     public static string SavePath => ProjectSettings.GlobalizePath("user://progress.json");
-    private static readonly Lazy<SaveData?> initial = new(() => Enabled ? Read(SavePath) : null);
+    private static readonly Lazy<SaveData?> initial = new(() => Enabled ? ReadInitial(SavePath) : null);
     public static SaveData? Initial => initial.Value;
+
+    /// <summary>Reads the player's save at startup and sets aside whatever the game could overwrite for good.</summary>
+    private static SaveData? ReadInitial(string path)
+    {
+        var data = Read(path);
+        Preserve(path);
+        return data;
+    }
 
     internal static SaveData? Read(string path)
     {
@@ -140,30 +157,92 @@ public static class SaveStore
             {
                 if (!File.Exists(candidate))
                     continue;
-                var data = JsonSerializer.Deserialize<SaveData>(File.ReadAllText(candidate))
-                    ?? throw new JsonException("Empty save data.");
-                MigrateLegacyQuestion(data);
-                MigrateRewardOffer(data);
-                MigrateBuilds(data);
-                MigrateEventRun(data);
-                MigrateHouseTasks(data);
-                Validate(data);
-                if (data.Postcards.Length == Game.OriginalPostcardCount)
-                {
-                    var expanded = new PostcardProgress?[Game.PostcardCount];
-                    data.Postcards.CopyTo(expanded, 0);
-                    data.Postcards = expanded;
-                }
-                MigrateAnimalCount(data);
-                return data;
+                return Load(candidate);
             }
-            catch (Exception error)
-                when (error is IOException or UnauthorizedAccessException or JsonException or NotSupportedException)
+            catch (Exception error) when (IsLoadFailure(error))
             {
                 GD.PushWarning($"Cannot load {candidate}: {error.Message}");
             }
         }
         return null;
+    }
+
+    private static bool IsLoadFailure(Exception error) =>
+        error is IOException or UnauthorizedAccessException or JsonException or NotSupportedException;
+
+    /// <summary>Reads, migrates and validates one file; throws when it cannot be used.</summary>
+    private static SaveData Load(string candidate)
+    {
+        var data = JsonSerializer.Deserialize<SaveData>(File.ReadAllText(candidate))
+            ?? throw new JsonException("Empty save data.");
+        MigrateLegacyQuestion(data);
+        MigrateRewardOffer(data);
+        MigrateBuilds(data);
+        MigrateEventRun(data);
+        MigrateHouseTasks(data);
+        Validate(data);
+        if (data.Postcards.Length == Game.OriginalPostcardCount)
+        {
+            var expanded = new PostcardProgress?[Game.PostcardCount];
+            data.Postcards.CopyTo(expanded, 0);
+            data.Postcards = expanded;
+        }
+        MigrateAnimalCount(data);
+        return data;
+    }
+
+    /// <summary>
+    /// The first autosave moves the file into <c>.bak</c> and the next one replaces that, so an older save would be
+    /// gone within seconds. Before that can happen, a save of an older version is copied to
+    /// <c>progress.vN.bak</c> and a file that cannot be loaded at all to <c>progress.nenacteno-HASH.json</c>.
+    /// Both copies are made once and never overwritten.
+    /// </summary>
+    internal static void Preserve(string path)
+    {
+        try
+        {
+            if (!File.Exists(path))
+                return;
+            byte[] bytes = File.ReadAllBytes(path);
+            string directory = Path.GetDirectoryName(path)!;
+            string name = Path.GetFileNameWithoutExtension(path);
+            try
+            {
+                Load(path);
+                if (RawVersion(bytes) is int version && version < SaveData.CurrentVersion)
+                    CopyOnce(path, Path.Combine(directory, $"{name}.v{version}.bak"));
+            }
+            catch (Exception error) when (IsLoadFailure(error))
+            {
+                string hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes))[..8];
+                CopyOnce(path, Path.Combine(directory, $"{name}.nenacteno-{hash}.json"));
+            }
+        }
+        catch (Exception error) when (IsLoadFailure(error))
+        {
+            GD.PushWarning($"Cannot keep a copy of {path}: {error.Message}");
+        }
+    }
+
+    private static int? RawVersion(byte[] bytes)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(bytes);
+            return document.RootElement.TryGetProperty("Version", out var version) && version.TryGetInt32(out int value)
+                ? value
+                : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static void CopyOnce(string source, string target)
+    {
+        if (!File.Exists(target))
+            File.Copy(source, target);
     }
 
     private static void Validate(SaveData data)
@@ -285,7 +364,44 @@ public static class SaveStore
                 : data.SyllableSelection != default
         )
         || (data.State is GameState.Challenge or GameState.Reward or GameState.ExpeditionChoice && data.Nearby < 0)
-        || (data.State == GameState.Challenge && data.Challenge == null);
+        || (data.State == GameState.Challenge && data.Challenge == null)
+        || HasInvalidDeparture(data);
+
+    /// <summary>
+    /// A trip waits for the open quiz: an ordinary question asked by the character who offers the trip, never a
+    /// loading question or a handover. Saves from before this field have none.
+    /// </summary>
+    private static bool HasInvalidDeparture(SaveData data)
+    {
+        if (data.Departure == 0)
+            return data.DepartureState != GameState.Title;
+        if (
+            !Enum.IsDefined((Game.Departure)data.Departure)
+            || data.State != GameState.Challenge
+            || data.Challenge is null or LoadChallenge or DeliveryChallenge
+            || data.HandoverQuiz
+            || data.Nearby == Game.BanditActorId
+        )
+            return true;
+        bool resident = data.Nearby is >= World.FirstResidentId and < World.FarmerId;
+        return (Game.Departure)data.Departure switch
+        {
+            Game.Departure.Golem => data.Nearby != World.SorcererId || data.DepartureState != GameState.Title,
+            Game.Departure.Fruit => !resident || data.DepartureState != GameState.Title,
+            Game.Departure.Build => !World.IsBuilder(data.Nearby) || data.DepartureState != GameState.BuildStatus,
+            Game.Departure.Plot => !World.IsPlotResident(data.Nearby) || data.DepartureState != GameState.PlotStatus,
+            Game.Departure.House => !resident || data.DepartureState != GameState.HouseMaterialOffer,
+            // The works' missing goods are asked for from a builder, a newcomer or a resident.
+            Game.Departure.Missing => data.DepartureState switch
+            {
+                GameState.BuildStatus => !World.IsBuilder(data.Nearby),
+                GameState.PlotStatus => !World.IsPlotResident(data.Nearby),
+                GameState.HouseMaterialOffer => !resident,
+                _ => true,
+            },
+            _ => true,
+        };
+    }
 
     private static bool HasInvalidTradeProgress(SaveData data) =>
         data.TradeCounts == null
@@ -540,9 +656,11 @@ public static class SaveStore
         if (data.Nearby is < World.FirstResidentId or >= World.FarmerId || data.Sender >= 0)
             return;
         var task = SavedTask(data, data.Nearby - World.FirstResidentId);
+        // The quiz before a goods trip is meant: the house asks for goods and the trip follows the quiz.
         bool stale =
             data.State == GameState.HouseFruitOffer && task != VillageTaskKind.Fruit
             || data.State == GameState.Challenge
+                && data.Departure == 0
                 && data.Challenge is not null and not LoadChallenge
                 && Village.MaterialOf(task ?? VillageTaskKind.Math) != null;
         if (!stale)
@@ -577,7 +695,8 @@ public static class SaveStore
         if (data.State is not (GameState.Exploring or GameState.Challenge) && data.State != panel)
             return true;
         var (cargo, askers, loaded) = ActiveTripAsker(data);
-        if (data.State == GameState.Challenge)
+        // A quiz before a trip is asked by the character who offers it, whatever trip is under way meanwhile.
+        if (data.State == GameState.Challenge && data.Departure == 0)
         {
             if (!askers.Contains(data.Nearby) || loaded || data.HandoverQuiz || data.Challenge is DeliveryChallenge)
                 return true;

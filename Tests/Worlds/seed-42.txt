@@ -1,0 +1,70 @@
+seed 42
+actor 0 RoadsideFriendRole Králíček Matěj -402.30 27.15 87.13
+actor 1 RoadsideFriendRole Liška Eliška -282.04 20.71 -284.76
+actor 2 RoadsideFriendRole Medvěd Brumla 415.54 16.51 134.31
+actor 3 RoadsideFriendRole Králíček Toník 242.20 17.48 -186.06
+actor 4 RoadsideFriendRole Liška Anička 170.90 6.08 -42.56
+actor 5 RoadsideFriendRole Medvěd Míša 90.92 -0.40 41.99
+actor 6 RoadsideFriendRole Králíček Pepík 441.55 23.47 7.52
+actor 7 RoadsideFriendRole Liška Bětka 363.77 22.74 -210.57
+actor 8 RoadsideFriendRole Medvěd Bručoun -170.46 23.76 -220.23
+actor 9 RoadsideFriendRole Králíček Kubík -153.25 22.78 -236.20
+actor 30 HouseResidentRole Králíček stavitel Vojtík -4.70 1.66 -55.83
+actor 31 HouseResidentRole Liška zahradnice Róza 4.70 1.66 -52.63
+actor 32 HouseResidentRole Medvídek kutil Hugo 6.97 1.66 -109.14
+actor 33 HouseResidentRole Králíček malíř Fialka 14.04 1.66 -102.17
+actor 34 FarmerRole Farmář Tonda 1.80 1.66 -140.52
+actor 35 GardenerRole Zahradník Vítek -25.22 1.82 -136.63
+actor 36 ExhibitCollectorRole Sběratel drahokamů Jáchym -59.83 1.82 -167.02
+actor 37 ExhibitCollectorRole Hračkář Pepa -80.81 1.82 -157.41
+actor 38 TraderRole Pekař František 18.29 1.82 -123.16
+actor 39 TraderRole Obchodník Kamil -4.30 1.82 -125.27
+actor 40 TraderRole Cukrář Oliver -17.66 1.82 -151.01
+actor 41 WitchRole Čarodějnice Bára -123.88 2.29 -177.11
+actor 42 SorcererRole Černokněžník Baltazar 153.60 2.22 75.09
+actor 44 BuilderRole Bobr Bóďa 122.58 2.06 -151.50
+actor 45 WorksRole Medvěd Pilař 72.20 1.66 -52.21
+actor 46 WorksRole Liška Cihlářka -69.88 1.66 -39.52
+actor 47 WorksRole Zajíc Štěrkař -108.82 1.66 -99.02
+actor 48 BuilderRole Mlynář Bruno -35.10 1.59 12.69
+actor 49 BuilderRole Hvězdář Kryštof -49.20 1.66 -100.82
+actor 50 BuilderRole Rybář Vilda 141.06 2.06 -216.00
+actor 51 SourceRole Králíček lomař Kvido -58.67 0.05 141.23
+actor 52 SourceRole Liška hlinařka Hanka 84.17 1.48 76.53
+actor 53 SourceRole Medvěd dřevorubec Drvoš -361.36 21.24 260.51
+actor 54 SourceRole Zajíc lomař Zdeněk -357.89 17.40 -108.62
+actor 55 SourceRole Liška hlinař Honza -325.36 20.38 -159.01
+actor 56 SourceRole Medvěd písečník Pepík 12.47 -1.11 108.85
+actor 57 SourceRole Králík dřevorubec Dušan -376.87 21.28 -245.96
+actor 58 PlotResidentRole Králíček Ondra -14.03 1.66 -89.67
+actor 59 PlotResidentRole Liška Alenka 10.20 1.66 -74.93
+actor 60 PlotResidentRole Medvěd Bořek -25.44 1.66 -85.27
+actor 61 PlotResidentRole Králíček Standa -22.40 1.66 -64.68
+actor 62 PlotResidentRole Liška Dana -39.53 1.66 -81.99
+actor 63 PlotResidentRole Medvídek Jarda -36.00 1.66 -61.82
+village center 0.00 1.66 -82.00 garage 5.24 1.96 -19.12 greeting -6.80 1.66 -40.23
+plot 0 -11.13 1.81 -93.88 drop -9.82 1.66 -89.05 road -7.59 0.00 -80.85
+plot 1 13.50 1.81 -71.03 drop 8.50 1.66 -71.03 road 0.00 0.00 -71.03
+plot 2 -22.98 1.81 -89.75 drop -21.19 1.66 -85.08 road -18.15 0.00 -77.14
+plot 3 -25.34 1.81 -60.50 drop -26.60 1.66 -65.33 road -28.76 0.00 -73.56
+plot 4 -36.13 1.81 -85.80 drop -35.43 1.66 -80.85 road -34.24 0.00 -72.43
+plot 5 -39.92 1.81 -58.55 drop -39.88 1.66 -63.55 road -39.82 0.00 -72.05
+project 0 focus 137.53 3.01 -145.00 first drop 122.58 1.84 -145.00
+project 1 focus -43.33 6.59 20.79 first drop -32.05 1.59 16.69
+project 2 focus -45.59 7.66 -111.79 first drop -53.74 1.66 -102.98
+project 3 focus 149.06 5.06 -221.00 first drop 141.06 2.06 -221.00
+works 0 70.60 1.50 -56.97 road 43.06 0.00 -56.41
+works 1 -64.86 1.66 -39.29 road -52.13 0.00 -74.41
+works 2 -104.73 1.66 -96.09 road -88.71 0.00 -108.17
+source Stones -61.42 1.11 143.56 road -90.88 0.00 126.33
+source Stones -359.93 17.11 -105.65 road -379.95 0.00 -111.07
+source Soil 80.57 2.05 76.54 road 67.02 0.00 38.62
+source Soil -327.97 20.65 -156.52 road -355.86 0.00 -170.67
+source Sand -402.81 14.58 -156.36 road -366.73 0.00 -147.94
+source Sand 8.88 -1.13 108.51 road -1.90 0.00 65.28
+source Logs -362.55 21.36 257.10 road -329.63 0.00 230.76
+source Logs -374.22 21.45 -248.40 road -327.96 0.00 -224.01
+pickup spots 48 hash 1977849B52761FD2
+road samples 2678 hash 443B526188CBDD81
+terrain heights 1681 hash 807ABBCA7072399A
+vegetation trees 3823 bushes 2044 hash 9F39299CBC80CED4

@@ -42,7 +42,13 @@ internal static class LaunchOptions
     public static bool UsesPlayerSave { get; } =
         !args.Any(argument =>
             argument.EndsWith("-checks")
-            || argument is "--smoke-test" or "--road-audit" or "--capture" or "--no-save"
+            || argument
+                is "--smoke-test"
+                    or "--road-audit"
+                    or "--capture"
+                    or "--no-save"
+                    or "--save-fixtures"
+                    or "--write-world-fingerprint"
             || argument.StartsWith("--seed=")
         );
 }

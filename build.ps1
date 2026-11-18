@@ -48,6 +48,9 @@ function Invoke-GameTests([string]$Godot, [int]$JobCount) {
         New-GameTestCase 'garden-checks' 42
         New-GameTestCase 'farm-checks' 42
         New-GameTestCase 'save-checks' 42
+        New-GameTestCase 'save-fixture-checks' 42
+        New-GameTestCase 'world-fingerprint-checks' 1,42,7421
+        New-GameTestCase 'contract-checks' 1,42,7421
         New-GameTestCase 'garage-checks' 42
         New-GameTestCase 'delivery-checks' 1,42,7421
         New-GameTestCase 'road-audit' 1,2,42,44,53,7421
