@@ -26,6 +26,7 @@ public partial class GameUi
                     HaulLoad.Stones => "Lom",
                     HaulLoad.Soil => Texts.Hliniste,
                     HaulLoad.Sand => Texts.Piskovna,
+                    HaulLoad.Wheat => Texts.Pole,
                     _ => Texts.Klady,
                 }
             );

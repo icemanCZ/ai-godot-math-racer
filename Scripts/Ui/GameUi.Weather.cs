@@ -17,8 +17,10 @@ public partial class GameUi
     {
         Clear();
         Text(witch.DisplayName, 30);
-        var row = new Godot.HBoxContainer { Alignment = Godot.BoxContainer.AlignmentMode.Center };
-        row.AddThemeConstantOverride("separation", 12);
+        // Two rows of three: the weather of the day, then the sun, the evening and the night.
+        var row = new Godot.GridContainer { Columns = 3 };
+        row.AddThemeConstantOverride("h_separation", 12);
+        row.AddThemeConstantOverride("v_separation", 12);
         content.AddChild(row);
         foreach (
             var (kind, icon, name) in new[]
@@ -27,6 +29,8 @@ public partial class GameUi
                 (WeatherKind.Wind, "wind", Texts.Vitr),
                 (WeatherKind.Storm, "storm", Texts.Bourka),
                 (WeatherKind.Clear, "clear", "Jasno"),
+                (WeatherKind.Evening, "evening", Texts.Vecer),
+                (WeatherKind.Night, "night", Texts.Noc),
             }
         )
         {

@@ -10,7 +10,7 @@ public partial class Village
         levels[house] = Mathf.Clamp(level, 0, Upgrades.Length);
         // Glasses are only for a finished house: a house that is not finished has been given none.
         if (levels[house] < Upgrades.Length)
-            glazed[house] = false;
+            glazed[house] = baked[house] = false;
         var details = decorations[house];
         if (details.GetChildCount() == 0)
         {

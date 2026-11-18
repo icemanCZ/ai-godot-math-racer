@@ -373,6 +373,24 @@ public partial class World
         AddChild(duck);
         Duck = duck;
         AddWorldPet(duck);
+        // Three ducklings come along the way, one for every third delivery, and trail behind their mother.
+        var yaw = Mathf.Atan2(jetty.Site.Inward.X, jetty.Site.Inward.Z);
+        var seats = new[] { new Vector3(-.8f, 0, 11.8f), new Vector3(.8f, 0, 11.8f), new Vector3(0, 0, 12.9f) };
+        for (int i = 0; i < seats.Length; i++)
+        {
+            var duckling = new CollectorPet(
+                WorldPetCatalog.ForDuckling(i),
+                fisherman,
+                () => jetty.Stage,
+                WorldPetCatalog.DucklingDeliveries[i],
+                0,
+                seats[i]
+            );
+            var home = spot + right * (-1.3f - i * .9f) + jetty.Site.Inward * .6f;
+            duckling.SetHome(Ground.At(home.X, home.Z), yaw);
+            AddChild(duckling);
+            AddWorldPet(duckling);
+        }
     }
 
     /// <summary>Places the mill, the tower and the jetty with their builders, after the terrain has been cut for them.</summary>

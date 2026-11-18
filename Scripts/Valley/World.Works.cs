@@ -51,6 +51,8 @@ public partial class World
             var road = Routes.Samples.OrderBy(sample => FlatDistance(sample, giver.Position)).First();
             return new HaulSource(load, giver.Position, road);
         }
+        if (load == HaulLoad.Wheat)
+            return WheatField!.Value;
         return load == HaulLoad.Logs ? LogYard!.Value : HaulSources[(int)load];
     }
 
@@ -65,6 +67,7 @@ public partial class World
     /// <summary>The works that makes a product: one of the three of <see cref="Industry"/> or the glassworks; null if absent.</summary>
     internal Works? WorksFor(Product product) =>
         product == Product.Glass ? Glassworks
+        : product == Product.Bread ? Bakery
         : (int)product < Industry.Length ? Industry[(int)product]
         : null;
 
@@ -73,10 +76,15 @@ public partial class World
 
     /// <summary>The actor ID of the worker of the works that makes a product.</summary>
     internal static int WorksId(Product product) =>
-        product == Product.Glass ? GlassworksId : FirstWorksId + (int)product;
+        product == Product.Glass ? GlassworksId
+        : product == Product.Bread ? BakeryId
+        : FirstWorksId + (int)product;
 
     /// <summary>The three works and the glassworks, where the valley has them.</summary>
-    internal IEnumerable<Works> AllWorks => Glassworks == null ? Industry : Industry.Append(Glassworks);
+    internal IEnumerable<Works> AllWorks =>
+        Industry
+            .Concat(Glassworks == null ? Array.Empty<Works>() : new[] { Glassworks })
+            .Concat(Bakery == null ? Array.Empty<Works>() : new[] { Bakery });
 
     /// <summary>
     /// Plans the glassworks the way the other works were planned (at the edge of the village where there is room, else
@@ -424,6 +432,8 @@ public partial class World
     /// <summary>The worker of the first site of a raw material, or null where nobody works (the sand pit).</summary>
     internal Character? SourceWorker(HaulLoad load)
     {
+        if (load == HaulLoad.Wheat)
+            return FieldFarmer;
         int index = SourceCatalog.IndexOf(load);
         return index < 0 ? null : SourceWorkers[index];
     }
@@ -471,6 +481,8 @@ public partial class World
             return new[] { ToymakerId };
         if (HaulLoads.IsGoods(load))
             return new[] { WorksId(HaulLoads.ProductOf(load)) };
+        if (load == HaulLoad.Wheat)
+            return new[] { FieldFarmerId };
         int first = SourceCatalog.IndexOf(load) >= 0 ? FirstSourceId + SourceCatalog.IndexOf(load) : BuilderId(project);
         int extra = SourceCatalog.ExtraIndexOf(load);
         return extra < 0 ? new[] { first } : new[] { first, FirstExtraSourceId + extra };

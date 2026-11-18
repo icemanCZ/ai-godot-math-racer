@@ -30,6 +30,20 @@ internal enum CollectorPetKind
     Bridge,
     Mill,
     Tower,
+
+    // The wheat field and the bakery, the fifth chain of hauling.
+    Wheat,
+    Bakery,
+
+    // The small friends who hide beside the roads: all eight of a kind found.
+    Ladybug,
+    Hedgehog,
+    Frog,
+
+    // The three ducklings that follow the jetty's duck, one for every third delivery to the jetty.
+    Duckling1,
+    Duckling2,
+    Duckling3,
 }
 
 internal sealed partial class CollectorPet : Node3D

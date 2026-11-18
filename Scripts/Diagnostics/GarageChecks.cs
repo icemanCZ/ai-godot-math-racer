@@ -41,14 +41,18 @@ public partial class GarageChecks : Node
             Check(game.State == GameState.Garage && !car.Active, "garage stops driving at the village entrance");
             var buttons = game.FindChildren("Garage_*", "Button", true, false).Cast<Button>().ToArray();
             Check(
-                buttons.Length == CarLook.Catalogue.Count + CarBody.All.Count + CarAccessory.Catalogue.Count
-                    && buttons.Count(b => !b.Disabled) == 2
+                buttons.Length
+                    == CarLook.Catalogue.Count
+                        + CarBody.All.Count
+                        + CarAccessory.Catalogue.Count
+                        + CarTrail.Catalogue.Count
+                    && buttons.Count(b => !b.Disabled) == 3
                     && game.Coins == 0,
-                "entire catalogue contains all rewards with only starting paint and model unlocked"
+                "entire catalogue contains all rewards with only the starting paint, model and tyre marks unlocked"
             );
             Check(
                 game.FindChildren("Price_*", "HBoxContainer", true, false).Count
-                    == CarLook.All.Count + CarBody.All.Count + CarAccessory.All.Count - 2,
+                    == CarLook.All.Count + CarBody.All.Count + CarAccessory.All.Count + CarTrail.All.Count - 2,
                 "every standard item not owned shows its price; the special sticker has none"
             );
             var defaults = game.CaptureProgress();
@@ -177,6 +181,70 @@ public partial class GarageChecks : Node
                 car.Appearance.HasAccessory(reward.Id) && game.Coins == coins - CarReward.AccessoryPrice,
                 "owned accessory can be equipped again without paying"
             );
+            // ---- Trails of the wheels ----
+            Check(
+                car.Appearance.CurrentTrailId == CarTrail.Plain.Id && game.CaptureProgress().Vehicle.Trail == "tyres",
+                "the car starts with the plain tyre marks"
+            );
+            game.AddCoins(CarReward.TrailPrice);
+            int trailCoins = game.Coins;
+            game.FinishInteraction();
+            game.OpenGarage();
+            var hearts = new CarReward("hearts", false, false, true);
+            Check(
+                hearts.Price == CarReward.TrailPrice
+                    && new CarReward("tyres", false, false, true).Price == null
+                    && game.FindChild("Garage_" + hearts.ButtonName, true, false) is Button { Disabled: false },
+                "a trail of hearts is for sale and the plain marks are free"
+            );
+            Press("Garage_" + hearts.ButtonName);
+            Check(
+                game.OwnedRewards.Contains(hearts)
+                    && car.Appearance.CurrentTrailId == "hearts"
+                    && game.Coins == trailCoins - CarReward.TrailPrice,
+                "buying a trail spends its price and puts it on the wheels"
+            );
+            car.Tracks.Update(.05f, car, world.Ground, world.Routes);
+            Check(
+                car.Tracks.Stamps is { Style: "hearts" } && car.Tracks.SegmentCount == 0,
+                "hearts take the place of the tyre marks"
+            );
+            var trailSave = game.CaptureProgress();
+            string trailPath = DiagnosticArtifacts.PathFor("garage-checks/trail.json");
+            Check(
+                trailSave.Vehicle.Trail == "hearts" && SaveStore.Write(trailSave, trailPath),
+                "the chosen trail is saved"
+            );
+            game.ConfigureCar(new CarReward("tyres", false, false, true));
+            Check(
+                car.Appearance.CurrentTrailId == "tyres" && game.OwnedRewards.Contains(hearts),
+                "the plain marks come back without losing the hearts"
+            );
+            game.RestoreProgress(SaveStore.Read(trailPath)!);
+            Check(car.Appearance.CurrentTrailId == "hearts", "the trail comes back after a reload");
+            game.ConfigureCar(new CarReward("stars", false, false, true));
+            Check(
+                car.Appearance.CurrentTrailId == "hearts" && game.Coins == trailCoins - CarReward.TrailPrice,
+                "a trail the player cannot afford is not bought"
+            );
+            void Damaged(Action<SaveData> damage, string what)
+            {
+                var data = game.CaptureProgress();
+                damage(data);
+                string file = DiagnosticArtifacts.PathFor("garage-checks/trail-damaged.json");
+                Check(SaveStore.Write(data, file) && SaveStore.Read(file) == null, "rejected: " + what);
+            }
+            Damaged(data => data.Vehicle.Trail = "stars", "a trail that was never bought");
+            Damaged(data => data.Vehicle.Trail = "sparkles", "a trail that does not exist");
+            Damaged(data => data.Vehicle.Trail = null!, "no trail at all");
+            var beforeTrails = System.Text.Json.JsonSerializer.SerializeToNode(game.CaptureProgress())!.AsObject();
+            ((System.Text.Json.Nodes.JsonObject)beforeTrails["Vehicle"]!).Remove("Trail");
+            string oldTrailPath = DiagnosticArtifacts.PathFor("garage-checks/before-trails.json");
+            System.IO.File.WriteAllText(oldTrailPath, beforeTrails.ToJsonString());
+            game.RestoreProgress(
+                SaveStore.Read(oldTrailPath) ?? throw new InvalidOperationException("older save refused")
+            );
+            Check(car.Appearance.CurrentTrailId == "tyres", "a save from before trails has the plain tyre marks");
             game.FinishInteraction();
             game.OpenChallenge(world.Animals[1]);
             ChallengeChecks.Solve(game);

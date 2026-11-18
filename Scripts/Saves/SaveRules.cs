@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text.Json;
 using MathRacer.App;
 using MathRacer.Buildings;
+using MathRacer.Garage;
 using MathRacer.Quizzes;
 using MathRacer.Settlement;
 using MathRacer.Tasks;
@@ -34,6 +35,9 @@ internal static class SaveRules
         ("works", HasInvalidWorksState),
         ("hauled loads", HasInvalidHauls),
         ("glassworks and glazed houses", HasInvalidGlass),
+        ("bakery and houses given bread", HasInvalidBread),
+        ("small friends found", HasInvalidHidden),
+        ("wheel trail", HasInvalidTrail),
         ("trailer trip", HasInvalidTrip),
         ("expedition cargo", HasInvalidPickupCount),
     };
@@ -51,7 +55,8 @@ internal static class SaveRules
         || data.Postcards is null
         || data.Events is null
         || data.Bandits is null
-        || data.Hauls is null;
+        || data.Hauls is null
+        || data.Hidden is null;
 
     /// <summary>Throws when the save is not one the game can restore.</summary>
     internal static void Validate(SaveData data)
@@ -122,7 +127,7 @@ internal static class SaveRules
         || data.Task.Picked == null
         || data.Quiz.Rejected == null
         || data.Nearby < -1
-        || data.Nearby > Math.Max(Game.BanditActorId, World.GlassworksId)
+        || data.Nearby > Math.Max(Game.BanditActorId, World.FieldFarmerId)
         || data.Task.Sender < -1
         || data.Task.Sender > World.SorcererId
         || data.Task.Sender == World.WitchId
@@ -299,6 +304,7 @@ internal static class SaveRules
                     SavedTask(data, data.Nearby - World.FirstResidentId)
                         is not (VillageTaskKind.Planks or VillageTaskKind.Bricks)
                     && !IsGlassOrder(data, data.Nearby - World.FirstResidentId)
+                    && !IsBreadOrder(data, data.Nearby - World.FirstResidentId)
                 )
             )
         )
@@ -413,6 +419,8 @@ internal static class SaveRules
                 return (goods, World.AskerIds(goods, 0), trip.Loaded);
             case TripKinds.House when IsGlassOrder(data, trip.Index):
                 return (HaulLoad.Glass, World.AskerIds(HaulLoad.Glass, 0), trip.Loaded);
+            case TripKinds.House when IsBreadOrder(data, trip.Index):
+                return (HaulLoad.Bread, World.AskerIds(HaulLoad.Bread, 0), trip.Loaded);
         }
         return (default, Array.Empty<int>(), false);
     }
@@ -424,6 +432,46 @@ internal static class SaveRules
         && levels[house] == 10
         && data.Village.Glazed is { Length: 4 } glazed
         && !glazed[house];
+
+    /// <summary>A finished house whose resident has glasses but no bread yet: the order that follows the housewarming.</summary>
+    internal static bool IsBreadOrder(SaveData data, int house) =>
+        house is >= 0 and < 4
+        && data.Village.HouseLevels is { Length: 4 } levels
+        && levels[house] == 10
+        && data.Village.Glazed is { Length: 4 } glazed
+        && glazed[house]
+        && data.Village.Baked is { Length: 4 } baked
+        && !baked[house];
+
+    /// <summary>The bread stock is within the yard, and only a house that has glasses can have been given bread.</summary>
+    private static bool HasInvalidBread(SaveData data) =>
+        data.Buildings.BreadStock is < 0 or > Works.Capacity
+        || data.Village.Baked == null
+        || data.Village.Baked.Length != 4
+        || data.Village.Glazed == null
+        || data.Village.Glazed.Length != 4
+        || data.Village.HouseLevels == null
+        || data.Village.HouseLevels.Length != 4
+        || Enumerable
+            .Range(0, 4)
+            .Any(house =>
+                data.Village.Baked[house] && (!data.Village.Glazed[house] || data.Village.HouseLevels[house] < 10)
+            );
+
+    /// <summary>The trail on the wheels is the plain one or a stamp that was bought.</summary>
+    private static bool HasInvalidTrail(SaveData data) =>
+        !CarTrail.IsKnown(data.Vehicle.Trail)
+        || (
+            data.Vehicle.Trail != CarTrail.Plain.Id
+            && !data.Economy.Owned.Contains(new CarReward(data.Vehicle.Trail, false, false, true))
+        );
+
+    /// <summary>The found friends are numbers of the friends that exist, each listed once.</summary>
+    private static bool HasInvalidHidden(SaveData data) =>
+        data.Hidden.Found == null
+        || data.Hidden.Found.Length > HiddenFriends.Total
+        || data.Hidden.Found.Any(index => index < 0 || index >= HiddenFriends.Total)
+        || data.Hidden.Found.Distinct().Count() != data.Hidden.Found.Length;
 
     /// <summary>The glass stock is within the yard, and only a finished house can have been given glasses.</summary>
     private static bool HasInvalidGlass(SaveData data) =>
@@ -460,14 +508,15 @@ internal static class SaveRules
                 || data.Buildings.Stages![trip.Index] >= BuildPlans.Trips,
             TripKinds.Supply => trip.Index is < 0 or >= WorksCatalog.Total
                 || (
-                    trip.Index == WorksCatalog.GlassIndex
-                        ? data.Buildings.GlassStock
-                        : data.Buildings.WorksStock[trip.Index]
+                    trip.Index == WorksCatalog.GlassIndex ? data.Buildings.GlassStock
+                    : trip.Index == WorksCatalog.BreadIndex ? data.Buildings.BreadStock
+                    : data.Buildings.WorksStock[trip.Index]
                 ) >= Works.Capacity,
             TripKinds.House => trip.Index is < 0 or >= 4
                 || (
                     SavedTask(data, trip.Index) is not (VillageTaskKind.Planks or VillageTaskKind.Bricks)
                     && !IsGlassOrder(data, trip.Index)
+                    && !IsBreadOrder(data, trip.Index)
                 ),
             TripKinds.Plot => trip.Index is < 0 or >= PlotPlans.Count
                 || data.Buildings.PlotStages[trip.Index] >= PlotPlans.Trips,
@@ -483,9 +532,10 @@ internal static class SaveRules
     {
         GameState? panel =
             World.IsBuilder(data.Nearby) ? GameState.BuildStatus
-            : data.Nearby is >= World.FirstWorksId and <= World.LastWorksId or World.GlassworksId
+            : data.Nearby is >= World.FirstWorksId and <= World.LastWorksId or World.GlassworksId or World.BakeryId
                 ? GameState.WorksStatus
-            : data.Nearby is >= World.FirstSourceId and <= World.LastSourceId ? GameState.SourceStatus
+            : data.Nearby is >= World.FirstSourceId and <= World.LastSourceId or World.FieldFarmerId
+                ? GameState.SourceStatus
             : World.IsPlotResident(data.Nearby) ? GameState.PlotStatus
             : null;
         if (panel == null)
@@ -530,7 +580,9 @@ internal static class SaveRules
         || data.Hauls.Raw.Length != HaulTally.RawKinds
         || data.Hauls.Works == null
         || data.Hauls.Works.Length != HaulTally.WorksKinds
-        || data.Hauls.Raw.Concat(data.Hauls.Works).Any(count => count < 0 || count > HaulTally.Limit);
+        || data.Hauls.Raw.Concat(data.Hauls.Works)
+            .Concat(new[] { data.Hauls.Wheat, data.Hauls.Baked })
+            .Any(count => count < 0 || count > HaulTally.Limit);
 
     private static bool HasInvalidPickupCount(SaveData data) =>
         (

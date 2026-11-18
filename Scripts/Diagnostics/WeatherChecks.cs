@@ -88,6 +88,7 @@ public partial class WeatherChecks(Game game, World world, Vehicle car) : Node
             Check(!rain.Visible && puddles.Visible, "Wind stops the rain while puddles remain");
             weather.Tick(36);
             Check(!puddles.Visible, "Puddles dry out after the rain");
+            CheckEveningAndNight(weather);
             game.RestoreProgress(progress!);
             var beforeBack = weather.Current;
             game._Input(new InputEventAction { Action = "back", Pressed = true });
@@ -104,6 +105,67 @@ public partial class WeatherChecks(Game game, World world, Vehicle car) : Node
             GD.PushError(error.ToString());
             GetTree().Quit(1);
         }
+    }
+
+    /// <summary>The evening and the night: only the witch brings them, and they light the lamps of the valley.</summary>
+    private void CheckEveningAndNight(Weather weather)
+    {
+        var sky = world.Atmosphere.GetNode<Node3D>("NightSky");
+        var headlights = car.GetNode<SpotLight3D>("Headlights");
+        var fireflies = weather.GetNode<Node3D>("Night");
+        Check(
+            !sky.Visible && !headlights.Visible && !fireflies.Visible,
+            "By day there are no stars, lights or fireflies"
+        );
+
+        // Two finished houses, one of them given glasses by the glassworks, and a plot that is not built yet.
+        world.Village.RestoreLevels(new[] { 10, 10, 0, 0 });
+        world.Village.RestoreGlazed(new[] { true, false, false, false });
+        weather.Begin(WeatherKind.Evening);
+        weather.Tick(3);
+        Check(!sky.Visible, "Evening has no stars yet");
+        weather.Tick(10);
+        Check(
+            headlights.Visible && fireflies.Visible,
+            "Evening turns on the headlights and brings the first fireflies"
+        );
+        Check(!weather.StarsOut, "Evening is not deep enough for the stargazer's pictures");
+        Check(
+            world.Village.Houses[0].GetNodeOrNull<Node3D>("WindowLights") is { Visible: true },
+            "A house with glasses has lit windows in the evening"
+        );
+        Check(
+            world.Village.Houses[1].GetNodeOrNull<Node3D>("WindowLights") is not { Visible: true },
+            "A finished house without glasses stays dark"
+        );
+
+        weather.Begin(WeatherKind.Night);
+        weather.Tick(15);
+        Check(sky.Visible && weather.StarsOut, "Night brings the stars and the moon");
+        Check(sky.GetNode<MultiMeshInstance3D>("Stars").Multimesh.InstanceCount > 100, "The night sky has stars");
+        var picture = Constellation.All[0];
+        world.Atmosphere.ShowConstellation(picture, 0, 1);
+        Check(
+            sky.GetNode<Node3D>("Constellation").GetChildCount() == picture.Stars.Length + picture.Lines.Length / 2,
+            "A constellation is a star for every point and a line for every pair"
+        );
+        Check(
+            Constellation.All.All(c => c.Lines.Length % 2 == 0 && c.Lines.All(i => i >= 0 && i < c.Stars.Length)),
+            "Every constellation joins stars that exist"
+        );
+
+        weather.Begin(WeatherKind.Clear);
+        weather.Tick(30);
+        Check(
+            !sky.Visible && !headlights.Visible && !fireflies.Visible,
+            "Morning puts out the stars, the headlights and the fireflies"
+        );
+        Check(
+            world.Village.Houses[0].GetNodeOrNull<Node3D>("WindowLights") is { Visible: false },
+            "Morning puts out the lamps in the windows"
+        );
+        world.Village.RestoreLevels(new[] { 0, 0, 0, 0 });
+        world.Village.RestoreGlazed(null);
     }
 
     private static void Check(bool ok, string message)

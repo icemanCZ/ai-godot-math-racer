@@ -1,3 +1,5 @@
+using MathRacer.Valley;
+
 namespace MathRacer.App;
 
 /// <summary>
@@ -45,6 +47,39 @@ internal static class Texts
     // Game.Lookout
     public const string PodivejSeCoVsechnoJeV =
         "Podívej se, co všechno je v údolí! Zlaté sloupy ukazují mince a modré kamarády.";
+
+    public const string StopyKol = "Stopy kol";
+
+    // Game.Hidden: the small friends who hide beside the roads
+    public static string HiddenName(HiddenKind kind) =>
+        kind switch
+        {
+            HiddenKind.Ladybug => "Beruška",
+            HiddenKind.Hedgehog => "Ježek",
+            _ => "Žabka",
+        };
+
+    public static string Pst(string name) => $"Pšt! {name}!";
+
+    public static string HiddenFoundSpeech(string name, int count, int total) =>
+        $"Pšt! Tady je {name}! Už jich máš {count} z {total}.";
+
+    public static string HiddenAllOfKind(HiddenKind kind, int total) =>
+        kind switch
+        {
+            HiddenKind.Ladybug => $"Našel jsi všech {total} berušek!",
+            HiddenKind.Hedgehog => $"Našel jsi všech {total} ježků!",
+            _ => $"Našel jsi všech {total} žabek!",
+        };
+
+    public static string HiddenNotebook(int ladybugs, int hedgehogs, int frogs, int total) =>
+        $"Berušky {ladybugs}/{total} · Ježci {hedgehogs}/{total} · Žabky {frogs}/{total}";
+
+    public static string PodivejSeKdoSeSchovava(int remaining) =>
+        $"Podívej se z věže! Oranžové sloupy ukazují, kde se schovávají kamarádi. Ještě jich hledáš {remaining}.";
+
+    public static string Souhvezdi(string name, int stars) =>
+        $"Podívej, hvězdy! Souhvězdí {name}.\nSpočítej si je: má {stars} hvězdiček.";
 
     // Game.Plots
     public const string MocDekujuZaDomecekBydliSe = "Moc děkuju za domeček! Bydlí se mi tu skvěle.";
@@ -179,8 +214,11 @@ internal static class Texts
     public const string Dest = "Déšť";
     public const string Vitr = "Vítr";
     public const string Bourka = "Bouřka";
+    public const string Vecer = "Večer";
+    public const string Noc = "Hvězdná noc";
 
     // GameUi.Works
+    public const string Pole = "Pole";
     public const string Hliniste = "Hliniště";
     public const string Piskovna = "Pískovna";
     public const string Klady = "Klády";
@@ -255,6 +293,17 @@ internal static class Texts
     public const string JedSVozikemProSklenickyDo = "Jeď s vozíkem pro skleničky do sklárny.";
 
     public static string GlassesParty(int coins) => $"Oslava domečku!  +{coins}  ·  Skleničky";
+
+    public const string HouseNeedsBread = "Chystám snídani pro celou rodinu! Přivezeš mi voňavý chléb z pekárny?";
+
+    public const string HouseNeedsBreadButNone =
+        "Chystám snídani, ale v pekárně ještě žádný chléb nemají. Pošlu tě na pole pro obilí!";
+
+    public const string JedSVozikemProChlebDo = "Jeď s vozíkem pro čerstvý chléb do pekárny.";
+
+    public const string JedSVozikemProObiliNa = "Jeď s vozíkem na pole pro obilí. Pak ho odvezeš do pekárny.";
+
+    public static string BreadParty(int coins) => $"Snídaně u domečku!  +{coins}  ·  Chléb";
 
     public static string NewUpgrade(string upgrade) => $"Nové vylepšení: {upgrade}";
 

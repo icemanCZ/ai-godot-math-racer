@@ -73,6 +73,7 @@ public partial class Game
                 Heading = vehicle.Heading,
                 Look = vehicle.Appearance.CurrentLookId,
                 Model = vehicle.Appearance.CurrentModelId,
+                Trail = vehicle.Appearance.CurrentTrailId,
                 Accessories = CarAccessory
                     .Catalogue.Where(a => vehicle.Appearance.HasAccessory(a.Id))
                     .Select(a => a.Id)
@@ -133,6 +134,7 @@ public partial class Game
                 ToyCount = world.Village.ToyCount,
                 TradeCounts = (int[])world.Village.TradeCounts.Clone(),
                 Glazed = world.Village.GlazedFlags,
+                Baked = world.Village.BakedFlags,
             },
             Buildings = new BuildingsSave
             {
@@ -140,6 +142,7 @@ public partial class Game
                 PlotStages = PlotStages(),
                 WorksStock = world.WorksStock(),
                 GlassStock = world.Glassworks?.Stock ?? 0,
+                BreadStock = world.Bakery?.Stock ?? 0,
                 TrailerOwned = TrailerOwned,
                 TrailerAttached = trailerParade,
                 TrailerPaint = trailer.PaintId,
@@ -169,7 +172,14 @@ public partial class Game
                 Solved = banditSolved,
                 Cooldown = banditCooldown,
             },
-            Hauls = new HaulsSave { Raw = world.Tally.RawCounts(), Works = world.Tally.WorksCounts() },
+            Hauls = new HaulsSave
+            {
+                Raw = world.Tally.RawCounts(),
+                Works = world.Tally.WorksCounts(),
+                Wheat = world.Tally.Wheat,
+                Baked = world.Tally.Baked,
+            },
+            Hidden = new HiddenSave { Found = world.Hidden.FoundIndices() },
         };
 
     internal void RestoreProgress(SaveData data)
@@ -270,6 +280,7 @@ public partial class Game
     private void RestoreCarLook(SaveData data)
     {
         vehicle.Appearance.ApplyModel(data.Vehicle.Model);
+        vehicle.Appearance.ApplyTrail(data.Vehicle.Trail);
         vehicle.Appearance.Apply(CarLook.Catalogue.FirstOrDefault(l => l.Id == data.Vehicle.Look) ?? CarLook.All[0]);
         foreach (var accessory in CarAccessory.Catalogue)
             if (vehicle.Appearance.HasAccessory(accessory.Id) != data.Vehicle.Accessories.Contains(accessory.Id))
@@ -282,6 +293,7 @@ public partial class Game
             world.Animals[i].SetRewardAvailable(data.Roadside.Animals[i]);
         world.Village.RestoreLevels(data.Village.HouseLevels);
         world.Village.RestoreGlazed(data.Village.Glazed);
+        world.Village.RestoreBaked(data.Village.Baked);
         world.Village.RestoreTrades(data.Village.TradeCounts);
         world.Village.RestoreFarm(data.Village.FarmCount);
         world.Village.RestoreGarden(data.Village.GardenCount);

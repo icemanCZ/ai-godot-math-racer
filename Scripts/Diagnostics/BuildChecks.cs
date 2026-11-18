@@ -283,6 +283,27 @@ public partial class BuildChecks : Node
             Deliver(jetty);
             Deliver(tower);
             Check(mill.Stage == 2 && tower.Stage == 2 && jetty.Stage == 1, "three buildings can be under way at once");
+            var ducklings = world
+                .WorldPets.Where(p =>
+                    p.Kind is CollectorPetKind.Duckling1 or CollectorPetKind.Duckling2 or CollectorPetKind.Duckling3
+                )
+                .ToArray();
+            Check(
+                ducklings.Length == 3
+                    && ducklings.All(d =>
+                        !d.IsOwned && d.Collector == jetty.Builder && d.TrailOffset.Z > jettyDuck.TrailOffset.Z
+                    ),
+                "three ducklings wait beside the fisherman and trail behind the duck"
+            );
+            foreach (var (stage, owned) in new[] { (2, 0), (3, 1), (5, 1), (6, 2), (8, 2), (9, 3) })
+            {
+                jetty.SetStage(stage);
+                Check(
+                    ducklings.Count(d => d.IsOwned) == owned && !jettyDuck.IsOwned,
+                    $"{owned} ducklings after {stage} deliveries to the jetty, the duck not yet"
+                );
+            }
+            jetty.SetStage(1);
             RoundTrip("three buildings under way");
             foreach (var project in new[] { mill, tower, jetty })
                 while (!project.Complete)
@@ -307,8 +328,11 @@ public partial class BuildChecks : Node
             Frames(3);
             Check(((Mill)mill).SailSpeed > 0, "the finished mill turns its sails");
             Check(
-                jettyDuck.IsOwned && jettyDuck.IsActive && jettyDuck.Visible,
-                "the finished jetty brings the duck along"
+                jettyDuck.IsOwned
+                    && jettyDuck.IsActive
+                    && jettyDuck.Visible
+                    && ducklings.All(d => d.IsActive && d.Visible),
+                "the finished jetty brings the duck and its three ducklings along"
             );
             RoundTrip("rewards of the finished buildings");
             Check(jettyDuck.IsActive, "the duck is still along after the progress is restored");

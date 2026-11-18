@@ -119,6 +119,7 @@ public partial class Game : Node3D
         SetupGolem();
         SetupTrailer();
         ui.AnimalCount(RemainingAnimals, world.Animals.Length);
+        ui.HiddenCount(world.Hidden);
 
         persistenceReady = true;
         bool skipTitle = false;
@@ -296,9 +297,21 @@ public partial class Game : Node3D
     {
         if (State != GameState.Garage)
             return;
-        // An item not owned yet is bought first and then equipped like an owned one.
+        // An item not owned yet is bought first and then equipped like an owned one; the plain tyre marks are free.
+        if (reward.IsTrail && reward.Id == CarTrail.Plain.Id)
+        {
+            vehicle.Appearance.ApplyTrail(reward.Id);
+            ShowGarage();
+            return;
+        }
         if (!OwnedRewards.Contains(reward) && !BuyCarItem(reward))
             return;
+        if (reward.IsTrail)
+        {
+            vehicle.Appearance.ApplyTrail(reward.Id);
+            ShowGarage();
+            return;
+        }
         if (reward.IsModel)
             vehicle.Appearance.ApplyModel(reward.Id);
         else if (reward.IsAccessory)
@@ -354,7 +367,7 @@ public partial class Game : Node3D
             bool glassOrder =
                 Haul == null
                 && animal.Role is HouseResidentRole { House: var house }
-                && HouseMaterial(house) == HaulLoad.Glass;
+                && HouseMaterial(house) is HaulLoad.Glass or HaulLoad.Bread;
             animal.Guide(animal.RewardAvailable || CanChooseExpedition(animal) || target || glassOrder, target);
         }
     }

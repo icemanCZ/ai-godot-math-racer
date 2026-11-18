@@ -32,9 +32,9 @@ public partial class Game
             ui.HouseCollection(resident, Delivery.Collected);
             return;
         }
-        if (HouseMaterial(house) == HaulLoad.Glass)
+        if (HouseMaterial(house) is HaulLoad.Glass or HaulLoad.Bread)
         {
-            // The tenth improvement is done, and the resident asks for glasses for a housewarming.
+            // The tenth improvement is done, and the resident asks for glasses for a housewarming, then for bread.
             ClearChallenge();
             EnterInteraction(GameState.HouseMaterialOffer, resident);
             ShowHouseMaterial();
@@ -68,12 +68,14 @@ public partial class Game
     /// <summary>
     /// The goods the resident of a house wants for the next improvement, or null for a quiz or an apple task.
     /// A valley without the works has no goods to haul, so its houses ask a quiz instead. A finished house asks for glasses
-    /// once, if the valley has a glassworks.
+    /// once, if the valley has a glassworks, and once it has them for bread, if the valley has a bakery.
     /// </summary>
     private HaulLoad? HouseMaterial(int house) =>
         world.Industry.Length == 0 ? null
         : world.Village.Level(house) >= Village.Upgrades.Length
             ? world.Glassworks != null && !world.Village.IsGlazed(house) ? HaulLoad.Glass
+                : world.Bakery != null && world.Village.IsGlazed(house) && !world.Village.IsBaked(house)
+                    ? HaulLoad.Bread
                 : null
         : Village.MaterialOf(world.Village.TaskAt(house));
 
@@ -109,10 +111,17 @@ public partial class Game
         var works = GoodsWorks(load)!;
         string wanted = load == HaulLoad.Planks ? Texts.Prkna : Texts.Cihly;
         bool glass = load == HaulLoad.Glass;
+        bool bread = load == HaulLoad.Bread;
         Speak(
             TripOf(resident) != null ? Texts.PrivedMiTenNakladKDomecku
-                : works.Stock >= Works.PerTrip ? (glass ? Texts.HouseNeedsGlasses : Texts.HouseNeeds(wanted))
+                : works.Stock >= Works.PerTrip
+                    ? (
+                        glass ? Texts.HouseNeedsGlasses
+                        : bread ? Texts.HouseNeedsBread
+                        : Texts.HouseNeeds(wanted)
+                    )
                 : glass ? Texts.HouseNeedsGlassesButNone
+                : bread ? Texts.HouseNeedsBreadButNone
                 : Texts.HouseNeedsButNone(wanted, works.Spec.Name.ToLower()),
             resident
         );
@@ -147,9 +156,27 @@ public partial class Game
         EndHaul();
         if (trip.Load == HaulLoad.Glass)
             CompleteGlassOrder(owner);
+        else if (trip.Load == HaulLoad.Bread)
+            CompleteBreadOrder(owner);
         else
             CompleteHouseTask(owner);
         SaveProgress();
+    }
+
+    /// <summary>The bread stands in front of the finished house: the resident pays and sits down to breakfast.</summary>
+    private void CompleteBreadOrder(Character owner)
+    {
+        int house = ((HouseResidentRole)owner.Role).House;
+        world.Village.Bake(house);
+        AddCoins(HouseTaskCoins);
+        nearby = owner;
+        CelebrateCompletion(owner, Texts.BreadParty(HouseTaskCoins));
+        ClearChallenge();
+        deliveryReward = false;
+        EnterInteraction(GameState.HouseReward);
+        ui.HouseReward(owner, world.Village.Level(house));
+        ShowCelebrationView();
+        UpdateDeliveryGuides();
     }
 
     /// <summary>The glasses stand in front of the finished house: the resident pays and holds a housewarming.</summary>

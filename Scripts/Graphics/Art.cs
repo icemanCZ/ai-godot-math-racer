@@ -65,6 +65,11 @@ public static class Art
                     "M16 34 H116 V100 H16 Z M16 56 H116 M16 78 H116 M46 34 V56 M86 34 V56 M31 56 V78 M66 56 V78 M101 56 V78 M46 78 V100 M86 78 V100",
                 "gravelworks" =>
                     "M22 22 H110 L84 70 H48 Z M48 70 V90 H84 V70 M20 118 A8 6 0 1 1 36 118 A8 6 0 1 1 20 118 Z M50 118 A8 6 0 1 1 66 118 A8 6 0 1 1 50 118 Z M80 118 A8 6 0 1 1 96 118 A8 6 0 1 1 80 118 Z",
+                // The bakery's loaf and the farmer's stalk of wheat.
+                "bakery" =>
+                    "M14 88 Q14 44 66 44 Q118 44 118 88 Q118 104 102 104 H30 Q14 104 14 88 Z M42 56 L54 80 M64 52 L76 80 M86 56 L98 80",
+                "wheat" =>
+                    "M66 120 V34 M66 34 Q48 30 46 16 M66 34 Q84 30 86 16 M66 58 Q46 54 42 40 M66 58 Q88 54 92 40 M66 82 Q46 78 42 64 M66 82 Q88 78 92 64",
                 "glassworks" => "M38 18 H94 L86 70 Q84 90 66 94 Q48 90 46 70 Z M48 40 H84 M66 94 V112 M42 116 H90",
                 _ =>
                     "M81 29 A15 15 0 1 1 51 29 A15 15 0 1 1 81 29 Z M44 111 V77 L31 88 L22 77 L46 53 H86 L110 77 L101 88 L88 77 V111 H73 V88 H59 V111 Z",
@@ -102,6 +107,25 @@ public static class Art
             Materials[color] = m;
         }
         return m;
+    }
+
+    /// <summary>A block that shines by itself and ignores the light of the day: a window with the lamp on.</summary>
+    public static MeshInstance3D Lamp(Node3D parent, Vector3 pos, Vector3 scale, string color)
+    {
+        string key = "lamp:" + color;
+        if (!Materials.TryGetValue(key, out var material))
+        {
+            material = new StandardMaterial3D
+            {
+                AlbedoColor = new Color(color).SrgbToLinear(),
+                ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+            };
+            Materials[key] = material;
+        }
+        var lamp = Block(parent, pos, scale, color);
+        lamp.MaterialOverride = material;
+        lamp.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
+        return lamp;
     }
 
     public static MeshInstance3D Ball(Node3D parent, Vector3 pos, Vector3 scale, string color) =>

@@ -1,6 +1,7 @@
 using System.Linq;
 using Godot;
 using MathRacer.Characters;
+using MathRacer.Garage;
 
 namespace MathRacer.Ui;
 
@@ -209,6 +210,17 @@ public partial class DeliveryPicture : Control
                                 new Color("cfeaf4")
                             );
                             break;
+                        case "wheat":
+                            DrawLine(p + new Vector2(0, 11), p + new Vector2(0, -8), new Color("c9b45a"), 2.5f, true);
+                            Oval(p + new Vector2(0, -7), new(5, 9), new("f2c64a"));
+                            DrawLine(p + new Vector2(0, -7), p + new Vector2(0, -15), new Color("f7dc7a"), 1.5f, true);
+                            break;
+                        case "bread":
+                            Oval(p, new(13, 10), new("b8732a"));
+                            Oval(p + new Vector2(-1, -2), new(10, 7), new("e0a04a"));
+                            DrawLine(p + new Vector2(-4, -4), p + new Vector2(-1, 2), new Color("b8732a"), 1.5f, true);
+                            DrawLine(p + new Vector2(2, -5), p + new Vector2(5, 1), new Color("b8732a"), 1.5f, true);
+                            break;
                         case "gravel":
                             Oval(p, new(12, 9), new("8f8a7d"));
                             Oval(p + new Vector2(-2, -2), new(9, 6), new("b9b4a5"));
@@ -328,6 +340,32 @@ public partial class DeliveryPicture : Control
                 );
                 DrawLine(new(x - 12, 50), new(x - 10, 72), new Color("ffffff"), 3);
             }
+        }
+        else if (Icon == "wheat")
+        {
+            // Three stalks of wheat with golden ears, leaning a little apart.
+            foreach (var (x, lean) in new[] { (60f, -10f), (90f, 0f), (120f, 10f) })
+            {
+                DrawLine(new(x, 128), new(x + lean, 56), new Color("c9b45a"), 6, true);
+                for (int i = 0; i < 5; i++)
+                {
+                    float y = 56 - i * 11;
+                    Oval(new(x + lean - 7, y + 4), new(6, 9), new("f2c64a"));
+                    Oval(new(x + lean + 7, y + 4), new(6, 9), new("e0b23a"));
+                }
+                Oval(new(x + lean, 6), new(6, 10), new("f7dc7a"));
+            }
+        }
+        else if (Icon == "bread")
+        {
+            // A round loaf with three cuts on top and a long loaf behind it.
+            DrawLine(new(40, 96), new(140, 56), ink, 30, true);
+            DrawLine(new(40, 96), new(140, 56), new Color("c27a2c"), 24, true);
+            Oval(new(90, 96), new(54, 38), ink);
+            Oval(new(90, 94), new(50, 34), new("c27a2c"));
+            Oval(new(86, 88), new(40, 24), new("e8b062"));
+            foreach (int x in new[] { 66, 88, 110 })
+                DrawLine(new(x - 6, 76), new(x + 6, 100), new Color("b8732a"), 5, true);
         }
         else if (Icon == "binoculars")
         {
@@ -543,6 +581,72 @@ public partial class DeliveryPicture : Control
                     true
                 );
             }
+        }
+        else if (Icon == "evening")
+        {
+            // A low sun sitting on the hills, with a few rays above it.
+            var centre = new Vector2(90, 100);
+            DrawCircle(centre, 28, new Color("ff9e66"), true, -1, true);
+            for (int i = 0; i < 5; i++)
+            {
+                var direction = Vector2.Right.Rotated(Mathf.Pi + (i + 1) * Mathf.Pi / 6);
+                DrawLine(centre + direction * 37, centre + direction * 49, new Color("ffc27a"), 7, true);
+            }
+            DrawRect(new Rect2(20, 100, 140, 36), ink);
+            DrawLine(new(24, 100), new(156, 100), Colors.White, 6, true);
+        }
+        else if (Icon == "night")
+        {
+            // A sleepy moon with rosy cheeks and a couple of stars.
+            var moon = new Color("fff0b8");
+            DrawCircle(new(84, 82), 40, moon, true, -1, true);
+            DrawArc(new(70, 78), 8, .15f, Mathf.Pi - .15f, 12, ink, 4, true);
+            DrawArc(new(98, 78), 8, .15f, Mathf.Pi - .15f, 12, ink, 4, true);
+            DrawArc(new(84, 90), 9, .3f, Mathf.Pi - .3f, 12, ink, 4, true);
+            DrawCircle(new(62, 93), 6, new Color("f4a29b"), true, -1, true);
+            DrawCircle(new(106, 93), 6, new Color("f4a29b"), true, -1, true);
+            foreach (var (x, y, r) in new[] { (140f, 40f, 11f), (150f, 96f, 8f), (30f, 34f, 7f) })
+                DrawColoredPolygon(
+                    new Vector2[]
+                    {
+                        new(x, y - r),
+                        new(x + r * .3f, y - r * .3f),
+                        new(x + r, y),
+                        new(x + r * .3f, y + r * .3f),
+                        new(x, y + r),
+                        new(x - r * .3f, y + r * .3f),
+                        new(x - r, y),
+                        new(x - r * .3f, y - r * .3f),
+                    },
+                    new Color("ffe27a")
+                );
+        }
+        else if (Icon.StartsWith("trail-"))
+        {
+            // A bit of road with what the rear wheels leave on it: tyre marks, or flowers, hearts or stars.
+            string trail = Icon[6..];
+            var road = Enumerable
+                .Range(0, 20)
+                .Select(i => new Vector2(14 + i * 8, 76 + 20 * Mathf.Sin(i / 19f * Mathf.Tau)))
+                .ToArray();
+            DrawPolyline(road, new Color("ecd49a"), 62, true);
+            if (trail == "tyres")
+                foreach (float side in new[] { -11f, 11f })
+                    for (int i = 0; i + 1 < road.Length; i += 2)
+                        DrawLine(
+                            road[i] + Vector2.Down * side,
+                            road[i + 1] + Vector2.Down * side,
+                            new Color("8a7757"),
+                            6,
+                            true
+                        );
+            else
+                for (int i = 1; i < road.Length - 1; i += 3)
+                {
+                    var centre = road[i] + Vector2.Down * (i % 2 == 0 ? 11 : -11);
+                    foreach (var piece in TrailShapes.Of(trail))
+                        DrawColoredPolygon(piece.Outline.Select(p => centre + p * 15).ToArray(), piece.Color);
+                }
         }
         else if (Icon == "quiz-letters")
         {

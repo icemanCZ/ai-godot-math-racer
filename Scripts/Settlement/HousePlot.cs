@@ -161,6 +161,30 @@ public sealed partial class HousePlot : Node3D
         Refresh();
     }
 
+    private Node3D? windowLights;
+
+    /// <summary>
+    /// The windows of the finished house shine in the evening. The lights are built the first time they are needed
+    /// and hang from the lot itself, not from a stage, so they never show on a house that is not finished.
+    /// </summary>
+    internal void ShowNightLight(bool on)
+    {
+        if (windowLights == null)
+        {
+            if (!on || !IsInsideTree())
+                return;
+            windowLights = new Node3D { Name = "WindowLights" };
+            AddChild(windowLights);
+            float frontZ = CenterZ + Depth / 2;
+            foreach (float x in new[] { -1.825f, 1.825f })
+                Art.Lamp(windowLights, new(x, 1.7f, frontZ + .112f), new(.94f, .74f, .02f), "ffd77a");
+            foreach (int side in new[] { -1, 1 })
+                Art.Lamp(windowLights, new(side * (Width / 2 + .122f), 1.7f, CenterZ), new(.02f, .74f, .94f), "ffd77a");
+        }
+        if (windowLights.Visible != on)
+            windowLights.Visible = on;
+    }
+
     private void Refresh()
     {
         for (int i = 0; i < Trips; i++)

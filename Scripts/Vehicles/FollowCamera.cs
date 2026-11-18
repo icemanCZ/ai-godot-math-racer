@@ -17,14 +17,19 @@ public partial class FollowCamera : Camera3D
     private float panorama,
         panoramaTotal;
     private Vector3 panoramaCenter;
-    private float panoramaStart;
+    private float panoramaStart,
+        panoramaPitch = -.16f;
 
-    /// <summary>The camera stands at <paramref name="center"/> and turns once round over <paramref name="seconds"/>.</summary>
-    internal void ShowPanorama(Vector3 center, float seconds, float startAngle)
+    /// <summary>
+    /// The camera stands at <paramref name="center"/> and turns once round over <paramref name="seconds"/>; a positive
+    /// <paramref name="pitch"/> (the height of the line of sight over its length) lifts the view towards the sky.
+    /// </summary>
+    internal void ShowPanorama(Vector3 center, float seconds, float startAngle, float pitch = -.16f)
     {
         panorama = panoramaTotal = seconds;
         panoramaCenter = center;
         panoramaStart = startAngle;
+        panoramaPitch = pitch;
     }
 
     internal bool PanoramaActive => panorama > 0;
@@ -114,7 +119,7 @@ public partial class FollowCamera : Camera3D
             panorama = Mathf.Max(0, panorama - dt);
             float turn = panoramaStart + (1 - panorama / panoramaTotal) * Mathf.Tau;
             Position = panoramaCenter;
-            LookAt(panoramaCenter + new Vector3(Mathf.Sin(turn), -.16f, Mathf.Cos(turn)) * 60);
+            LookAt(panoramaCenter + new Vector3(Mathf.Sin(turn), panoramaPitch, Mathf.Cos(turn)) * 60);
             if (panorama <= 0)
                 Snap();
             return;

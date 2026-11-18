@@ -139,6 +139,7 @@ public partial class GameUi : CanvasLayer
         talkButton.Name = "PrimaryTask";
         SetupEvents();
         SetupCoins();
+        SetupHidden();
     }
 
     private static StyleBoxFlat Style(string color, int radius) =>

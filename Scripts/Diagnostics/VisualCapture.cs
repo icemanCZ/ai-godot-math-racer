@@ -44,6 +44,16 @@ public partial class VisualCapture : Node
                 camera.LookAt(focus + Vector3.Up * .6f);
             }
         }
+        else if (view == "constellation")
+        {
+            // The view from the tower at night: the line of sight is lifted and a picture of stars hangs ahead.
+            camera.SetProcess(false);
+            car.Active = false;
+            var eye = car.Position + Vector3.Up * 6;
+            camera.Position = eye;
+            camera.LookAt(eye + new Vector3(0, .5f, 1) * 60);
+            world.Atmosphere.ShowConstellation(Constellation.All[0], 0, 8);
+        }
         else if (view == "square")
         {
             camera.SetProcess(false);
@@ -140,6 +150,8 @@ public partial class VisualCapture : Node
             view
             is "village"
                 or "village-upgraded"
+                or "village-evening"
+                or "village-night"
                 or "village-question"
                 or "village-fruit-offer"
                 or "village-material-offer"
@@ -162,7 +174,7 @@ public partial class VisualCapture : Node
             camera.Position = focus + building.GlobalBasis * new Vector3(12, 8, 19);
             camera.LookAt(focus);
         }
-        else if (view is "garage" or "garage-shop") { }
+        else if (view is "garage" or "garage-shop" or "garage-trails") { }
         else if (view == "coins" && world.GetNodeOrNull<WorldCoins>("WorldCoins") is { } coins)
         {
             camera.SetProcess(false);
@@ -206,6 +218,28 @@ public partial class VisualCapture : Node
             var focus = car.Position + Vector3.Back * 3;
             camera.Position = focus + new Vector3(7, 11, 10);
             camera.LookAt(focus);
+        }
+        else if (view is "trail-flowers" or "trail-hearts" or "trail-stars")
+        {
+            // The car drives with a bought trail and looks back at what its wheels left on the road.
+            car.Appearance.ApplyTrail(view[6..]);
+            Input.ActionPress("accelerate");
+            await ToSignal(GetTree().CreateTimer(2.2), SceneTreeTimer.SignalName.Timeout);
+            Input.ActionRelease("accelerate");
+            Input.ActionPress("brake");
+            await ToSignal(GetTree().CreateTimer(.6), SceneTreeTimer.SignalName.Timeout);
+            camera.SetProcess(false);
+            var focus = car.Position + Vector3.Back * 4;
+            camera.Position = focus + new Vector3(4, 5.5f, 9);
+            camera.LookAt(focus);
+        }
+        else if (view == "ducklings" && world.Duck is { } duck)
+        {
+            // The duck of the jetty and its three ducklings waiting beside the fisherman.
+            camera.SetProcess(false);
+            car.Active = false;
+            camera.Position = duck.Position + duck.Basis * new Vector3(0, 2.2f, 7);
+            camera.LookAt(duck.Position + duck.Basis * new Vector3(-1, .6f, 0));
         }
         else if (view == "wildlife")
         {
@@ -368,6 +402,65 @@ public partial class VisualCapture : Node
             camera.Position = site.Position - site.Inward * 15 + right * 13 + Vector3.Up * 11;
             camera.LookAt(site.Position + site.Inward * 8 + right * 2 + Vector3.Up * 1.5f);
         }
+        else if (view == "pekarna" && world.Bakery is { } bakery)
+        {
+            camera.SetProcess(false);
+            bakery.SetStock(8);
+            var site = bakery.Site;
+            var right = Vector3.Up.Cross(site.Inward);
+            camera.Position = site.Position - site.Inward * 15 + right * 13 + Vector3.Up * 11;
+            camera.LookAt(site.Position + site.Inward * 8 + right * 2 + Vector3.Up * 1.5f);
+        }
+        else if (view is "wheat-farm" or "wheat-farm-far" && world.Farm is { } farm)
+        {
+            // The loading ring, the sacks, the barn and the four fields, from the road side and from above.
+            camera.SetProcess(false);
+            car.Active = false;
+            var site = farm.Site;
+            var right = Vector3.Up.Cross(site.Inward);
+            bool far = view == "wheat-farm-far";
+            camera.Position =
+                site.Position - site.Inward * (far ? 30 : 17) + right * (far ? 24 : 13) + Vector3.Up * (far ? 26 : 12);
+            camera.LookAt(site.Position + site.Inward * 12 + Vector3.Up);
+        }
+        else if (view is "hidden-ladybug" or "hidden-hedgehog" or "hidden-frog")
+        {
+            // A close look at one friend who hides, from the road side.
+            camera.SetProcess(false);
+            car.Active = false;
+            var kind = view switch
+            {
+                "hidden-ladybug" => HiddenKind.Ladybug,
+                "hidden-hedgehog" => HiddenKind.Hedgehog,
+                _ => HiddenKind.Frog,
+            };
+            var friend = world.Hidden.Friends.First(f => f.Kind == kind);
+            camera.Position =
+                friend.Position + friend.Transform.Basis.Z * 2.6f + friend.Transform.Basis.X * 1.4f + Vector3.Up * 1.4f;
+            camera.LookAt(friend.Position + Vector3.Up * .6f);
+        }
+        else if (view == "hidden-near")
+        {
+            // The car drives towards a friend: the question mark grows over it and the notebook is in the corner.
+            var friend = world.Hidden.Friends[0];
+            var road = world.Routes.Samples.OrderBy(s => (s - friend.Position).Length()).First();
+            var toFriend = friend.Position - road;
+            toFriend.Y = 0;
+            car.SetPose(
+                world.Ground.At(road.X - toFriend.X * 1.2f, road.Z - toFriend.Z * 1.2f, .15f),
+                Mathf.Atan2(-toFriend.X, -toFriend.Z)
+            );
+            camera.Snap();
+        }
+        else if (view == "hidden-pets")
+        {
+            // The three pets that wait around the witch until their friends are all found.
+            camera.SetProcess(false);
+            car.Active = false;
+            var witch = world.Witch;
+            camera.Position = witch.Position + witch.Basis * new Vector3(0, 2.6f, 9);
+            camera.LookAt(witch.Position + witch.Basis * new Vector3(0, 1.1f, 1.2f));
+        }
         else if (view == "log-yard" && world.LogYard is { } yard)
         {
             camera.SetProcess(false);
@@ -405,6 +498,7 @@ public partial class VisualCapture : Node
             && !view.StartsWith("collection-")
             && !view.StartsWith("delivery-")
             && view != "gameplay"
+            && view is not ("night-drive" or "evening-drive" or "weather-choice" or "constellation")
             && view != "title"
             && view != "challenge"
             && view != "letters"

@@ -402,8 +402,8 @@ public partial class PlotChecks : Node
                 },
                 "a plot panel at the farmer"
             );
-            // The glassworks' worker follows the newcomers, so the first unused ID is the one after it.
-            Rejected(data => data.Nearby = World.GlassworksId + 1, "a character beyond the last actor");
+            // The baker and the farmer at the wheat field come after the glassworks' worker, so the first unused ID is the one after them.
+            Rejected(data => data.Nearby = World.FieldFarmerId + 1, "a character beyond the last actor");
 
             // A panel left open at a newcomer and a trip under way come back as they were.
             game.RestoreProgress(old!);

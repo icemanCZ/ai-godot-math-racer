@@ -1,4 +1,5 @@
 using Godot;
+using MathRacer.Settlement;
 using MathRacer.Vehicles;
 
 namespace MathRacer.Valley;
@@ -9,6 +10,12 @@ internal enum WeatherKind
     Rain,
     Wind,
     Storm,
+
+    /// <summary>A low orange sun. Only the witch brings it; the weather never turns to evening by itself.</summary>
+    Evening,
+
+    /// <summary>A starry night with a moon and fireflies. Only the witch brings it.</summary>
+    Night,
 }
 
 public partial class Weather : Node3D
@@ -18,7 +25,14 @@ public partial class Weather : Node3D
     private readonly ShaderMaterial rainMaterial = new() { Shader = GD.Load<Shader>("res://Shaders/Rain.gdshader") };
     private readonly ImmediateMesh boltMesh = new();
     private readonly MeshInstance3D bolt = new() { Visible = false };
+    private readonly ShaderMaterial fireflyMaterial = new()
+    {
+        Shader = GD.Load<Shader>("res://Shaders/Firefly.gdshader"),
+    };
     private MultiMeshInstance3D rain = null!;
+    private Node3D night = null!;
+    private SpotLight3D headlights = null!;
+    private Village village = null!;
     private Atmosphere atmosphere = null!;
     private Terrain ground = null!;
     private FollowCamera camera = null!;
@@ -29,6 +43,9 @@ public partial class Weather : Node3D
         wind,
         rainfall,
         wetness,
+        evening,
+        nightfall,
+        fireflyTime,
         rainTime,
         nextBolt,
         flash;
@@ -40,10 +57,12 @@ public partial class Weather : Node3D
         ground = world.Ground;
         camera = view;
         car = vehicle;
+        village = world.Village;
         random.Randomize();
         AddChild(puddles);
         puddles.Generate(world);
         CreateRain();
+        CreateNight();
         bolt.Mesh = boltMesh;
         bolt.MaterialOverride = new StandardMaterial3D
         {
@@ -59,16 +78,28 @@ public partial class Weather : Node3D
         RenderingServer.GlobalShaderParameterSet("road_wetness", 0f);
     }
 
-    internal void Begin(WeatherKind kind)
+    /// <summary>
+    /// Starts <paramref name="kind"/> of weather. The sky changes over several seconds, or at once with
+    /// <paramref name="instant"/> (a screenshot should not wait for it).
+    /// </summary>
+    internal void Begin(WeatherKind kind, bool instant = false)
     {
         Current = kind;
-        remaining = kind == WeatherKind.Clear ? random.RandfRange(240, 420) : random.RandfRange(35, 60);
+        remaining =
+            kind == WeatherKind.Clear ? random.RandfRange(240, 420)
+            : kind is WeatherKind.Evening or WeatherKind.Night ? 300
+            : random.RandfRange(35, 60);
         nextBolt = random.RandfRange(4, 7);
-        if (flash > 0)
-            atmosphere.ApplyWeather(cover, 0);
         flash = 0;
         bolt.Hide();
-        if (kind == WeatherKind.Clear)
+        if (instant)
+        {
+            cover = CoverTarget;
+            evening = kind == WeatherKind.Evening ? 1 : 0;
+            nightfall = kind == WeatherKind.Night ? 1 : 0;
+        }
+        atmosphere.ApplyWeather(cover, 0, evening, nightfall);
+        if (kind is WeatherKind.Clear or WeatherKind.Evening or WeatherKind.Night)
             return;
         windDirection = Vector2.Right.Rotated(random.RandfRange(0, Mathf.Tau));
         var drift = windDirection * (kind == WeatherKind.Storm ? 5f : 1.5f);
@@ -92,13 +123,6 @@ public partial class Weather : Node3D
             );
         }
 
-        float coverTarget = Current switch
-        {
-            WeatherKind.Rain => .62f,
-            WeatherKind.Storm => 1,
-            WeatherKind.Wind => .18f,
-            _ => 0,
-        };
         float windTarget = Current switch
         {
             WeatherKind.Rain => .14f,
@@ -114,9 +138,13 @@ public partial class Weather : Node3D
         };
         float previousCover = cover,
             previousFlash = flash;
+        float previousEvening = evening,
+            previousNight = nightfall;
         float previousWind = wind,
             previousWetness = wetness;
-        cover = Mathf.MoveToward(cover, coverTarget, dt * .23f);
+        cover = Mathf.MoveToward(cover, CoverTarget, dt * .23f);
+        evening = Mathf.MoveToward(evening, Current == WeatherKind.Evening ? 1 : 0, dt * .12f);
+        nightfall = Mathf.MoveToward(nightfall, Current == WeatherKind.Night ? 1 : 0, dt * .12f);
         wind = Mathf.MoveToward(wind, windTarget, dt * .45f);
         rainfall = Mathf.MoveToward(rainfall, rainTarget, dt * .35f);
         wetness = Mathf.MoveToward(wetness, rainTarget > 0 ? 1 : 0, dt * (rainTarget > 0 ? .075f : .028f));
@@ -145,8 +173,90 @@ public partial class Weather : Node3D
             flash = 1;
         }
         bolt.Visible = flash > .45f;
-        if (cover != previousCover || flash != previousFlash)
-            atmosphere.ApplyWeather(cover, flash);
+        if (
+            cover != previousCover
+            || flash != previousFlash
+            || evening != previousEvening
+            || nightfall != previousNight
+        )
+            atmosphere.ApplyWeather(cover, flash, evening, nightfall);
+        TickNight(dt);
+    }
+
+    private float CoverTarget =>
+        Current switch
+        {
+            WeatherKind.Rain => .62f,
+            WeatherKind.Storm => 1,
+            WeatherKind.Wind => .18f,
+            WeatherKind.Evening => .22f,
+            _ => 0,
+        };
+
+    /// <summary>How dark it is, from 0 by day to 1 at night: the car's lights and the fireflies follow it.</summary>
+    internal float Darkness => Mathf.Max(evening * .6f, nightfall);
+
+    /// <summary>The night is deep enough for the stars: the stargazer can show a constellation.</summary>
+    internal bool StarsOut => nightfall > .6f;
+
+    /// <summary>The fireflies, the headlights of the car and the lamps in the windows.</summary>
+    private void TickNight(float dt)
+    {
+        float glow = Mathf.Clamp(nightfall + evening * .35f, 0, 1);
+        night.Visible = glow > .01f;
+        if (night.Visible)
+        {
+            fireflyTime += dt;
+            night.GlobalPosition = car.GlobalPosition;
+            fireflyMaterial.SetShaderParameter("glow_time", fireflyTime);
+            fireflyMaterial.SetShaderParameter("intensity", glow);
+        }
+        headlights.Visible = Darkness > .02f;
+        headlights.LightEnergy = Darkness * 4.5f;
+        village.SetNightLights(Darkness > .35f);
+    }
+
+    private void CreateNight()
+    {
+        var specks = new MultiMesh
+        {
+            TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
+            UseCustomData = true,
+            Mesh = new QuadMesh(),
+            CustomAabb = new Aabb(new(-40, -3, -40), new(80, 10, 80)),
+            InstanceCount = 120,
+        };
+        var seeds = new RandomNumberGenerator { Seed = 8321 };
+        for (int i = 0; i < specks.InstanceCount; i++)
+        {
+            specks.SetInstanceTransform(i, Transform3D.Identity);
+            specks.SetInstanceCustomData(i, new Color(seeds.Randf(), seeds.Randf(), seeds.Randf(), seeds.Randf()));
+        }
+        night = new Node3D { Name = "Night", Visible = false };
+        night.AddChild(
+            new MultiMeshInstance3D
+            {
+                Name = "Fireflies",
+                Multimesh = specks,
+                MaterialOverride = fireflyMaterial,
+                CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+            }
+        );
+        AddChild(night);
+        // The car's front is -Z, as for the camera that looks over its roof from +Z.
+        headlights = new SpotLight3D
+        {
+            Name = "Headlights",
+            Position = new(0, .95f, -1.55f),
+            RotationDegrees = new(-7, 0, 0),
+            SpotRange = 48,
+            SpotAngle = 34,
+            SpotAngleAttenuation = .7f,
+            LightColor = new Color("fff0c2"),
+            LightEnergy = 0,
+            Visible = false,
+        };
+        car.AddChild(headlights);
     }
 
     private void CreateRain()

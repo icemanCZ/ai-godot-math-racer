@@ -1,9 +1,12 @@
+using System.Linq;
 using Godot;
 using MathRacer.App;
 
 namespace MathRacer.Valley;
 
-/// <summary>Daylight and distant cloud silhouettes, independent of world landmarks.</summary>
+/// <summary>
+/// Daylight, the warm evening, the starry night and distant cloud silhouettes, independent of world landmarks.
+/// </summary>
 public partial class Atmosphere : Node3D
 {
     private static readonly Color ClearHorizon = new Color("8cbfed").SrgbToLinear();
@@ -13,22 +16,164 @@ public partial class Atmosphere : Node3D
     private static readonly Color ClearFog = new Color("a7c9df").SrgbToLinear();
     private static readonly Color CloudyFog = new Color("8897af").SrgbToLinear();
     private static readonly Color CloudTint = new("8995a8");
+    private static readonly Color DayGround = new Color("739fa3").SrgbToLinear();
+    private static readonly Color DayAmbient = new("edf5ff");
+    private static readonly Color DaySun = new("fff5e5");
+    private static readonly Color EveningHorizon = new Color("f4a77e").SrgbToLinear();
+    private static readonly Color EveningSky = new Color("6a5f9e").SrgbToLinear();
+    private static readonly Color EveningFog = new Color("d9a08c").SrgbToLinear();
+    private static readonly Color EveningGround = new Color("8a6a73").SrgbToLinear();
+    private static readonly Color EveningAmbient = new("ffd9c8");
+    private static readonly Color EveningSun = new("ff9e66");
+    private static readonly Color EveningCloud = new("ffc2a4");
+    private static readonly Color NightHorizon = new Color("26356f").SrgbToLinear();
+    private static readonly Color NightSky = new Color("0b1238").SrgbToLinear();
+    private static readonly Color NightFog = new Color("1b2652").SrgbToLinear();
+    private static readonly Color NightGround = new Color("0f1a3a").SrgbToLinear();
+    private static readonly Color NightAmbient = new("5f78d4");
+    private static readonly Color NightSun = new("a9bcff");
+    private static readonly Color NightCloud = new("46517e");
+    private static readonly Vector3 DaySunAngle = new(-55, -28, 0);
+    private static readonly Vector3 EveningSunAngle = new(-13, -62, 0);
+    private static readonly Vector3 NightSunAngle = new(-46, 38, 0);
+
+    /// <summary>Distance of the stars and the moon from the camera; the camera sees 1200 m.</summary>
+    private const float SkyRadius = 1000;
+
     private ProceduralSkyMaterial sky = null!;
     private Godot.Environment environment = null!;
     private DirectionalLight3D sun = null!;
     private StandardMaterial3D cloudMaterial = null!;
+    private Node3D nightSky = null!;
+    private StandardMaterial3D starMaterial = null!;
+    private StandardMaterial3D moonMaterial = null!;
+    private Node3D moon = null!;
 
-    internal void ApplyWeather(float cover, float flash)
+    /// <summary>
+    /// Sets the sky for the weather. <paramref name="evening"/> and <paramref name="night"/> (0 to 1) blend the
+    /// ordinary day towards a low orange sun or a moonlit night with stars.
+    /// </summary>
+    internal void ApplyWeather(float cover, float flash, float evening = 0, float night = 0)
     {
-        var horizon = ClearHorizon.Lerp(CloudyHorizon, cover);
-        sky.SkyTopColor = ClearSky.Lerp(CloudySky, cover);
+        var horizon = ClearHorizon.Lerp(CloudyHorizon, cover).Lerp(EveningHorizon, evening).Lerp(NightHorizon, night);
+        sky.SkyTopColor = ClearSky.Lerp(CloudySky, cover).Lerp(EveningSky, evening).Lerp(NightSky, night);
         sky.SkyHorizonColor = horizon;
         sky.GroundHorizonColor = horizon;
-        environment.AmbientLightEnergy = .42f - cover * .12f + flash * .22f;
-        environment.FogLightColor = ClearFog.Lerp(CloudyFog, cover);
-        environment.FogDensity = .00055f + cover * .0035f;
-        sun.LightEnergy = .6f - cover * .41f + flash * .53f;
-        cloudMaterial.AlbedoColor = Colors.White.Lerp(CloudTint, cover);
+        sky.GroundBottomColor = DayGround.Lerp(EveningGround, evening).Lerp(NightGround, night);
+        environment.AmbientLightColor = DayAmbient.Lerp(EveningAmbient, evening).Lerp(NightAmbient, night);
+        environment.AmbientLightEnergy =
+            (.42f - cover * .12f + flash * .22f) * (1 - evening * .1f) * (1 - night * .45f);
+        environment.FogLightColor = ClearFog.Lerp(CloudyFog, cover).Lerp(EveningFog, evening).Lerp(NightFog, night);
+        environment.FogDensity = .00055f + cover * .0035f + evening * .0004f + night * .0006f;
+        sun.LightEnergy = (.6f - cover * .41f + flash * .53f) * (1 - evening * .15f) * (1 - night * .8f);
+        sun.LightColor = DaySun.Lerp(EveningSun, evening).Lerp(NightSun, night);
+        sun.RotationDegrees = DaySunAngle.Lerp(EveningSunAngle, evening).Lerp(NightSunAngle, night);
+        cloudMaterial.AlbedoColor = Colors
+            .White.Lerp(CloudTint, cover)
+            .Lerp(EveningCloud, evening)
+            .Lerp(NightCloud, night);
+
+        // The moon stands where the sun's light comes from, and the stars fade in as the sky darkens.
+        float stars = Mathf.Clamp((night - .15f) / .85f, 0, 1);
+        nightSky.Visible = stars > 0;
+        starMaterial.AlbedoColor = new Color(1, 1, 1, stars);
+        moonMaterial.AlbedoColor = new Color("fff3c9") with { A = stars };
+        moon.Position = sun.Basis.Z * SkyRadius;
+    }
+
+    /// <summary>The stars and the moon travel with the camera, so they never come closer.</summary>
+    public override void _Process(double delta)
+    {
+        if (nightSky.Visible && GetViewport().GetCamera3D() is { } camera)
+            nightSky.GlobalPosition = camera.GlobalPosition;
+        if (constellation == null)
+            return;
+        constellationTime -= (float)delta;
+        if (constellationTime <= 0 || !nightSky.Visible)
+        {
+            constellation.QueueFree();
+            constellation = null;
+            return;
+        }
+        // It fades in over the first quarter of the time and out over the last.
+        float fade = Mathf.Clamp(
+            Mathf.Min(constellationTime, constellationTotal - constellationTime) / (constellationTotal * .25f),
+            0,
+            1
+        );
+        constellationMaterial.AlbedoColor = new Color("ffe9a0") with { A = fade };
+    }
+
+    private Node3D? constellation;
+    private StandardMaterial3D constellationMaterial = null!;
+    private float constellationTime,
+        constellationTotal;
+
+    /// <summary>
+    /// Draws <paramref name="picture"/> in bright stars joined by thin lines, 27 degrees over the horizon in the
+    /// direction <paramref name="azimuth"/> (the angle the camera turns to, 0 looks along +Z), for
+    /// <paramref name="seconds"/>.
+    /// </summary>
+    internal void ShowConstellation(Constellation picture, float azimuth, float seconds)
+    {
+        constellation?.QueueFree();
+        constellationMaterial = SkyMaterial(new Color("ffe9a0") with { A = 0 });
+        constellationTotal = constellationTime = seconds;
+        constellation = new Node3D { Name = "Constellation" };
+        nightSky.AddChild(constellation);
+        const float radius = SkyRadius * .96f;
+        const float elevation = .47f;
+        var centre = new Vector3(
+            Mathf.Sin(azimuth) * Mathf.Cos(elevation),
+            Mathf.Sin(elevation),
+            Mathf.Cos(azimuth) * Mathf.Cos(elevation)
+        );
+        var right = centre.Cross(Vector3.Up).Normalized();
+        var up = right.Cross(centre).Normalized();
+        // 1 degree of sky is about 17 m at this distance.
+        var points = picture
+            .Stars.Select(offset =>
+                (centre + (right * offset.X + up * offset.Y) * Mathf.DegToRad(1)).Normalized() * radius
+            )
+            .ToArray();
+        var ball = new SphereMesh
+        {
+            Radius = 1,
+            Height = 2,
+            RadialSegments = 10,
+            Rings = 5,
+        };
+        foreach (var point in points)
+            constellation.AddChild(
+                new MeshInstance3D
+                {
+                    Mesh = ball,
+                    MaterialOverride = constellationMaterial,
+                    Position = point,
+                    Scale = Vector3.One * 11,
+                    CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+                }
+            );
+        var line = new BoxMesh { Size = Vector3.One };
+        for (int i = 0; i + 1 < picture.Lines.Length; i += 2)
+        {
+            var from = points[picture.Lines[i]];
+            var to = points[picture.Lines[i + 1]];
+            var middle = (from + to) / 2;
+            constellation.AddChild(
+                new MeshInstance3D
+                {
+                    Mesh = line,
+                    MaterialOverride = constellationMaterial,
+                    Transform = new Transform3D(
+                        Basis.LookingAt(to - from, Vector3.Up)
+                            * Basis.FromScale(new Vector3(3.2f, 3.2f, from.DistanceTo(to))),
+                        middle
+                    ),
+                    CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+                }
+            );
+        }
     }
 
     public void Generate()
@@ -39,14 +184,14 @@ public partial class Atmosphere : Node3D
             SkyHorizonColor = ClearHorizon,
             SkyCurve = .3f,
             GroundHorizonColor = ClearHorizon,
-            GroundBottomColor = new Color("739fa3").SrgbToLinear(),
+            GroundBottomColor = DayGround,
         };
         environment = new Godot.Environment
         {
             BackgroundMode = Godot.Environment.BGMode.Sky,
             Sky = new Sky { SkyMaterial = sky },
             AmbientLightSource = Godot.Environment.AmbientSource.Color,
-            AmbientLightColor = new Color("edf5ff"),
+            AmbientLightColor = DayAmbient,
             AmbientLightEnergy = .42f,
             TonemapMode = Godot.Environment.ToneMapper.Linear,
             FogEnabled = true,
@@ -56,13 +201,14 @@ public partial class Atmosphere : Node3D
         AddChild(new WorldEnvironment { Environment = environment });
         sun = new DirectionalLight3D
         {
-            RotationDegrees = new Vector3(-55, -28, 0),
-            LightColor = new Color("fff5e5"),
+            RotationDegrees = DaySunAngle,
+            LightColor = DaySun,
             LightEnergy = .6f,
             ShadowEnabled = true,
             DirectionalShadowMaxDistance = 100,
         };
         AddChild(sun);
+        CreateNightSky();
 
         cloudMaterial = new StandardMaterial3D
         {
@@ -111,4 +257,89 @@ public partial class Atmosphere : Node3D
             }
         }
     }
+
+    /// <summary>
+    /// Stars and a moon on a sphere around the camera. They have a random generator of their own, so the clouds and
+    /// everything else that is generated from the seed stay where they were.
+    /// </summary>
+    private void CreateNightSky()
+    {
+        nightSky = new Node3D { Name = "NightSky", Visible = false };
+        AddChild(nightSky);
+        starMaterial = SkyMaterial(Colors.White);
+        var random = new RandomNumberGenerator { Seed = (ulong)Settings.Seed + 82 };
+        var stars = new MultiMesh
+        {
+            TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
+            UseColors = true,
+            Mesh = new SphereMesh
+            {
+                Radius = .5f,
+                Height = 1,
+                RadialSegments = 6,
+                Rings = 3,
+            },
+            InstanceCount = 260,
+        };
+        for (int i = 0; i < stars.InstanceCount; i++)
+        {
+            // Above the hills: no stars lower than about eight degrees over the horizon.
+            float elevation = Mathf.Asin(random.RandfRange(.14f, 1));
+            float turn = random.RandfRange(0, Mathf.Tau);
+            var direction = new Vector3(
+                Mathf.Cos(elevation) * Mathf.Sin(turn),
+                Mathf.Sin(elevation),
+                Mathf.Cos(elevation) * Mathf.Cos(turn)
+            );
+            float size = random.RandfRange(3.4f, 8.5f);
+            stars.SetInstanceTransform(i, new Transform3D(Basis.FromScale(Vector3.One * size), direction * SkyRadius));
+            // A few stars are warm and a few are blue, like in a picture book.
+            float roll = random.Randf();
+            stars.SetInstanceColor(
+                i,
+                roll < .15f ? new Color("ffe29a")
+                    : roll < .3f ? new Color("b9d4ff")
+                    : Colors.White
+            );
+        }
+        nightSky.AddChild(
+            new MultiMeshInstance3D
+            {
+                Name = "Stars",
+                Multimesh = stars,
+                MaterialOverride = starMaterial,
+                CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+            }
+        );
+        moonMaterial = SkyMaterial(new Color("fff3c9"));
+        moon = new Node3D { Name = "Moon" };
+        nightSky.AddChild(moon);
+        var ball = new SphereMesh
+        {
+            Radius = 1,
+            Height = 2,
+            RadialSegments = 20,
+            Rings = 10,
+        };
+        foreach (var (material, size) in new[] { (moonMaterial, 42f) })
+            moon.AddChild(
+                new MeshInstance3D
+                {
+                    Mesh = ball,
+                    MaterialOverride = material,
+                    Scale = Vector3.One * size,
+                    CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+                }
+            );
+    }
+
+    private static StandardMaterial3D SkyMaterial(Color color) =>
+        new()
+        {
+            AlbedoColor = color,
+            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+            Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+            VertexColorUseAsAlbedo = true,
+            DisableFog = true,
+        };
 }

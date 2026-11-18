@@ -21,18 +21,18 @@ public partial class World
     private void CreateWorldPets()
     {
         int index = 0;
-        void Add(WorldPetSpec spec, Character? owner, System.Func<int> count, int goal)
+        void Add(WorldPetSpec spec, Character? owner, System.Func<int> count, int goal, Vector3? side = null)
         {
             if (owner == null)
                 return;
             var pet = new CollectorPet(spec, owner, count, goal, index++);
-            var spot = owner.Position + owner.Basis * new Vector3(1.9f, 0, .35f);
+            var spot = owner.Position + owner.Basis * (side ?? new Vector3(1.9f, 0, .35f));
             pet.SetHome(Ground.At(spot.X, spot.Z), owner.Rotation.Y);
             AddChild(pet);
             AddWorldPet(pet);
         }
 
-        foreach (var load in new[] { HaulLoad.Logs, HaulLoad.Stones, HaulLoad.Soil, HaulLoad.Sand })
+        foreach (var load in new[] { HaulLoad.Logs, HaulLoad.Stones, HaulLoad.Soil, HaulLoad.Sand, HaulLoad.Wheat })
             Add(
                 WorldPetCatalog.ForSource(load),
                 SourceWorker(load) ?? ExtraSourceWorker(load),
@@ -55,5 +55,15 @@ public partial class World
                 continue;
             Add(WorldPetCatalog.ForBuilding(project), built.Builder, () => built.Stage, BuildPlans.Trips);
         }
+        // The witch hid the small friends, so their pets wait around her: right, left and in front.
+        var seats = new[] { new Vector3(1.9f, 0, .35f), new Vector3(-1.9f, 0, .35f), new Vector3(0, 0, 2.6f) };
+        foreach (var kind in System.Enum.GetValues<HiddenKind>())
+            Add(
+                WorldPetCatalog.ForHidden((int)kind),
+                Witch,
+                () => Hidden.FoundOf(kind),
+                HiddenFriends.PerKind,
+                seats[(int)kind]
+            );
     }
 }

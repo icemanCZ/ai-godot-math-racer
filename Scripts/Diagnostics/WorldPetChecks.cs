@@ -334,7 +334,11 @@ internal sealed partial class WorldPetChecks(Game game, World world, Vehicle car
         game.FinishInteraction();
         car.SetPose(owner.Position + Vector3.Right * 2, 0);
         game.OpenChallenge(owner);
-        Check(game.State != GameState.HouseMaterialOffer, "a house that has its glasses does not ask again");
+        // A valley with a bakery asks for bread next; the glasses are never asked for again.
+        Check(
+            game.State == (world.Bakery != null ? GameState.HouseMaterialOffer : GameState.HouseReward),
+            "a house that has its glasses does not ask for glasses again"
+        );
         game.FinishInteraction();
     }
 }

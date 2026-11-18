@@ -16,6 +16,9 @@ public enum Product
 
     /// <summary>The glassworks, which stands apart from the original three: it makes glasses from sand.</summary>
     Glass = 3,
+
+    /// <summary>The bakery, the fifth works: it bakes bread from the wheat of the farmer's field.</summary>
+    Bread = 4,
 }
 
 /// <summary>One kind of works: what it takes in, what it stores and who runs it.</summary>
@@ -39,6 +42,7 @@ internal sealed record WorksSpec(
             Product.Planks => "sawmill",
             Product.Bricks => "brickworks",
             Product.Gravel => "gravelworks",
+            Product.Bread => "bakery",
             _ => "glassworks",
         };
 }
@@ -51,9 +55,12 @@ internal static class WorksCatalog
     /// <summary>The glassworks follows them, has an actor ID and a stock of its own and is placed after everything else.</summary>
     public const int GlassIndex = 3;
 
-    public const int Total = 4;
+    /// <summary>The bakery is the fifth works, planned after the farmer's field and the glassworks.</summary>
+    public const int BreadIndex = 4;
 
-    /// <summary>Indexed by <see cref="Product"/>: the sawmill, the brickworks, the gravel works and the glassworks.</summary>
+    public const int Total = 5;
+
+    /// <summary>Indexed by <see cref="Product"/>: the sawmill, the brickworks, the gravel works, the glassworks and the bakery.</summary>
     public static readonly WorksSpec[] All =
     {
         new(
@@ -104,6 +111,18 @@ internal static class WorksCatalog
             "d9cfe6",
             "6bc4d9"
         ),
+        new(
+            Product.Bread,
+            HaulLoad.Wheat,
+            "Pekárna",
+            "PEKÁRNA",
+            "Chléb",
+            "Králíček pekař Rohlík",
+            "Přivez mi obilí od sedláka, upeču z něj voňavý chléb.",
+            0,
+            "f3e0c0",
+            "fffaf0"
+        ),
     };
 
     public static string ProductIcon(Product product) =>
@@ -112,6 +131,7 @@ internal static class WorksCatalog
             Product.Planks => "planks",
             Product.Bricks => "bricks",
             Product.Gravel => "gravel",
+            Product.Bread => "bread",
             _ => "glass",
         };
 
@@ -135,6 +155,19 @@ internal static class SourceCatalog
     };
 
     public static int IndexOf(HaulLoad load) => Array.FindIndex(All, spec => spec.Load == load);
+
+    /// <summary>
+    /// The farmer at the wheat field, who loads the trailer for the bakery. He is not in <see cref="All"/>, whose order and
+    /// length give the IDs of the other workers: he has an ID of his own (<c>ActorIds.FieldFarmer</c>).
+    /// </summary>
+    public static readonly SourceSpec Field = new(
+        HaulLoad.Wheat,
+        "Králíček sedlák Klásek",
+        "Naložím ti obilí pro pekárnu.",
+        0,
+        "e9d8b4",
+        "d9b84a"
+    );
 
     /// <summary>
     /// The workers at the second site of each raw material, in <see cref="ExtraLoads"/> order. The sand pit's worker
@@ -174,6 +207,7 @@ internal static class SourceCatalog
             HaulLoad.Stones => "quarry",
             HaulLoad.Soil => "clay",
             HaulLoad.Sand => "sand",
+            HaulLoad.Wheat => "wheat",
             _ => "logs",
         };
 }
@@ -312,6 +346,9 @@ public partial class Works : Node3D
                 break;
             case (int)Product.Glass:
                 BuildGlassworks(building);
+                break;
+            case (int)Product.Bread:
+                BuildBakery(building);
                 break;
             default:
                 BuildGravelWorks(building);
@@ -490,6 +527,37 @@ public partial class Works : Node3D
         exhaust = Emitter(new(-2.2f, y + 9, z + 2.4f), new Color(.8f, .85f, .88f, .5f), 1.2f, 2.2f);
     }
 
+    private void BuildBakery(float y)
+    {
+        const float z = BuildingZ;
+        // A cosy bakery: cream walls, a warm red roof, a brick oven with a chimney and a window full of loaves.
+        Art.Block(this, new(0, y + 1.55f, z + .4f), new(6.4f, 3.1f, 5), "f1dfb8");
+        Art.Block(this, new(0, y + .25f, z + .4f), new(6.6f, .5f, 5.2f), "b8895f");
+        Roof(new(0, y + 3.1f, z + .4f), 7.2f, 5.8f, "c9553f", "8f3a2a");
+        Art.Block(this, new(-1.9f, y + 1.1f, z - 2.12f), new(1.2f, 2.2f, .12f), "8d5a3b");
+        Art.Ball(this, new(-1.55f, y + 1.1f, z - 2.2f), Vector3.One * .09f, "f5d36b");
+        Art.Block(this, new(1.5f, y + 1.8f, z - 2.12f), new(2.6f, 1.4f, .1f), "fff6e0");
+        Art.Block(this, new(1.5f, y + 1.8f, z - 2.17f), new(2.3f, 1.1f, .08f), "8fb8c9");
+        Art.Block(this, new(1.5f, y + 1.2f, z - 2.4f), new(2.7f, .12f, .55f), "8d5a3b");
+        for (int i = 0; i < 4; i++)
+            Art.Ball(
+                this,
+                new(.55f + i * .62f, y + 1.38f, z - 2.4f),
+                new(.24f, .16f, .2f),
+                i % 2 == 0 ? "d9923f" : "c27a2c"
+            );
+        // The oven glows through a little arched door at the side, and its chimney smokes.
+        Art.Block(this, new(3.22f, y + 1, z + .4f), new(.1f, 1.2f, 1.5f), "3a2a26");
+        Art.Block(this, new(3.28f, y + .8f, z + .4f), new(.1f, .6f, .9f), "ff9a3d");
+        Art.Cylinder(this, new(2.2f, y + 5.1f, z + 2.2f), .6f, .5f, 4.4f, "a35a45");
+        Art.Cylinder(this, new(2.2f, y + 7.4f, z + 2.2f), .6f, .6f, .3f, "5a2f25");
+        // A baker's sign hangs over the door: a golden pretzel is too fiddly, so a loaf on a board.
+        Art.Block(this, new(-1.9f, y + 2.7f, z - 2.35f), new(1.3f, .6f, .1f), "8d5a3b");
+        Art.Ball(this, new(-1.9f, y + 2.7f, z - 2.45f), new(.45f, .2f, .08f), "d9923f");
+        Obstacles.Box(this, new(0, y + 1.55f, z + .4f), new(6.6f, 3.1f, 5.2f));
+        exhaust = Emitter(new(2.2f, y + 7.7f, z + 2.2f), new Color(.95f, .93f, .9f, .55f), 1.1f, 2.2f);
+    }
+
     private void BuildGravelWorks(float y)
     {
         const float z = BuildingZ;
@@ -534,6 +602,7 @@ public partial class Works : Node3D
             Product.Planks => "bba87f",
             Product.Bricks => "9d9382",
             Product.Glass => "b9c4c9",
+            Product.Bread => "d9c6a0",
             _ => "8e8a7d",
         };
         float width = 3 * 2.3f + .8f;
@@ -579,6 +648,22 @@ public partial class Works : Node3D
                 Art.Block(slot, new(0, lift + .46f, 0), new(1.6f, .58f, 1.4f), "c4623f");
                 foreach (float band in new[] { .3f, .5f, .68f })
                     Art.Block(slot, new(0, lift + band, 0), new(1.64f, .04f, 1.44f), "e0a384");
+                break;
+            }
+            case Product.Bread:
+            {
+                // A wooden tray with four round loaves and two long ones, a second tray on top for the next layer.
+                float lift = layer * .5f;
+                Art.Block(slot, new(0, lift + .04f, 0), new(1.9f, .08f, 1.7f), "8d6a46");
+                for (int i = 0; i < 4; i++)
+                {
+                    float x = -.5f + i % 2 * 1f,
+                        z = -.42f + i / 2 * .84f;
+                    Art.Ball(slot, new(x, lift + .24f, z), new(.4f, .22f, .36f), i % 2 == 0 ? "d9923f" : "c27a2c");
+                    Art.Ball(slot, new(x, lift + .34f, z), new(.28f, .1f, .24f), "e8b062");
+                }
+                foreach (float x in new[] { -.15f, .15f })
+                    Art.Ball(slot, new(x, lift + .18f, 0), new(.13f, .13f, .72f), "dca04a");
                 break;
             }
             case Product.Glass:
@@ -629,6 +714,17 @@ public partial class Works : Node3D
                 Art.Ball(this, new(RawX, y + .6f, RawZ), new(3.2f, 1.7f, 2.8f), "8a6142");
                 Art.Ball(this, new(RawX - 1, y + .4f, RawZ + 1), new(1.9f, 1.1f, 1.7f), "6f4b33");
                 Art.Ball(this, new(RawX + 1.2f, y + .4f, RawZ - .8f), new(1.7f, 1, 1.5f), "9c7150");
+                break;
+            case HaulLoad.Wheat:
+                for (int i = 0; i < 5; i++)
+                {
+                    float px = RawX + (i % 3 - 1) * 1.25f + (i / 3) * .6f - .3f;
+                    float lift = i / 3 * .75f;
+                    float pz = RawZ + (i / 3 - .5f) * .3f + (i % 2) * .2f;
+                    Art.Ball(this, new(px, y + .45f + lift, pz), new(.62f, .5f, .5f), i % 2 == 0 ? "e8dcc0" : "dccfae");
+                    Art.Ball(this, new(px, y + .92f + lift, pz), new(.22f, .15f, .2f), "c9b78e");
+                }
+                Art.Ball(this, new(RawX - 1.6f, y + .25f, RawZ + 1.4f), new(.9f, .3f, .8f), "f2c64a");
                 break;
             case HaulLoad.Sand:
                 Art.Ball(this, new(RawX, y + .55f, RawZ), new(3.4f, 1.5f, 2.9f), "e3c98a");

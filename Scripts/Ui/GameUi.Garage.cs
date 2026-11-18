@@ -49,7 +49,7 @@ public partial class GameUi
             new Label
             {
                 Text =
-                    $"{owned.Count} / {CarLook.Catalogue.Count + CarBody.All.Count + CarAccessory.Catalogue.Count}   ·",
+                    $"{owned.Count} / {CarLook.Catalogue.Count + CarBody.All.Count + CarAccessory.Catalogue.Count + CarTrail.All.Count}   ·",
             }
         );
         header.AddChild(new DeliveryPicture { Icon = "coin", CustomMinimumSize = new(40, 36) });
@@ -197,26 +197,34 @@ public partial class GameUi
             catalogue.AddChild(grid);
             foreach (var (reward, name) in items)
             {
-                bool unlocked = owned.Contains(reward);
+                bool unlocked = owned.Contains(reward) || (reward.IsTrail && reward.Id == CarTrail.Plain.Id);
                 bool active =
-                    reward.IsModel ? appearance.CurrentModelId == reward.Id
+                    reward.IsTrail ? appearance.CurrentTrailId == reward.Id
+                    : reward.IsModel ? appearance.CurrentModelId == reward.Id
                     : reward.IsAccessory ? appearance.HasAccessory(reward.Id)
                     : appearance.CurrentLookId == reward.Id;
                 var card = new VBoxContainer();
                 grid.AddChild(card);
-                var sample = new CarLookPreview
+                Control sample;
+                if (reward.IsTrail)
+                    sample = new DeliveryPicture { Icon = "trail-" + reward.Id, CustomMinimumSize = new(205, 160) };
+                else
                 {
-                    Look =
-                        reward.IsModel || reward.IsAccessory
-                            ? current
-                            : System.Linq.Enumerable.First(CarLook.Catalogue, l => l.Id == reward.Id),
-                    ModelId = reward.IsModel ? reward.Id : appearance.CurrentModelId,
-                    AccessoryId = reward.IsAccessory ? reward.Id : null,
-                    AccessoryOnly = reward.IsAccessory,
-                };
-                // Anything that can be bought keeps its real colours; only special prizes stay grey.
-                if (!unlocked && reward.Price == null)
-                    sample.Material = gray;
+                    var preview = new CarLookPreview
+                    {
+                        Look =
+                            reward.IsModel || reward.IsAccessory
+                                ? current
+                                : System.Linq.Enumerable.First(CarLook.Catalogue, l => l.Id == reward.Id),
+                        ModelId = reward.IsModel ? reward.Id : appearance.CurrentModelId,
+                        AccessoryId = reward.IsAccessory ? reward.Id : null,
+                        AccessoryOnly = reward.IsAccessory,
+                    };
+                    // Anything that can be bought keeps its real colours; only special prizes stay grey.
+                    if (!unlocked && reward.Price == null)
+                        preview.Material = gray;
+                    sample = preview;
+                }
                 card.AddChild(sample);
                 int? price = unlocked ? null : reward.Price;
                 bool affordable = price <= coins;
@@ -354,6 +362,10 @@ public partial class GameUi
         Category(
             Texts.Doplnky,
             System.Linq.Enumerable.Select(CarAccessory.Catalogue, a => (new CarReward(a.Id, true), a.Name))
+        );
+        Category(
+            Texts.StopyKol,
+            System.Linq.Enumerable.Select(CarTrail.Catalogue, t => (new CarReward(t.Id, false, false, true), t.Name))
         );
         (selectedFocus ?? firstQuiz ?? firstPet ?? first)?.GrabFocus();
         scroll.SetDeferred(ScrollContainer.PropertyName.ScrollVertical, (int)garageScroll);

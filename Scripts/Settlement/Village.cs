@@ -50,6 +50,21 @@ public partial class Village : Node3D
 
     public bool[] GlazedFlags => (bool[])glazed.Clone();
 
+    private readonly bool[] baked = new bool[4];
+
+    /// <summary>Whether the resident of a finished house has been given bread from the bakery.</summary>
+    public bool IsBaked(int house) => baked[house];
+
+    public void Bake(int house) => baked[house] = levels[house] >= Upgrades.Length;
+
+    public bool[] BakedFlags => (bool[])baked.Clone();
+
+    public void RestoreBaked(bool[]? saved)
+    {
+        for (int i = 0; i < baked.Length; i++)
+            baked[i] = saved != null && i < saved.Length && saved[i] && levels[i] >= Upgrades.Length;
+    }
+
     public void RestoreGlazed(bool[]? saved)
     {
         for (int i = 0; i < glazed.Length; i++)

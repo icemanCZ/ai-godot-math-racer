@@ -458,8 +458,19 @@ public partial class VillageChecks : Node
                 {
                     world.Village.Glaze(house);
                     game.OpenChallenge(owner);
-                    Check(game.State == GameState.HouseReward, "a house that has its glasses only offers thanks");
+                    // A valley with a bakery adds one more order, for bread, after the glasses.
+                    Check(
+                        game.State == (world.Bakery != null ? GameState.HouseMaterialOffer : GameState.HouseReward),
+                        "a house that has its glasses only offers thanks (or the bread order)"
+                    );
                     game.FinishInteraction();
+                    if (world.Bakery != null)
+                    {
+                        world.Village.Bake(house);
+                        game.OpenChallenge(owner);
+                        Check(game.State == GameState.HouseReward, "a house that has its bread only offers thanks");
+                        game.FinishInteraction();
+                    }
                 }
             }
             Check(
