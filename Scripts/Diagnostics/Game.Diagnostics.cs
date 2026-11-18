@@ -15,6 +15,14 @@ public partial class Game
 {
     partial void RunDiagnosticsBeforeWorld(ref bool handled)
     {
+        if (LaunchOptions.Has("--unit-checks"))
+        {
+            // The checks that need no valley run before one is generated.
+            handled = true;
+            SetProcess(false);
+            GetTree().Quit(UnitChecks.Run());
+            return;
+        }
         if (LaunchOptions.Has("--list-checks"))
         {
             // build.ps1 reads the suites of the test run from here.

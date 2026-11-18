@@ -50,16 +50,16 @@ public partial class World : Node3D
         var river = new River();
         AddChild(river);
         river.Generate(Ground);
-        foreach (float distance in new[] { 115f, 180f })
+        foreach (float distance in WorldTuning.BenchDistances)
         {
             var frame = Routes.SampleMain(distance);
-            var benchSpot = frame.Center + frame.Forward.Cross(Vector3.Up) * 9;
+            var benchSpot = frame.Center + frame.Forward.Cross(Vector3.Up) * WorldTuning.BenchOffset;
             Bench(Ground.At(benchSpot.X, benchSpot.Z));
         }
-        foreach (float distance in new[] { 22f, 140f })
+        foreach (float distance in WorldTuning.SignDistances)
         {
             var frame = Routes.SampleMain(distance);
-            var verge = frame.Center + frame.Forward.Cross(Vector3.Up) * 6;
+            var verge = frame.Center + frame.Forward.Cross(Vector3.Up) * WorldTuning.SignOffset;
             Sign(verge.X, verge.Z, "ZA KAMARÁDY");
         }
         PlaceWitch();
@@ -82,9 +82,9 @@ public partial class World : Node3D
         var tower = Tower.Position;
         var sorcerer = Sorcerer.Position;
         Plants.Generate(Ground, Routes, Village, Animals, p =>
-            p.DistanceSquaredTo(witch) < 7 * 7
-            || p.DistanceSquaredTo(tower) < 18 * 18
-            || p.DistanceSquaredTo(sorcerer) < 8 * 8
+            p.DistanceSquaredTo(witch) < WorldTuning.WitchTreeClearing * WorldTuning.WitchTreeClearing
+            || p.DistanceSquaredTo(tower) < WorldTuning.TowerTreeClearing * WorldTuning.TowerTreeClearing
+            || p.DistanceSquaredTo(sorcerer) < WorldTuning.SorcererTreeClearing * WorldTuning.SorcererTreeClearing
             || IsPickupApproachReserved(p)
             || IsHaulReserved(p)
         );
@@ -166,26 +166,33 @@ public partial class World : Node3D
                 int index = (startIndex + attempt) % (Routes.Samples.Count - 1);
                 var road = Routes.Samples[index];
                 var tangent = Routes.Samples[index + 1] - road;
-                if (tangent.Length() < .1f || tangent.Length() > 3)
+                if (
+                    tangent.Length() < WorldTuning.FriendMinRoadStep
+                    || tangent.Length() > WorldTuning.FriendMaxRoadStep
+                )
                     continue;
                 var side = tangent.Normalized().Cross(Vector3.Up);
                 foreach (int sign in new[] { i % 2 == 0 ? 1 : -1, i % 2 == 0 ? -1 : 1 })
                 {
-                    var verge = road + side * sign * 6.5f;
+                    var verge = road + side * sign * WorldTuning.FriendVergeOffset;
                     var position = Ground.At(verge.X, verge.Z);
                     if (
-                        new Vector2(position.X, position.Z).Length() > Settings.PlayableRadius - 10
+                        new Vector2(position.X, position.Z).Length()
+                            > Settings.PlayableRadius - WorldTuning.FriendBorderMargin
                         || Village.IsNearVillage(position)
                         || Village.IsReserved(position)
-                        || Routes.Distance(position) < 5.5f
-                        || position.DistanceSquaredTo(Witch.Position) < 20 * 20
-                        || position.DistanceSquaredTo(Sorcerer.Position) < 25 * 25
-                        || River.Distance(position.X, position.Z) < River.HalfWidth(position.Z) + 7
+                        || Routes.Distance(position) < WorldTuning.FriendRoadClearance
+                        || position.DistanceSquaredTo(Witch.Position)
+                            < WorldTuning.FriendWitchClearance * WorldTuning.FriendWitchClearance
+                        || position.DistanceSquaredTo(Sorcerer.Position)
+                            < WorldTuning.FriendSorcererClearance * WorldTuning.FriendSorcererClearance
+                        || River.Distance(position.X, position.Z)
+                            < River.HalfWidth(position.Z) + WorldTuning.FriendRiverMargin
                     )
                         continue;
                     bool crowded = false;
                     for (int previous = 0; previous < i; previous++)
-                        if (Animals[previous].Position.DistanceTo(position) < 22)
+                        if (Animals[previous].Position.DistanceTo(position) < WorldTuning.FriendSpacing)
                         {
                             crowded = true;
                             break;
@@ -209,24 +216,32 @@ public partial class World : Node3D
         Witch = Character.Create("Čarodějnice Bára", "Vyřeš příklad a vyber, jaké počasí mám přičarovat.", 2, "b6a2c8");
         Witch.Role = new WitchRole();
         Witch.DressAsWitch();
-        var villageEdge = Village.TerrainArea.Grow(6);
+        var villageEdge = Village.TerrainArea.Grow(WorldTuning.WitchVillageEdgeGrow);
         float best = float.PositiveInfinity;
-        for (float distance = 192; distance <= 384; distance += 8)
+        for (
+            float distance = WorldTuning.WitchFirstRoadDistance;
+            distance <= WorldTuning.WitchLastRoadDistance;
+            distance += WorldTuning.WitchRoadStep
+        )
         {
             var (road, forward) = Routes.SampleMain(distance);
             var verge = forward.Cross(Vector3.Up);
             foreach (int side in new[] { 1, -1 })
             {
-                var spot = road + verge * (5.3f * side);
+                var spot = road + verge * (WorldTuning.WitchVergeOffset * side);
                 spot.Y = Ground.Height(spot.X, spot.Z);
                 float roadHeight = Routes.SurfaceHeight(road, Ground.Height(road.X, road.Z));
                 float score =
                     Mathf.Abs(spot.Y - roadHeight)
-                    + (distance - 192) * .07f
-                    + (villageEdge.HasPoint(new Vector2(road.X, road.Z)) ? 20 : 0)
-                    + (villageEdge.HasPoint(new Vector2(spot.X, spot.Z)) ? 20 : 0)
-                    + (Village.IsReserved(spot) ? 20 : 0)
-                    + (River.Distance(spot.X, spot.Z) < River.HalfWidth(spot.Z) + 8 ? 100 : 0);
+                    + (distance - WorldTuning.WitchFirstRoadDistance) * WorldTuning.WitchDistancePenalty
+                    + (villageEdge.HasPoint(new Vector2(road.X, road.Z)) ? WorldTuning.WitchVillagePenalty : 0)
+                    + (villageEdge.HasPoint(new Vector2(spot.X, spot.Z)) ? WorldTuning.WitchVillagePenalty : 0)
+                    + (Village.IsReserved(spot) ? WorldTuning.WitchVillagePenalty : 0)
+                    + (
+                        River.Distance(spot.X, spot.Z) < River.HalfWidth(spot.Z) + WorldTuning.WitchRiverMargin
+                            ? WorldTuning.WitchRiverPenalty
+                            : 0
+                    );
                 if (score >= best)
                     continue;
                 best = score;
