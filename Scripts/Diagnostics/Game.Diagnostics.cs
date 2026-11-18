@@ -1,8 +1,15 @@
 using System;
 using System.Linq;
 using Godot;
+using MathRacer.Buildings;
+using MathRacer.Diagnostics;
+using MathRacer.Garage;
+using MathRacer.Quizzes;
+using MathRacer.Settlement;
+using MathRacer.Valley;
+using MathRacer.Vehicles;
 
-namespace MathRacer;
+namespace MathRacer.App;
 
 public partial class Game
 {

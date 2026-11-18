@@ -1,7 +1,12 @@
 using System.Linq;
 using Godot;
+using MathRacer.App;
+using MathRacer.Buildings;
+using MathRacer.Quizzes;
+using MathRacer.Valley;
+using MathRacer.Vehicles;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 public partial class VisualCapture : Node
 {

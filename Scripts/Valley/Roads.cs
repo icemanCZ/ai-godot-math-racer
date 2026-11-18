@@ -1,0 +1,525 @@
+using System.Collections.Generic;
+using System.Linq;
+using Godot;
+
+namespace MathRacer.Valley;
+
+public partial class Roads : Node3D
+{
+    public const float MainWidth = 7;
+    private const float BucketSize = 12;
+    private const float MeshStep = .75f;
+    private const int NavigationAnchorStep = 12;
+
+    /// <summary><see cref="Middle"/> and <see cref="HalfLength"/> bound the distance to the segment from below.</summary>
+    private readonly record struct Segment(
+        Vector2 A,
+        Vector2 B,
+        float Width,
+        float Along,
+        Vector2 Middle,
+        float HalfLength
+    );
+
+    private readonly record struct FieldPoint(Vector2 Position, float Distance, Vector2 Uv, float Marks);
+
+    private readonly Dictionary<Vector2I, List<Segment>> segments = new();
+    private readonly List<Segment> allSegments = new();
+
+    /// <summary>
+    /// A drivable surface triangle. <see cref="MinBucket"/> and <see cref="MaxBucket"/> are the coarse buckets its
+    /// footprint touches: a point only sees the triangles of its own bucket, as it always has.
+    /// </summary>
+    private readonly record struct SurfaceTriangle(
+        Vector3 A,
+        Vector3 B,
+        Vector3 C,
+        Vector2I MinBucket,
+        Vector2I MaxBucket
+    );
+
+    /// <summary>Cell size of the grid that finds the triangles near a point; the triangles are under a metre wide.</summary>
+    private const float TriangleCell = 1.5f;
+
+    private const float TriangleCellMargin = .05f;
+
+    private readonly Dictionary<Vector2I, List<SurfaceTriangle>> surfaceTriangles = new();
+    private Curve3D mainRoute = null!;
+    private Vector2[] junctions = System.Array.Empty<Vector2>();
+    private readonly ShaderMaterial roadMaterial = new()
+    {
+        Shader = GD.Load<Shader>("res://Shaders/RoadSurface.gdshader"),
+    };
+    public readonly List<Vector3> Samples = new();
+    internal readonly List<(Vector3 Position, Vector3 Forward)> NavigationAnchors = new();
+    internal readonly List<int> SampleAnchors = new();
+
+    public (Vector3 Center, Vector3 Forward) SampleMain(float distance)
+    {
+        float length = mainRoute.GetBakedLength();
+        float offset = Mathf.Clamp(distance, 0, length);
+        var center = mainRoute.SampleBaked(offset);
+        var forward = (
+            mainRoute.SampleBaked(Mathf.Min(offset + .2f, length)) - mainRoute.SampleBaked(Mathf.Max(offset - .2f, 0))
+        ).Normalized();
+        return (center, forward);
+    }
+
+    public void Generate(Terrain terrain)
+    {
+        var routes = WorldLayout.Plan.Routes;
+        junctions = routes
+            .SelectMany(route => route)
+            .GroupBy(point => point)
+            .Where(group => group.Count() > 1)
+            .Select(group => new Vector2(group.Key.X, group.Key.Z))
+            .ToArray();
+        mainRoute = WorldPlan.CreateCurve(routes[0]);
+        for (int routeIndex = 0; routeIndex < routes.Length; routeIndex++)
+        {
+            int sampleStart = Samples.Count;
+            using var curve = WorldPlan.CreateCurve(routes[routeIndex]);
+            float length = curve.GetBakedLength();
+            float baseWidth = routeIndex == 0 ? MainWidth / 2 : 3;
+            for (float distance = 0; distance < length; distance += 1.4f)
+            {
+                var p = curve.SampleBaked(distance);
+                var q = curve.SampleBaked(Mathf.Min(distance + 1.4f, length));
+                Samples.Add(p);
+                float mouth = Mathf.Max(
+                    1 - Mathf.SmoothStep(0, 10, distance),
+                    1 - Mathf.SmoothStep(0, 10, length - distance)
+                );
+                var segmentStart = new Vector2(p.X, p.Z);
+                var segmentEnd = new Vector2(q.X, q.Z);
+                var segment = new Segment(
+                    segmentStart,
+                    segmentEnd,
+                    baseWidth + mouth * 2.5f,
+                    distance,
+                    (segmentStart + segmentEnd) / 2,
+                    segmentStart.DistanceTo(segmentEnd) / 2
+                );
+                allSegments.Add(segment);
+                foreach (
+                    var bucket in Buckets(
+                        segment.A.Min(segment.B) - Vector2.One * 8,
+                        segment.A.Max(segment.B) + Vector2.One * 8
+                    )
+                )
+                {
+                    if (!segments.TryGetValue(bucket, out var entries))
+                        segments[bucket] = entries = new();
+                    entries.Add(segment);
+                }
+            }
+            // Fixed road markings: route searches must never determine their spacing or position.
+            int anchorStart = NavigationAnchors.Count;
+            for (int i = sampleStart; i < Samples.Count; i += NavigationAnchorStep)
+            {
+                var forward = Samples[Mathf.Min(i + 1, Samples.Count - 1)] - Samples[Mathf.Max(i - 1, sampleStart)];
+                forward.Y = 0;
+                NavigationAnchors.Add((Samples[i], forward.Normalized()));
+            }
+            int lastAnchor = NavigationAnchors.Count - 1;
+            for (int i = sampleStart; i < Samples.Count; i++)
+                SampleAnchors.Add(
+                    Mathf.Min(
+                        anchorStart + Mathf.RoundToInt((i - sampleStart) / (float)NavigationAnchorStep),
+                        lastAnchor
+                    )
+                );
+        }
+        BuildSurface(terrain);
+    }
+
+    private bool[] roadCells = System.Array.Empty<bool>();
+    private int roadCellsX,
+        roadCellsZ,
+        roadCellColumns,
+        roadCellRows;
+
+    /// <summary>
+    /// Marks every mesh cell that can contain road: a corner of such a cell lies within a segment's width of the
+    /// segment, or within the junction radius of a junction. Any other cell has no corner inside the road, so it
+    /// produces no triangles and its corners need not be sampled.
+    /// </summary>
+    private void MarkCellsNearRoads()
+    {
+        const float junctionRadius = 7;
+        const float slack = .05f;
+        var low = new Vector2(float.MaxValue, float.MaxValue);
+        var high = new Vector2(float.MinValue, float.MinValue);
+        foreach (var segment in allSegments)
+        {
+            low = low.Min(segment.A.Min(segment.B) - Vector2.One * (segment.Width + slack));
+            high = high.Max(segment.A.Max(segment.B) + Vector2.One * (segment.Width + slack));
+        }
+        foreach (var junction in junctions)
+        {
+            low = low.Min(junction - Vector2.One * (junctionRadius + slack));
+            high = high.Max(junction + Vector2.One * (junctionRadius + slack));
+        }
+        if (low.X > high.X)
+            return;
+        roadCellsX = Mathf.FloorToInt(low.X / MeshStep) - 1;
+        roadCellsZ = Mathf.FloorToInt(low.Y / MeshStep) - 1;
+        roadCellColumns = Mathf.CeilToInt(high.X / MeshStep) - roadCellsX + 2;
+        roadCellRows = Mathf.CeilToInt(high.Y / MeshStep) - roadCellsZ + 2;
+        roadCells = new bool[roadCellColumns * roadCellRows];
+        void Mark(Vector2 from, Vector2 to, float reach)
+        {
+            // A corner inside the reach belongs to the cell on either side of it, hence one cell more on each side.
+            var min = from.Min(to) - Vector2.One * (reach + slack);
+            var max = from.Max(to) + Vector2.One * (reach + slack);
+            int firstX = Mathf.FloorToInt(min.X / MeshStep) - 1,
+                lastX = Mathf.CeilToInt(max.X / MeshStep);
+            int firstZ = Mathf.FloorToInt(min.Y / MeshStep) - 1,
+                lastZ = Mathf.CeilToInt(max.Y / MeshStep);
+            for (int z = firstZ; z <= lastZ; z++)
+            for (int x = firstX; x <= lastX; x++)
+                roadCells[(z - roadCellsZ) * roadCellColumns + x - roadCellsX] = true;
+        }
+        foreach (var segment in allSegments)
+            Mark(segment.A, segment.B, segment.Width);
+        foreach (var junction in junctions)
+            Mark(junction, junction, junctionRadius);
+    }
+
+    private bool MayHoldRoad(int x, int z)
+    {
+        int column = x - roadCellsX,
+            row = z - roadCellsZ;
+        return column >= 0
+            && column < roadCellColumns
+            && row >= 0
+            && row < roadCellRows
+            && roadCells[row * roadCellColumns + column];
+    }
+
+    private static WorldPlan? cachedFieldPlan;
+    private static Dictionary<Vector2I, FieldPoint>? cachedField;
+
+    /// <summary>Drops the sampled field once the valley is generated; a new valley would not match it anyway.</summary>
+    internal static void ReleaseFieldCache()
+    {
+        cachedField = null;
+        cachedFieldPlan = null;
+    }
+
+    private FieldPoint SampleField(Vector2 point)
+    {
+        float best = 1000;
+        Vector2 uv = Vector2.Zero;
+        var key = new Vector2I(Mathf.FloorToInt(point.X / BucketSize), Mathf.FloorToInt(point.Y / BucketSize));
+        if (segments.TryGetValue(key, out var entries))
+            foreach (var segment in entries)
+            {
+                // The segment cannot be nearer than its middle minus its half length. When even that is further than
+                // the best so far (with a centimetre to spare for rounding), the full test would skip it as well.
+                float reach = best + segment.Width + segment.HalfLength + .01f;
+                if (reach > 0 && (point - segment.Middle).LengthSquared() >= reach * reach)
+                    continue;
+                var delta = segment.B - segment.A;
+                float lengthSquared = delta.LengthSquared();
+                float t =
+                    lengthSquared < .000001f ? 0 : Mathf.Clamp((point - segment.A).Dot(delta) / lengthSquared, 0, 1);
+                float signed = point.DistanceTo(segment.A + delta * t) - segment.Width;
+                if (signed >= best)
+                    continue;
+                best = signed;
+                float length = Mathf.Sqrt(lengthSquared);
+                uv = new Vector2(
+                    length > .0001f ? (point - segment.A).Cross(delta / length) / segment.Width : 0,
+                    segment.Along + t * length
+                );
+            }
+        float marks = 1;
+        foreach (var junction in junctions)
+        {
+            float distance = point.DistanceTo(junction);
+            best = Mathf.Min(best, distance - 7);
+            if (distance < 14)
+                marks = Mathf.Min(marks, Mathf.SmoothStep(7, 14, distance));
+        }
+        // A rectangular opening meets the wooden deck; ramps cover its ends.
+        float deck = Mathf.Max(
+            Mathf.Abs(point.X - River.CenterX(River.BridgeZ)) - 18.9f,
+            Mathf.Abs(point.Y - River.BridgeZ) - 3.7f
+        );
+        best = Mathf.Max(best, -deck);
+        return new FieldPoint(point, best, uv, marks);
+    }
+
+    private void BuildSurface(Terrain terrain)
+    {
+        // Sample the UNION once. Adjacent triangles share field values and contour edges,
+        // so intersecting routes cannot cut holes out of one another.
+        // The field depends on the road plan alone, not on the terrain, so the second generation of a valley
+        // (after the village is levelled) reuses every point the first one sampled.
+        var plan = WorldLayout.Plan;
+        if (cachedFieldPlan != plan || cachedField == null)
+        {
+            cachedField = new Dictionary<Vector2I, FieldPoint>();
+            cachedFieldPlan = plan;
+        }
+        var cache = cachedField;
+        FieldPoint Sample(int x, int z)
+        {
+            var key = new Vector2I(x, z);
+            if (!cache.TryGetValue(key, out var point))
+                cache[key] = point = SampleField(new Vector2(x * MeshStep, z * MeshStep));
+            return point;
+        }
+        MarkCellsNearRoads();
+        const int cellsPerBucket = 16;
+        foreach (
+            var chunk in segments.Keys.GroupBy(key => new Vector2I(
+                Mathf.FloorToInt(key.X / 4f),
+                Mathf.FloorToInt(key.Y / 4f)
+            ))
+        )
+        {
+            var surface = new SurfaceTool();
+            surface.Begin(Mesh.PrimitiveType.Triangles);
+            int count = 0;
+            foreach (var bucket in chunk)
+                for (int z = bucket.Y * cellsPerBucket; z < (bucket.Y + 1) * cellsPerBucket; z++)
+                for (int x = bucket.X * cellsPerBucket; x < (bucket.X + 1) * cellsPerBucket; x++)
+                {
+                    if (!MayHoldRoad(x, z))
+                        continue;
+                    var a = Sample(x, z);
+                    var b = Sample(x + 1, z);
+                    var c = Sample(x, z + 1);
+                    var d = Sample(x + 1, z + 1);
+                    Emit(a, b, c);
+                    Emit(b, d, c);
+                }
+            void Emit(FieldPoint a, FieldPoint b, FieldPoint c)
+            {
+                if (a.Distance >= 0 && b.Distance >= 0 && c.Distance >= 0)
+                    return;
+                var polygon = new List<FieldPoint>(4);
+                var input = new[] { a, b, c };
+                for (int i = 0; i < 3; i++)
+                {
+                    var p = input[i];
+                    var q = input[(i + 1) % 3];
+                    if (p.Distance <= 0)
+                        polygon.Add(p);
+                    if ((p.Distance < 0) != (q.Distance < 0))
+                    {
+                        float t = p.Distance / (p.Distance - q.Distance);
+                        polygon.Add(
+                            new FieldPoint(
+                                p.Position.Lerp(q.Position, t),
+                                0,
+                                p.Uv.Lerp(q.Uv, t),
+                                Mathf.Lerp(p.Marks, q.Marks, t)
+                            )
+                        );
+                    }
+                }
+                for (int i = 1; i + 1 < polygon.Count; i++)
+                {
+                    var points = new[] { polygon[0], polygon[i], polygon[i + 1] };
+                    float area = (points[1].Position - points[0].Position).Cross(
+                        points[2].Position - points[0].Position
+                    );
+                    if (Mathf.Abs(area) < .000001f)
+                        continue;
+                    var triangle = new Vector3[3];
+                    for (int vertex = 0; vertex < 3; vertex++)
+                    {
+                        var point = points[vertex];
+                        triangle[vertex] = terrain.At(point.Position.X, point.Position.Y, .13f);
+                        surface.SetColor(new Color(point.Marks, 0, 0));
+                        surface.SetUV(point.Uv);
+                        surface.AddVertex(triangle[vertex]);
+                    }
+                    count++;
+                    var min = points[0].Position.Min(points[1].Position).Min(points[2].Position);
+                    var max = points[0].Position.Max(points[1].Position).Max(points[2].Position);
+                    var entry = new SurfaceTriangle(
+                        triangle[0],
+                        triangle[1],
+                        triangle[2],
+                        BucketOf(min.X, min.Y),
+                        BucketOf(max.X, max.Y)
+                    );
+                    var cellLow = TriangleCellOf(min.X - TriangleCellMargin, min.Y - TriangleCellMargin);
+                    var cellHigh = TriangleCellOf(max.X + TriangleCellMargin, max.Y + TriangleCellMargin);
+                    for (int cellZ = cellLow.Y; cellZ <= cellHigh.Y; cellZ++)
+                    for (int cellX = cellLow.X; cellX <= cellHigh.X; cellX++)
+                    {
+                        var key = new Vector2I(cellX, cellZ);
+                        if (!surfaceTriangles.TryGetValue(key, out var entries))
+                            surfaceTriangles[key] = entries = new();
+                        entries.Add(entry);
+                    }
+                }
+            }
+            if (count == 0)
+                continue;
+            surface.GenerateNormals();
+            AddChild(
+                new MeshInstance3D
+                {
+                    Mesh = surface.Commit(),
+                    MaterialOverride = roadMaterial,
+                    CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+                }
+            );
+        }
+    }
+
+    private static IEnumerable<Vector2I> Buckets(Vector2 min, Vector2 max)
+    {
+        for (int z = Mathf.FloorToInt(min.Y / BucketSize); z <= Mathf.FloorToInt(max.Y / BucketSize); z++)
+        for (int x = Mathf.FloorToInt(min.X / BucketSize); x <= Mathf.FloorToInt(max.X / BucketSize); x++)
+            yield return new Vector2I(x, z);
+    }
+
+    public bool Contains(Vector3 p) => !float.IsNegativeInfinity(SurfaceHeight(p, float.NegativeInfinity));
+
+    private static Vector2I BucketOf(float x, float z) =>
+        new(Mathf.FloorToInt(x / BucketSize), Mathf.FloorToInt(z / BucketSize));
+
+    private static Vector2I TriangleCellOf(float x, float z) =>
+        new(Mathf.FloorToInt(x / TriangleCell), Mathf.FloorToInt(z / TriangleCell));
+
+    public float SurfaceHeight(Vector3 p, float groundHeight)
+    {
+        float height = groundHeight;
+        var flat = new Vector2(p.X, p.Z);
+        var bucket = BucketOf(p.X, p.Z);
+        if (!surfaceTriangles.TryGetValue(TriangleCellOf(p.X, p.Z), out var entries))
+            return height;
+        foreach (var triangle in entries)
+        {
+            if (
+                bucket.X < triangle.MinBucket.X
+                || bucket.X > triangle.MaxBucket.X
+                || bucket.Y < triangle.MinBucket.Y
+                || bucket.Y > triangle.MaxBucket.Y
+            )
+                continue;
+            var a = new Vector2(triangle.A.X, triangle.A.Z);
+            var b = new Vector2(triangle.B.X, triangle.B.Z);
+            var c = new Vector2(triangle.C.X, triangle.C.Z);
+            float area = (b - a).Cross(c - a);
+            if (Mathf.Abs(area) < .000001f)
+                continue;
+            float u = (flat - a).Cross(c - a) / area;
+            float v = (b - a).Cross(flat - a) / area;
+            if (u >= -.0001f && v >= -.0001f && u + v <= 1.0001f)
+                height = Mathf.Max(
+                    height,
+                    triangle.A.Y + u * (triangle.B.Y - triangle.A.Y) + v * (triangle.C.Y - triangle.A.Y)
+                );
+        }
+        return height;
+    }
+
+    // Grid of sample indices for Distance(), kept as flat arrays; rebuilt whenever Samples has grown.
+    private const float SampleCellSize = 16;
+    private int[] cellStarts = System.Array.Empty<int>();
+    private int[] cellSamples = System.Array.Empty<int>();
+    private float[] sampleX = System.Array.Empty<float>();
+    private float[] sampleZ = System.Array.Empty<float>();
+    private int indexedSamples = -1;
+    private Vector2I sampleCellMin,
+        sampleCellMax;
+    private int sampleColumns;
+
+    private static Vector2I SampleCell(float x, float z) =>
+        new(Mathf.FloorToInt(x / SampleCellSize), Mathf.FloorToInt(z / SampleCellSize));
+
+    private void IndexSamples()
+    {
+        sampleCellMin = new Vector2I(int.MaxValue, int.MaxValue);
+        sampleCellMax = new Vector2I(int.MinValue, int.MinValue);
+        for (int i = 0; i < Samples.Count; i++)
+        {
+            var cell = SampleCell(Samples[i].X, Samples[i].Z);
+            sampleCellMin = sampleCellMin.Min(cell);
+            sampleCellMax = sampleCellMax.Max(cell);
+        }
+        indexedSamples = Samples.Count;
+        sampleX = new float[Samples.Count];
+        sampleZ = new float[Samples.Count];
+        if (Samples.Count == 0)
+        {
+            cellStarts = System.Array.Empty<int>();
+            cellSamples = System.Array.Empty<int>();
+            return;
+        }
+        sampleColumns = sampleCellMax.X - sampleCellMin.X + 1;
+        int rows = sampleCellMax.Y - sampleCellMin.Y + 1;
+        cellStarts = new int[sampleColumns * rows + 1];
+        var cellOf = new int[Samples.Count];
+        for (int i = 0; i < Samples.Count; i++)
+        {
+            sampleX[i] = Samples[i].X;
+            sampleZ[i] = Samples[i].Z;
+            var cell = SampleCell(sampleX[i], sampleZ[i]);
+            cellOf[i] = (cell.Y - sampleCellMin.Y) * sampleColumns + cell.X - sampleCellMin.X;
+            cellStarts[cellOf[i] + 1]++;
+        }
+        for (int cell = 0; cell < sampleColumns * rows; cell++)
+            cellStarts[cell + 1] += cellStarts[cell];
+        cellSamples = new int[Samples.Count];
+        var fill = (int[])cellStarts.Clone();
+        for (int i = 0; i < Samples.Count; i++)
+            cellSamples[fill[cellOf[i]]++] = i;
+    }
+
+    /// <summary>
+    /// Flat distance to the nearest road sample. Searches grid rings outwards and returns exactly the value
+    /// of a full scan, so seeded placement stays unchanged.
+    /// </summary>
+    public float Distance(Vector3 p)
+    {
+        if (indexedSamples != Samples.Count)
+            IndexSamples();
+        if (Samples.Count == 0)
+            return float.MaxValue;
+        // The squares are compared and the root taken once: the root of the smallest square is the smallest root.
+        float nearestSquared = float.MaxValue;
+        var center = SampleCell(p.X, p.Z);
+        int lastRing = Mathf.Max(
+            Mathf.Max(Mathf.Abs(center.X - sampleCellMin.X), Mathf.Abs(center.X - sampleCellMax.X)),
+            Mathf.Max(Mathf.Abs(center.Y - sampleCellMin.Y), Mathf.Abs(center.Y - sampleCellMax.Y))
+        );
+        for (int ring = 0; ring <= lastRing; ring++)
+        {
+            for (int z = center.Y - ring; z <= center.Y + ring; z++)
+            {
+                // Inner rows of a ring only contribute their two edge cells.
+                int step = z == center.Y - ring || z == center.Y + ring ? 1 : Mathf.Max(1, 2 * ring);
+                if (z < sampleCellMin.Y || z > sampleCellMax.Y)
+                    continue;
+                for (int x = center.X - ring; x <= center.X + ring; x += step)
+                {
+                    if (x < sampleCellMin.X || x > sampleCellMax.X)
+                        continue;
+                    int cell = (z - sampleCellMin.Y) * sampleColumns + x - sampleCellMin.X;
+                    for (int k = cellStarts[cell]; k < cellStarts[cell + 1]; k++)
+                    {
+                        int i = cellSamples[k];
+                        float dx = p.X - sampleX[i],
+                            dz = p.Z - sampleZ[i];
+                        float squared = dx * dx + dz * dz;
+                        if (squared < nearestSquared)
+                            nearestSquared = squared;
+                    }
+                }
+            }
+            // Every unvisited cell is at least `ring` whole cells away from p along X or Z.
+            if (nearestSquared != float.MaxValue && Mathf.Sqrt(nearestSquared) <= ring * SampleCellSize)
+                break;
+        }
+        return nearestSquared == float.MaxValue ? float.MaxValue : Mathf.Sqrt(nearestSquared);
+    }
+}

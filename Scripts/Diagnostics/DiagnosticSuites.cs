@@ -2,8 +2,11 @@ using System;
 using System.Linq;
 using System.Text.Json;
 using Godot;
+using MathRacer.App;
+using MathRacer.Valley;
+using MathRacer.Vehicles;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 /// <summary>One more run of a suite with an extra argument, such as one driving route of the road checks.</summary>
 internal sealed record DiagnosticVariant(string Argument, string Suffix);
@@ -104,12 +107,11 @@ internal static class DiagnosticSuites
     internal static bool Requested(DiagnosticSuite suite) => LaunchOptions.Has("--" + suite.Mode);
 
     /// <summary>
-    /// The suites of the test run, one line of JSON each, which <c>build.ps1</c> reads. One object per line, because
-    /// Windows PowerShell 5.1 does not unroll a JSON array.
+    /// The suites and the tools, one line of JSON each, which <c>build.ps1</c> and <c>test.ps1</c> read; a tool is
+    /// marked by <c>inSuite: false</c>. One object per line, because Windows PowerShell 5.1 does not unroll a JSON array.
     /// </summary>
     internal static string[] ListForTestRun() =>
-        All.Where(suite => suite.InSuite)
-            .Select(suite =>
+        All.Select(suite =>
                 JsonSerializer.Serialize(
                     new
                     {
@@ -119,6 +121,7 @@ internal static class DiagnosticSuites
                             .Select(variant => new { argument = variant.Argument, suffix = variant.Suffix })
                             .ToArray(),
                         fixedFps = suite.FixedFps,
+                        inSuite = suite.InSuite,
                     }
                 )
             )

@@ -17,18 +17,19 @@ function Find-Godot {
 }
 function Assert-ExitCode([string]$step) { if ($LASTEXITCODE -ne 0) { throw "$step selhalo (kód $LASTEXITCODE)." } }
 
-function New-GameTestCase([string]$Mode, [int[]]$Seeds = @(0), [string]$Argument = '', [string]$Suffix = '', [bool]$FixedFps = $true) {
+function New-GameTestCase([string]$Mode, [int[]]$Seeds = @(0), [string]$Argument = '', [string]$Suffix = '', [bool]$FixedFps = $true, [bool]$InSuite = $true) {
     foreach ($seed in $Seeds) {
         $label = if ($seed) { "$Mode-$seed" } else { $Mode }
         if ($Suffix) { $label = "$label-$Suffix" }
         $extra = if ($Argument) { " $Argument" } else { '' }
-        [PSCustomObject]@{ Mode = $Mode; Seed = $seed; Label = $label; Argument = $extra; FixedFps = $FixedFps }
+        [PSCustomObject]@{ Mode = $Mode; Seed = $seed; Label = $label; Argument = $extra; FixedFps = $FixedFps; InSuite = $InSuite }
     }
 }
 
 # The suites of the test run are listed in Scripts/Diagnostics/DiagnosticSuites.cs, in the order they should start
 # (roughly longest first, so no long scenario starts near the end of the run). The game prints them as JSON.
-function Get-GameTestCases([string]$Godot) {
+# Without -IncludeTools only the suites of the test run; the tools (which write files or look at one save) come with it.
+function Get-GameTestCases([string]$Godot, [switch]$IncludeTools) {
     # Godot reports leaked resources on stderr when it quits this early, which PowerShell would treat as an error.
     $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
     $startInfo.FileName = $Godot
@@ -53,7 +54,9 @@ function Get-GameTestCases([string]$Godot) {
         $variants = @($suite.variants)
         if ($variants.Count -eq 0) { $variants = @([PSCustomObject]@{ argument = ''; suffix = '' }) }
         foreach ($variant in $variants) {
-            New-GameTestCase $suite.mode $seeds $variant.argument $variant.suffix ([bool]$suite.fixedFps)
+            if ($IncludeTools -or $suite.inSuite) {
+                New-GameTestCase $suite.mode $seeds $variant.argument $variant.suffix ([bool]$suite.fixedFps) ([bool]$suite.inSuite)
+            }
         }
     }
 }

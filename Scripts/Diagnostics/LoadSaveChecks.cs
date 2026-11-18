@@ -1,8 +1,12 @@
 using System;
 using System.Text.Json;
 using Godot;
+using MathRacer.App;
+using MathRacer.Saves;
+using MathRacer.Valley;
+using MathRacer.Vehicles;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 /// <summary>
 /// <c>--load-save-checks --seed=N --save-file=PATH</c>: loads one save file (a copy of a player's save, never the

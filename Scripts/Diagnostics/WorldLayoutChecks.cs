@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Godot;
+using MathRacer.App;
+using MathRacer.Valley;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 public static class WorldLayoutChecks
 {

@@ -2,8 +2,16 @@ using System;
 using System.IO;
 using System.Linq;
 using Godot;
+using MathRacer.App;
+using MathRacer.Buildings;
+using MathRacer.Quizzes;
+using MathRacer.Saves;
+using MathRacer.Settlement;
+using MathRacer.Tasks;
+using MathRacer.Valley;
+using MathRacer.Vehicles;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 public partial class VillageChecks : Node
 {

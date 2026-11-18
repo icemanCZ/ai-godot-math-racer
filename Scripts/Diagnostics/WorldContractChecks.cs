@@ -6,8 +6,12 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Godot;
+using MathRacer.App;
+using MathRacer.Buildings;
+using MathRacer.Characters;
+using MathRacer.Valley;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 /// <summary>
 /// A text description of everything a seed places in the world: characters, roads, terrain, buildings, pickups and
@@ -203,6 +207,7 @@ public partial class ContractChecks : Node
             CheckActorIds();
             CheckPanels();
             CheckDiagnosticSuites();
+            CheckNamespaces();
             GD.Print("CONTRACT_CHECKS_PASSED");
             GetTree().Quit();
         }
@@ -323,6 +328,56 @@ public partial class ContractChecks : Node
                 continue;
             Check(game.HasPanel(state), $"an interaction state {state} has a panel");
         }
+    }
+
+    /// <summary>
+    /// A source file is in the namespace of its folder (<c>Scripts/Saves/SaveStore.cs</c> is in
+    /// <c>MathRacer.Saves</c>), a file does not lie loose in <c>Scripts</c>, and no namespace has the name of a type,
+    /// which the compiler would not tell apart from it. The one exception is the file of the diagnostic hooks of
+    /// <c>Game</c>, which is a part of that class and so has its namespace.
+    /// </summary>
+    private static void CheckNamespaces()
+    {
+        var exceptions = new System.Collections.Generic.Dictionary<string, string>
+        {
+            ["Diagnostics/Game.Diagnostics.cs"] = "MathRacer.App",
+        };
+        string scripts = ProjectSettings.GlobalizePath("res://Scripts");
+        var wrong = new System.Collections.Generic.List<string>();
+        int checkedFiles = 0;
+        foreach (string file in Directory.GetFiles(scripts, "*.cs", SearchOption.AllDirectories).Order())
+        {
+            string relative = Path.GetRelativePath(scripts, file).Replace('\\', '/');
+            string[] parts = relative.Split('/');
+            string expected = exceptions.TryGetValue(relative, out string? exception)
+                ? exception
+                : "MathRacer." + parts[0];
+            var declared = System.Text.RegularExpressions.Regex.Match(
+                File.ReadAllText(file),
+                @"^namespace (\S+);",
+                System.Text.RegularExpressions.RegexOptions.Multiline
+            );
+            checkedFiles++;
+            if (parts.Length < 2 || !declared.Success || declared.Groups[1].Value != expected)
+                wrong.Add($"{relative} should be in {expected}");
+        }
+        Check(
+            wrong.Count == 0,
+            $"{checkedFiles} source files are in the namespace of their folder"
+                + (wrong.Count == 0 ? "" : ": " + string.Join("; ", wrong))
+        );
+        var assembly = typeof(Game).Assembly;
+        var clashes = assembly
+            .GetTypes()
+            .Select(type => type.Namespace)
+            .Where(name => name != null && name.Contains('.'))
+            .Distinct()
+            .Where(name => assembly.GetType(name!) != null)
+            .ToList();
+        Check(
+            clashes.Count == 0,
+            "no namespace has the name of a type" + (clashes.Count == 0 ? "" : ": " + string.Join(", ", clashes))
+        );
     }
 
     /// <summary>

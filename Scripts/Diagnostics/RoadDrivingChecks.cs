@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using Godot;
+using MathRacer.App;
+using MathRacer.Valley;
+using MathRacer.Vehicles;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 /// <summary>Drive every route in both directions using the normal vehicle physics and scene obstacles.</summary>
 public partial class RoadDrivingChecks : Node

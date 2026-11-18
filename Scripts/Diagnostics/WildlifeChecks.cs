@@ -1,8 +1,10 @@
 using System;
 using System.Linq;
 using Godot;
+using MathRacer.Valley;
+using MathRacer.Vehicles;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 internal static class WildlifeChecks
 {

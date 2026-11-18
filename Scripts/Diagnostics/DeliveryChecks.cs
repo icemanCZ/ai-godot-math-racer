@@ -2,8 +2,15 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
+using MathRacer.App;
+using MathRacer.Garage;
+using MathRacer.Quizzes;
+using MathRacer.Tasks;
+using MathRacer.Ui;
+using MathRacer.Valley;
+using MathRacer.Vehicles;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 public partial class DeliveryChecks : Node
 {

@@ -16,8 +16,11 @@ not write a runner of your own.
 ./test.ps1 -Suite track-checks -Seeds (1..40)     # one suite on many seeds, in parallel
 ./test.ps1 -Build -Suite save                     # build and import first, after changing C#
 ./build.ps1 -Test                                 # build, import and run every suite; use before a commit
+./test.ps1 -Tool load-save -Seeds 123 -Argument '--save-file=PATH'   # a tool, not a suite: here one save file, never the live one
 ```
 
+- Tools (`load-save-checks`, `save-fixtures`, `write-world-fingerprint`) are run the same way with `-Tool`, the seed with `-Seeds`
+  and the game's own arguments with `-Argument`. Never start Godot by hand for a check, a tool or a fixture.
 - After changing C# code the checks run the **built** game, so use `-Build` (or `./build.ps1 -Test`), not a bare run.
 - Each case keeps its log in `artifacts/game-tests/<run>/<case>/godot.log`; a failed case prints the end of its log.
 - From a git worktree the scripts find Godot in the main checkout's `.tools`; otherwise set `GODOT_PATH`.
@@ -38,6 +41,9 @@ game. Details are in `Tests/README.md` and `docs/REFACTORING_PLAN.md`.
 ## Code
 
 - Format C# with `dotnet csharpier format Scripts` (120 columns) before committing.
+- A source file goes in a folder of `Scripts` and declares that folder's namespace (`Scripts/Saves/X.cs` is in
+  `MathRacer.Saves`); the table is in `docs/ARCHITECTURE.md`. Every part of a partial class stays in the folder of the class.
+  `contract-checks` enforces it. Add the `using` of another folder's namespace explicitly; there is no `global using`.
 - Saved state that is new is a section in `SaveData.cs` with defaults, a rule in `SaveRules.All` and its capture and restore in
   `Game.Persistence.cs`; `SaveStore` is not touched. The flat save of versions 1 to 4 is `SaveDataV4`: it and `SaveMigrations` are
   never changed to make a check pass, and `LegacySaves` (diagnostics) makes old-shaped saves for the checks of the migrations.

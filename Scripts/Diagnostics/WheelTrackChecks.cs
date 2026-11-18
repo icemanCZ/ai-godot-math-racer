@@ -1,6 +1,8 @@
 using Godot;
+using MathRacer.Valley;
+using MathRacer.Vehicles;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 // Reproduce driving right from spawn with several steering strengths. A hard turn can end against a tree beside the
 // road, and after five seconds the car is put back on the road. That jump is not driving, so it is not a gap in the tracks.

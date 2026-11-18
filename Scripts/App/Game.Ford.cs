@@ -1,0 +1,349 @@
+using System;
+using Godot;
+using MathRacer.Buildings;
+using MathRacer.Characters;
+using MathRacer.Saves;
+using MathRacer.Tasks;
+using MathRacer.Vehicles;
+
+namespace MathRacer.App;
+
+/// <summary>
+/// Trailer trips for buildings: each building has a builder who sends the next of ten deliveries (the bridge's
+/// builder is the beaver). The trips share the single task slot with expeditions and supply trips.
+/// </summary>
+public partial class Game
+{
+    private Trailer trailer = null!;
+    private bool trailerParade;
+
+    /// <summary>The trailer is won by finishing the bridge; it is lent for every trip before that.</summary>
+    internal bool TrailerOwned { get; private set; }
+    internal Trailer Trailer => trailer;
+
+    /// <summary>Companions trail further back while the trailer is hitched.</summary>
+    private float TrailerTrailShift => trailer?.Attached == true ? 3.5f : 0;
+
+    private void SetupTrailer()
+    {
+        trailer = new Trailer(world, vehicle);
+        world.AddChild(trailer);
+        ui.BuildQuestRequested += BeginBuildTrip;
+        ui.SupplyQuestRequested += BeginSupplyTrip;
+        ui.MissingSupplyRequested += BeginMissingSupply;
+        ui.HouseTripRequested += BeginHouseTrip;
+        ui.PlotTripRequested += BeginPlotTrip;
+        ui.LookoutRequested += BeginLookout;
+        ui.TrailerToggleRequested += ToggleTrailer;
+        ui.TrailerPaintSelected += SelectTrailerPaint;
+    }
+
+    private BuildProject? ProjectOf(Animal? actor) =>
+        actor?.Role is BuilderRole role && role.Project < world.Projects.Length ? world.Projects[role.Project] : null;
+
+    /// <summary>The works that makes a goods load, or null for any other load.</summary>
+    private Works? GoodsWorks(HaulLoad load) =>
+        HaulLoads.IsGoods(load) && (int)HaulLoads.ProductOf(load) < world.Industry.Length
+            ? world.Industry[(int)HaulLoads.ProductOf(load)]
+            : null;
+
+    /// <summary>Whether the next delivery of a project can be fetched: goods need units in the works' stock.</summary>
+    private bool StepReady(BuildProject project) =>
+        project.Complete
+        || !HaulLoads.IsGoods(project.Steps[project.Stage].Cargo)
+        || GoodsWorks(project.Steps[project.Stage].Cargo) is { } works && works.Stock >= Works.PerTrip;
+
+    internal void OpenBuilder(Animal builder)
+    {
+        if (ProjectOf(builder) is not { } project)
+            return;
+        ClearChallenge();
+        EnterInteraction(GameState.BuildStatus, builder);
+        ShowBuilder();
+        if (Haul != null || project.Complete)
+            return;
+        Speak(
+            !StepReady(project) ? "Zboží ještě není vyrobené. Pošlu tě pro surovinu!"
+                : project.Stage == 0 ? builder.Greeting
+                : "Přivezeš mi další náklad?",
+            builder
+        );
+    }
+
+    private void ShowBuilder()
+    {
+        if (ProjectOf(nearby) is not { } project)
+            return;
+        var trip = Haul != null && Haul.Project == project ? Haul : null;
+        bool free = Haul == null && !project.Complete;
+        bool ready = StepReady(project);
+        ui.BuilderPanel(
+            nearby!,
+            project,
+            trip,
+            free && ready,
+            free && !ready ? GoodsWorks(project.Steps[project.Stage].Cargo) : null,
+            project.Index == BuildPlans.Tower ? LookoutState : 0
+        );
+    }
+
+    internal void BeginBuildTrip() => BeginBuildTrip(false);
+
+    private void BeginBuildTrip(bool quizzed)
+    {
+        if (
+            State != GameState.BuildStatus
+            || ProjectOf(nearby) is not { Complete: false } project
+            || Haul != null
+            || !StepReady(project)
+        )
+            return;
+        if (!quizzed)
+        {
+            AskBeforeDeparture(Departure.Build);
+            return;
+        }
+        StartTrip(project);
+    }
+
+    /// <summary>Only a trailer trip needs the trailer: once it is over (and the bed has settled) it is unhitched.</summary>
+    private void UnhitchIdleTrailer()
+    {
+        if (Haul == null && !trailerParade && trailer.Attached && !trailer.Dumping)
+            trailer.Attach(false);
+    }
+
+    private void UpdateHaulGuides()
+    {
+        foreach (var project in world.Projects)
+            project.Builder.Guide(Haul == null && !project.Complete);
+        foreach (var plot in world.Village.BuildPlots)
+            plot.Resident.Guide(Haul == null && !plot.Complete);
+        foreach (var works in world.Industry)
+            works.Worker.Guide(true);
+        foreach (var worker in world.AllSourceWorkers)
+            worker.Guide(
+                worker.Role is SourceRole { Load: HaulLoad.Sand }
+                    || Haul == null && WorksOfSource(worker) is { Full: false }
+            );
+    }
+
+    private void TickHaul(double delta)
+    {
+        if (Haul == null)
+            return;
+        Haul.Tick(delta);
+        ui.DeliveryDirection(Haul.Waypoint, vehicle);
+        if (!Haul.Reached(vehicle.Position))
+        {
+            if (!trailer.Dumping)
+                Haul.Arrived = false;
+            return;
+        }
+        if (Haul.Arrived)
+            return;
+        Haul.Arrived = true;
+        if (Haul.Loaded)
+            BeginDump();
+        else
+            BeginLoading();
+    }
+
+    /// <summary>The loading question; whoever loads the cargo asks it from afar, like a radio call.</summary>
+    private void BeginLoading()
+    {
+        if (Haul is not { Loaded: false } trip || State != GameState.Exploring)
+            return;
+        nearby = trip.Asker;
+        vehicle.Active = false;
+        BeginQuiz(load: HaulLoads.IsSpecial(trip.Load) ? null : trip.Load);
+    }
+
+    internal void CompleteHaulLoading()
+    {
+        ClearChallenge();
+        if (Haul is not { Loaded: false } trip)
+        {
+            CloseInteraction();
+            return;
+        }
+        // Goods come out of the works' stock the moment they are loaded.
+        if (GoodsWorks(trip.Load) is { } works && !works.Take(Works.PerTrip))
+        {
+            EndHaul();
+            CloseInteraction();
+            Speak("Zboží došlo. Zkus to znovu později.", trip.Asker);
+            return;
+        }
+        trip.SetLoaded(true);
+        trailer.Fill(trip.Load);
+        ui.HaulHud(trip);
+        UpdateDeliveryGuides();
+        CloseInteraction();
+        Speak(TripInstruction(trip), trip.Contractor);
+        SaveProgress();
+    }
+
+    private void BeginDump()
+    {
+        if (Haul is not { Loaded: true } trip || trailer.Dumping)
+            return;
+        // The car waits while the bed tips; the callback returns control.
+        vehicle.Active = false;
+        trailer.Dump(() => FinishDump(trip));
+    }
+
+    private void FinishDump(HaulTrip trip)
+    {
+        if (State == GameState.Exploring)
+            vehicle.Active = true;
+        if (Haul != trip)
+            return;
+        trip.Target.FinishDump(this, trip);
+    }
+
+    internal void FinishBuildDump(HaulTrip trip)
+    {
+        var project = trip.Project!;
+        project.SetStage(trip.Step + 1);
+        project.Builder.Celebrate();
+        if (project.Complete)
+        {
+            CompleteProject(project);
+            return;
+        }
+        CelebrateAt(
+            project.DropFor(trip.Step) + Vector3.Up * 2,
+            $"{project.Builder.DisplayName} děkuje!  {project.Stage} / {BuildProject.Trips}"
+        );
+        // The next load waits until the player asks the builder for it again.
+        EndHaul();
+        Speak("Děkuju! Až budeš chtít, přijeď za mnou pro další náklad.", project.Builder);
+        SaveProgress();
+    }
+
+    /// <summary>The last delivery has been tipped out: the building is finished.</summary>
+    private void CompleteProject(BuildProject project)
+    {
+        EndHaul();
+        PayBuildReward(project);
+        if (project.Index == BuildPlans.Bridge)
+        {
+            TrailerOwned = true;
+            trailerParade = false;
+            CelebrateAt(project.Focus, "Most je hotový! Vozík je tvůj.");
+            Speak("Hurá, most je hotový! Teď můžeš přejet řeku. Vozík si nech, najdeš ho v garáži.", project.Builder);
+        }
+        else
+        {
+            CelebrateAt(project.Focus, $"Stavba je hotová!  +{BuildCoins}  ·  {BuildItemName(project.Index)}");
+            Speak("Hurá, je hotovo! Moc děkuju.", project.Builder);
+        }
+        var outward = followCamera.GlobalPosition - project.Focus;
+        outward.Y = 0;
+        followCamera.ShowMoment(project.Focus, outward.LengthSquared() > .01f ? outward.Normalized() : Vector3.Back);
+        UpdateDeliveryGuides();
+        SaveProgress();
+    }
+
+    internal void ToggleTrailer()
+    {
+        if (State != GameState.Garage || !TrailerOwned || Haul != null)
+            return;
+        trailerParade = !trailerParade;
+        trailer.Attach(trailerParade);
+        ShowGarage();
+        SaveProgress();
+    }
+
+    internal void SelectTrailerPaint(string id)
+    {
+        if (State != GameState.Garage || !TrailerOwned || !Array.Exists(TrailerModel.Paints, p => p.Id == id))
+            return;
+        trailer.SetPaint(id);
+        ShowGarage();
+        SaveProgress();
+    }
+
+    private void RestoreBuilds(SaveData data)
+    {
+        EndHaul(refreshUi: false);
+        for (int i = 0; i < world.Projects.Length; i++)
+            world.Projects[i].SetStage(data.Buildings.Stages![i]);
+        TrailerOwned = world.Ford is { Passable: true } && data.Buildings.TrailerOwned;
+        trailerParade = TrailerOwned && data.Buildings.TrailerAttached;
+        trailer.SetPaint(data.Buildings.TrailerPaint);
+        if (world.Duck is { } duck)
+        {
+            duck.Disabled = duck.IsOwned && data.Companions.DisabledPets.Contains(duck.Kind.ToString());
+            PlaceCollectorPet(duck);
+        }
+        foreach (var works in world.Industry)
+            works.SetStock(data.Buildings.WorksStock[works.Site.Index]);
+        world.Village.RestorePlots(data.Buildings.PlotStages!);
+        trailer.SetLoad(null);
+        if (data.Task.Trip is { } saved && TripTarget(saved) is { } target)
+        {
+            StartHaul(new HaulTrip(world, vehicle, target, target.NextStep, saved.Loaded));
+            trailer.Snap();
+        }
+        else
+            trailer.Attach(trailerParade);
+    }
+
+    /// <summary>
+    /// What a saved trip is for, or null when it no longer has a target that needs a delivery: a finished building or
+    /// plot, or a house that asks for something else now.
+    /// </summary>
+    private ITripTarget? TripTarget(SavedTrip saved) =>
+        saved.Kind switch
+        {
+            TripKinds.Build
+                when saved.Index >= 0 && saved.Index < world.Projects.Length && !world.Projects[saved.Index].Complete =>
+                world.Projects[saved.Index],
+            TripKinds.Supply when saved.Index >= 0 && saved.Index < world.Industry.Length => world.Industry[
+                saved.Index
+            ],
+            TripKinds.Plot
+                when saved.Index >= 0
+                    && saved.Index < world.Village.BuildPlots.Count
+                    && !world.Village.BuildPlots[saved.Index].Complete => world.Village.BuildPlots[saved.Index],
+            TripKinds.House
+                when saved.Index >= 0
+                    && saved.Index < world.Village.Residents.Count
+                    && HouseMaterial(saved.Index) is { } material => new HouseTripTarget(world, saved.Index, material),
+            _ => null,
+        };
+
+    /// <summary>The deliveries made to each of the four buildings; zeros for buildings this valley lacks.</summary>
+    private int[] BuildStages()
+    {
+        var stages = new int[BuildPlans.Count];
+        foreach (var project in world.Projects)
+            stages[project.Index] = project.Stage;
+        return stages;
+    }
+
+    private static string TripInstruction(HaulTrip trip) =>
+        trip switch
+        {
+            { Loaded: true, FarBank: true } => "Teď odvez náklad na druhý břeh řeky. Přejeď po velkém mostě.",
+            { Loaded: true, Project: not null } => "Teď odvez náklad na stavbu a vysyp ho do žlutého kruhu.",
+            { Loaded: true, House: >= 0 } => "Teď odvez náklad před domeček a vysyp ho do žlutého kruhu.",
+            { Loaded: true, Plot: not null } => "Teď odvez náklad na parcelu a vysyp ho do žlutého kruhu.",
+            { Loaded: true } => "Teď odvez náklad do žlutého kruhu před závodem.",
+            _ => trip.Load switch
+            {
+                HaulLoad.Stones => "Jeď s vozíkem pro kamení do lomu.",
+                HaulLoad.Soil => "Jeď s vozíkem pro hlínu.",
+                HaulLoad.Logs => "Jeď s vozíkem pro klády na skládku.",
+                HaulLoad.Planks => "Jeď s vozíkem pro prkna na pilu.",
+                HaulLoad.Bricks => "Jeď s vozíkem pro cihly do cihelny.",
+                HaulLoad.Gravel => "Jeď s vozíkem pro štěrk do štěrkovny.",
+                HaulLoad.Fabric => "Jeď s vozíkem pro látku k farmáři Tondovi.",
+                HaulLoad.Capstone => "Jeď s vozíkem pro kámen ke sběrateli drahokamů.",
+                HaulLoad.Flag => "Jeď s vozíkem pro vlaječku k hračkáři Pepovi.",
+                _ => "Jeď s vozíkem pro písek.",
+            },
+        };
+}

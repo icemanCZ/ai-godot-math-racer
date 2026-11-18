@@ -1,8 +1,11 @@
 using System;
 using System.Linq;
 using Godot;
+using MathRacer.Graphics;
+using MathRacer.Valley;
+using MathRacer.Vehicles;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 // Real fixed-tick impacts using shapes copied from the generated scenery.
 public partial class CollisionChecks : Node

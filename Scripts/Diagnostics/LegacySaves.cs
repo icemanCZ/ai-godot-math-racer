@@ -2,8 +2,9 @@ using System;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using MathRacer.Saves;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 /// <summary>
 /// Saves in the flat shape of versions 1 to 4, made from the current game for the checks of the migrations. The

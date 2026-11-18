@@ -1,8 +1,15 @@
 using System;
 using System.Linq;
 using Godot;
+using MathRacer.App;
+using MathRacer.Garage;
+using MathRacer.Quizzes;
+using MathRacer.Saves;
+using MathRacer.Ui;
+using MathRacer.Valley;
+using MathRacer.Vehicles;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 public partial class GarageChecks : Node
 {

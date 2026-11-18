@@ -13,10 +13,18 @@
     ./test.ps1 -Suite track -Seeds (1..40)
     ./test.ps1 -Build -Suite save
     ./test.ps1 -Suite plot-checks, build-checks -Seeds 1, 2, 3 -Jobs 8
+    ./test.ps1 -Tool load-save -Seeds 555399881 -Argument '--save-file=C:\copy\progress.json'
+    ./test.ps1 -Tool save-fixtures -Seeds 42
 #>
 param(
     # Names of suites; a name matches every suite that starts with it ("save" is save-checks and save-fixture-checks).
     [string[]]$Suite = @(),
+    # Names of tools (not suites): they write files or look at one save, and run only when asked for by name. A name
+    # matches every tool that starts with it. Give the seed with -Seeds and further game arguments with -Argument.
+    [string[]]$Tool = @(),
+    # Extra arguments for the game, after the flag of the suite or tool, e.g. '--save-file=PATH'. A path with a space
+    # needs its own quotes inside the string.
+    [string[]]$Argument = @(),
     # Seeds to run every selected suite with, instead of the seeds listed for it.
     [int[]]$Seeds = @(),
     [ValidateRange(1, 64)]
@@ -37,7 +45,14 @@ if ($Build) {
     Assert-ExitCode 'Import'
 }
 
-$cases = @(Get-GameTestCases $godot)
+$cases = @(Get-GameTestCases $godot -IncludeTools)
+if ($Tool.Count -gt 0) {
+    $selected = @($cases | Where-Object { $mode = $_.Mode; -not $_.InSuite -and @($Tool | Where-Object { $mode -like "$_*" }).Count -gt 0 })
+    if ($selected.Count -eq 0) { throw "Žádný nástroj nepatří k: $($Tool -join ', '). Seznam: ./test.ps1 -List" }
+    $cases = $selected
+} else {
+    $cases = @($cases | Where-Object { $_.InSuite })
+}
 if ($Suite.Count -gt 0) {
     $selected = @($cases | Where-Object { $label = $_.Mode; @($Suite | Where-Object { $label -like "$_*" }).Count -gt 0 })
     if ($selected.Count -eq 0) { throw "Žádná kontrola nepatří k: $($Suite -join ', '). Seznam: ./test.ps1 -List" }
@@ -53,8 +68,18 @@ if ($Seeds.Count -gt 0) {
     })
 }
 
+if ($Argument.Count -gt 0) {
+    $extra = ' ' + ($Argument -join ' ')
+    foreach ($case in $cases) { $case.Argument += $extra }
+}
+
 if ($List) {
     $cases | Group-Object Mode | ForEach-Object { '{0,-28} {1}' -f $_.Name, (($_.Group | ForEach-Object { if ($_.Seed) { $_.Seed } else { 'výchozí' } }) -join ' ') }
+    if ($Tool.Count -eq 0) {
+        $tools = @(Get-GameTestCases $godot -IncludeTools | Where-Object { -not $_.InSuite } | ForEach-Object { $_.Mode } | Sort-Object -Unique)
+        Write-Host ''
+        Write-Host "Nástroje (-Tool): $($tools -join ', ')"
+    }
     return
 }
 

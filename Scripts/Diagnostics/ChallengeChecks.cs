@@ -1,8 +1,14 @@
 using System;
 using System.Linq;
 using Godot;
+using MathRacer.App;
+using MathRacer.Garage;
+using MathRacer.Quizzes;
+using MathRacer.Ui;
+using MathRacer.Valley;
+using MathRacer.Vehicles;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 /// <summary>Checks generated questions, single visits, the HUD and real reward UI signals.</summary>
 public static class ChallengeChecks

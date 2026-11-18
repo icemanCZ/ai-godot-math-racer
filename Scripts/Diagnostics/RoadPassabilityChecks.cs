@@ -1,7 +1,9 @@
 using System;
 using Godot;
+using MathRacer.App;
+using MathRacer.Valley;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 public static class RoadPassabilityChecks
 {

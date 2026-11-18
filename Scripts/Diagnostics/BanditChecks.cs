@@ -2,8 +2,13 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
+using MathRacer.App;
+using MathRacer.Quizzes;
+using MathRacer.Saves;
+using MathRacer.Valley;
+using MathRacer.Vehicles;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 public partial class BanditChecks(Game game, World world, Vehicle car) : Node
 {

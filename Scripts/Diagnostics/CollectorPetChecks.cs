@@ -4,8 +4,14 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Godot;
+using MathRacer.App;
+using MathRacer.Characters;
+using MathRacer.Saves;
+using MathRacer.Settlement;
+using MathRacer.Valley;
+using MathRacer.Vehicles;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 internal sealed partial class CollectorPetChecks(Game game, World world, Vehicle car) : Node
 {

@@ -1,8 +1,12 @@
 using System;
 using System.Linq;
 using Godot;
+using MathRacer.App;
+using MathRacer.Graphics;
+using MathRacer.Valley;
+using MathRacer.Vehicles;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 // Added only by the command-line validation mode; never runs during ordinary play.
 public partial class SmokeTest : Node

@@ -2,6 +2,34 @@
 
 MathRacer is a code-only Godot 4.7.2 .NET project. The root node in `Main.tscn` runs the `Game` script. C# generates the world, illustrations and interface at startup. Player-facing text is Czech.
 
+## Source layout
+
+A folder under `Scripts` is a namespace: `Scripts/Saves/SaveStore.cs` is in `MathRacer.Saves`. The names are chosen so that
+no namespace has the name of a type (`World`, `Village` and `Game` are classes, hence `Valley`, `Settlement` and `App`), and
+`contract-checks` fails when a file is in the wrong namespace, lies loose in `Scripts`, or a namespace clashes with a type.
+A class that is written in several files (`Game`, `GameUi`, `World`, `Village`, `BuildProject`, `Works`, `HousePlot`) has all its
+parts in the folder of the class, with one exception: `Diagnostics/Game.Diagnostics.cs` is a part of `Game` and so is in
+`MathRacer.App`, which is why it can be left out of the release build together with its folder.
+
+| Folder (namespace `MathRacer.<folder>`) | What lives there |
+| --- | --- |
+| `App` | `Game` and every `Game.*.cs`, `Interaction`, `GameControls`, `Settings`, `LaunchOptions`, `GameState` |
+| `Ui` | `GameUi` and every `GameUi.*.cs`, `DeliveryPicture`, `TaskMarker` |
+| `Graphics` | `Art` (procedural meshes and icons), `Obstacles` (collision helpers), `Celebration` |
+| `Quizzes` | `IChallenge` and the generators of the four kinds of question (`Mathematics`, `Letters`), `QuizType`, `QuizSession` |
+| `Saves` | `SaveData` and its sections, `SaveDataV4`, `SaveRules`, `SaveMigrations`, `SaveStore`, `PostcardProgress` |
+| `Valley` | `World` and every `World.*.cs`, the terrain, roads, river, vegetation, grass, weather, wildlife |
+| `Settlement` | `Village` and every `Village.*.cs`, `HousePlot`, `PlotPlans` |
+| `Buildings` | `BuildProject`, `BuildPlans`, the mill, the tower, the jetty, the ford, the boat, the works |
+| `Tasks` | `HaulTrip`, `ITripTarget`, `Expedition`, `RouteGuide`, `TaskSlot`, `DrivingEvents` |
+| `Vehicles` | `Vehicle`, `VehicleModel`, `FollowCamera`, `WheelTracks`, `Trailer` |
+| `Garage` | the car items and looks (`Customization` of old), `CarRewards`, `Economy` |
+| `Characters` | `Animal`, the roles, `ActorIds`, `CharacterCatalog`, the companions and the golem |
+| `Diagnostics` | the headless checks, the capture views and `DiagnosticSuites` |
+
+The namespaces depend on one another in both directions (every one of them can reach every other), mostly because `Settings`,
+`GameState` and the constants of `Game` live in `App`. `docs/REFACTORING_PLAN.md` lists what a first step towards layers would be.
+
 ## Module boundaries
 
 | Module | Responsibility |

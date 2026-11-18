@@ -1,7 +1,7 @@
 using System.IO;
 using Godot;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 internal static class DiagnosticArtifacts
 {

@@ -2,8 +2,16 @@ using System;
 using System.Linq;
 using System.Text.Json;
 using Godot;
+using MathRacer.App;
+using MathRacer.Buildings;
+using MathRacer.Characters;
+using MathRacer.Quizzes;
+using MathRacer.Saves;
+using MathRacer.Tasks;
+using MathRacer.Valley;
+using MathRacer.Vehicles;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 /// <summary>
 /// The raw-material economy: the log yard, the sawmill, the brickworks and the gravel works, their workers,

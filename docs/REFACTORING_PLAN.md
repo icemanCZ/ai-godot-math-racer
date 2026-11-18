@@ -220,6 +220,25 @@ Každá položka je samostatný krok a samostatný commit. Pořadí je pevné je
 
 ### 5.0 Složky a jmenné prostory
 
+**Stav: provedeno.** Odchylky od návrhu níže a co přesun odhalil:
+
+- **Třídy rozdělené do více souborů ležely v cizích složkách,** což návrh nezachytil: `Golem.cs` obsahoval části `World`, `Game` a `GameUi`, `TripTarget.cs` části `BuildProject`, `HousePlot` a `Works` a `Game.Weather.cs` část `GameUi`. Každá část musí mít jmenný prostor své třídy, takže se rozdělily na `World.Golem.cs`, `Game.Golem.cs`, `GameUi.Golem.cs`, `BuildProject.Trips.cs`, `HousePlot.Trips.cs`, `Works.Trips.cs` a `GameUi.Weather.cs`. Obsah se nezměnil.
+- **Dva typy ležely v souboru cizí třídy** a přesunuly se: `QuizType` do `Quizzes/QuizType.cs` a `PostcardProgress` do `Saves/PostcardProgress.cs`.
+- **`DrivingEvents` je v `Tasks`**, ne v samostatné složce `Courses` (měla by jeden soubor), a knihovna z bodu „Čisté testy“ se bude jmenovat `MathRacer.Logic`.
+- **Výjimka z pravidla „složka = jmenný prostor“:** `Diagnostics/Game.Diagnostics.cs` je část třídy `Game`, takže má `MathRacer.App`, a díky tomu zůstává ve složce, kterou `.csproj` vynechává z vydání. Výjimku zná `contract-checks`.
+- **Nástroj** (skript mimo repozitář) přesunul soubory s `.uid` přes `git mv`, takže historie se drží (`git log --follow`), a `using` doplnil podle chyb překladače. Nepoužité `using` odstranil vlastní skript, protože `dotnet format` nic nenašel.
+- **Ověřeno:** celá sada, sestavení vydání (`ExportRelease`), fixtury a otisky světa beze změny.
+
+**Příloha: závislosti mezi složkami po přesunu.** Všech 12 jmenných prostorů (bez `Diagnostics`) tvoří jeden cyklus, každý dosáhne na každý. Hlavní důvod je, že `App` drží věci, které potřebují všichni:
+
+| Typ v `App` | Použití mimo `App` | Kde se používá |
+| --- | --- | --- |
+| `Settings` | 87 | `Buildings`, `Quizzes`, `Settlement`, `Tasks`, `Ui`, `Valley`, `Vehicles` |
+| `GameState` | 72 | `Characters`, `Quizzes`, `Saves`, `Valley` |
+| `Game` (hlavně konstanty) | 64 | všude |
+
+`QuizType` (25) a `PostcardProgress` (6) byly další dvě a už jsou jinde. Doporučený první krok k vrstvám: `Settings`, `LaunchOptions` a `GameState` do vlastní listové složky (navrhuji `Foundation`) a konstanty z `Game` k tomu, komu patří (konstanty odměn a bandité k `Economy` a pravidlům, `PostcardCount` a `MaxBanditSites` k uložení). Teprve potom má smysl hlídat směr závislostí testem.
+
 **Dnes:** všech 161 souborů je v jednom jmenném prostoru `MathRacer`, 110 z nich leží plochých ve `Scripts/`. Podsložky jsou jen `Diagnostics`, `Customization`, `Letters` a `Mathematics`.
 
 **Cíl:** složka je jmenný prostor. `Scripts/Saves/SaveStore.cs` má `namespace MathRacer.Saves;`. Jedna úroveň, žádné vnořování.

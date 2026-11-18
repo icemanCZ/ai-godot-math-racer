@@ -1,8 +1,14 @@
 using System;
 using System.Linq;
 using Godot;
+using MathRacer.App;
+using MathRacer.Characters;
+using MathRacer.Saves;
+using MathRacer.Settlement;
+using MathRacer.Valley;
+using MathRacer.Vehicles;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 public partial class GardenChecks : Node
 {

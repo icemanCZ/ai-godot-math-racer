@@ -4,8 +4,17 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Godot;
+using MathRacer.App;
+using MathRacer.Buildings;
+using MathRacer.Characters;
+using MathRacer.Garage;
+using MathRacer.Quizzes;
+using MathRacer.Saves;
+using MathRacer.Tasks;
+using MathRacer.Valley;
+using MathRacer.Vehicles;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 /// <summary>
 /// The mill, the lookout tower and the jetty: sites, ways to them (cut into the slope where needed, then driven

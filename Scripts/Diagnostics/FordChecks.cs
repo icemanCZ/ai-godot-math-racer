@@ -3,8 +3,15 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Godot;
+using MathRacer.App;
+using MathRacer.Buildings;
+using MathRacer.Quizzes;
+using MathRacer.Saves;
+using MathRacer.Tasks;
+using MathRacer.Valley;
+using MathRacer.Vehicles;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 /// <summary>The trailer and the beaver's ford: placement, six trips, saves, the crossing and the garage.</summary>
 public partial class FordChecks : Node

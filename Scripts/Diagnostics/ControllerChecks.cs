@@ -2,8 +2,13 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Godot;
+using MathRacer.App;
+using MathRacer.Quizzes;
+using MathRacer.Tasks;
+using MathRacer.Valley;
+using MathRacer.Vehicles;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 // Feed real joypad events through Godot's input and GUI routing, without hardware.
 public partial class ControllerChecks : Node

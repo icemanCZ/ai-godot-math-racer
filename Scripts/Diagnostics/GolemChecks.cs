@@ -2,8 +2,12 @@ using System;
 using System.Linq;
 using System.Text.Json;
 using Godot;
+using MathRacer.App;
+using MathRacer.Saves;
+using MathRacer.Valley;
+using MathRacer.Vehicles;
 
-namespace MathRacer;
+namespace MathRacer.Diagnostics;
 
 public partial class GolemChecks : Node
 {
