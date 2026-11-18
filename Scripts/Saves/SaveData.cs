@@ -132,6 +132,9 @@ public sealed class VillageSave
 
     /// <summary>Houses whose resident has been given glasses after the tenth improvement.</summary>
     public bool[] Glazed { get; set; } = new bool[4];
+
+    /// <summary>Whether the resident of a finished house has been given bread from the bakery, house by house.</summary>
+    public bool[] Baked { get; set; } = new bool[4];
 }
 
 /// <summary>The four buildings, the six building plots, the works and the trailer.</summary>
@@ -149,6 +152,9 @@ public sealed class BuildingsSave
     /// <summary>Glasses stored at the glassworks, 0–12. A save from before the glassworks has none.</summary>
     public int GlassStock { get; set; }
 
+    /// <summary>Loaves stored at the bakery, 0–12. A save from before the bakery has none.</summary>
+    public int BreadStock { get; set; }
+
     public bool TrailerOwned { get; set; }
     public bool TrailerAttached { get; set; }
     public string TrailerPaint { get; set; } = "red";
@@ -162,6 +168,12 @@ public sealed class HaulsSave
 {
     public int[] Raw { get; set; } = new int[4];
     public int[] Works { get; set; } = new int[4];
+
+    /// <summary>Loads of wheat tipped out at the bakery. A save from before the bakery has none.</summary>
+    public int Wheat { get; set; }
+
+    /// <summary>Loads of wheat the bakery has taken in. A save from before the bakery has none.</summary>
+    public int Baked { get; set; }
 }
 
 /// <summary>The golem and the companions that follow the car.</summary>

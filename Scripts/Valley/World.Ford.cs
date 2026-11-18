@@ -147,6 +147,7 @@ public partial class World
         var builds = PlanBuilds(site);
         var extras = PlanExtraSources(site, sources, industry);
         var glass = industry == null ? null : PlanGlassworks(site);
+        var farm = industry == null ? null : PlanFarm(site);
         if (builds != null)
             Ground.Grade(builds.Grading, (x, z) => Routes.Distance(new Vector3(x, 0, z)));
         river.AddBankRocks(Ground, site.Z);
@@ -164,9 +165,10 @@ public partial class World
             BuildHaulSource(extra, extra: true);
             BuildExtraSourceWorker(extra);
         }
-        BuildTracks(site, sources, extras, industry, builds, glass);
+        BuildTracks(site, sources, extras, industry, builds, glass, farm);
         BuildIndustry(industry);
         BuildGlassworks(glass);
+        BuildFarm(farm);
         Beaver = Character.Create(
             "Bobr Bóďa",
             "Postavíme most přes řeku? Přivez mi štěrk, cihly a prkna.",
@@ -528,7 +530,8 @@ public partial class World
         HaulSource[] extras,
         IndustryPlan? industry,
         BuildPlan? builds,
-        WorksSite? glass
+        WorksSite? glass,
+        FarmPlan? farm = null
     )
     {
         Tracks = new Tracks { Name = "Tracks" };
@@ -569,6 +572,18 @@ public partial class World
         {
             Tracks.Line(glass.Road, glass.Position, WorksPathHalfWidth, Tracks.Kind.Path);
             Tracks.Pad(glass.Position, 6, Tracks.Kind.Path);
+        }
+        if (farm != null)
+        {
+            // The farm: a path to the loading ring, a lane up to the barn and the bare soil under the four fields.
+            Tracks.Line(farm.Farm.Road, farm.Farm.Position, WorksPathHalfWidth, Tracks.Kind.Path);
+            Tracks.Pad(farm.Farm.Position, 6, Tracks.Kind.Path);
+            var (laneFrom, laneTo) = WheatFarm.Lane(farm.Farm);
+            Tracks.Line(laneFrom, laneTo, 2.4f, Tracks.Kind.Path);
+            foreach (var pad in WheatFarm.SoilPads(farm.Farm))
+                Tracks.Pad(pad, WheatFarm.SoilRadius, Tracks.Kind.Path);
+            Tracks.Line(farm.Bakery.Road, farm.Bakery.Position, WorksPathHalfWidth, Tracks.Kind.Path);
+            Tracks.Pad(farm.Bakery.Position, 6, Tracks.Kind.Path);
         }
         if (builds != null)
             foreach (var build in builds.Sites)

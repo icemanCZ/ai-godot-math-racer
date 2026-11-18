@@ -209,6 +209,17 @@ public partial class DeliveryPicture : Control
                                 new Color("cfeaf4")
                             );
                             break;
+                        case "wheat":
+                            DrawLine(p + new Vector2(0, 11), p + new Vector2(0, -8), new Color("c9b45a"), 2.5f, true);
+                            Oval(p + new Vector2(0, -7), new(5, 9), new("f2c64a"));
+                            DrawLine(p + new Vector2(0, -7), p + new Vector2(0, -15), new Color("f7dc7a"), 1.5f, true);
+                            break;
+                        case "bread":
+                            Oval(p, new(13, 10), new("b8732a"));
+                            Oval(p + new Vector2(-1, -2), new(10, 7), new("e0a04a"));
+                            DrawLine(p + new Vector2(-4, -4), p + new Vector2(-1, 2), new Color("b8732a"), 1.5f, true);
+                            DrawLine(p + new Vector2(2, -5), p + new Vector2(5, 1), new Color("b8732a"), 1.5f, true);
+                            break;
                         case "gravel":
                             Oval(p, new(12, 9), new("8f8a7d"));
                             Oval(p + new Vector2(-2, -2), new(9, 6), new("b9b4a5"));
@@ -328,6 +339,32 @@ public partial class DeliveryPicture : Control
                 );
                 DrawLine(new(x - 12, 50), new(x - 10, 72), new Color("ffffff"), 3);
             }
+        }
+        else if (Icon == "wheat")
+        {
+            // Three stalks of wheat with golden ears, leaning a little apart.
+            foreach (var (x, lean) in new[] { (60f, -10f), (90f, 0f), (120f, 10f) })
+            {
+                DrawLine(new(x, 128), new(x + lean, 56), new Color("c9b45a"), 6, true);
+                for (int i = 0; i < 5; i++)
+                {
+                    float y = 56 - i * 11;
+                    Oval(new(x + lean - 7, y + 4), new(6, 9), new("f2c64a"));
+                    Oval(new(x + lean + 7, y + 4), new(6, 9), new("e0b23a"));
+                }
+                Oval(new(x + lean, 6), new(6, 10), new("f7dc7a"));
+            }
+        }
+        else if (Icon == "bread")
+        {
+            // A round loaf with three cuts on top and a long loaf behind it.
+            DrawLine(new(40, 96), new(140, 56), ink, 30, true);
+            DrawLine(new(40, 96), new(140, 56), new Color("c27a2c"), 24, true);
+            Oval(new(90, 96), new(54, 38), ink);
+            Oval(new(90, 94), new(50, 34), new("c27a2c"));
+            Oval(new(86, 88), new(40, 24), new("e8b062"));
+            foreach (int x in new[] { 66, 88, 110 })
+                DrawLine(new(x - 6, 76), new(x + 6, 100), new Color("b8732a"), 5, true);
         }
         else if (Icon == "binoculars")
         {

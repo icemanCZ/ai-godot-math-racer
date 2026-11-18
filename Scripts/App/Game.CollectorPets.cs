@@ -48,7 +48,7 @@ public partial class Game
     /// <summary>Takes the pets of the world from a restored game: who is owned, who was switched off, where each stands.</summary>
     private void RestoreWorldPets(SaveData data)
     {
-        world.Tally.Restore(data.Hauls.Raw, data.Hauls.Works);
+        world.Tally.Restore(data.Hauls.Raw, data.Hauls.Works, data.Hauls.Wheat, data.Hauls.Baked);
         earnedPets.Clear();
         foreach (var pet in world.WorldPets)
         {

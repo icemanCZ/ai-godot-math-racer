@@ -70,6 +70,7 @@ internal static class DiagnosticSuites
         new("golem-checks", (g, w, v) => new GolemChecks(g, w, v), Seeds: Seed42),
         new("ford-checks", (g, w, v) => new FordChecks(g, w, v), Seeds: ThreeSeeds),
         new("works-checks", (g, w, v) => new WorksChecks(g, w, v), Seeds: ThreeSeeds),
+        new("bakery-checks", (g, w, v) => new BakeryChecks(g, w, v), Seeds: ThreeSeeds),
         new("build-checks", (g, w, v) => new BuildChecks(g, w, v), Seeds: ThreeSeeds),
         new("plot-checks", (g, w, v) => new PlotChecks(g, w, v), Seeds: ThreeSeeds),
         new(

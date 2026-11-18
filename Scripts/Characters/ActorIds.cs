@@ -60,4 +60,10 @@ internal static class ActorIds
 
     /// <summary>The worker of the glassworks, which a valley gets after everything else (no actor has an ID between).</summary>
     public const int Glassworks = LastPlotResident + 1;
+
+    /// <summary>The worker of the bakery, the fifth works, which a valley with a wheat field gets after the glassworks.</summary>
+    public const int Bakery = Glassworks + 1;
+
+    /// <summary>The farmer at the wheat field outside the village, who loads the trailer for the bakery.</summary>
+    public const int FieldFarmer = Bakery + 1;
 }

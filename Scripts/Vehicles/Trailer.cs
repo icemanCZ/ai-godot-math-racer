@@ -77,12 +77,56 @@ internal static class TrailerModel
         parts.Piles[(int)HaulLoad.Capstone] = Capstone();
         parts.Piles[(int)HaulLoad.Flag] = FlagPole();
         parts.Piles[(int)HaulLoad.Glass] = GlassCrates();
+        parts.Piles[(int)HaulLoad.Wheat] = WheatSacks();
+        parts.Piles[(int)HaulLoad.Bread] = BreadCrates();
         foreach (var pile in parts.Piles)
         {
             pile.Visible = false;
             parts.Load.AddChild(pile);
         }
         return parts;
+    }
+
+    /// <summary>Six sacks of wheat tied at the neck: four below and two on top.</summary>
+    private static Node3D WheatSacks()
+    {
+        var sacks = new Node3D { Name = "Wheat" };
+        string[] colors = { "e8dcc0", "dccfae", "efe4c8" };
+        for (int i = 0; i < 6; i++)
+        {
+            bool top = i >= 4;
+            float x = top ? (i - 4) * .5f - .25f : -.5f + (i % 2) * 1f;
+            float z = top ? 0 : i / 2 * .8f - .4f;
+            float y = top ? .5f : 0;
+            Art.Ball(sacks, new(x, y + .27f, z), new(.4f, .3f, .34f), colors[i % 3]);
+            Art.Ball(sacks, new(x, y + .56f, z), new(.14f, .1f, .12f), "c9b78e");
+            Art.Block(sacks, new(x, y + .47f, z), new(.24f, .03f, .2f), "b8895f");
+        }
+        return sacks;
+    }
+
+    /// <summary>Two baskets of golden loaves on the bed.</summary>
+    private static Node3D BreadCrates()
+    {
+        var crates = new Node3D { Name = "Bread" };
+        foreach (float z in new[] { -.45f, .45f })
+        {
+            Art.Block(crates, new(0, .1f, z), new(1.3f, .16f, .8f), "8d6a46");
+            Art.Block(crates, new(0, .24f, z - .38f), new(1.3f, .14f, .05f), "a77a59");
+            Art.Block(crates, new(0, .24f, z + .38f), new(1.3f, .14f, .05f), "a77a59");
+            for (int i = 0; i < 4; i++)
+            {
+                float x = -.42f + i * .28f;
+                Art.Ball(
+                    crates,
+                    new(x, .34f, z - (i % 2) * .12f + .06f),
+                    new(.17f, .13f, .17f),
+                    i % 2 == 0 ? "d9923f" : "c27a2c"
+                );
+                Art.Ball(crates, new(x, .43f, z - (i % 2) * .12f + .06f), new(.11f, .06f, .11f), "e8b062");
+            }
+        }
+        return crates;
     }
 
     /// <summary>Two trays of pale-blue tumblers stand on the bed.</summary>

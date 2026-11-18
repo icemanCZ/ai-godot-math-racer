@@ -269,6 +269,7 @@ public partial class Game
         foreach (var works in world.Industry)
             works.SetStock(data.Buildings.WorksStock[works.Site.Index]);
         world.Glassworks?.SetStock(data.Buildings.GlassStock);
+        world.Bakery?.SetStock(data.Buildings.BreadStock);
         world.Village.RestorePlots(data.Buildings.PlotStages!);
         trailer.SetLoad(null);
         if (data.Task.Trip is { } saved && TripTarget(saved) is { } target)
@@ -328,6 +329,8 @@ public partial class Game
                 HaulLoad.Bricks => Texts.JedSVozikemProCihlyDo,
                 HaulLoad.Gravel => Texts.JedSVozikemProSterkDo,
                 HaulLoad.Glass => Texts.JedSVozikemProSklenickyDo,
+                HaulLoad.Bread => Texts.JedSVozikemProChlebDo,
+                HaulLoad.Wheat => Texts.JedSVozikemProObiliNa,
                 HaulLoad.Fabric => Texts.JedSVozikemProLatkuK,
                 HaulLoad.Capstone => Texts.JedSVozikemProKamenKe,
                 HaulLoad.Flag => Texts.JedSVozikemProVlajeckuK,

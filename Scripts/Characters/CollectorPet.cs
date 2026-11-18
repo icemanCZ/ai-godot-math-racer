@@ -30,6 +30,10 @@ internal enum CollectorPetKind
     Bridge,
     Mill,
     Tower,
+
+    // The wheat field and the bakery, the fifth chain of hauling.
+    Wheat,
+    Bakery,
 }
 
 internal sealed partial class CollectorPet : Node3D

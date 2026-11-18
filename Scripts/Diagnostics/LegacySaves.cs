@@ -75,7 +75,7 @@ internal static class LegacySaves
 
     /// <summary>
     /// Fields that were added to version 5 after its committed saves were made, and that the flat saves never had: the
-    /// counts of hauled loads, the glassworks' stock and the houses that were given glasses. Each has a default, so a file
+    /// counts of hauled loads, the glassworks' stock and the houses that were given glasses, the bakery's loaves and the houses that were given bread. Each has a default, so a file
     /// without it loads as before and the game writes it from then on. A new optional field of the current version is
     /// listed here, with the section it belongs to, instead of changing a committed save.
     /// </summary>
@@ -85,6 +85,10 @@ internal static class LegacySaves
         ("Hauls", "Works"),
         ("Buildings", "GlassStock"),
         ("Village", "Glazed"),
+        ("Hauls", "Wheat"),
+        ("Hauls", "Baked"),
+        ("Buildings", "BreadStock"),
+        ("Village", "Baked"),
     };
 
     /// <summary>

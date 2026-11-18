@@ -25,21 +25,31 @@ public enum HaulLoad
 
     /// <summary>Glasses made from sand at the glassworks, hauled from its yard to a resident's house.</summary>
     Glass = 10,
+
+    /// <summary>Wheat from the farmer's field, hauled to the bakery.</summary>
+    Wheat = 11,
+
+    /// <summary>Loaves of bread baked at the bakery, hauled from its yard to a resident's house.</summary>
+    Bread = 12,
 }
 
 internal static class HaulLoads
 {
     public static bool IsGoods(HaulLoad load) =>
-        load is HaulLoad.Planks or HaulLoad.Bricks or HaulLoad.Gravel or HaulLoad.Glass;
+        load is HaulLoad.Planks or HaulLoad.Bricks or HaulLoad.Gravel or HaulLoad.Glass or HaulLoad.Bread;
 
     public static bool IsSpecial(HaulLoad load) => load is HaulLoad.Fabric or HaulLoad.Capstone or HaulLoad.Flag;
 
     /// <summary>The works that makes a goods load, in <see cref="Product"/> order.</summary>
     public static Product ProductOf(HaulLoad load) =>
-        load == HaulLoad.Glass ? Product.Glass : (Product)(load - HaulLoad.Planks);
+        load == HaulLoad.Glass ? Product.Glass
+        : load == HaulLoad.Bread ? Product.Bread
+        : (Product)(load - HaulLoad.Planks);
 
     public static HaulLoad GoodsOf(Product product) =>
-        product == Product.Glass ? HaulLoad.Glass : HaulLoad.Planks + (int)product;
+        product == Product.Glass ? HaulLoad.Glass
+        : product == Product.Bread ? HaulLoad.Bread
+        : HaulLoad.Planks + (int)product;
 }
 
 /// <summary>One delivery to a building: what is carried and whether it goes to the far bank of the river.</summary>

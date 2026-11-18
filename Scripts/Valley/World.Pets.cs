@@ -32,7 +32,7 @@ public partial class World
             AddWorldPet(pet);
         }
 
-        foreach (var load in new[] { HaulLoad.Logs, HaulLoad.Stones, HaulLoad.Soil, HaulLoad.Sand })
+        foreach (var load in new[] { HaulLoad.Logs, HaulLoad.Stones, HaulLoad.Soil, HaulLoad.Sand, HaulLoad.Wheat })
             Add(
                 WorldPetCatalog.ForSource(load),
                 SourceWorker(load) ?? ExtraSourceWorker(load),

@@ -283,7 +283,9 @@ public partial class ContractChecks : Node
                 && ActorIds.LastSource == 57
                 && ActorIds.FirstPlotResident == 58
                 && ActorIds.LastPlotResident == 63
-                && ActorIds.Glassworks == 64,
+                && ActorIds.Glassworks == 64
+                && ActorIds.Bakery == 65
+                && ActorIds.FieldFarmer == 66,
             "the actor ID ranges are the ones saved games use"
         );
 
@@ -306,8 +308,10 @@ public partial class ContractChecks : Node
                 : id == World.WitchId ? nameof(WitchRole)
                 : id == World.SorcererId ? nameof(SorcererRole)
                 : World.IsBuilder(id) ? nameof(BuilderRole)
-                : id >= World.FirstWorksId && id <= World.LastWorksId || id == World.GlassworksId ? nameof(WorksRole)
-                : id >= World.FirstSourceId && id <= World.LastSourceId ? nameof(SourceRole)
+                : id >= World.FirstWorksId && id <= World.LastWorksId || id is World.GlassworksId or World.BakeryId
+                    ? nameof(WorksRole)
+                : id >= World.FirstSourceId && id <= World.LastSourceId || id == World.FieldFarmerId
+                    ? nameof(SourceRole)
                 : World.IsPlotResident(id) ? nameof(PlotResidentRole)
                 : "(no actor may have this ID)";
             Check(actor.Role.GetType().Name == expected, $"ID {id} ({actor.DisplayName}) is a {expected}");
@@ -319,7 +323,12 @@ public partial class ContractChecks : Node
                 Check(builder.Project == World.BuilderProject(id), $"builder ID {id} builds project {builder.Project}");
             if (actor.Role is WorksRole works)
                 Check(
-                    works.Index == (id == World.GlassworksId ? WorksCatalog.GlassIndex : id - World.FirstWorksId),
+                    works.Index
+                        == (
+                            id == World.GlassworksId ? WorksCatalog.GlassIndex
+                            : id == World.BakeryId ? WorksCatalog.BreadIndex
+                            : id - World.FirstWorksId
+                        ),
                     $"works worker ID {id} serves works {works.Index}"
                 );
             if (actor.Role is PlotResidentRole plot)

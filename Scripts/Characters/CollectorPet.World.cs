@@ -39,6 +39,9 @@ internal static class WorldPetCatalog
         "20 vyrobených skleniček"
     );
 
+    public static readonly WorldPetSpec Wheat = new(CollectorPetKind.Wheat, "Zrníčko", "10 odvezených nákladů obilí");
+    public static readonly WorldPetSpec Bakery = new(CollectorPetKind.Bakery, "Housánek", "20 upečených chlebů");
+
     public static readonly WorldPetSpec Bridge = new(CollectorPetKind.Bridge, "Mostíček", "dostavěný most");
     public static readonly WorldPetSpec Mill = new(CollectorPetKind.Mill, "Mlýnek", "dostavěný mlýn");
     public static readonly WorldPetSpec Tower = new(CollectorPetKind.Tower, "Věžička", "dostavěnou rozhlednu");
@@ -49,6 +52,7 @@ internal static class WorldPetCatalog
             HaulLoad.Stones => Stones,
             HaulLoad.Soil => Soil,
             HaulLoad.Sand => Sand,
+            HaulLoad.Wheat => Wheat,
             _ => Logs,
         };
 
@@ -59,6 +63,7 @@ internal static class WorldPetCatalog
             (int)Product.Planks => Sawmill,
             (int)Product.Bricks => Brickworks,
             (int)Product.Gravel => GravelWorks,
+            (int)Product.Bread => Bakery,
             _ => Glassworks,
         };
 
@@ -116,6 +121,12 @@ internal sealed partial class CollectorPet
                 break;
             case CollectorPetKind.Glassworks:
                 BuildGlass();
+                break;
+            case CollectorPetKind.Wheat:
+                BuildSheaf();
+                break;
+            case CollectorPetKind.Bakery:
+                BuildBun();
                 break;
             case CollectorPetKind.Bridge:
                 BuildBridge();
@@ -248,6 +259,36 @@ internal sealed partial class CollectorPet
             Foot(new(side * .15f, .22f, .02f), .22f, .12f, "9ec4d2", side);
         Eyes(.11f, .72f, .26f);
         Smile(.56f, .275f, .08f);
+    }
+
+    private void BuildSheaf()
+    {
+        // A little golden sheaf tied with a red ribbon, a face on the bundle and ears of wheat sticking out of the top.
+        Art.Cylinder(model, new(0, .42f, 0), .3f, .22f, .78f, "e2bd5a");
+        Art.Ball(model, new(0, .82f, 0), new(.3f, .12f, .27f), "d9b84a");
+        Art.Block(model, new(0, .52f, 0), new(.58f, .09f, .52f), "d9604f");
+        foreach (float lean in new[] { -.35f, 0, .35f })
+        {
+            var ear = Art.Ball(model, new(lean * .35f, 1.06f, 0), new(.07f, .2f, .07f), "f2c64a");
+            ear.RotateZ(-lean);
+        }
+        foreach (int side in new[] { -1, 1 })
+            Foot(new(side * .15f, .2f, .02f), .22f, .12f, "c9a13f", side);
+        Eyes(.11f, .66f, .27f);
+        Smile(.52f, .29f, .08f);
+    }
+
+    private void BuildBun()
+    {
+        // A plump round bun with a shiny top and two cuts, a face on its front and rosy cheeks.
+        Art.Ball(model, new(0, .46f, 0), new(.58f, .44f, .54f), "c27a2c");
+        Art.Ball(model, new(0, .58f, -.02f), new(.5f, .3f, .46f), "e0a04a");
+        Art.Ball(model, new(-.14f, .84f, 0), new(.09f, .03f, .2f), "b8732a").RotateY(.5f);
+        Art.Ball(model, new(.14f, .84f, 0), new(.09f, .03f, .2f), "b8732a").RotateY(-.5f);
+        foreach (int side in new[] { -1, 1 })
+            Foot(new(side * .2f, .16f, .02f), .22f, .12f, "9c5f1e", side);
+        Eyes(.13f, .52f, .3f);
+        Smile(.4f, .32f, .09f);
     }
 
     private void BuildBridge()

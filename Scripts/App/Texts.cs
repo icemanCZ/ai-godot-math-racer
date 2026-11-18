@@ -186,6 +186,7 @@ internal static class Texts
     public const string Noc = "Hvězdná noc";
 
     // GameUi.Works
+    public const string Pole = "Pole";
     public const string Hliniste = "Hliniště";
     public const string Piskovna = "Pískovna";
     public const string Klady = "Klády";
@@ -260,6 +261,17 @@ internal static class Texts
     public const string JedSVozikemProSklenickyDo = "Jeď s vozíkem pro skleničky do sklárny.";
 
     public static string GlassesParty(int coins) => $"Oslava domečku!  +{coins}  ·  Skleničky";
+
+    public const string HouseNeedsBread = "Chystám snídani pro celou rodinu! Přivezeš mi voňavý chléb z pekárny?";
+
+    public const string HouseNeedsBreadButNone =
+        "Chystám snídani, ale v pekárně ještě žádný chléb nemají. Pošlu tě na pole pro obilí!";
+
+    public const string JedSVozikemProChlebDo = "Jeď s vozíkem pro čerstvý chléb do pekárny.";
+
+    public const string JedSVozikemProObiliNa = "Jeď s vozíkem na pole pro obilí. Pak ho odvezeš do pekárny.";
+
+    public static string BreadParty(int coins) => $"Snídaně u domečku!  +{coins}  ·  Chléb";
 
     public static string NewUpgrade(string upgrade) => $"Nové vylepšení: {upgrade}";
 

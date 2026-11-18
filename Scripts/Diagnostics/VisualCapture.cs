@@ -380,6 +380,27 @@ public partial class VisualCapture : Node
             camera.Position = site.Position - site.Inward * 15 + right * 13 + Vector3.Up * 11;
             camera.LookAt(site.Position + site.Inward * 8 + right * 2 + Vector3.Up * 1.5f);
         }
+        else if (view == "pekarna" && world.Bakery is { } bakery)
+        {
+            camera.SetProcess(false);
+            bakery.SetStock(8);
+            var site = bakery.Site;
+            var right = Vector3.Up.Cross(site.Inward);
+            camera.Position = site.Position - site.Inward * 15 + right * 13 + Vector3.Up * 11;
+            camera.LookAt(site.Position + site.Inward * 8 + right * 2 + Vector3.Up * 1.5f);
+        }
+        else if (view is "wheat-farm" or "wheat-farm-far" && world.Farm is { } farm)
+        {
+            // The loading ring, the sacks, the barn and the four fields, from the road side and from above.
+            camera.SetProcess(false);
+            car.Active = false;
+            var site = farm.Site;
+            var right = Vector3.Up.Cross(site.Inward);
+            bool far = view == "wheat-farm-far";
+            camera.Position =
+                site.Position - site.Inward * (far ? 30 : 17) + right * (far ? 24 : 13) + Vector3.Up * (far ? 26 : 12);
+            camera.LookAt(site.Position + site.Inward * 12 + Vector3.Up);
+        }
         else if (view == "log-yard" && world.LogYard is { } yard)
         {
             camera.SetProcess(false);
