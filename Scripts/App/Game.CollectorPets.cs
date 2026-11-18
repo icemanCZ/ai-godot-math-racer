@@ -49,6 +49,8 @@ public partial class Game
     private void RestoreWorldPets(SaveData data)
     {
         world.Tally.Restore(data.Hauls.Raw, data.Hauls.Works, data.Hauls.Wheat, data.Hauls.Baked);
+        world.Hidden.Restore(data.Hidden.Found);
+        ui.HiddenCount(world.Hidden);
         earnedPets.Clear();
         foreach (var pet in world.WorldPets)
         {

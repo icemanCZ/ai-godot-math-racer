@@ -89,6 +89,7 @@ internal static class LegacySaves
         ("Hauls", "Baked"),
         ("Buildings", "BreadStock"),
         ("Village", "Baked"),
+        ("Hidden", "Found"),
     };
 
     /// <summary>

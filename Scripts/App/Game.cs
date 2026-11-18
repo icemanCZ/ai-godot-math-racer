@@ -119,6 +119,7 @@ public partial class Game : Node3D
         SetupGolem();
         SetupTrailer();
         ui.AnimalCount(RemainingAnimals, world.Animals.Length);
+        ui.HiddenCount(world.Hidden);
 
         persistenceReady = true;
         bool skipTitle = false;

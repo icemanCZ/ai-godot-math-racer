@@ -178,6 +178,7 @@ public partial class Game
                 Wheat = world.Tally.Wheat,
                 Baked = world.Tally.Baked,
             },
+            Hidden = new HiddenSave { Found = world.Hidden.FoundIndices() },
         };
 
     internal void RestoreProgress(SaveData data)

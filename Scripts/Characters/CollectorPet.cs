@@ -34,6 +34,11 @@ internal enum CollectorPetKind
     // The wheat field and the bakery, the fifth chain of hauling.
     Wheat,
     Bakery,
+
+    // The small friends who hide beside the roads: all eight of a kind found.
+    Ladybug,
+    Hedgehog,
+    Frog,
 }
 
 internal sealed partial class CollectorPet : Node3D

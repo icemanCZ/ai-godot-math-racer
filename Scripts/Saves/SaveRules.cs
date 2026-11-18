@@ -35,6 +35,7 @@ internal static class SaveRules
         ("hauled loads", HasInvalidHauls),
         ("glassworks and glazed houses", HasInvalidGlass),
         ("bakery and houses given bread", HasInvalidBread),
+        ("small friends found", HasInvalidHidden),
         ("trailer trip", HasInvalidTrip),
         ("expedition cargo", HasInvalidPickupCount),
     };
@@ -52,7 +53,8 @@ internal static class SaveRules
         || data.Postcards is null
         || data.Events is null
         || data.Bandits is null
-        || data.Hauls is null;
+        || data.Hauls is null
+        || data.Hidden is null;
 
     /// <summary>Throws when the save is not one the game can restore.</summary>
     internal static void Validate(SaveData data)
@@ -453,6 +455,13 @@ internal static class SaveRules
             .Any(house =>
                 data.Village.Baked[house] && (!data.Village.Glazed[house] || data.Village.HouseLevels[house] < 10)
             );
+
+    /// <summary>The found friends are numbers of the friends that exist, each listed once.</summary>
+    private static bool HasInvalidHidden(SaveData data) =>
+        data.Hidden.Found == null
+        || data.Hidden.Found.Length > HiddenFriends.Total
+        || data.Hidden.Found.Any(index => index < 0 || index >= HiddenFriends.Total)
+        || data.Hidden.Found.Distinct().Count() != data.Hidden.Found.Length;
 
     /// <summary>The glass stock is within the yard, and only a finished house can have been given glasses.</summary>
     private static bool HasInvalidGlass(SaveData data) =>

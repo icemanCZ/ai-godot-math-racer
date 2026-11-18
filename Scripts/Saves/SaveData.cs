@@ -46,6 +46,15 @@ public sealed class SaveData
 
     /// <summary>The loads hauled so far, which earn the pets of the sources and the works. Added after version 5 began.</summary>
     public HaulsSave Hauls { get; set; } = new();
+
+    /// <summary>The small friends found so far, which earn their pets. Added after version 5 began.</summary>
+    public HiddenSave Hidden { get; set; } = new();
+}
+
+/// <summary>The ladybugs, hedgehogs and frogs found beside the roads, by their numbers (the order they were placed in).</summary>
+public sealed class HiddenSave
+{
+    public int[] Found { get; set; } = Array.Empty<int>();
 }
 
 /// <summary>The car: where it stands and how it looks.</summary>

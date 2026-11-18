@@ -50,6 +50,7 @@ public partial class Game
         foreach (var animal in world.Animals)
             if (animal.RewardAvailable)
                 animal.Ping(RadarSeconds);
+        world.Hidden.Ping(RadarSeconds);
         tower.Builder.Celebrate();
         if (starry)
         {
@@ -58,7 +59,10 @@ public partial class Game
             Speak(Texts.Souhvezdi(picture.Name, picture.Stars.Length), tower.Builder);
         }
         else
-            Speak(Texts.PodivejSeCoVsechnoJeV, tower.Builder);
+        {
+            int remaining = HiddenFriends.Total - world.Hidden.FoundCount;
+            Speak(remaining > 0 ? Texts.PodivejSeKdoSeSchovava(remaining) : Texts.PodivejSeCoVsechnoJeV, tower.Builder);
+        }
     }
 
     private void TickLookout(float delta)

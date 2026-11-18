@@ -1,3 +1,5 @@
+using MathRacer.Valley;
+
 namespace MathRacer.App;
 
 /// <summary>
@@ -45,6 +47,34 @@ internal static class Texts
     // Game.Lookout
     public const string PodivejSeCoVsechnoJeV =
         "Podívej se, co všechno je v údolí! Zlaté sloupy ukazují mince a modré kamarády.";
+
+    // Game.Hidden: the small friends who hide beside the roads
+    public static string HiddenName(HiddenKind kind) =>
+        kind switch
+        {
+            HiddenKind.Ladybug => "Beruška",
+            HiddenKind.Hedgehog => "Ježek",
+            _ => "Žabka",
+        };
+
+    public static string Pst(string name) => $"Pšt! {name}!";
+
+    public static string HiddenFoundSpeech(string name, int count, int total) =>
+        $"Pšt! Tady je {name}! Už jich máš {count} z {total}.";
+
+    public static string HiddenAllOfKind(HiddenKind kind, int total) =>
+        kind switch
+        {
+            HiddenKind.Ladybug => $"Našel jsi všech {total} berušek!",
+            HiddenKind.Hedgehog => $"Našel jsi všech {total} ježků!",
+            _ => $"Našel jsi všech {total} žabek!",
+        };
+
+    public static string HiddenNotebook(int ladybugs, int hedgehogs, int frogs, int total) =>
+        $"Berušky {ladybugs}/{total} · Ježci {hedgehogs}/{total} · Žabky {frogs}/{total}";
+
+    public static string PodivejSeKdoSeSchovava(int remaining) =>
+        $"Podívej se z věže! Oranžové sloupy ukazují, kde se schovávají kamarádi. Ještě jich hledáš {remaining}.";
 
     public static string Souhvezdi(string name, int stars) =>
         $"Podívej, hvězdy! Souhvězdí {name}.\nSpočítej si je: má {stars} hvězdiček.";

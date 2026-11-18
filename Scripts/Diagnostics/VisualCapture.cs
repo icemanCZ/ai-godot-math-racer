@@ -401,6 +401,44 @@ public partial class VisualCapture : Node
                 site.Position - site.Inward * (far ? 30 : 17) + right * (far ? 24 : 13) + Vector3.Up * (far ? 26 : 12);
             camera.LookAt(site.Position + site.Inward * 12 + Vector3.Up);
         }
+        else if (view is "hidden-ladybug" or "hidden-hedgehog" or "hidden-frog")
+        {
+            // A close look at one friend who hides, from the road side.
+            camera.SetProcess(false);
+            car.Active = false;
+            var kind = view switch
+            {
+                "hidden-ladybug" => HiddenKind.Ladybug,
+                "hidden-hedgehog" => HiddenKind.Hedgehog,
+                _ => HiddenKind.Frog,
+            };
+            var friend = world.Hidden.Friends.First(f => f.Kind == kind);
+            camera.Position =
+                friend.Position + friend.Transform.Basis.Z * 2.6f + friend.Transform.Basis.X * 1.4f + Vector3.Up * 1.4f;
+            camera.LookAt(friend.Position + Vector3.Up * .6f);
+        }
+        else if (view == "hidden-near")
+        {
+            // The car drives towards a friend: the question mark grows over it and the notebook is in the corner.
+            var friend = world.Hidden.Friends[0];
+            var road = world.Routes.Samples.OrderBy(s => (s - friend.Position).Length()).First();
+            var toFriend = friend.Position - road;
+            toFriend.Y = 0;
+            car.SetPose(
+                world.Ground.At(road.X - toFriend.X * 1.2f, road.Z - toFriend.Z * 1.2f, .15f),
+                Mathf.Atan2(-toFriend.X, -toFriend.Z)
+            );
+            camera.Snap();
+        }
+        else if (view == "hidden-pets")
+        {
+            // The three pets that wait around the witch until their friends are all found.
+            camera.SetProcess(false);
+            car.Active = false;
+            var witch = world.Witch;
+            camera.Position = witch.Position + witch.Basis * new Vector3(0, 2.6f, 9);
+            camera.LookAt(witch.Position + witch.Basis * new Vector3(0, 1.1f, 1.2f));
+        }
         else if (view == "log-yard" && world.LogYard is { } yard)
         {
             camera.SetProcess(false);

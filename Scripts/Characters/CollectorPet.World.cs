@@ -46,6 +46,28 @@ internal static class WorldPetCatalog
     public static readonly WorldPetSpec Mill = new(CollectorPetKind.Mill, "Mlýnek", "dostavěný mlýn");
     public static readonly WorldPetSpec Tower = new(CollectorPetKind.Tower, "Věžička", "dostavěnou rozhlednu");
 
+    // The small friends who hide beside the roads: finding all eight of a kind earns that animal.
+    public static readonly WorldPetSpec Ladybug = new(
+        CollectorPetKind.Ladybug,
+        "Beruška Tečka",
+        "8 nalezených berušek"
+    );
+    public static readonly WorldPetSpec Hedgehog = new(
+        CollectorPetKind.Hedgehog,
+        "Ježek Bodlínek",
+        "8 nalezených ježků"
+    );
+    public static readonly WorldPetSpec Frog = new(CollectorPetKind.Frog, "Žabka Kvákalka", "8 nalezených žabek");
+
+    /// <summary>The pet of a kind of hidden friend, in the order ladybug, hedgehog, frog.</summary>
+    public static WorldPetSpec ForHidden(int kind) =>
+        kind switch
+        {
+            0 => Ladybug,
+            1 => Hedgehog,
+            _ => Frog,
+        };
+
     public static WorldPetSpec ForSource(HaulLoad load) =>
         load switch
         {
@@ -128,6 +150,15 @@ internal sealed partial class CollectorPet
             case CollectorPetKind.Bakery:
                 BuildBun();
                 break;
+            case CollectorPetKind.Ladybug:
+                BuildLadybug();
+                break;
+            case CollectorPetKind.Hedgehog:
+                BuildHedgehog();
+                break;
+            case CollectorPetKind.Frog:
+                BuildFrog();
+                break;
             case CollectorPetKind.Bridge:
                 BuildBridge();
                 break;
@@ -139,6 +170,10 @@ internal sealed partial class CollectorPet
                 break;
         }
     }
+
+    /// <summary>A ball of the given full size (the spheres of <see cref="Art"/> are scaled by their radius).</summary>
+    private MeshInstance3D Ball(Vector3 position, Vector3 size, string color) =>
+        Art.Ball(model, position, size * .5f, color);
 
     /// <summary>A smile and rosy cheeks on the front of a body; <paramref name="z"/> is the surface they sit on.</summary>
     private void Smile(float y, float z, float width = .1f)
@@ -289,6 +324,81 @@ internal sealed partial class CollectorPet
             Foot(new(side * .2f, .16f, .02f), .22f, .12f, "9c5f1e", side);
         Eyes(.13f, .52f, .3f);
         Smile(.4f, .32f, .09f);
+    }
+
+    private void BuildLadybug()
+    {
+        // A red dome with black spots and a cream face on the front, two antennae and little black feet.
+        Ball(new(0, .5f, -.04f), new(.86f, .72f, .8f), "d93a30");
+        foreach (
+            var (x, z, s) in new[] { (-.22f, -.1f, .15f), (.22f, -.12f, .15f), (0f, -.28f, .13f), (0f, .02f, .11f) }
+        )
+        {
+            float y =
+                .5f + .36f * Mathf.Sqrt(Mathf.Max(0, 1 - Mathf.Pow(x / .43f, 2) - Mathf.Pow((z + .04f) / .4f, 2)));
+            Ball(new(x, y - .015f, z), new(s, s * .4f, s), "2b2b33");
+        }
+        Ball(new(0, .42f, .26f), new(.6f, .46f, .34f), "fff1d6");
+        foreach (int side in new[] { -1, 1 })
+        {
+            var antenna = Art.Cylinder(model, new(side * .12f, .95f, .24f), .015f, .015f, .3f, "2b2b33");
+            antenna.RotationDegrees = new(-10, 0, side * -22);
+            Ball(new(side * .2f, 1.08f, .25f), Vector3.One * .07f, "2b2b33");
+            Foot(new(side * .2f, .24f, .02f), .24f, .13f, "2b2b33", side);
+        }
+        Eyes(.12f, .5f, .4f);
+        Smile(.37f, .42f, .07f);
+    }
+
+    private void BuildHedgehog()
+    {
+        // A round brown body with a ring of dark spikes over the back and a cream face.
+        Ball(new(0, .5f, -.06f), new(.82f, .7f, .94f), "8a6446");
+        var center = new Vector3(0, .5f, -.06f);
+        var radii = new Vector3(.41f, .35f, .47f);
+        foreach (var (lift, count, turn) in new[] { (25f, 7, 0f), (55f, 8, .3f), (82f, 6, .1f) })
+        {
+            for (int i = 0; i < count; i++)
+            {
+                float around = turn + i * Mathf.Tau / count;
+                float flat = Mathf.Cos(Mathf.DegToRad(lift));
+                var dir = new Vector3(
+                    Mathf.Sin(around) * flat,
+                    Mathf.Sin(Mathf.DegToRad(lift)),
+                    Mathf.Cos(around) * flat
+                );
+                if (dir.Z > .35f && dir.Y < .85f)
+                    continue;
+                var surface = center + new Vector3(dir.X * radii.X, dir.Y * radii.Y, dir.Z * radii.Z);
+                var spike = Art.Cylinder(model, surface + dir * .08f, .07f, 0, .3f, "4d3829");
+                spike.Basis = new Basis(new Quaternion(Vector3.Up, dir.Normalized()));
+            }
+        }
+        Ball(new(0, .4f, .42f), new(.44f, .36f, .38f), "f0d7b6");
+        Ball(new(0, .43f, .62f), new(.12f, .09f, .08f), "34404a");
+        foreach (int side in new[] { -1, 1 })
+        {
+            Ball(new(side * .22f, .72f, .36f), new(.14f, .16f, .09f), "8a6446");
+            Foot(new(side * .18f, .22f, .1f), .22f, .12f, "d9bd98", side);
+        }
+        Eyes(.11f, .5f, .56f);
+        Smile(.33f, .59f, .06f);
+    }
+
+    private void BuildFrog()
+    {
+        // A green frog with big eyes on top, a pale belly and a wide smile.
+        Ball(new(0, .44f, 0), new(.8f, .6f, .76f), "6cbf5a");
+        Ball(new(0, .34f, .2f), new(.56f, .4f, .4f), "d9f2a8");
+        foreach (int side in new[] { -1, 1 })
+        {
+            Ball(new(side * .22f, .8f, .18f), Vector3.One * .3f, "6cbf5a");
+            Ball(new(side * .22f, .84f, .26f), Vector3.One * .22f, "fffaf0");
+            Ball(new(side * .22f, .84f, .37f), new(.11f, .13f, .07f), "34404a");
+            Ball(new(side * .3f, .46f, .44f), new(.12f, .07f, .04f), "f4a29b");
+            Foot(new(side * .26f, .26f, .08f), .26f, .14f, "5aa84b", side);
+        }
+        Ball(new(0, .4f, .42f), new(.4f, .04f, .05f), "7a3a3a");
     }
 
     private void BuildBridge()
