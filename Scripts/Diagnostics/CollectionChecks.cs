@@ -172,11 +172,13 @@ public partial class CollectionChecks : Node
                     && game.RemainingDeliveries == deliveries,
                 "all four collections and roadside quests remain independent"
             );
-            var oldSave = JsonNode.Parse(JsonSerializer.Serialize(game.CaptureProgress()))!;
-            oldSave.AsObject().Remove("GemCount");
-            oldSave.AsObject().Remove("ToyCount");
-            File.WriteAllText(path, oldSave.ToJsonString());
-            Check(SaveStore.Read(path) is { GemCount: 0, ToyCount: 0 }, "older saves start with empty new collections");
+            var oldSave = LegacySaves.FromCurrent(game.CaptureProgress(), 3);
+            oldSave.Remove("GemCount");
+            oldSave.Remove("ToyCount");
+            Check(
+                LegacySaves.Read(oldSave) is { Village: { GemCount: 0, ToyCount: 0 } },
+                "older saves start with empty new collections"
+            );
             GD.Print("COLLECTION_CHECKS_PASSED");
             GetTree().Quit();
         }

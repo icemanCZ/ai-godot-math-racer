@@ -242,7 +242,7 @@ public partial class PlotChecks : Node
             Check(!Has("StartPlotTrip"), "talking to the newcomer during the trip starts no second one");
             game.FinishInteraction();
             var withoutTrip = game.CaptureProgress();
-            withoutTrip.Trip = null;
+            withoutTrip.Task.Trip = null;
             game.RestoreProgress(withoutTrip);
             Check(game.Haul == null && trailer.Load == null, "a save without the trip ends it");
 
@@ -354,15 +354,11 @@ public partial class PlotChecks : Node
             RoundTrip("all six houses finished");
 
             // ---- Saves ----
-            var oldSave = JsonSerializer.SerializeToNode(game.CaptureProgress())!.AsObject();
+            var oldSave = LegacySaves.FromCurrent(game.CaptureProgress(), 3);
             oldSave.Remove("PlotStages");
-            oldSave.Remove("PlotTrip");
-            oldSave.Remove("PlotTripLoaded");
-            string oldPath = DiagnosticArtifacts.PathFor("plot-checks/old.json");
-            System.IO.File.WriteAllText(oldPath, oldSave.ToJsonString());
-            var old = SaveStore.Read(oldPath);
+            var old = LegacySaves.Read(oldSave);
             Check(
-                old != null && old.PlotStages.All(stage => stage == 0) && old.Trip == null,
+                old != null && old.Buildings.PlotStages.All(stage => stage == 0) && old.Task.Trip == null,
                 "a save from before the plots loads with empty plots"
             );
             game.RestoreProgress(old!);
@@ -372,38 +368,22 @@ public partial class PlotChecks : Node
                 "the newcomers wait again on empty plots"
             );
             Rejected(
-                data => data.PlotStages = new[] { 0, PlotPlans.Trips + 1, 0, 0, 0, 0 },
+                data => data.Buildings.PlotStages = new[] { 0, PlotPlans.Trips + 1, 0, 0, 0, 0 },
                 "a house with seven deliveries"
             );
-            Rejected(data => data.PlotStages = new[] { 0, 1 }, "progress for only two plots");
-            Rejected(data => data.PlotStages = null!, "no plot progress at all");
-            Rejected(data => data.PlotTrip = PlotPlans.Count, "a trip for a seventh plot");
+            Rejected(data => data.Buildings.PlotStages = new[] { 0, 1 }, "progress for only two plots");
+            Rejected(data => data.Buildings.PlotStages = null!, "no plot progress at all");
+            Rejected(
+                data => data.Task.Trip = new SavedTrip { Kind = TripKinds.Plot, Index = PlotPlans.Count },
+                "a trip for a seventh plot"
+            );
             Rejected(
                 data =>
                 {
-                    data.PlotStages = new[] { PlotPlans.Trips, 0, 0, 0, 0, 0 };
-                    data.PlotTrip = 0;
+                    data.Buildings.PlotStages = new[] { PlotPlans.Trips, 0, 0, 0, 0, 0 };
+                    data.Task.Trip = new SavedTrip { Kind = TripKinds.Plot, Index = 0 };
                 },
                 "a trip to a plot that has no delivery left"
-            );
-            Rejected(data => data.PlotTripLoaded = true, "a loaded trailer without a trip");
-            Rejected(
-                data =>
-                {
-                    data.PlotStages = new[] { 2, 0, 0, 0, 0, 0 };
-                    data.PlotTrip = 0;
-                    data.SupplyTrip = 0;
-                },
-                "a plot trip together with a supply trip"
-            );
-            Rejected(
-                data =>
-                {
-                    data.PlotStages = new[] { 2, 0, 0, 0, 0, 0 };
-                    data.PlotTrip = 0;
-                    data.HouseTrip = 0;
-                },
-                "a plot trip together with a house trip"
             );
             Rejected(
                 data =>

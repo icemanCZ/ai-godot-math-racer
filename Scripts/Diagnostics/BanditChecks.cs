@@ -14,13 +14,13 @@ public partial class BanditChecks(Game game, World world, Vehicle car) : Node
             await Frames(2);
             Check(game.BanditSiteCount >= 2, "the generated valley has multiple separated forest approaches");
             var initial = game.CaptureProgress();
-            initial.QuizTypes = QuizType.Math | QuizType.Reading;
-            initial.ThreeTermMath = true;
+            initial.Quiz.Types = QuizType.Math | QuizType.Reading;
+            initial.Quiz.ThreeTermMath = true;
             game.RestoreProgress(initial);
             game.OpenChallenge(world.Animals[0]);
             ChallengeChecks.Solve(game);
             game.SelectExpedition(false);
-            int sender = game.CaptureProgress().Sender;
+            int sender = game.CaptureProgress().Task.Sender;
 
             await Approach(0);
             var reading = game.CurrentChallenge as ReadingChallenge;
@@ -56,7 +56,7 @@ public partial class BanditChecks(Game game, World world, Vehicle car) : Node
             Check(IsQuestionAt(0, 2), "two solves leave the final question");
             ChallengeChecks.Solve(game);
             Check(
-                game.State == GameState.Exploring && car.Active && game.CaptureProgress().Sender == sender,
+                game.State == GameState.Exploring && car.Active && game.CaptureProgress().Task.Sender == sender,
                 "third solve sends the bandits away and resumes the expedition"
             );
             await Approach(1);
@@ -84,8 +84,8 @@ public partial class BanditChecks(Game game, World world, Vehicle car) : Node
         var save = game.CaptureProgress();
         return game.State == GameState.Challenge
             && save.Nearby == Game.BanditActorId
-            && save.BanditSite == site
-            && save.BanditSolved == solved;
+            && save.Bandits.Site == site
+            && save.Bandits.Solved == solved;
     }
 
     private async Task Approach(int index)

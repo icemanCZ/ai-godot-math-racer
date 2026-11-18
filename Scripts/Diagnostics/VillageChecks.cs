@@ -451,12 +451,11 @@ public partial class VillageChecks : Node
                     && game.OwnedRewards.Count == owned,
                 "village tasks preserve original animal visits, expedition counts and cosmetics"
             );
-            var oldJson = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(path))!;
+            var oldJson = LegacySaves.FromCurrent(SaveStore.Read(path)!, 3);
             oldJson["State"] = (int)GameState.Exploring;
-            oldJson.AsObject().Remove("HouseLevels");
-            File.WriteAllText(path, oldJson.ToJsonString());
+            oldJson.Remove("HouseLevels");
             Check(
-                SaveStore.Read(path)?.HouseLevels.All(l => l == 0) == true,
+                LegacySaves.Read(oldJson)?.Village.HouseLevels.All(l => l == 0) == true,
                 "old saves start with zero house upgrades"
             );
 
@@ -485,24 +484,13 @@ public partial class VillageChecks : Node
             int materialLevel = plan1.FindIndex(k => Village.MaterialOf(k) != null);
             village.RestoreLevels(new[] { quizLevel, materialLevel, 0, 0 });
             var clean = game.CaptureProgress();
-            Rejected(data => data.HouseTrip = 4, "a trip for a fifth house");
-            Rejected(data => data.HouseTripLoaded = true, "a loaded house trip without a house");
-            Rejected(data => data.HouseTrip = 0, "a house trip for a house whose next task is a quiz");
             Rejected(
-                data =>
-                {
-                    data.HouseTrip = 1;
-                    data.BuildTrip = BuildPlans.Bridge;
-                },
-                "a house trip together with a building trip"
+                data => data.Task.Trip = new SavedTrip { Kind = TripKinds.House, Index = 4 },
+                "a trip for a fifth house"
             );
             Rejected(
-                data =>
-                {
-                    data.HouseTrip = 1;
-                    data.SupplyTrip = 0;
-                },
-                "a house trip together with a supply trip"
+                data => data.Task.Trip = new SavedTrip { Kind = TripKinds.House, Index = 0 },
+                "a house trip for a house whose next task is a quiz"
             );
             Rejected(
                 data =>
@@ -522,10 +510,12 @@ public partial class VillageChecks : Node
             );
             var tripSave = Accepted(
                 data =>
-                {
-                    data.HouseTrip = 1;
-                    data.HouseTripLoaded = true;
-                },
+                    data.Task.Trip = new SavedTrip
+                    {
+                        Kind = TripKinds.House,
+                        Index = 1,
+                        Loaded = true,
+                    },
                 "a loaded house trip"
             );
             game.RestoreProgress(tripSave);
@@ -559,7 +549,7 @@ public partial class VillageChecks : Node
             Check(SaveStore.Write(staleQuiz, staleFile), "save written");
             var migrated = SaveStore.Read(staleFile);
             Check(
-                migrated is { State: GameState.Exploring, Nearby: -1, Challenge: null },
+                migrated is { State: GameState.Exploring, Nearby: -1, Quiz: { Challenge: null } },
                 "a house quiz saved before the house asked for goods goes back to driving"
             );
             game.FinishInteraction();

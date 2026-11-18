@@ -9,7 +9,7 @@ Each file is a save written by the game itself (`./run.ps1`-style launch with `-
 each situation a player can quit in: driving, every kind of quiz, an expedition at several points, every kind of
 trailer trip empty and loaded, each panel, a bandit encounter, a course run, and a save with a lot of progress.
 
-- `v3/` is the format of the game before the refactoring (`SaveData.CurrentVersion = 3`). The game now writes version 4 (`v4/`), and `--save-fixture-checks` loads both folders: a v3 file goes through the migrations, a v4 file loads as it is.
+- `v3/` is the format of the game before the refactoring (`SaveData.CurrentVersion = 3`), `v4/` the one with the trip as one object and `v5/` the one the game writes now, with a section for each part of the game. `--save-fixture-checks` loads all three folders: a v3 or v4 file goes through the migrations into the sections of version 5 (for v4 the check also flattens the result again and compares every field with the file), a v5 file loads as it is.
 - A new save format gets **its own folder** (`v4`, `v5`), made by the new code. The old folders stay exactly as they
   are, so every version of the format keeps being loaded by the newest game.
 - `--save-fixture-checks --seed=42` loads every file, restores it, checks that the game captures the same save back,
@@ -23,8 +23,9 @@ The six `quiz-before-…-trip` fixtures were added after the game learnt to keep
 (`SaveData.Departure`, `SaveData.DepartureState`). The saves made before that have no such field and load as before.
 They are made by the new code but have the same format version 3, because the fields are optional.
 
-`v4/` has the same 39 situations as `v3/`, made by the game that writes the trailer trip as one `Trip` instead of a
-pair of fields for each kind. `v3/` was not touched: a save of the old format still has to load into the new game.
+`v4/` and `v5/` have the same 39 situations as `v3/`, made by the game of their time (`v4/` writes the trailer trip as one
+`Trip` instead of a pair of fields for each kind, `v5/` writes sections instead of one flat object). `v3/` and `v4/` were not
+touched: a save of an old format still has to load into the new game.
 
 ## `Worlds/seed-N.txt` – what a seed places in the world
 

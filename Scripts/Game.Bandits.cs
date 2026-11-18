@@ -195,9 +195,9 @@ public partial class Game
 
     private bool RestoreBandits(SaveData data)
     {
-        banditSite = data.BanditSite < banditSites.Length ? data.BanditSite : -1;
-        banditCooldown = data.BanditCooldown;
-        banditSolved = data.BanditSolved;
+        banditSite = data.Bandits.Site < banditSites.Length ? data.Bandits.Site : -1;
+        banditCooldown = data.Bandits.Cooldown;
+        banditSolved = data.Bandits.Solved;
         banditArrival = banditRetreat = 0;
         foreach (var bandit in bandits)
             bandit.Hide();

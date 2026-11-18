@@ -240,7 +240,7 @@ public partial class WorksChecks : Node
                     Check(load.Cargo == spec.Input && load.IsValid(), "the loading question shows the right material");
                     RoundTrip("loading question");
                     Rejected(
-                        data => data.Challenge = load with { Cargo = (HaulLoad)(((int)spec.Input + 1) % 4) },
+                        data => data.Quiz.Challenge = load with { Cargo = (HaulLoad)(((int)spec.Input + 1) % 4) },
                         "a loading question for another material"
                     );
                 }
@@ -382,7 +382,7 @@ public partial class WorksChecks : Node
 
             // ---- Without arithmetic a word quiz replaces the loading count ----
             var words = game.CaptureProgress();
-            words.QuizTypes = QuizType.Letters;
+            words.Quiz.Types = QuizType.Letters;
             Check(SaveStore.Write(words, path) && SaveStore.Read(path) != null, "word-quiz save accepted");
             game.RestoreProgress(SaveStore.Read(path)!);
             var wanted = world.SourceFor(bricks.Spec.Input);
@@ -391,26 +391,21 @@ public partial class WorksChecks : Node
             Check(game.CurrentChallenge is LetterChallenge, "without arithmetic the loading quiz uses words");
 
             // ---- Damaged saves ----
-            Rejected(data => data.WorksStock = new[] { Works.Capacity + 1, 0, 0 }, "stock above the yard");
-            Rejected(data => data.WorksStock = new[] { -1, 0, 0 }, "negative stock");
-            Rejected(data => data.WorksStock = new[] { 1, 2 }, "stock of only two works");
-            Rejected(data => data.WorksStock = null!, "missing stock");
-            Rejected(data => data.SupplyTrip = 3, "a supply trip for a fourth works");
+            Rejected(data => data.Buildings.WorksStock = new[] { Works.Capacity + 1, 0, 0 }, "stock above the yard");
+            Rejected(data => data.Buildings.WorksStock = new[] { -1, 0, 0 }, "negative stock");
+            Rejected(data => data.Buildings.WorksStock = new[] { 1, 2 }, "stock of only two works");
+            Rejected(data => data.Buildings.WorksStock = null!, "missing stock");
             Rejected(
-                data =>
-                {
-                    data.SupplyTrip = -1;
-                    data.SupplyTripLoaded = true;
-                },
-                "a loaded supply trip without a trip"
+                data => data.Task.Trip = new SavedTrip { Kind = TripKinds.Supply, Index = 3 },
+                "a supply trip for a fourth works"
             );
             Rejected(data => data.Nearby = World.FirstWorksId + 1, "a question asked by a works worker");
             Rejected(data => data.Nearby = World.FirstSourceId, "a question asked by the wrong source worker");
             Rejected(
                 data =>
                 {
-                    data.SupplyTrip = 0;
-                    data.WorksStock = new[] { Works.Capacity, 0, 0 };
+                    data.Task.Trip = new SavedTrip { Kind = TripKinds.Supply, Index = 0 };
+                    data.Buildings.WorksStock = new[] { Works.Capacity, 0, 0 };
                 },
                 "a supply trip to a full works"
             );

@@ -259,11 +259,11 @@ public partial class FordChecks : Node
 
             // A word quiz replaces the loading count when arithmetic is off.
             var words = game.CaptureProgress();
-            words.BuildStages = new[] { 2, 0, 0, 0 };
-            words.Trip = new SavedTrip { Kind = TripKinds.Build, Index = BuildPlans.Bridge };
-            words.TrailerOwned = false;
-            words.TrailerAttached = false;
-            words.QuizTypes = QuizType.Letters;
+            words.Buildings.Stages = new[] { 2, 0, 0, 0 };
+            words.Task.Trip = new SavedTrip { Kind = TripKinds.Build, Index = BuildPlans.Bridge };
+            words.Buildings.TrailerOwned = false;
+            words.Buildings.TrailerAttached = false;
+            words.Quiz.Types = QuizType.Letters;
             Check(SaveStore.Write(words, path) && SaveStore.Read(path) != null, "partial ford save accepted");
             game.RestoreProgress(SaveStore.Read(path)!);
             Check(
@@ -277,45 +277,44 @@ public partial class FordChecks : Node
             // A fresh file has no backup to fall back to.
             string invalidPath = DiagnosticArtifacts.PathFor("ford-checks/invalid.json");
             var invalid = game.CaptureProgress();
-            invalid.TrailerOwned = true;
+            invalid.Buildings.TrailerOwned = true;
             Check(
                 SaveStore.Write(invalid, invalidPath) && SaveStore.Read(invalidPath) == null,
                 "an unearned trailer is rejected"
             );
             // Saves from before the buildings had ten deliveries have only FordStage (0-6) and no BuildStages.
-            SaveData Legacy(int stage, int trip = -1)
+            System.Text.Json.Nodes.JsonObject Legacy(int stage, int trip = -1)
             {
-                var legacy = game.CaptureProgress();
-                legacy.BuildStages = null;
-                legacy.Trip = null;
-                legacy.FordStage = stage;
-                legacy.FordTrip = trip;
-                legacy.TrailerOwned = stage == 6;
-                legacy.TrailerAttached = false;
-                legacy.State = GameState.Exploring;
-                legacy.Nearby = -1;
-                legacy.Challenge = null;
-                legacy.Sender = -1;
-                legacy.Collection = false;
-                legacy.Picked = Array.Empty<bool>();
-                legacy.Arrived = false;
+                var capture = game.CaptureProgress();
+                capture.Task.Trip = null;
+                capture.Buildings.TrailerOwned = stage == 6;
+                capture.Buildings.TrailerAttached = false;
+                capture.State = GameState.Exploring;
+                capture.Nearby = -1;
+                capture.Quiz.Challenge = null;
+                capture.Task.Sender = -1;
+                capture.Task.Collection = false;
+                capture.Task.Picked = Array.Empty<bool>();
+                capture.Task.Arrived = false;
+                var legacy = LegacySaves.FromCurrent(capture, 3);
+                legacy.Remove("BuildStages");
+                legacy["FordStage"] = stage;
+                legacy["FordTrip"] = trip;
                 return legacy;
             }
-            SaveData? MigratedSave(SaveData legacy, string name)
-            {
-                string file = DiagnosticArtifacts.PathFor($"ford-checks/{name}.json");
-                return SaveStore.Write(legacy, file) ? SaveStore.Read(file) : null;
-            }
-            var finished = MigratedSave(Legacy(6), "legacy-finished");
+            var finished = LegacySaves.Read(Legacy(6));
             Check(
-                finished is { BuildStages: [BuildPlans.Trips, 0, 0, 0] } && finished.TrailerOwned,
+                finished is { Buildings: { Stages: [BuildPlans.Trips, 0, 0, 0], TrailerOwned: true } },
                 "a finished six-load bridge becomes a finished ten-load bridge with its trailer"
             );
-            var halfway = MigratedSave(Legacy(3), "legacy-half");
-            Check(halfway is { BuildStages: [5, 0, 0, 0] }, "a half-built bridge keeps its share of the work");
-            var tripUnderWay = MigratedSave(Legacy(2, trip: 2), "legacy-trip");
+            var halfway = LegacySaves.Read(Legacy(3));
             Check(
-                tripUnderWay is { BuildStages: [3, 0, 0, 0], Trip: null, FordTrip: -1 },
+                halfway is { Buildings: { Stages: [5, 0, 0, 0] } },
+                "a half-built bridge keeps its share of the work"
+            );
+            var tripUnderWay = LegacySaves.Read(Legacy(2, trip: 2));
+            Check(
+                tripUnderWay is { Buildings: { Stages: [3, 0, 0, 0] }, Task: { Trip: null } },
                 "a trip under way in an old save is dropped"
             );
             game.RestoreProgress(finished!);

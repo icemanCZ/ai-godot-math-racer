@@ -50,9 +50,7 @@ public partial class SaveChecks : Node
         Check(Copies().Length == 0, "a current save is not copied");
 
         // A save of an older version is kept as progress.vN.bak, once, even if the file changes afterwards.
-        var older = game.CaptureProgress();
-        older.Version = 2;
-        Check(SaveStore.Write(older, path), "older save written");
+        File.WriteAllText(path, LegacySaves.FromCurrent(game.CaptureProgress(), 2).ToJsonString());
         SaveStore.Preserve(path);
         Check(
             Copies().Contains("progress.v2.bak")
@@ -146,17 +144,14 @@ public partial class SaveChecks : Node
                 game.State == GameState.Reward && game.Coins == coins + Game.RoadsideDeliveryCoins,
                 "a restored reward panel keeps the paid coins without paying again"
             );
-            var legacyReward = game.CaptureProgress();
-            legacyReward.Version = 2;
-            legacyReward.Coins = coins;
-            legacyReward.RewardCoins = 0;
-            string legacyPath = DiagnosticArtifacts.PathFor("save-checks/legacy-reward.json");
-            Check(SaveStore.Write(legacyReward, legacyPath), "version 2 reward save written");
-            var migratedReward = SaveStore.Read(legacyPath);
+            var legacyReward = LegacySaves.FromCurrent(game.CaptureProgress(), 2);
+            legacyReward["Coins"] = coins;
+            legacyReward["RewardCoins"] = 0;
+            var migratedReward = LegacySaves.Read(legacyReward);
             Check(
                 migratedReward is { Version: SaveData.CurrentVersion, State: GameState.Reward }
-                    && migratedReward.Coins == coins + Game.RoadsideDeliveryCoins
-                    && migratedReward.RewardCoins == Game.RoadsideDeliveryCoins,
+                    && migratedReward.Economy.Coins == coins + Game.RoadsideDeliveryCoins
+                    && migratedReward.Economy.RewardCoins == Game.RoadsideDeliveryCoins,
                 "an open version 2 reward choice migrates to the delivery's coins"
             );
             game.FinishInteraction();
@@ -208,7 +203,7 @@ public partial class SaveChecks : Node
             ((Button)game.FindChild("GarageQuiz_Reading", true, false)).EmitSignal(Button.SignalName.Pressed);
             RoundTrip();
             Check(
-                game.CaptureProgress() is { QuizTypes: QuizType.Math | QuizType.Letters, ThreeTermMath: true },
+                game.CaptureProgress() is { Quiz: { Types: QuizType.Math | QuizType.Letters, ThreeTermMath: true } },
                 "garage task settings and the arithmetic level survive reload"
             );
             game.FinishInteraction();
@@ -233,21 +228,21 @@ public partial class SaveChecks : Node
             Check(SaveStore.Read(path) == null, "invalid saves are safely ignored");
             File.WriteAllText(path, backup);
             var legacy = game.CaptureProgress();
-            legacy.Animals = legacy.Animals.Concat(Enumerable.Repeat(true, 20)).ToArray();
-            legacy.Unlocked = new[] { 0, 12, 29 };
-            legacy.Completed = new[] { 1, 22 };
+            legacy.Roadside.Animals = legacy.Roadside.Animals.Concat(Enumerable.Repeat(true, 20)).ToArray();
+            legacy.Roadside.Unlocked = new[] { 0, 12, 29 };
+            legacy.Roadside.Completed = new[] { 1, 22 };
             legacy.State = GameState.Exploring;
             legacy.Nearby = 30;
-            legacy.Sender = -1;
-            legacy.Picked = Array.Empty<bool>();
-            legacy.DeliveryReward = false;
+            legacy.Task.Sender = -1;
+            legacy.Task.Picked = Array.Empty<bool>();
+            legacy.Task.DeliveryReward = false;
             Check(SaveStore.Write(legacy, path), "legacy thirty-animal save written");
             var migrated = SaveStore.Read(path)!;
             Check(
                 migrated != null
-                    && migrated.Animals.Length == 10
-                    && migrated.Unlocked.SequenceEqual(new[] { 0 })
-                    && migrated.Completed.SequenceEqual(new[] { 1 })
+                    && migrated.Roadside.Animals.Length == 10
+                    && migrated.Roadside.Unlocked.SequenceEqual(new[] { 0 })
+                    && migrated.Roadside.Completed.SequenceEqual(new[] { 1 })
                     && migrated.Nearby == 30,
                 "old saves retain ten animal records and stable village IDs"
             );
@@ -255,56 +250,54 @@ public partial class SaveChecks : Node
             Check(game.RemainingAnimals <= 10, "migrated progress restores in the ten-animal world");
             legacy.State = GameState.Challenge;
             legacy.Nearby = 22;
-            legacy.Math = new ChallengeGenerator(42).Next();
+            legacy.Quiz.Challenge = new ChallengeGenerator(42).Next();
             Check(SaveStore.Write(legacy, path), "removed animal question saved");
             migrated = SaveStore.Read(path)!;
             Check(
-                migrated is { State: GameState.Exploring, Nearby: -1, Challenge: null },
+                migrated is { State: GameState.Exploring, Nearby: -1, Quiz: { Challenge: null } },
                 "removed animal interaction returns safely to driving"
             );
             // A version 1 save keeps the open question in its per-kind field.
-            var versionOne = game.CaptureProgress();
             var oldQuestion = new ChallengeGenerator(42).Next();
-            versionOne.Version = 1;
-            versionOne.State = GameState.Challenge;
-            versionOne.Nearby = 0;
-            versionOne.Sender = -1;
-            versionOne.Picked = Array.Empty<bool>();
-            versionOne.HandoverQuiz = false;
-            versionOne.DeliveryReward = false;
-            versionOne.SyllableSelection = default;
-            versionOne.Challenge = null;
-            versionOne.Math = oldQuestion;
-            Check(SaveStore.Write(versionOne, path), "version 1 question saved");
-            var upgraded = SaveStore.Read(path);
+            var versionOne = LegacySaves.FromCurrent(game.CaptureProgress(), 1);
+            versionOne["State"] = (int)GameState.Challenge;
+            versionOne["Nearby"] = 0;
+            versionOne["Sender"] = -1;
+            versionOne["Picked"] = new System.Text.Json.Nodes.JsonArray();
+            versionOne["HandoverQuiz"] = false;
+            versionOne["DeliveryReward"] = false;
+            versionOne.Remove("Challenge");
+            versionOne["Math"] = System.Text.Json.JsonSerializer.SerializeToNode(oldQuestion);
+            var upgraded = LegacySaves.Read(versionOne);
             Check(
-                upgraded is { Version: SaveData.CurrentVersion, Math: null, Challenge: MathChallenge migratedQuestion }
+                upgraded is { Version: SaveData.CurrentVersion, Quiz: { Challenge: MathChallenge migratedQuestion } }
                     && migratedQuestion.Expression == oldQuestion.Expression
                     && migratedQuestion.Choices.SequenceEqual(oldQuestion.Choices),
                 "version 1 question migrates into the single challenge field"
             );
             Check(
-                File.ReadAllText(path).Contains("\"Math\"") && !File.ReadAllText(path).Contains("\"Challenge\":{"),
+                versionOne.ContainsKey("Math")
+                    && !versionOne.ContainsKey("Challenge")
+                    && !versionOne.ContainsKey("Quiz"),
                 "version 1 save on disk uses the old per-kind field"
             );
             legacy.State = GameState.Exploring;
             legacy.Nearby = -1;
-            legacy.Math = null;
-            legacy.Sender = 22;
-            legacy.Collection = true;
-            legacy.Picked = new[] { true, false, false };
+            legacy.Task.Sender = 22;
+            legacy.Task.Collection = true;
+            legacy.Task.Picked = new[] { true, false, false };
             Check(SaveStore.Write(legacy, path), "removed animal expedition saved");
             migrated = SaveStore.Read(path)!;
             Check(
-                migrated is { Sender: -1, State: GameState.Exploring }
-                    && migrated.Picked.Length == 0
-                    && migrated.Owned.SequenceEqual(legacy.Owned),
+                migrated is { Task: { Sender: -1 }, State: GameState.Exploring }
+                    && migrated.Task.Picked.Length == 0
+                    && migrated.Economy.Owned.SequenceEqual(legacy.Economy.Owned),
                 "removed sender cancels only its expedition and preserves earned rewards"
             );
             var beforeLeveling = game.CaptureProgress();
             var villageSpot = world.Village.Center;
             float villageGround = world.Ground.Height(villageSpot.X, villageSpot.Z);
-            beforeLeveling.Position = new[] { villageSpot.X, villageGround - 3, villageSpot.Z };
+            beforeLeveling.Vehicle.Position = new[] { villageSpot.X, villageGround - 3, villageSpot.Z };
             game.RestoreProgress(beforeLeveling);
             Check(
                 Mathf.Abs(car.Position.X - villageSpot.X) < .001f

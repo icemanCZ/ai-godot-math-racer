@@ -18,13 +18,13 @@ public partial class PostcardChecks(Game game, World world, Vehicle car) : Node
                     && game.PostcardQuestion(2) is ReadingChallenge,
                 "postcards use the available word activities by default"
             );
-            initial.QuizTypes = QuizType.Math | QuizType.Syllables;
+            initial.Quiz.Types = QuizType.Math | QuizType.Syllables;
             game.RestoreProgress(initial);
             var owner = world.Animals[0];
             game.OpenChallenge(owner);
             ChallengeChecks.Solve(game);
             game.SelectExpedition(false);
-            int sender = game.CaptureProgress().Sender;
+            int sender = game.CaptureProgress().Task.Sender;
             Require(sender >= 0, "normal expedition starts before the postcard trip");
 
             string path = DiagnosticArtifacts.PathFor($"postcard-checks/{Settings.Seed}/progress.json");
@@ -52,10 +52,13 @@ public partial class PostcardChecks(Game game, World world, Vehicle car) : Node
                 );
                 game.TogglePause();
                 game._Process(2);
-                Require(game.CaptureProgress().Postcards[i] == null, "pause holds the camera shot");
+                Require(game.CaptureProgress().Postcards.Cards[i] == null, "pause holds the camera shot");
                 game.TogglePause();
                 game._Process(2);
-                Require(game.CaptureProgress().Postcards[i] is { Stamped: false }, "camera adds an unstamped postcard");
+                Require(
+                    game.CaptureProgress().Postcards.Cards[i] is { Stamped: false },
+                    "camera adds an unstamped postcard"
+                );
                 var question = (SyllableChallenge)game.PostcardQuestion(i)!;
                 string wrongChoice = $"Answer{question.Choices.First(choice => !question.Accepts(choice))}";
                 var choice = Find(wrongChoice);
@@ -66,7 +69,7 @@ public partial class PostcardChecks(Game game, World world, Vehicle car) : Node
                 Press(wrongChoice);
                 Require(Find(wrongChoice).Disabled, "wrong syllable is marked and disabled");
                 Require(
-                    game.CaptureProgress().Postcards[i] is { Stamped: false },
+                    game.CaptureProgress().Postcards.Cards[i] is { Stamped: false },
                     "wrong answer leaves the postcard unstamped"
                 );
                 if (question.Syllables.Count > 1)
@@ -74,7 +77,7 @@ public partial class PostcardChecks(Game game, World world, Vehicle car) : Node
                     int correct = question.Choices.Last(question.Accepts);
                     Press($"Answer{correct}");
                     Require(
-                        game.CaptureProgress().Postcards[i] is { Stamped: false },
+                        game.CaptureProgress().Postcards.Cards[i] is { Stamped: false },
                         "a partial word does not grant a stamp"
                     );
                     Require(SaveStore.Write(game.CaptureProgress(), path), "partial postcard saves to disk");
@@ -104,7 +107,8 @@ public partial class PostcardChecks(Game game, World world, Vehicle car) : Node
                     if (!Find($"Answer{choice}").Disabled)
                         Press($"Answer{choice}");
                 Require(
-                    game.CaptureProgress().Postcards[i] is { Stamped: false } && !Find("ConfirmSyllables").Disabled,
+                    game.CaptureProgress().Postcards.Cards[i] is { Stamped: false }
+                        && !Find("ConfirmSyllables").Disabled,
                     "selecting the last syllable leaves the card unstamped"
                 );
                 Require(SaveStore.Write(game.CaptureProgress(), path), "a complete unconfirmed word saves to disk");
@@ -114,7 +118,7 @@ public partial class PostcardChecks(Game game, World world, Vehicle car) : Node
                 );
                 Press("ConfirmSyllables");
                 Require(
-                    game.CaptureProgress().Postcards[i] is { Stamped: true },
+                    game.CaptureProgress().Postcards.Cards[i] is { Stamped: true },
                     "confirming the completed word stamps the selected postcard"
                 );
                 Require(
@@ -130,23 +134,23 @@ public partial class PostcardChecks(Game game, World world, Vehicle car) : Node
             );
             Require(
                 game.State == GameState.PostcardAlbum
-                    && game.CaptureProgress().Postcards.All(card => card?.Stamped == true),
+                    && game.CaptureProgress().Postcards.Cards.All(card => card?.Stamped == true),
                 "album and stamps restore"
             );
-            Require(game.CaptureProgress().Sender == sender, "original delivery survives album and reload");
+            Require(game.CaptureProgress().Task.Sender == sender, "original delivery survives album and reload");
             Require(car.Appearance.HasAccessory(reward.Id), "sticker is still equipped after reload");
             game.FinishInteraction();
-            save.Postcards = save.Postcards.Take(Game.OriginalPostcardCount).ToArray();
-            save.PostcardPage = 2;
+            save.Postcards.Cards = save.Postcards.Cards.Take(Game.OriginalPostcardCount).ToArray();
+            save.Postcards.Page = 2;
             Require(SaveStore.Write(save, path), "original three-card save written");
             game.RestoreProgress(
                 SaveStore.Read(path) ?? throw new InvalidOperationException("Original postcard save failed validation")
             );
             var expanded = game.CaptureProgress();
             Require(
-                expanded.PostcardPage == 2
-                    && expanded.Postcards.Take(Game.OriginalPostcardCount).All(card => card?.Stamped == true)
-                    && expanded.Postcards.Skip(Game.OriginalPostcardCount).All(card => card == null)
+                expanded.Postcards.Page == 2
+                    && expanded.Postcards.Cards.Take(Game.OriginalPostcardCount).All(card => card?.Stamped == true)
+                    && expanded.Postcards.Cards.Skip(Game.OriginalPostcardCount).All(card => card == null)
                     && car.Appearance.HasAccessory(reward.Id),
                 "original save preserves old stamps, selected postcard and sticker"
             );

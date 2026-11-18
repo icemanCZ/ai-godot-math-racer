@@ -38,6 +38,9 @@ game. Details are in `Tests/README.md` and `docs/REFACTORING_PLAN.md`.
 ## Code
 
 - Format C# with `dotnet csharpier format Scripts` (120 columns) before committing.
+- Saved state that is new is a section in `SaveData.cs` with defaults, a rule in `SaveRules.All` and its capture and restore in
+  `Game.Persistence.cs`; `SaveStore` is not touched. The flat save of versions 1 to 4 is `SaveDataV4`: it and `SaveMigrations` are
+  never changed to make a check pass, and `LegacySaves` (diagnostics) makes old-shaped saves for the checks of the migrations.
 - A scene-free class holds state that several features share (`Economy`, `QuizSession`, `TaskSlot`, `Interaction`);
   `Game` forwards to them. New per-frame work is registered in `Game.Systems.cs`, a new interaction state registers its
   panel in `Game.Panels.cs`, a new character is a role in `ActorRoles.cs` with its ID in `ActorIds.cs`, and a new kind of

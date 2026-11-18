@@ -48,7 +48,7 @@ public partial class GarageChecks : Node
             void Press(string name) =>
                 ((Button)game.FindChild(name, true, false)).EmitSignal(Button.SignalName.Pressed);
             Check(
-                defaults.QuizTypes == QuizType.All && !defaults.ThreeTermMath,
+                defaults.Quiz.Types == QuizType.All && !defaults.Quiz.ThreeTermMath,
                 "all four quiz types and level-one arithmetic are the defaults"
             );
             Check(
@@ -66,7 +66,7 @@ public partial class GarageChecks : Node
             Press("GarageQuiz_Math");
             Press("GarageMathLevel2");
             Check(
-                game.CaptureProgress() is { QuizTypes: QuizType.Letters, ThreeTermMath: true },
+                game.CaptureProgress() is { Quiz: { Types: QuizType.Letters, ThreeTermMath: true } },
                 "quiz toggles and the arithmetic level can be selected independently"
             );
             game.FinishInteraction();
@@ -195,7 +195,8 @@ public partial class GarageChecks : Node
             Press("GarageQuiz_Syllables");
             game.FinishInteraction();
             Check(
-                game.CaptureProgress().QuizTypes == QuizType.Syllables && game.PostcardQuestion(0) is SyllableChallenge,
+                game.CaptureProgress().Quiz.Types == QuizType.Syllables
+                    && game.PostcardQuestion(0) is SyllableChallenge,
                 "the last active quiz type cannot be switched off"
             );
             foreach (var point in collection!.PickupPositions)
@@ -218,7 +219,7 @@ public partial class GarageChecks : Node
             Check(
                 game.State == GameState.Reward
                     && game.CurrentChallenge == null
-                    && game.CaptureProgress().DeliveryReward,
+                    && game.CaptureProgress().Task.DeliveryReward,
                 "replacement handover quiz unlocks the delivery reward after reload"
             );
             game.FinishInteraction();

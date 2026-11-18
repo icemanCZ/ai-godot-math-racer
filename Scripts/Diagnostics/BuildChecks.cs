@@ -215,7 +215,7 @@ public partial class BuildChecks : Node
             var jettyDuck = world.Duck!;
             Check(!jettyDuck.IsOwned && !jettyDuck.IsActive, "the duck waits until the jetty is finished");
             int coinsBefore = game.Coins;
-            var ownedBefore = game.CaptureProgress().Owned;
+            var ownedBefore = game.CaptureProgress().Economy.Owned;
             Check(
                 ownedBefore.All(item =>
                     item != Game.BuildItem(BuildPlans.Mill) && item != Game.BuildItem(BuildPlans.Jetty)
@@ -282,7 +282,7 @@ public partial class BuildChecks : Node
             Frames(5);
             Check(!game.TrailerOwned, "only the bridge grants the trailer");
             Check(game.Coins == coinsBefore + 3 * Game.BuildCoins, "each finished building paid 30 coins");
-            var ownedAfter = game.CaptureProgress().Owned;
+            var ownedAfter = game.CaptureProgress().Economy.Owned;
             foreach (int project in new[] { BuildPlans.Mill, BuildPlans.Tower, BuildPlans.Jetty })
                 Check(ownedAfter.Contains(Game.BuildItem(project)!), $"the {project} building brought its garage item");
             Check(
@@ -305,7 +305,7 @@ public partial class BuildChecks : Node
             Check(jettyDuck.IsActive, "the duck is still along after the progress is restored");
             var ownedSave = game.CaptureProgress();
             var duckOff = game.CaptureProgress();
-            duckOff.DisabledCollectorPets = new[] { nameof(CollectorPetKind.Duck) };
+            duckOff.Companions.DisabledPets = new[] { nameof(CollectorPetKind.Duck) };
             Check(
                 SaveStore.Write(duckOff, path) && SaveStore.Read(path) != null,
                 "a save with the duck sent home is accepted"
@@ -353,28 +353,19 @@ public partial class BuildChecks : Node
 
             // ---- Damaged saves ----
             Rejected(
-                data => data.BuildStages = new[] { 0, BuildPlans.Trips + 1, 0, 0 },
+                data => data.Buildings.Stages = new[] { 0, BuildPlans.Trips + 1, 0, 0 },
                 "a building with eleven deliveries"
             );
-            Rejected(data => data.BuildStages = new[] { 0, 1 }, "progress for only two buildings");
+            Rejected(data => data.Buildings.Stages = new[] { 0, 1 }, "progress for only two buildings");
             Rejected(
-                data => data.Trip = new SavedTrip { Kind = TripKinds.Build, Index = BuildPlans.Count },
+                data => data.Task.Trip = new SavedTrip { Kind = TripKinds.Build, Index = BuildPlans.Count },
                 "a trip for a fifth building"
             );
             Rejected(
-                data => data.Trip = new SavedTrip { Kind = TripKinds.Build, Index = BuildPlans.Mill },
+                data => data.Task.Trip = new SavedTrip { Kind = TripKinds.Build, Index = BuildPlans.Mill },
                 "a trip to a finished building"
             );
-            Rejected(
-                data =>
-                {
-                    data.BuildStages = new[] { 0, 3, 0, 0 };
-                    data.BuildTrip = BuildPlans.Mill;
-                    data.SupplyTrip = 0;
-                },
-                "a building trip together with a supply trip"
-            );
-            Rejected(data => data.TrailerOwned = true, "a trailer without a finished bridge");
+            Rejected(data => data.Buildings.TrailerOwned = true, "a trailer without a finished bridge");
 
             GD.Print("BUILD_CHECKS_PASSED");
             GetTree().Quit();

@@ -32,10 +32,10 @@ internal sealed partial class CollectorPetChecks(Game game, World world, Vehicle
             );
 
             var almostDone = game.CaptureProgress();
-            almostDone.FarmCount = Village.FarmKinds.Length - 1;
-            almostDone.GardenCount = Village.FlowerNames.Length - 1;
-            almostDone.GemCount = Village.GemNames.Length - 1;
-            almostDone.ToyCount = Village.ToyNames.Length - 1;
+            almostDone.Village.FarmCount = Village.FarmKinds.Length - 1;
+            almostDone.Village.GardenCount = Village.FlowerNames.Length - 1;
+            almostDone.Village.GemCount = Village.GemNames.Length - 1;
+            almostDone.Village.ToyCount = Village.ToyNames.Length - 1;
             game.RestoreProgress(almostDone);
             car.SetPose(world.Village.GarageEntrance, 0);
             game.OpenGarage();
@@ -141,11 +141,10 @@ internal sealed partial class CollectorPetChecks(Game game, World world, Vehicle
                 "reload restores ownership and individual toggles"
             );
 
-            var legacy = JsonNode.Parse(JsonSerializer.Serialize(saved))!.AsObject();
-            legacy.Remove(nameof(SaveData.DisabledCollectorPets));
-            File.WriteAllText(path, legacy.ToJsonString());
+            var legacy = LegacySaves.FromCurrent(saved, 3);
+            legacy.Remove("DisabledCollectorPets");
             game.RestoreProgress(
-                SaveStore.Read(path) ?? throw new InvalidOperationException("Legacy save was rejected.")
+                LegacySaves.Read(legacy) ?? throw new InvalidOperationException("Legacy save was rejected.")
             );
             Check(
                 pets.All(p => p.IsActive && p.Visible),

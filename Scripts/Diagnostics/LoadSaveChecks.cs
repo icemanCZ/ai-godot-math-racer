@@ -33,7 +33,7 @@ public partial class LoadSaveChecks : Node
             Check(data != null, "the game accepts the save file");
             Check(data!.Seed == Settings.Seed, $"the save is of the world that was generated (seed {data.Seed})");
             GD.Print(
-                $"SAVE: version {data.Version}, state {data.State}, trip {(data.Trip == null ? "none" : data.Trip.Kind + " " + data.Trip.Index + (data.Trip.Loaded ? " loaded" : ""))}, expedition {(data.Sender >= 0 ? "yes" : "no")}, departure {data.Departure}"
+                $"SAVE: version {data.Version}, state {data.State}, trip {(data.Task.Trip == null ? "none" : data.Task.Trip.Kind + " " + data.Task.Trip.Index + (data.Task.Trip.Loaded ? " loaded" : ""))}, expedition {(data.Task.Sender >= 0 ? "yes" : "no")}, departure {data.Quiz.Departure}"
             );
             game.RestoreProgress(data);
             Check(

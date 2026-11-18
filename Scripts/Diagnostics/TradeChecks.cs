@@ -140,11 +140,10 @@ public partial class TradeChecks : Node
                 game.RemainingAnimals == animals && game.RemainingDeliveries == deliveries,
                 "trade jobs preserve roadside progression"
             );
-            var legacy = JsonNode.Parse(JsonSerializer.Serialize(game.CaptureProgress()))!;
-            legacy.AsObject().Remove("TradeCounts");
-            File.WriteAllText(path, legacy.ToJsonString());
+            var legacy = LegacySaves.FromCurrent(game.CaptureProgress(), 3);
+            legacy.Remove("TradeCounts");
             Check(
-                SaveStore.Read(path)?.TradeCounts.SequenceEqual(new int[3]) == true,
+                LegacySaves.Read(legacy)?.Village.TradeCounts.SequenceEqual(new int[3]) == true,
                 "older saves default to zero trade trips"
             );
             GD.Print("TRADE_CHECKS_PASSED");

@@ -15,10 +15,10 @@ internal static class SaveFixtureFiles
     internal static string Root => ProjectSettings.GlobalizePath("res://Tests/Saves");
 
     /// <summary>The folder of the format the game writes now; the folders of older formats stay as they are.</summary>
-    internal const string CurrentFolder = "v4";
+    internal const string CurrentFolder = "v5";
 
     /// <summary>One folder for each version of the save format that fixtures were made with.</summary>
-    internal static readonly string[] Folders = { "v3", "v4" };
+    internal static readonly string[] Folders = { "v3", "v4", "v5" };
 
     /// <summary>The seed every fixture was made with.</summary>
     internal const int Seed = 42;
@@ -115,11 +115,11 @@ internal static class TripDriver
     internal static string Progress(SaveData data) =>
         string.Join(
             "|",
-            data.Coins,
-            string.Join(",", data.BuildStages ?? Array.Empty<int>()),
-            string.Join(",", data.PlotStages),
-            string.Join(",", data.HouseLevels),
-            string.Join(",", data.WorksStock)
+            data.Economy.Coins,
+            string.Join(",", data.Buildings.Stages ?? Array.Empty<int>()),
+            string.Join(",", data.Buildings.PlotStages),
+            string.Join(",", data.Village.HouseLevels),
+            string.Join(",", data.Buildings.WorksStock)
         );
 }
 
@@ -575,8 +575,8 @@ public partial class SaveFixtures : Node
         world.Industry[1].SetStock(3);
         world.Industry[2].SetStock(Works.Capacity);
         var data = game.CaptureProgress();
-        data.TrailerOwned = true;
-        data.TrailerPaint = "blue";
+        data.Buildings.TrailerOwned = true;
+        data.Buildings.TrailerPaint = "blue";
         Save("progress-rich", data);
     }
 }
@@ -637,6 +637,7 @@ public partial class SaveFixtureChecks : Node
                 missing.Count == 0,
                 "no committed fixture is missing" + (missing.Count == 0 ? "" : ": " + string.Join(", ", missing))
             );
+            Check(LegacySaves.CoversEverySection(), "every field of every section has the flat field it came from");
             int used = 0;
             foreach (string folder in Directory.GetDirectories(SaveFixtureFiles.Root, "v*").Order())
             foreach (string file in Directory.GetFiles(folder, "*.json").Order())
@@ -650,6 +651,10 @@ public partial class SaveFixtureChecks : Node
                     continue;
                 }
                 used++;
+                if (name.StartsWith("v4/"))
+                    CheckMigrationKeepsEveryField(name, file, data);
+                if (name == "v5/exploring")
+                    CheckSections(data);
                 await Continue(name, data);
             }
             Check(
@@ -666,6 +671,47 @@ public partial class SaveFixtureChecks : Node
         }
     }
 
+    /// <summary>
+    /// A save of version 4 is read into the sections of version 5 without losing or changing a field: flattened again,
+    /// it is the file that was read.
+    /// </summary>
+    private void CheckMigrationKeepsEveryField(string name, string file, SaveData data)
+    {
+        var original = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(file))!.AsObject();
+        var flat = LegacySaves.FromCurrent(data, SaveDataV4.LastVersion);
+        var moved = new[] { "Seed", "State", "Nearby" }.Concat(LegacySaves.Fields.Select(field => field.Flat)).ToList();
+        var different = moved
+            .Where(key => !System.Text.Json.Nodes.JsonNode.DeepEquals(flat[key], original[key]))
+            .ToList();
+        Check(
+            different.Count == 0,
+            $"{name}: every field moved to its section unchanged"
+                + (different.Count == 0 ? "" : ": " + string.Join(", ", different))
+        );
+    }
+
+    /// <summary>A section a file leaves out has its defaults, and one that is null is not a save.</summary>
+    private void CheckSections(SaveData data)
+    {
+        var json = System.Text.Json.JsonSerializer.SerializeToNode(data)!.AsObject();
+        string path = DiagnosticArtifacts.PathFor($"save-fixture-checks/sections-{savedFiles++}.json");
+        var withoutVillage = json.DeepClone().AsObject();
+        withoutVillage.Remove("Village");
+        File.WriteAllText(path, withoutVillage.ToJsonString());
+        Check(
+            SaveStore.Read(path) is { Village: { HouseLevels: [0, 0, 0, 0], FarmCount: 0 } },
+            "a save without the village section has an empty village"
+        );
+        foreach (string section in new[] { "Vehicle", "Economy", "Quiz", "Task", "Roadside", "Buildings", "Events" })
+        {
+            var nulled = json.DeepClone().AsObject();
+            nulled[section] = null;
+            path = DiagnosticArtifacts.PathFor($"save-fixture-checks/sections-{savedFiles++}.json");
+            File.WriteAllText(path, nulled.ToJsonString());
+            Check(SaveStore.Read(path) == null, $"a save whose {section} section is null is rejected");
+        }
+    }
+
     /// <summary>A pending trip that does not fit the character who asks the quiz is not a save the game accepts.</summary>
     private void RejectDamagedDepartures(SaveData data)
     {
@@ -676,18 +722,21 @@ public partial class SaveFixtureChecks : Node
             string path = DiagnosticArtifacts.PathFor($"save-fixture-checks/damaged-departure-{savedFiles++}.json");
             Check(SaveStore.Write(copy, path) && SaveStore.Read(path) == null, $"a save is rejected: {what}");
         }
-        Rejected(save => save.Departure = 99, "a trip that does not exist waits for the quiz");
-        Rejected(save => save.Departure = (int)Game.Departure.Plot, "a plot trip waits for a quiz asked by a builder");
-        Rejected(save => save.DepartureState = GameState.PlotStatus, "the quiz was asked from another panel");
+        Rejected(save => save.Quiz.Departure = 99, "a trip that does not exist waits for the quiz");
         Rejected(
-            save => save.Departure = (int)Game.Departure.Golem,
+            save => save.Quiz.Departure = (int)Game.Departure.Plot,
+            "a plot trip waits for a quiz asked by a builder"
+        );
+        Rejected(save => save.Quiz.DepartureState = GameState.PlotStatus, "the quiz was asked from another panel");
+        Rejected(
+            save => save.Quiz.Departure = (int)Game.Departure.Golem,
             "the golem's trip waits for a quiz asked by a builder"
         );
         Rejected(
-            save => save.Departure = 0,
+            save => save.Quiz.Departure = 0,
             "no trip waits, so the panel's character cannot be asking an ordinary quiz"
         );
-        Rejected(save => save.HandoverQuiz = true, "a trip waits for a handover quiz");
+        Rejected(save => save.Quiz.Handover = true, "a trip waits for a handover quiz");
     }
 
     /// <summary>
@@ -696,7 +745,7 @@ public partial class SaveFixtureChecks : Node
     /// </summary>
     private void CheckTripSaves(SaveData data)
     {
-        var trip = data.Trip!;
+        var trip = data.Task.Trip!;
         SaveData Copy() => JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(data))!;
         SaveData? Reloaded(SaveData copy)
         {
@@ -711,22 +760,21 @@ public partial class SaveFixtureChecks : Node
             Check(Reloaded(copy) == null, $"a save is rejected: {what}");
         }
         Rejected(
-            save => save.Trip = new SavedTrip { Kind = "bogus", Index = 0 },
+            save => save.Task.Trip = new SavedTrip { Kind = "bogus", Index = 0 },
             "a trip of a kind that does not exist"
         );
-        Rejected(save => save.Trip!.Index = BuildPlans.Count, "a trip to a fifth building");
-        Rejected(save => save.Trip!.Index = -1, "a trip to no building");
-        Rejected(save => save.Sender = 3, "a trip together with an expedition");
+        Rejected(save => save.Task.Trip!.Index = BuildPlans.Count, "a trip to a fifth building");
+        Rejected(save => save.Task.Trip!.Index = -1, "a trip to no building");
+        Rejected(save => save.Task.Sender = 3, "a trip together with an expedition");
 
         // A save of version 3 has a pair of fields for each kind of trip.
-        var old = Copy();
-        old.Version = 3;
-        old.Trip = null;
-        old.BuildTrip = trip.Index;
-        old.BuildTripLoaded = trip.Loaded;
-        var migrated = Reloaded(old);
+        var old = LegacySaves.FromCurrent(data, 3);
+        old.Remove("Trip");
+        old["BuildTrip"] = trip.Index;
+        old["BuildTripLoaded"] = trip.Loaded;
+        var migrated = LegacySaves.Read(old);
         Check(
-            migrated is { Version: SaveData.CurrentVersion, Trip: { } moved, BuildTrip: null, BuildTripLoaded: null }
+            migrated is { Version: SaveData.CurrentVersion, Task: { Trip: { } moved } }
                 && moved.Kind == trip.Kind
                 && moved.Index == trip.Index
                 && moved.Loaded == trip.Loaded,
@@ -736,22 +784,22 @@ public partial class SaveFixtureChecks : Node
             migrated != null && !JsonSerializer.Serialize(migrated).Contains("\"BuildTrip\""),
             "a migrated save is written without the old trip fields"
         );
-        var two = Copy();
-        two.Version = 3;
-        two.Trip = null;
-        two.BuildTrip = trip.Index;
-        two.SupplyTrip = 0;
-        Check(Reloaded(two) == null, "a version 3 save with two trips is rejected");
-        var loadedWithoutTrip = Copy();
-        loadedWithoutTrip.Version = 3;
-        loadedWithoutTrip.Trip = null;
-        loadedWithoutTrip.PlotTripLoaded = true;
-        Check(Reloaded(loadedWithoutTrip) == null, "a version 3 save with a loaded trailer and no trip is rejected");
-        var invalidNumber = Copy();
-        invalidNumber.Version = 3;
-        invalidNumber.Trip = null;
-        invalidNumber.HouseTrip = -2;
-        Check(Reloaded(invalidNumber) == null, "a version 3 save with a trip number below -1 is rejected");
+        Check(LegacySaves.IsRejected(data, flat =>
+            {
+                flat.Remove("Trip");
+                flat["BuildTrip"] = trip.Index;
+                flat["SupplyTrip"] = 0;
+            }), "a version 3 save with two trips is rejected");
+        Check(LegacySaves.IsRejected(data, flat =>
+            {
+                flat.Remove("Trip");
+                flat["PlotTripLoaded"] = true;
+            }), "a version 3 save with a loaded trailer and no trip is rejected");
+        Check(LegacySaves.IsRejected(data, flat =>
+            {
+                flat.Remove("Trip");
+                flat["HouseTrip"] = -2;
+            }), "a version 3 save with a trip number below -1 is rejected");
     }
 
     private async Task Continue(string name, SaveData data)
@@ -767,7 +815,7 @@ public partial class SaveFixtureChecks : Node
             $"{name}: restoring and capturing again gives the same save"
         );
         Check(
-            game.Coins == data.Coins && game.OwnedRewards.Count == data.Owned.Length,
+            game.Coins == data.Economy.Coins && game.OwnedRewards.Count == data.Economy.Owned.Length,
             $"{name}: coins and garage items are kept"
         );
         // The game goes on running from the restored state.
@@ -841,7 +889,7 @@ public partial class SaveFixtureChecks : Node
         {
             int course = game.Events.Active;
             var events = game.Events;
-            for (int gate = Math.Max(1, data.EventNext); gate < DrivingEvents.GateCount; gate++)
+            for (int gate = Math.Max(1, data.Events.Next); gate < DrivingEvents.GateCount; gate++)
             {
                 car.SetPose(events.Points[course, gate], 0);
                 game._Process(.05);
@@ -852,6 +900,6 @@ public partial class SaveFixtureChecks : Node
         }
         Frames(10);
         Accepted($"{name}: after carrying on");
-        Check(game.Coins >= data.Coins, $"{name}: carrying on never loses coins");
+        Check(game.Coins >= data.Economy.Coins, $"{name}: carrying on never loses coins");
     }
 }

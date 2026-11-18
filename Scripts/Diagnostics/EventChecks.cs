@@ -81,22 +81,25 @@ public partial class EventChecks(Game game, World world, Vehicle car) : Node
         }
         // Saves from before the ghost race have a run under way but no clock or gate times.
         var old = game.CaptureProgress();
-        old.EventActive = 0;
-        old.EventNext = 3;
-        old.EventSplits = Array.Empty<float>();
-        old.EventBest = null!;
+        old.Events.Active = 0;
+        old.Events.Next = 3;
+        old.Events.Splits = Array.Empty<float>();
+        old.Events.Best = null!;
         string path = DiagnosticArtifacts.PathFor($"event-checks/{Settings.Seed}/old-run.json");
         Check(SaveStore.Write(old, path), "old-style event save written");
         var migrated = SaveStore.Read(path);
         Check(
-            migrated != null && migrated.EventActive == -1 && migrated.EventNext == 0 && migrated.EventBest.Length == 2,
+            migrated != null
+                && migrated.Events.Active == -1
+                && migrated.Events.Next == 0
+                && migrated.Events.Best.Length == 2,
             "a run without a clock is dropped when an old save is read"
         );
         var damaged = game.CaptureProgress();
-        damaged.EventBest = new[] { new float[] { 3, 2, 1 }, Array.Empty<float>() };
+        damaged.Events.Best = new[] { new float[] { 3, 2, 1 }, Array.Empty<float>() };
         Check(SaveStore.Write(damaged, path), "damaged record written");
         Check(
-            SaveStore.Read(path)?.EventBest.All(best => best.Length == 0) ?? false,
+            SaveStore.Read(path)?.Events.Best.All(best => best.Length == 0) ?? false,
             "a damaged record falls back to the pace ghost"
         );
         // A finish through the game itself pays the course coins plus the bonus for beating the ghost.

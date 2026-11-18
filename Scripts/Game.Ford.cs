@@ -264,20 +264,20 @@ public partial class Game
     {
         EndHaul(refreshUi: false);
         for (int i = 0; i < world.Projects.Length; i++)
-            world.Projects[i].SetStage(data.BuildStages![i]);
-        TrailerOwned = world.Ford is { Passable: true } && data.TrailerOwned;
-        trailerParade = TrailerOwned && data.TrailerAttached;
-        trailer.SetPaint(data.TrailerPaint);
+            world.Projects[i].SetStage(data.Buildings.Stages![i]);
+        TrailerOwned = world.Ford is { Passable: true } && data.Buildings.TrailerOwned;
+        trailerParade = TrailerOwned && data.Buildings.TrailerAttached;
+        trailer.SetPaint(data.Buildings.TrailerPaint);
         if (world.Duck is { } duck)
         {
-            duck.Disabled = duck.IsOwned && data.DisabledCollectorPets.Contains(duck.Kind.ToString());
+            duck.Disabled = duck.IsOwned && data.Companions.DisabledPets.Contains(duck.Kind.ToString());
             PlaceCollectorPet(duck);
         }
         foreach (var works in world.Industry)
-            works.SetStock(data.WorksStock[works.Site.Index]);
-        world.Village.RestorePlots(data.PlotStages!);
+            works.SetStock(data.Buildings.WorksStock[works.Site.Index]);
+        world.Village.RestorePlots(data.Buildings.PlotStages!);
         trailer.SetLoad(null);
-        if (data.Trip is { } saved && TripTarget(saved) is { } target)
+        if (data.Task.Trip is { } saved && TripTarget(saved) is { } target)
         {
             StartHaul(new HaulTrip(world, vehicle, target, target.NextStep, saved.Loaded));
             trailer.Snap();

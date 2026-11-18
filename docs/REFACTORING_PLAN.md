@@ -194,6 +194,14 @@ Poznámky:
 
 ## Fáze 4: struktura `SaveData` (nález 5)
 
+**Stav: provedeno** (verze 5). Odchylky od návrhu níže:
+
+- **Sekce jsou datové třídy**, ne rozhraní `ISaveSection`: `Vehicle`, `Economy`, `Quiz`, `Task` (výprava nebo trasa), `Roadside`, `Village`, `Buildings`, `Companions`, `Postcards`, `Events`, `Bandits`. Pravidla jsou seznam `SaveRules.All`, jedno pravidlo na část; pravidlům nevadí, že se odkazují na jiné části uložení (postava, panel, trasa), protože vidí celé `SaveData`.
+- **Starý plochý tvar je `SaveDataV4`** (jen čtení, nikdy se nemění) a `SaveMigrations.ReadLegacy` + `ToCurrent` ho převedou. Soubor verze 5 se čte přímo. Opravy po verzích (`Repair`, `AfterValidation`) zůstaly ve stejném pořadí jako dřív, takže pořadí validace a oprav se nezměnilo.
+- **Řetěz migrací** zůstal tvaru „kroky 1→2→3→4 na ploché třídě, pak jeden převod do sekcí“, ne nový řetěz na každou verzi: kroky 1–4 jsou beze změny a pro ně nikdo nechce další převod. Nový tvar dostane vlastní krok, až bude verze 6.
+- **Chyba z fáze 2 opravena při přesunu pravidel:** pravidlo pro obchody (`TradeStatus`) po fázi 2 porovnávalo staré `int?` pole tras s nulou, takže se vždy vyhodnotilo jako nepravdivé a uložení „stav obchodu bez úkolu“ se přijímalo. Teď kontroluje `Task.Sender` a `Task.Trip` jako dřív.
+- **Testy:** všech 117 fixtur (v3, v4, nové v5) se načítá a hra z nich pokračuje; u v4 se navíc ověřuje, že se žádné pole při převodu neztratilo ani nezměnilo (zploštění výsledku je původní soubor). `LegacySaves` (diagnostika) vyrábí uložení ve starém tvaru z aktuálního, a testy migrací starších verzí (v1, v2, v3) ho používají. Kopie skutečného uložení hráče (verze 3) se načetla jako verze 5.
+
 1. **`ISaveSection`** pro každý podsystém: `string Name`, `void Capture(SaveBuilder)`, `void Restore(SaveReader)`, `bool Validate(SaveReader)`. Sekce vznikají přirozeně z fáze 3: `Economy`, `TaskSlot`, `QuizSession`, `Vehicle`, `Village`, `Buildings`, `Postcards`, `Events`, `Bandits`, `Companions`.
 2. **Verze 5** ukládá `{ Version, Seed, State, Nearby, Sections: { ... } }`. Každá sekce má vlastní třídu a vlastní výchozí hodnoty.
 3. **Řetěz migrací** podle verze: `Migrate(data, from)` volá `V1→V2`, `V2→V3`, `V3→V4`, `V4→V5` postupně. Současné migrace podle tvaru dat (`MigrateBuilds`, `MigrateEventRun`…) se převedou na kroky řetězu; jedna migrace = jedna čistá funkce a jedna fixtura.
