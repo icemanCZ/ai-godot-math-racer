@@ -162,6 +162,16 @@ Panel, zahájení a obnova jsou **jeden tok** v `Game.Trips.cs` místo čtyř ko
 
 ## Fáze 3: stav z `Game` do malých objektů (nálezy 1, 3)
 
+**Stav: provedeno** v menším rozsahu, než plán čekal. Co vzniklo: `Economy`, `QuizSession`, `TaskSlot`, `Interaction` (258 řádků, žádné uzly scény), seznam systémů `Game.Systems.cs` a registr panelů `Game.Panels.cs`. `Game` si nechala vlastnosti, které používaly ostatní části a testy (`State`, `Delivery`, `Haul`, `CurrentChallenge`, `Coins`), a ty teď předávají.
+
+Odchylky a čísla, pro úplnost:
+
+- **Velikost `Game` se skoro nezměnila:** všechny soubory `Game.*.cs` mají 3 295 řádků (před fází 3 jich bylo 3 328), `Game.cs` 628 (dřív 719). Cíl ≤ 2 500 se nesplnil a **s tímto postupem splnit nejde**: stav se přesouvá, ale velké části (pohlednice, bandité, závody, společníci) zůstaly v `Game`, protože plán je přesouvat nechtěl. Číslo 5 388 z review počítalo i `GameUi*` a `GameControls`, skutečná třída `Game` měla 3 328 řádků.
+- `ShowPanel` už není `switch`, ale slovník `GameState → panel`. Kontrola v `contract-checks` se tím změnila z čtení zdrojového kódu na dotaz do registru (`Game.HasPanel`).
+- `Interaction` je jen stav a přechody pauzy. `EnterInteraction`, `Resume` a `TogglePause` zůstaly v `Game`, protože zastavují auto a ukazují panel.
+- `Economy` a `Interaction` jsou malé; větší užitek mají `QuizSession` (generátory a rotace bez scény) a `TaskSlot` (vkládání a odebírání úkolu ze scény na jednom místě).
+- **Nalezeno cestou, není z refaktoringu:** `track-checks` selhává na seedech 42 a 1706514621 (`TRACK_GAP … gaps=1`) už na původním commitu `c742645`. `build.ps1` ho spouští s náhodným seedem, proto dosud procházel jen náhodou. Zdroj chyby jsem nehledal.
+
 Princip: **přesun, ne přepis.** Každý objekt vezme pole a metody, které dnes leží v `Game`, a `Game` na něj jen deleguje. Pořadí od nejmenšího rizika:
 
 | Krok | Objekt | Co převezme | Dnes v |
@@ -226,7 +236,7 @@ Nepotvrzeno během review, nic se nespouštělo. Každou věc potvrdit nebo vyvr
 
 | Metrika | Dnes | Cíl |
 | --- | --- | --- |
-| Řádky `Game` (všechny partialy) | 5 388 | ≤ 2 500 (z toho `Game.cs` ≤ 1 200) |
+| Řádky `Game` (všechny partialy `Game.*.cs`) | 3 328 (5 388 s `GameUi`) | ≤ 2 500 — **nesplněno**, 3 295; `Game.cs` 719 → 628 |
 | Soubory dotčené novým druhem trasy | 21 | ≤ 5 |
 | Pole tras ve `SaveData` | 8 | 1 (`Trip`) — splněno |
 | Místa s ručním výčtem druhů tras | `Departure`, `FinishDump`, `RestoreBuilds`, `CaptureProgress`, `SaveStore` | 4 zbývají (viz fáze 2), `FinishDump`, `CaptureProgress` a `RestoreBuilds` už ne |

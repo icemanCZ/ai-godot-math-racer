@@ -47,7 +47,7 @@ public partial class Game
         if (project is Jetty && world.Duck is { } duck)
             PlaceCollectorPet(duck);
         if (BuildItem(project.Index) is { } item)
-            rewards.Owned.Add(item);
+            economy.Owned.Add(item);
     }
 
     /// <summary>The sails of a finished mill turn faster in the wind.</summary>

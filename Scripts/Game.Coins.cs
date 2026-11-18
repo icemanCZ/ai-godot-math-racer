@@ -15,10 +15,8 @@ public partial class Game
     internal const int GhostCoins = 5;
     internal const int WorldCoinValue = 1;
 
-    internal int Coins => rewards.Coins;
+    internal int Coins => economy.Coins;
 
-    /// <summary>The coins paid for the task on the open reward panel.</summary>
-    private int rewardCoins;
     internal readonly WorldCoins WorldCoins = new();
 
     private void SetupCoins()
@@ -30,7 +28,7 @@ public partial class Game
     /// <summary>Pays coins for a finished task or a coin found in the valley and shows them in the HUD.</summary>
     internal void AddCoins(int amount)
     {
-        rewards.AddCoins(amount);
+        economy.Add(amount);
         ui.CoinCount(Coins, amount);
     }
 
@@ -47,7 +45,7 @@ public partial class Game
     /// <summary>Buys a priced car item in the garage and equips it right away.</summary>
     private bool BuyCarItem(CarReward reward)
     {
-        if (!rewards.Buy(reward))
+        if (!economy.Buy(reward))
             return false;
         ui.CoinCount(Coins, 0);
         Speak("Koupeno!");

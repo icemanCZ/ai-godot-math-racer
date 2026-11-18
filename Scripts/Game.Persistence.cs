@@ -33,7 +33,7 @@ public partial class Game
         Settings.PendingNewGameQuizzes =
             State == GameState.Title && SaveStore.Initial is { } saved
                 ? (saved.QuizTypes, saved.ThreeTermMath)
-                : (enabledQuizzes, threeTermMath);
+                : (quiz.Enabled, quiz.ThreeTermMath);
         vehicle.Active = false;
         ui.LoadingWorld();
         Callable
@@ -74,13 +74,13 @@ public partial class Game
             TrailerOwned = TrailerOwned,
             TrailerAttached = trailerParade,
             TrailerPaint = trailer.PaintId,
-            QuizTypes = enabledQuizzes,
-            NextQuiz = nextQuiz,
-            ThreeTermMath = threeTermMath,
-            HandoverQuiz = handoverQuiz,
-            Departure = (int)departure,
-            DepartureState = departure is Departure.Build or Departure.Plot or Departure.House or Departure.Missing
-                ? departureState
+            QuizTypes = quiz.Enabled,
+            NextQuiz = quiz.NextQuiz,
+            ThreeTermMath = quiz.ThreeTermMath,
+            HandoverQuiz = quiz.Handover,
+            Departure = (int)quiz.Departure,
+            DepartureState = quiz.Departure is Departure.Build or Departure.Plot or Departure.House or Departure.Missing
+                ? quiz.DepartureState
                 : GameState.Title,
             BanditSite = banditSite,
             BanditSolved = banditSolved,
@@ -100,7 +100,7 @@ public partial class Game
             Seed = Settings.Seed,
             Position = new[] { vehicle.Position.X, vehicle.Position.Y, vehicle.Position.Z },
             Heading = vehicle.Heading,
-            State = State == GameState.Paused ? beforePause : State,
+            State = interaction.Resting,
             Nearby = ActorId(nearby),
             TradeCounts = (int[])world.Village.TradeCounts.Clone(),
             HouseLevels = world.Village.Levels,
@@ -111,12 +111,9 @@ public partial class Game
             Animals = world.Animals.Select(a => a.RewardAvailable).ToArray(),
             Unlocked = roadside.UnlockedIndices(world.Animals),
             Completed = roadside.CompletedIndices(world.Animals),
-            Owned = rewards.Owned.ToArray(),
+            Owned = economy.Owned.ToArray(),
             Coins = Coins,
-            RewardCoins =
-                State is GameState.Reward || (State == GameState.Paused && beforePause == GameState.Reward)
-                    ? rewardCoins
-                    : 0,
+            RewardCoins = interaction.Resting == GameState.Reward ? economy.RewardCoins : 0,
             Look = vehicle.Appearance.CurrentLookId,
             Model = vehicle.Appearance.CurrentModelId,
             Accessories = CarAccessory
@@ -129,21 +126,21 @@ public partial class Game
             Arrived = Delivery?.Arrived ?? false,
             DeliveryReward = deliveryReward,
             Challenge = CurrentChallenge,
-            SyllableSelection = CurrentChallenge is SyllableChallenge ? syllableSelection : default,
-            Rejected = rejectedAnswers.ToArray(),
+            SyllableSelection = CurrentChallenge is SyllableChallenge ? quiz.Selection : default,
+            Rejected = quiz.Rejected.ToArray(),
         };
 
     internal void RestoreProgress(SaveData data)
     {
         EndExpedition(refreshUi: false);
         CancelPostcardPhoto();
-        enabledQuizzes = data.QuizTypes;
-        nextQuiz = data.NextQuiz;
-        threeTermMath = data.ThreeTermMath;
-        handoverQuiz = data.HandoverQuiz;
+        quiz.Enabled = data.QuizTypes;
+        quiz.NextQuiz = data.NextQuiz;
+        quiz.ThreeTermMath = data.ThreeTermMath;
+        quiz.Handover = data.HandoverQuiz;
         companionStopTime = 0;
         Array.Clear(companionWanders);
-        syllableSelection = data.SyllableSelection;
+        quiz.Selection = data.SyllableSelection;
         RestorePostcards(data);
         ResetCelebration();
         Events.Restore(
@@ -159,8 +156,7 @@ public partial class Game
         RestoreCarLook(data);
         RestoreVillage(data);
         roadside.Restore(world.Animals, data.Unlocked, data.Completed);
-        rewards.Restore(data.Owned, data.Coins);
-        rewardCoins = data.RewardCoins;
+        economy.Restore(data.Owned, data.Coins, data.RewardCoins);
         ui.CoinCount(Coins, 0);
         bool validEncounter = RestoreBandits(data);
         nearby = validEncounter ? ActorAt(data.Nearby) : null;
@@ -170,17 +166,18 @@ public partial class Game
             CurrentChallenge = null;
             banditSolved = 0;
         }
-        rejectedAnswers.Clear();
-        rejectedAnswers.UnionWith(data.Rejected);
+        quiz.Rejected.Clear();
+        quiz.Rejected.UnionWith(data.Rejected);
         // The trip that waits for the open quiz to be solved; without a question there is none.
-        departure = CurrentChallenge != null ? (Departure)data.Departure : Departure.None;
-        departureState = data.DepartureState;
+        quiz.Departure = CurrentChallenge != null ? (Departure)data.Departure : Departure.None;
+        quiz.DepartureState = data.DepartureState;
         deliveryReward = data.DeliveryReward;
         if (data.Sender >= 0)
         {
             var sender = ActorAt(data.Sender)!;
-            Delivery = new Expedition(world, vehicle, sender, data.Collection, data.Picked) { Arrived = data.Arrived };
-            AddChild(Delivery);
+            tasks.Begin(
+                new Expedition(world, vehicle, sender, data.Collection, data.Picked) { Arrived = data.Arrived }
+            );
             if (deliveryReward)
                 Delivery.ReleaseCargo();
         }
@@ -189,7 +186,7 @@ public partial class Game
         RestoreBuilds(data);
         ui.AnimalCount(RemainingAnimals, world.Animals.Length);
         UpdateDeliveryGuides();
-        beforePause = validEncounter ? data.State : GameState.Exploring;
+        interaction.BeforePause = validEncounter ? data.State : GameState.Exploring;
         Resume();
         foreach (var camera in GetChildren().OfType<FollowCamera>())
             camera.Snap();

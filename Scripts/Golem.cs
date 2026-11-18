@@ -218,7 +218,7 @@ public partial class Game
         if (State != GameState.SorcererStatus || Delivery?.Golem == true || GolemOwned)
             return;
         // Like every trip, the way for the golem's pieces starts with a quiz.
-        departure = Departure.Golem;
+        quiz.Departure = Departure.Golem;
         BeginQuiz();
     }
 

@@ -11,29 +11,10 @@ public partial class Game
 {
     private Trailer trailer = null!;
     private bool trailerParade;
-    private readonly Random loadRandom = new(Settings.Seed + 2313);
-
-    /// <summary>
-    /// The active trailer trip for a building or a works, which takes the same single task slot as
-    /// an expedition.
-    /// </summary>
-    internal HaulTrip? Haul { get; private set; }
 
     /// <summary>The trailer is won by finishing the bridge; it is lent for every trip before that.</summary>
     internal bool TrailerOwned { get; private set; }
     internal Trailer Trailer => trailer;
-
-    /// <summary>A delivery, collection or trailer trip is under way; only one runs at a time.</summary>
-    internal bool TaskActive => Delivery != null || Haul != null;
-
-    /// <summary>Accepting a new task switches off the one under way, together with its cargo.</summary>
-    private void CancelActiveTask()
-    {
-        EndExpedition(refreshUi: false);
-        EndHaul(refreshUi: false);
-        trailer.SetLoad(null);
-        deliveryReward = false;
-    }
 
     /// <summary>Companions trail further back while the trailer is hitched.</summary>
     private float TrailerTrailShift => trailer?.Attached == true ? 3.5f : 0;
@@ -118,34 +99,6 @@ public partial class Game
             return;
         }
         StartTrip(project);
-    }
-
-    private void StartHaul(HaulTrip trip)
-    {
-        EndHaul(refreshUi: false);
-        Haul = trip;
-        AddChild(Haul);
-        if (!trailer.Attached)
-            trailer.Attach(true);
-        // Keep the bed lowering after a dump; only a different load replaces the contents.
-        HaulLoad? load = trip.Loaded ? trip.Load : null;
-        if (trailer.Load != load)
-            trailer.SetLoad(load);
-        ui.HaulHud(Haul);
-        UpdateDeliveryGuides();
-    }
-
-    private void EndHaul(bool refreshUi = true)
-    {
-        if (Haul == null)
-            return;
-        RemoveChild(Haul);
-        Haul.QueueFree();
-        Haul = null;
-        if (!refreshUi)
-            return;
-        ui.DeliveryHud(null);
-        UpdateDeliveryGuides();
     }
 
     /// <summary>Only a trailer trip needs the trailer: once it is over (and the bed has settled) it is unhitched.</summary>

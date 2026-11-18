@@ -15,21 +15,7 @@ public enum QuizType
 
 public partial class Game
 {
-    private readonly LetterChallengeGenerator letterChallenges = new(Settings.Seed + 205);
-    private readonly SyllableChallengeGenerator syllableChallenges = new(Settings.Seed + 206);
-    private readonly ReadingChallengeGenerator readingChallenges = new(Settings.Seed + 207);
-    private static readonly QuizType[] QuizRotation =
-    {
-        QuizType.Math,
-        QuizType.Syllables,
-        QuizType.Letters,
-        QuizType.Reading,
-    };
-    internal static int QuizRotationLength => QuizRotation.Length;
-    private QuizType enabledQuizzes = QuizType.All;
-    private bool threeTermMath;
-    private int nextQuiz;
-    private bool handoverQuiz;
+    internal static int QuizRotationLength => QuizSession.RotationLength;
 
     /// <summary>
     /// The trip that starts once the quiz now on screen is solved. SaveData persists these numbers, so a value is
@@ -46,33 +32,28 @@ public partial class Game
         Missing,
     }
 
-    private Departure departure;
-    private GameState departureState;
-
     /// <summary>Asks the quiz that must be solved before a trip starts; the trip continues in StartDeparture.</summary>
     private void AskBeforeDeparture(Departure trip)
     {
-        departureState = State;
-        departure = trip;
+        quiz.DepartureState = State;
+        quiz.Departure = trip;
         BeginQuiz();
     }
 
-    private SyllableSelection syllableSelection;
-
     private void ToggleQuizType(QuizType type)
     {
-        if (State != GameState.Garage || enabledQuizzes == type)
+        if (State != GameState.Garage || quiz.Enabled == type)
             return;
-        enabledQuizzes ^= type;
+        quiz.Enabled ^= type;
         ShowGarage();
         SaveProgress();
     }
 
     private void SetMathLevel(bool advanced)
     {
-        if (State != GameState.Garage || threeTermMath == advanced)
+        if (State != GameState.Garage || quiz.ThreeTermMath == advanced)
             return;
-        threeTermMath = advanced;
+        quiz.ThreeTermMath = advanced;
         ShowGarage();
         SaveProgress();
     }
@@ -83,24 +64,10 @@ public partial class Game
     /// </summary>
     private void BeginQuiz(bool handover = false, HaulLoad? load = null)
     {
-        QuizType type;
-        do
-        {
-            type = QuizRotation[nextQuiz];
-            nextQuiz = (nextQuiz + 1) % QuizRotation.Length;
-        } while (!enabledQuizzes.HasFlag(type));
-        CurrentChallenge = type switch
-        {
-            QuizType.Math when load is HaulLoad cargo => LoadChallenge.Create(loadRandom, cargo),
-            QuizType.Math => challenges.Next(threeTermMath),
-            QuizType.Letters => letterChallenges.Next(),
-            QuizType.Syllables => syllableChallenges.Next(),
-            QuizType.Reading => readingChallenges.Next(),
-            _ => throw new InvalidOperationException("At least one quiz type must be enabled."),
-        };
-        handoverQuiz = handover;
-        syllableSelection = default;
-        rejectedAnswers.Clear();
+        CurrentChallenge = quiz.Next(load);
+        quiz.Handover = handover;
+        quiz.Selection = default;
+        quiz.Rejected.Clear();
         State = GameState.Challenge;
         ShowChallenge();
         if (nearby != null && !InBanditQuiz)

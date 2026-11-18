@@ -270,13 +270,13 @@ public partial class Game
             else
             {
                 if (view == "letters")
-                    enabledQuizzes = QuizType.Letters;
+                    quiz.Enabled = QuizType.Letters;
                 if (view == "syllables")
-                    enabledQuizzes = QuizType.Syllables;
+                    quiz.Enabled = QuizType.Syllables;
                 if (view == "reading")
-                    enabledQuizzes = QuizType.Reading;
+                    quiz.Enabled = QuizType.Reading;
                 if (view == "challenge-2")
-                    threeTermMath = true;
+                    quiz.ThreeTermMath = true;
                 OpenChallenge(world.Animals[view is "letters" or "syllables" or "reading" ? 1 : 0]);
             }
         }
@@ -355,7 +355,7 @@ public partial class Game
                 world.Industry[(int)Product.Gravel].SetStock(5);
                 BeginBuildTrip();
                 ChallengeChecks.Solve(this);
-                enabledQuizzes = QuizType.Math;
+                quiz.Enabled = QuizType.Math;
                 vehicle.SetPose(world.Ground.At(Haul!.Source.Position.X, Haul.Source.Position.Z, .15f), 0);
                 BeginLoading();
             }

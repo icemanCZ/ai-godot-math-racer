@@ -34,23 +34,37 @@ public enum GameState
 
 public partial class Game : Node3D
 {
-    public GameState State { get; private set; } = GameState.Title;
+    private readonly Interaction interaction = new();
+
+    public GameState State
+    {
+        get => interaction.State;
+        private set => interaction.State = value;
+    }
+
     private readonly World world = new();
     private readonly Vehicle vehicle = new();
     private readonly GameUi ui = new();
-    private Animal? nearby;
-    internal Expedition? Delivery { get; private set; }
+    private Animal? nearby
+    {
+        get => interaction.Nearby;
+        set => interaction.Nearby = value;
+    }
+
     private readonly RoadsideProgress roadside = new();
-    private readonly CarRewards rewards = new();
+    private readonly Economy economy = new();
     private bool deliveryReward;
     private int lastCollected = -1;
     internal int RemainingDeliveries => world.Animals.Length - roadside.CompletedCount;
     internal int RemainingAnimals => world.Animals.Count(animal => animal.RewardAvailable);
-    private GameState beforePause;
-    private readonly ChallengeGenerator challenges = new(Settings.Seed + 204);
-    private readonly HashSet<int> rejectedAnswers = new();
-    internal IChallenge? CurrentChallenge { get; private set; }
-    internal HashSet<CarReward> OwnedRewards => rewards.Owned;
+    private readonly QuizSession quiz = new();
+
+    internal IChallenge? CurrentChallenge
+    {
+        get => quiz.Current;
+        private set => quiz.Current = value;
+    }
+    internal HashSet<CarReward> OwnedRewards => economy.Owned;
     private bool AtGarage => vehicle.Position.DistanceTo(world.Village.GarageEntrance) < Settings.InteractionRange;
 
     public override void _Ready()
@@ -102,7 +116,7 @@ public partial class Game : Node3D
         DiagnosticsSkipTitle(ref skipTitle);
         if (Settings.PendingNewGameQuizzes is { } quizSettings)
         {
-            (enabledQuizzes, threeTermMath) = quizSettings;
+            (quiz.Enabled, quiz.ThreeTermMath) = quizSettings;
             Settings.PendingNewGameQuizzes = null;
             Start();
             SaveProgress();
@@ -159,36 +173,14 @@ public partial class Game : Node3D
     /// <summary>Stops the car and switches to an interaction state.</summary>
     private void EnterInteraction(GameState state, Animal? actor = null)
     {
-        if (actor != null)
-            nearby = actor;
-        State = state;
+        interaction.Enter(state, actor);
         vehicle.Active = false;
     }
 
     /// <summary>Forgets the open question together with the wrong answers already tried.</summary>
     private void ClearChallenge()
     {
-        departure = Departure.None;
-        CurrentChallenge = null;
-        rejectedAnswers.Clear();
-    }
-
-    /// <summary>
-    /// Removes the active expedition from the scene. With <paramref name="refreshUi"/> it also hides the
-    /// delivery HUD and refreshes the task markers; callers that still change related state pass false.
-    /// </summary>
-    private void EndExpedition(bool refreshUi = true)
-    {
-        if (Delivery == null)
-            return;
-        Delivery.ReleaseCargo();
-        RemoveChild(Delivery);
-        Delivery.QueueFree();
-        Delivery = null;
-        if (!refreshUi)
-            return;
-        ui.DeliveryHud(null);
-        UpdateDeliveryGuides();
+        quiz.Clear();
     }
 
     private void CloseInteraction()
@@ -204,94 +196,20 @@ public partial class Game : Node3D
             EndExpedition();
         }
         deliveryReward = false;
-        rewardCoins = 0;
-        handoverQuiz = false;
+        economy.RewardCoins = 0;
+        quiz.Handover = false;
         ClearChallenge();
         Start();
     }
 
     private void Resume()
     {
-        State = beforePause;
+        interaction.Unpause();
         vehicle.Active = State == GameState.Exploring;
         if (!ShowPanel(State))
             ui.HideModal();
         if (celebrationPanel == State && celebrationTime > 0)
             ui.HideModal();
-    }
-
-    /// <summary>Title, driving and pause have no panel; every other state is an interaction that Back closes.</summary>
-    private static bool IsInteraction(GameState state) =>
-        state is not (GameState.Title or GameState.Exploring or GameState.Paused);
-
-    /// <summary>
-    /// Shows the panel of an interaction state from the current context, e.g. after pause, loading or a celebration.
-    /// <paramref name="returned"/> marks a collection status shown right after a delivery.
-    /// Returns false when the state has no panel or its context is missing.
-    /// </summary>
-    private bool ShowPanel(GameState state, bool returned = false)
-    {
-        switch (state)
-        {
-            case GameState.Challenge when nearby != null && CurrentChallenge != null:
-                ShowChallenge();
-                return true;
-            case GameState.Reward when nearby != null:
-                ShowRewards();
-                return true;
-            case GameState.ExpeditionChoice when nearby != null:
-                ui.ExpeditionChoice(nearby, vehicle.Appearance);
-                return true;
-            case GameState.Garage:
-                ShowGarage();
-                return true;
-            case GameState.HouseReward when nearby is { Role: HouseResidentRole house }:
-                ui.HouseReward(nearby, world.Village.Level(house.House));
-                return true;
-            case GameState.HouseCollection when Delivery != null:
-                ui.HouseCollection(Delivery.Sender, Delivery.Collected);
-                return true;
-            case GameState.HouseFruitOffer when nearby is { Role: HouseResidentRole house }:
-                ui.HouseFruitOffer(nearby, world.Village.Level(house.House), true);
-                return true;
-            case GameState.HouseMaterialOffer when nearby?.Role is HouseResidentRole:
-                return ShowHouseMaterial();
-            case GameState.FarmStatus:
-                ui.FarmStatus(world.Village, Delivery, returned);
-                return true;
-            case GameState.GardenStatus:
-                ui.GardenStatus(world.Village, Delivery, returned);
-                return true;
-            case GameState.CollectionStatus when nearby != null:
-                ui.CollectionStatus(world.Village, nearby, Delivery, returned);
-                return true;
-            case GameState.TradeStatus when nearby != null:
-                ui.TradeStatus(nearby, Delivery);
-                return true;
-            case GameState.WeatherChoice:
-                ShowWeatherChoice();
-                return true;
-            case GameState.SorcererStatus:
-                ShowSorcerer();
-                return true;
-            case GameState.BuildStatus when nearby?.Role is BuilderRole:
-                ShowBuilder();
-                return true;
-            case GameState.PlotStatus when nearby?.Role is PlotResidentRole:
-                ShowPlot();
-                return true;
-            case GameState.SourceStatus when nearby?.Role is SourceRole:
-                ShowSource();
-                return true;
-            case GameState.WorksStatus when nearby?.Role is WorksRole:
-                ShowWorks();
-                return true;
-            case GameState.PostcardAlbum when pendingPhoto < 0:
-                ShowPostcards();
-                return true;
-            default:
-                return false;
-        }
     }
 
     public override void _Input(InputEvent e)
@@ -307,7 +225,7 @@ public partial class Game : Node3D
         {
             if (State == GameState.Paused)
                 Resume();
-            else if (IsInteraction(State))
+            else if (Interaction.IsInteraction(State))
                 CloseInteraction();
             else
                 TogglePause();
@@ -357,7 +275,7 @@ public partial class Game : Node3D
             OpenChallenge(nearby);
     }
 
-    private void ShowRewards() => ui.CoinReward(rewardCoins);
+    private void ShowRewards() => ui.CoinReward(economy.RewardCoins);
 
     private void ShowGarage() =>
         ui.Garage(
@@ -366,8 +284,8 @@ public partial class Game : Node3D
             GolemOwned,
             GolemActive,
             world.AllPets,
-            enabledQuizzes,
-            threeTermMath,
+            quiz.Enabled,
+            quiz.ThreeTermMath,
             Coins,
             world.Ford == null ? null : new GarageTrailer(TrailerOwned, trailerParade, trailer.PaintId)
         );
@@ -416,8 +334,7 @@ public partial class Game : Node3D
     private void StartExpedition(Animal sender, bool collection)
     {
         CancelActiveTask();
-        Delivery = new Expedition(world, vehicle, sender, collection);
-        AddChild(Delivery);
+        tasks.Begin(new Expedition(world, vehicle, sender, collection));
         ClearChallenge();
         lastCollected = Delivery.Collected;
         ui.DeliveryHud(Delivery);
@@ -469,7 +386,7 @@ public partial class Game : Node3D
             CompleteCollectorDelivery(collector);
             return;
         }
-        if (!enabledQuizzes.HasFlag(QuizType.Math))
+        if (!quiz.Enabled.HasFlag(QuizType.Math))
         {
             BeginQuiz(handover: true);
             return;
@@ -519,17 +436,17 @@ public partial class Game : Node3D
             return;
         if (CurrentChallenge is SyllableChallenge syllables)
         {
-            var next = syllableSelection.Pick(syllables, answer);
-            if (next == syllableSelection)
+            var next = quiz.Selection.Pick(syllables, answer);
+            if (next == quiz.Selection)
                 return;
-            syllableSelection = next;
+            quiz.Selection = next;
             ShowChallenge();
             SaveProgress();
             return;
         }
         if (!CurrentChallenge.Accepts(answer))
         {
-            rejectedAnswers.Add(answer);
+            quiz.Rejected.Add(answer);
             ShowChallenge();
             return;
         }
@@ -547,7 +464,7 @@ public partial class Game : Node3D
             State == GameState.Challenge
             && banditArrival <= 0
             && CurrentChallenge is SyllableChallenge syllables
-            && syllableSelection.IsComplete(syllables)
+            && quiz.Selection.IsComplete(syllables)
         )
             CompleteChallenge();
     }
@@ -562,17 +479,17 @@ public partial class Game : Node3D
             return;
         }
         StopSpeech();
-        bool handover = handoverQuiz || CurrentChallenge is DeliveryChallenge;
-        if (handoverQuiz)
+        bool handover = quiz.Handover || CurrentChallenge is DeliveryChallenge;
+        if (quiz.Handover)
         {
-            handoverQuiz = false;
+            quiz.Handover = false;
             ClearChallenge();
         }
         // A solved quiz that was asked before a trip lets the trip start.
-        if (departure != Departure.None)
+        if (quiz.Departure != Departure.None)
         {
-            var trip = departure;
-            departure = Departure.None;
+            var trip = quiz.Departure;
+            quiz.Departure = Departure.None;
             StartDeparture(trip);
             return;
         }
@@ -614,7 +531,7 @@ public partial class Game : Node3D
     /// <summary>Pays a finished delivery's coins and opens the reward panel that shows them.</summary>
     private void PayReward(int coins)
     {
-        rewardCoins = coins;
+        economy.RewardCoins = coins;
         AddCoins(coins);
         State = GameState.Reward;
         ShowRewards();
@@ -630,8 +547,7 @@ public partial class Game : Node3D
             return;
         }
         StopSpeech();
-        beforePause = State;
-        State = GameState.Paused;
+        interaction.Pause();
         vehicle.Active = false;
         ui.Pause();
     }
@@ -652,15 +568,8 @@ public partial class Game : Node3D
         if (State is not (GameState.Paused or GameState.Title))
             trailer.Tick((float)delta);
         UnhitchIdleTrailer();
-        TickCompanionStop((float)delta);
-        TickGolem((float)delta);
-        TickCollectorPets((float)delta);
-        TickEvents(delta);
-        TickPostcards(delta);
-        TickBandits((float)delta);
-        TickCoins(delta);
-        TickMill();
-        TickLookout((float)delta);
+        foreach (var system in systems)
+            system.Tick(delta);
         saveTimer += delta;
         double saveInterval = State == GameState.Exploring ? 2 : .5;
         if (State != GameState.Title && (State != lastSavedState || saveTimer >= saveInterval))

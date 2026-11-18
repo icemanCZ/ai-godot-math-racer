@@ -152,9 +152,14 @@ public partial class WorldFingerprintChecks : Node
 /// </summary>
 public partial class ContractChecks : Node
 {
+    private readonly Game game;
     private readonly World world;
 
-    public ContractChecks(World world) => this.world = world;
+    public ContractChecks(Game game, World world)
+    {
+        this.game = game;
+        this.world = world;
+    }
 
     private static void Check(bool condition, string message)
     {
@@ -307,21 +312,16 @@ public partial class ContractChecks : Node
     }
 
     /// <summary>
-    /// Every state that opens a panel is shown again after a pause or a load by <c>Game.ShowPanel</c>. This reads the
-    /// source on purpose, and goes away when the panels are registered rather than listed in a switch.
+    /// Every state that opens a panel has one registered in <c>Game.RegisterPanels</c>, so that it is shown again
+    /// after a pause or a load.
     /// </summary>
-    private static void CheckPanels()
+    private void CheckPanels()
     {
-        string source = File.ReadAllText(ProjectSettings.GlobalizePath("res://Scripts/Game.cs"));
-        int start = source.IndexOf("private bool ShowPanel", StringComparison.Ordinal);
-        int end = source.IndexOf("public override void _Input", StringComparison.Ordinal);
-        Check(start >= 0 && end > start, "Game.ShowPanel is found in the source");
-        string body = source[start..end];
         foreach (var state in Enum.GetValues<GameState>())
         {
             if (state is GameState.Title or GameState.Exploring or GameState.Paused)
                 continue;
-            Check(body.Contains($"GameState.{state}"), $"Game.ShowPanel shows a panel for {state}");
+            Check(game.HasPanel(state), $"an interaction state {state} has a panel");
         }
     }
 

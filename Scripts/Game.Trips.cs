@@ -46,10 +46,10 @@ public partial class Game
             return;
         if (PanelTrips.TryGetValue(trip, out var begin))
         {
-            State = departureState;
+            State = quiz.DepartureState;
             begin(true);
             // A refused trip must not leave the quiz state behind.
-            if (State == departureState && State != GameState.Exploring)
+            if (State == quiz.DepartureState && State != GameState.Exploring)
                 CloseInteraction();
             return;
         }

@@ -157,7 +157,7 @@ public partial class Game
         var type = Enumerable
             .Range(0, PostcardQuizTypes.Length)
             .Select(offset => PostcardQuizTypes[(index + offset) % PostcardQuizTypes.Length])
-            .FirstOrDefault(candidate => enabledQuizzes.HasFlag(candidate), QuizType.Math);
+            .FirstOrDefault(candidate => quiz.Enabled.HasFlag(candidate), QuizType.Math);
         return type switch
         {
             QuizType.Letters => new LetterChallenge(
@@ -166,7 +166,7 @@ public partial class Game
             ),
             QuizType.Syllables => PostcardSyllables(index, Settings.Seed),
             QuizType.Reading => new ReadingChallengeGenerator(Settings.Seed + 300 + index).Next(),
-            QuizType.Math => new ChallengeGenerator(Settings.Seed + 280 + index).Next(threeTermMath),
+            QuizType.Math => new ChallengeGenerator(Settings.Seed + 280 + index).Next(quiz.ThreeTermMath),
             _ => throw new InvalidOperationException("At least one quiz type must be enabled."),
         };
     }

@@ -9,7 +9,7 @@ public partial class Game
             ui.HideModal();
             return;
         }
-        ui.Challenge(CurrentChallenge!, rejectedAnswers, syllableSelection, InBanditQuiz ? banditSolved + 1 : 0);
+        ui.Challenge(CurrentChallenge!, quiz.Rejected, quiz.Selection, InBanditQuiz ? banditSolved + 1 : 0);
     }
 
     internal void OpenHouse(Animal resident)
@@ -145,7 +145,7 @@ public partial class Game
         )
             return;
         // The apple trip starts only after a solved quiz.
-        departure = Departure.Fruit;
+        quiz.Departure = Departure.Fruit;
         BeginQuiz();
     }
 
