@@ -1,5 +1,6 @@
 using System;
 using Godot;
+using MathRacer.App;
 using MathRacer.Buildings;
 using MathRacer.Characters;
 using MathRacer.Quizzes;
@@ -36,9 +37,9 @@ public partial class GameUi
             + project switch
             {
                 BuildPlans.Bridge => "Bobr",
-                BuildPlans.Mill => "Mlynář",
-                BuildPlans.Tower => "Hvězdář",
-                _ => "Rybář",
+                BuildPlans.Mill => Texts.Mlynar,
+                BuildPlans.Tower => Texts.Hvezdar,
+                _ => Texts.Rybar,
             };
     }
 
@@ -90,7 +91,7 @@ public partial class GameUi
         else if (canStart)
         {
             var start = IconButton("play", () => Send(new UiIntent.BuildQuest()), "StartBuildTrip");
-            start.AccessibilityName = "Zapřáhnout vozík";
+            start.AccessibilityName = Texts.ZaprahnoutVozik;
             start.GrabFocus();
         }
         else if (missing != null)
@@ -106,7 +107,7 @@ public partial class GameUi
             Picture(need, WorksCatalog.ProductIcon(missing.Spec.Product))!.CustomMinimumSize = new(100, 84);
             // The builder sends the player for the raw material right away.
             var fetch = IconButton("play", () => Send(new UiIntent.MissingSupply()), "StartMissingSupply");
-            fetch.AccessibilityName = "Zapřáhnout vozík pro surovinu";
+            fetch.AccessibilityName = Texts.ZaprahnoutVozikProSurovinu;
             fetch.GrabFocus();
         }
         else
@@ -188,7 +189,7 @@ public partial class GameUi
         ref Button? focus
     )
     {
-        catalogue.AddChild(new Label { Text = "Vozík" });
+        catalogue.AddChild(new Label { Text = Texts.Vozik });
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 8);
         catalogue.AddChild(row);
@@ -212,15 +213,15 @@ public partial class GameUi
             {
                 button.AddThemeStyleboxOverride("disabled", Style("d5d5d5", 16));
                 button.AddThemeColorOverride("font_disabled_color", new Color("777777"));
-                button.TooltipText = "Postav s bobrem Bóďou most a vozík je tvůj.";
+                button.TooltipText = Texts.PostavSBobremBodouMostA;
             }
             return button;
         }
         var toggle = Option(
             "GarageTrailer",
-            !trailer.Owned ? "Vozík · zatím nezískán"
-                : trailer.Attached ? "✓ Vozík připojený"
-                : "Připojit vozík",
+            !trailer.Owned ? Texts.VozikZatimNeziskan
+                : trailer.Attached ? Texts.VozikPripojeny
+                : Texts.PripojitVozik,
             () => Send(new UiIntent.ToggleTrailer())
         );
         if (trailer.Owned && garageFocus == toggle.Name)

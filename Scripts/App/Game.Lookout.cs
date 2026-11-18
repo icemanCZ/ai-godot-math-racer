@@ -47,7 +47,7 @@ public partial class Game
             if (animal.RewardAvailable)
                 animal.Ping(RadarSeconds);
         tower.Builder.Celebrate();
-        Speak("Podívej se, co všechno je v údolí! Zlaté sloupy ukazují mince a modré kamarády.", tower.Builder);
+        Speak(Texts.PodivejSeCoVsechnoJeV, tower.Builder);
     }
 
     private void TickLookout(float delta)

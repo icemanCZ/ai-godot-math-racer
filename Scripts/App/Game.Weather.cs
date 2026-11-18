@@ -19,7 +19,7 @@ public partial class Game
         ClearChallenge();
         State = GameState.WeatherChoice;
         ShowWeatherChoice();
-        Speak("Teď prosím vyber počasí.", nearby);
+        Speak(Texts.TedProsimVyberPocasi, nearby);
     }
 
     private void ShowWeatherChoice() => ui.WeatherChoice(world.Witch, SelectWeather);

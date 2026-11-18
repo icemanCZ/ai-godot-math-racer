@@ -22,15 +22,15 @@ public partial class Game
     private static readonly Postcard[] Postcards =
     {
         new(
-            "Most a lekníny",
-            "U příjezdu k mostu",
+            Texts.MostALekniny,
+            Texts.UPrijezduKMostu,
             "most",
             new[] { "postcard-village", "postcard-bridge", "postcard-farm" },
             1
         ),
         new(
-            "Domečky pod kopcem",
-            "Na silnici nad vesnicí",
+            Texts.DomeckyPodKopcem,
+            Texts.NaSilniciNadVesnici,
             "do-meč-ky",
             new[] { "postcard-bridge", "postcard-farm", "postcard-village" },
             2
@@ -43,22 +43,22 @@ public partial class Game
             0
         ),
         new(
-            "Garáž u cesty",
-            "Poblíž garáže",
+            Texts.GarazUCesty,
+            Texts.PoblizGaraze,
             "ga-ráž",
             new[] { "postcard-garden", "postcard-garage", "postcard-meadow" },
             1
         ),
         new(
-            "Zahrada plná květin",
-            "U zahradnictví",
+            Texts.ZahradaPlnaKvetin,
+            Texts.UZahradnictvi,
             "za-hra-da",
             new[] { "postcard-meadow", "postcard-garage", "postcard-garden" },
             2
         ),
         new(
-            "Louka u lesní cesty",
-            "U lučních květin",
+            Texts.LoukaULesniCesty,
+            Texts.ULucnichKvetin,
             "lou-ka",
             new[] { "postcard-meadow", "postcard-garden", "postcard-garage" },
             0
@@ -205,7 +205,7 @@ public partial class Game
         photoTime = 1.5;
         ui.HideModal();
         ui.DeliveryHint(false);
-        Speak("Vyfotíme pohlednici.");
+        Speak(Texts.VyfotimePohlednici);
 
         var subject = viewpoints[index].Subject;
         var car = vehicle.GlobalPosition;
@@ -366,7 +366,7 @@ public partial class Game
     private void StampPostcard(PostcardProgress card)
     {
         postcards[postcardPage] = card with { Stamped = true };
-        postcardFeedback = "Pohlednice má razítko.";
+        postcardFeedback = Texts.PohledniceMaRazitko;
         AddCoins(PostcardCoins);
         if (
             postcards.Count(progress => progress?.Stamped == true) >= PostcardRewardStamps
@@ -374,7 +374,7 @@ public partial class Game
         )
         {
             vehicle.Appearance.ToggleAccessory(PostcardReward.Id);
-            postcardFeedback = "V garáži máš samolepku Mapka údolí!";
+            postcardFeedback = Texts.VGaraziMasSamolepkuMapkaUdoli;
         }
         Speak(postcardFeedback);
     }

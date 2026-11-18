@@ -315,7 +315,7 @@ public partial class Game : Node3D
         CurrentChallenge = null;
         EnterInteraction(GameState.ExpeditionChoice, sender);
         ui.ExpeditionChoice(sender, vehicle.Appearance);
-        Speak("Teď si prosím vyber rozvoz nebo dovoz.", sender);
+        Speak(Texts.TedSiProsimVyberRozvozNebo, sender);
     }
 
     internal void SelectExpedition(bool collection)
@@ -517,7 +517,7 @@ public partial class Game : Node3D
         if (Delivery != null)
         {
             roadside.Complete(Delivery.Sender);
-            CelebrateCompletion(Delivery.Recipient, "Doručeno! Děkujeme za pomoc!", true);
+            CelebrateCompletion(Delivery.Recipient, Texts.DorucenoDekujemeZaPomoc, true);
         }
         PayReward(RoadsideDeliveryCoins);
     }
@@ -589,7 +589,7 @@ public partial class Game : Node3D
                 ui.DeliveryHud(Delivery);
                 UpdateDeliveryGuides();
                 if (Delivery.CanDeliver)
-                    Speak("Náklad je na autě. Teď ho dovez zpátky.");
+                    Speak(Texts.NakladJeNaAuteTedHo);
                 SaveProgress();
             }
             bool atRecipient = Delivery.CanDeliver && AtRecipient(Delivery);

@@ -139,7 +139,7 @@ public partial class Game
                         ? $"\nPřed duchem o {DrivingEvents.FormatTime(-Events.Gap)} s"
                         : $"\nZa duchem o {DrivingEvents.FormatTime(Events.Gap)} s";
             ui.EventHud(hud);
-            ui.EventHint("Ukončit jízdu");
+            ui.EventHint(Texts.UkoncitJizdu);
         }
         else
         {
@@ -150,7 +150,7 @@ public partial class Game
                     : ""
             );
             if (course >= 0 && nearby == null && !AtGarage)
-                ui.EventHint("Zahájit jízdu");
+                ui.EventHint(Texts.ZahajitJizdu);
         }
     }
 }

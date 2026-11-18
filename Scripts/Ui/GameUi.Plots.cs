@@ -1,5 +1,6 @@
 using System;
 using Godot;
+using MathRacer.App;
 using MathRacer.Buildings;
 using MathRacer.Characters;
 using MathRacer.Settlement;
@@ -42,7 +43,7 @@ public partial class GameUi
         else if (canStart)
         {
             var start = IconButton("play", () => Send(new UiIntent.PlotTrip()), "StartPlotTrip");
-            start.AccessibilityName = "Zapřáhnout vozík";
+            start.AccessibilityName = Texts.ZaprahnoutVozik;
             start.GrabFocus();
         }
         else if (missing != null)
@@ -57,7 +58,7 @@ public partial class GameUi
             arrow.Direction = Mathf.Pi / 2;
             Picture(need, WorksCatalog.ProductIcon(missing.Spec.Product))!.CustomMinimumSize = new(100, 84);
             var fetch = IconButton("play", () => Send(new UiIntent.MissingSupply()), "StartMissingSupply");
-            fetch.AccessibilityName = "Zapřáhnout vozík pro surovinu";
+            fetch.AccessibilityName = Texts.ZaprahnoutVozikProSurovinu;
             fetch.GrabFocus();
         }
         else

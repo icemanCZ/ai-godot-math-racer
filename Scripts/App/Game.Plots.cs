@@ -36,15 +36,15 @@ public partial class Game
         ShowPlot();
         if (plot.Complete)
         {
-            Speak("Moc děkuju za domeček! Bydlí se mi tu skvěle.", resident);
+            Speak(Texts.MocDekujuZaDomecekBydliSe, resident);
             return;
         }
         if (Haul != null)
             return;
         Speak(
-            !PlotStepReady(plot) ? "Zboží ještě není vyrobené. Pošlu tě pro surovinu!"
+            !PlotStepReady(plot) ? Texts.ZboziJesteNeniVyrobenePosluTe
                 : plot.Stage == 0 ? resident.Greeting
-                : "Přivezeš mi další materiál?",
+                : Texts.PrivezesMiDalsiMaterial,
             resident
         );
     }
@@ -101,7 +101,7 @@ public partial class Game
         );
         // The next load waits until the player asks the newcomer for it again.
         EndHaul();
-        Speak("Děkuju! Až budeš chtít, přivez další materiál.", plot.Resident);
+        Speak(Texts.DekujuAzBudesChtitPrivezDalsi, plot.Resident);
         SaveProgress();
     }
 
@@ -111,7 +111,7 @@ public partial class Game
         EndHaul();
         AddCoins(PlotCoins);
         CelebrateAt(plot.Focus, $"Domeček je hotový! {plot.Resident.DisplayName} se nastěhoval.  +{PlotCoins}");
-        Speak("Hurá, domeček je hotový! Teď tu budu bydlet. Moc děkuju!", plot.Resident);
+        Speak(Texts.HuraDomecekJeHotovyTedTu, plot.Resident);
         var outward = followCamera.GlobalPosition - plot.Focus;
         outward.Y = 0;
         followCamera.ShowMoment(plot.Focus, outward.LengthSquared() > .01f ? outward.Normalized() : Vector3.Back);

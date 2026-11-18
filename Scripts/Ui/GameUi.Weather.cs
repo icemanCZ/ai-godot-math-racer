@@ -1,4 +1,5 @@
 using System;
+using MathRacer.App;
 using MathRacer.Characters;
 using MathRacer.Valley;
 
@@ -9,7 +10,7 @@ public partial class GameUi
     internal void WitchHint()
     {
         talkButton.Visible = !modal.Visible;
-        talkButton.Text = controller ? "A · Čarodějnice" : "E · Čarodějnice";
+        talkButton.Text = controller ? Texts.ACarodejnice : Texts.ECarodejnice;
     }
 
     internal void WeatherChoice(Character witch, Action<WeatherKind> select)
@@ -22,9 +23,9 @@ public partial class GameUi
         foreach (
             var (kind, icon, name) in new[]
             {
-                (WeatherKind.Rain, "rain", "Déšť"),
-                (WeatherKind.Wind, "wind", "Vítr"),
-                (WeatherKind.Storm, "storm", "Bouřka"),
+                (WeatherKind.Rain, "rain", Texts.Dest),
+                (WeatherKind.Wind, "wind", Texts.Vitr),
+                (WeatherKind.Storm, "storm", Texts.Bourka),
                 (WeatherKind.Clear, "clear", "Jasno"),
             }
         )

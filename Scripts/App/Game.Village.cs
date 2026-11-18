@@ -97,7 +97,7 @@ public partial class Game
         var works = GoodsWorks(load)!;
         string wanted = load == HaulLoad.Planks ? "prkna" : "cihly";
         Speak(
-            TripOf(resident) != null ? "Přiveď mi ten náklad k domečku!"
+            TripOf(resident) != null ? Texts.PrivedMiTenNakladKDomecku
                 : works.Stock >= Works.PerTrip ? $"Na vylepšení domečku potřebuju {wanted}. Přivezeš mi je?"
                 : $"Na vylepšení domečku potřebuju {wanted}, ale {works.Spec.Name.ToLower()} jich nemá. Pošlu tě pro surovinu!",
             resident

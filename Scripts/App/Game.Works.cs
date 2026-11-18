@@ -33,7 +33,7 @@ public partial class Game
         ClearChallenge();
         EnterInteraction(GameState.WorksStatus, worker);
         ShowWorks();
-        Speak(works.Full ? "Sklad je plný. Děkuju!" : worker.Greeting, worker);
+        Speak(works.Full ? Texts.SkladJePlnyDekuju : worker.Greeting, worker);
     }
 
     private void ShowWorks()
@@ -56,7 +56,7 @@ public partial class Game
         EnterInteraction(GameState.SourceStatus, worker);
         ShowSource();
         if (works.Full)
-            Speak("Sklad závodu je plný. Zkus to později.", worker);
+            Speak(Texts.SkladZavoduJePlnyZkusTo, worker);
         else if (Haul == null)
             Speak(worker.Greeting, worker);
     }
@@ -144,7 +144,7 @@ public partial class Game
         works.Worker.Celebrate();
         CelebrateAt(works.Site.Position + Vector3.Up * 2, $"{works.Spec.Goods}  {works.Stock} / {Works.Capacity}");
         EndHaul();
-        Speak(works.Full ? "Sklad je plný, děkuju!" : "Děkuju! Až budeš chtít, přivez další náklad.", works.Worker);
+        Speak(works.Full ? Texts.SkladJePlnyDekuju2 : Texts.DekujuAzBudesChtitPrivezDalsi2, works.Worker);
         SaveProgress();
     }
 }

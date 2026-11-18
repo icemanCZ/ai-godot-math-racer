@@ -33,7 +33,7 @@ public partial class Game
             return;
         deliveryReward = true;
         ClearChallenge();
-        CelebrateCompletion(Delivery.Recipient, "Objednávka doručena! Děkujeme!", true);
+        CelebrateCompletion(Delivery.Recipient, Texts.ObjednavkaDorucenaDekujeme, true);
         Delivery.Sender.Celebrate();
         PayReward(TradeReward(Delivery.Sender));
     }

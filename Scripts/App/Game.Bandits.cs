@@ -134,7 +134,7 @@ public partial class Game
             if (banditArrival == 0)
             {
                 ShowChallenge();
-                Speak("Stůj, pocestný! Vyřeš tři úkoly, nebo tě dál nepustíme!", bandits[0]);
+                Speak(Texts.StujPocestnyVyresTriUkolyNebo, bandits[0]);
             }
             return;
         }

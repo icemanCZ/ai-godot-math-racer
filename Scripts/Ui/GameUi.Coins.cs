@@ -1,4 +1,5 @@
 using Godot;
+using MathRacer.App;
 
 namespace MathRacer.Ui;
 
@@ -106,7 +107,7 @@ public partial class GameUi
         amount.AddThemeFontSizeOverride("font_size", 56);
         amount.AddThemeColorOverride("font_color", new Color("c98a16"));
         row.AddChild(amount);
-        Text("Za penízky si v garáži koupíš nová vylepšení.", 20);
+        Text(Texts.ZaPenizkySiVGaraziKoupis, 20);
         var back = IconButton("check", () => Send(new UiIntent.CloseInteraction()), "TakeCoins");
         back.AccessibilityName = $"Získáváš {coins} penízků";
         back.GrabFocus();

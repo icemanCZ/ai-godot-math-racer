@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Godot;
+using MathRacer.App;
 using MathRacer.Characters;
 using MathRacer.Settlement;
 using MathRacer.Tasks;
@@ -13,13 +14,13 @@ public partial class GameUi
     public void GarageHint()
     {
         talkButton.Visible = !modal.Visible;
-        talkButton.Text = controller ? "A · Garáž" : "E · Garáž";
+        talkButton.Text = controller ? Texts.AGaraz : Texts.EGaraz;
     }
 
     public void HouseHint()
     {
         talkButton.Visible = !modal.Visible;
-        talkButton.Text = controller ? "A · Domeček" : "E · Domeček";
+        talkButton.Text = controller ? Texts.ADomecek : Texts.EDomecek;
     }
 
     public void FarmHint()
@@ -31,13 +32,13 @@ public partial class GameUi
     public void GardenHint()
     {
         talkButton.Visible = !modal.Visible;
-        talkButton.Text = controller ? "A · Zahradník" : "E · Zahradník";
+        talkButton.Text = controller ? Texts.AZahradnik : Texts.EZahradnik;
     }
 
     public void CollectionHint(bool toys)
     {
         talkButton.Visible = !modal.Visible;
-        talkButton.Text = (controller ? "A · " : "E · ") + (toys ? "Hračkář" : "Sběratel drahokamů");
+        talkButton.Text = (controller ? "A · " : "E · ") + (toys ? Texts.Hrackar : Texts.SberatelDrahokamu);
     }
 
     public void CollectionStatus(Village village, Character owner, Expedition? expedition, bool returned = false)
@@ -58,7 +59,7 @@ public partial class GameUi
     public void GardenStatus(Village village, Expedition? expedition, bool returned = false)
     {
         Clear();
-        Text("Zahradník Vítek", 32);
+        Text(Texts.ZahradnikVitek, 32);
         Text($"{(returned ? "✓  " : "")}{village.GardenCount} / {Village.FlowerNames.Length}", 28);
         if (expedition?.Garden == true)
             Text(expedition.FlowerName, 22);
@@ -71,7 +72,7 @@ public partial class GameUi
     public void FarmStatus(Village village, Expedition? expedition, bool returned = false)
     {
         Clear();
-        Text("Farmář Tonda", 32);
+        Text(Texts.FarmarTonda, 32);
         Text($"{(returned ? "✓  " : "")}{village.FarmCount} / {Village.FarmKinds.Length}", 28);
         if (expedition?.Farm == true)
             Text(expedition.FarmName, 22);

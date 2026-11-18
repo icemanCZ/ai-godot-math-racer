@@ -1,5 +1,6 @@
 using System;
 using Godot;
+using MathRacer.App;
 using MathRacer.Buildings;
 using MathRacer.Characters;
 using MathRacer.Tasks;
@@ -23,9 +24,9 @@ public partial class GameUi
                 load switch
                 {
                     HaulLoad.Stones => "Lom",
-                    HaulLoad.Soil => "Hliniště",
-                    HaulLoad.Sand => "Pískovna",
-                    _ => "Klády",
+                    HaulLoad.Soil => Texts.Hliniste,
+                    HaulLoad.Sand => Texts.Piskovna,
+                    _ => Texts.Klady,
                 }
             );
     }
@@ -65,7 +66,7 @@ public partial class GameUi
         else if (canStart)
         {
             var start = IconButton("play", () => Send(new UiIntent.SupplyQuest()), "StartSupplyTrip");
-            start.AccessibilityName = "Zapřáhnout vozík";
+            start.AccessibilityName = Texts.ZaprahnoutVozik;
             start.GrabFocus();
         }
         var back = BackButton();

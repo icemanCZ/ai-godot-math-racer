@@ -1,5 +1,6 @@
 using System;
 using Godot;
+using MathRacer.App;
 using MathRacer.Quizzes;
 using MathRacer.Saves;
 
@@ -14,7 +15,7 @@ public partial class GameUi
     )
     {
         Clear();
-        Text("Pohlednice z Kouzelného údolí", 32);
+        Text(Texts.PohledniceZKouzelnehoUdoli, 32);
         Text($"✓  {stamps} / {cards.Length}", 22);
         var grid = new GridContainer { Columns = 2 };
         grid.AddThemeConstantOverride("h_separation", 12);

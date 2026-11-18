@@ -70,7 +70,7 @@ public partial class GameUi : CanvasLayer
             }
         );
         theme.SetColor("font_disabled_color", "Button", new Color("3c5960"));
-        var brand = new Label { Text = "MATHRACER  /  Kouzelné údolí", Position = new Vector2(32, 24) };
+        var brand = new Label { Text = Texts.MathracerKouzelneUdoli, Position = new Vector2(32, 24) };
         brand.AddThemeFontSizeOverride("font_size", 25);
         brand.AddThemeColorOverride("font_color", new Color("fff7e4"));
         brand.AddThemeColorOverride("font_outline_color", new Color("245693"));
@@ -225,21 +225,21 @@ public partial class GameUi : CanvasLayer
     public void Title(bool saved = false)
     {
         Clear();
-        Text("Kouzelné údolí", 34);
+        Text(Texts.KouzelneUdoli, 34);
         Text($"Seed údolí: {Settings.Seed}", 20);
-        Button(saved ? "Pokračovat" : "Hrát", () => Send(new UiIntent.Play())).GrabFocus();
-        Button("Nová hra", () => Send(new UiIntent.NewGame())).Name = "NewGame";
+        Button(saved ? Texts.Pokracovat : Texts.Hrat, () => Send(new UiIntent.Play())).GrabFocus();
+        Button(Texts.NovaHra, () => Send(new UiIntent.NewGame())).Name = "NewGame";
         if (saved)
-            Text("Nová hra nahradí uložený postup.", 18);
+            Text(Texts.NovaHraNahradiUlozenyPostup, 18);
     }
 
     public void Pause()
     {
         Clear();
         Text("Ⅱ", 40);
-        Button("Pokračovat", () => Send(new UiIntent.Resume())).GrabFocus();
-        Button("Nová hra", () => Send(new UiIntent.NewGame())).Name = "NewGame";
-        Text("Nová hra nahradí uložený postup.", 18);
+        Button(Texts.Pokracovat, () => Send(new UiIntent.Resume())).GrabFocus();
+        Button(Texts.NovaHra, () => Send(new UiIntent.NewGame())).Name = "NewGame";
+        Text(Texts.NovaHraNahradiUlozenyPostup, 18);
         Button("Konec hry", () => GetTree().Quit());
     }
 
@@ -256,13 +256,13 @@ public partial class GameUi : CanvasLayer
     }
 
     public void AnimalCount(int remaining, int total) =>
-        animalCount.Text = remaining == 0 ? "Všechna zvířátka navštívena!" : $"Zbývá zvířátek: {remaining} / {total}";
+        animalCount.Text = remaining == 0 ? Texts.VsechnaZviratkaNavstivena : $"Zbývá zvířátek: {remaining} / {total}";
 
     public void Hint(bool visible, bool available) =>
         hint.Text =
             !visible ? ""
-            : available ? (controller ? "Stiskni A pro úkol a odměnu" : "Stiskni E nebo mezerník pro úkol a odměnu")
-            : "Toto zvířátko už jsi navštívil. Sleduj další otazníky!";
+            : available ? (controller ? Texts.StiskniAProUkolAOdmenu : Texts.StiskniENeboMezernikProUkol)
+            : Texts.TotoZviratkoUzJsiNavstivilSleduj;
 
     private DeliveryPicture? Picture(Container parent, string icon, Character? animal = null, int count = 1)
     {
@@ -305,7 +305,7 @@ public partial class GameUi : CanvasLayer
     private Button BackButton(string name = "Back", Container? parent = null)
     {
         var button = IconButton("back", () => Send(new UiIntent.CloseInteraction()), name, parent);
-        button.AccessibilityName = "Zpět";
+        button.AccessibilityName = Texts.Zpet;
         return button;
     }
 }

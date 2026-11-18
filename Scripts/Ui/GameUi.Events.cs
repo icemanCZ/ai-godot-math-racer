@@ -1,4 +1,5 @@
 using Godot;
+using MathRacer.App;
 
 namespace MathRacer.Ui;
 
@@ -41,7 +42,7 @@ public partial class GameUi
         talkButton.Show();
         string key =
             controller ? "A"
-            : space ? "E / mezerník"
+            : space ? Texts.EMezernik
             : "E";
         talkButton.Text = $"{key} · {text}";
     }

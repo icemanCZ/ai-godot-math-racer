@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Godot;
+using MathRacer.App;
 using MathRacer.Characters;
 using MathRacer.Garage;
 using MathRacer.Quizzes;
@@ -39,8 +40,8 @@ public partial class GameUi
             header
         );
         leave.CustomMinimumSize = new(120, 60);
-        leave.AccessibilityName = "Vyjet z garáže";
-        var title = new Label { Text = "Garáž", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
+        leave.AccessibilityName = Texts.VyjetZGaraze;
+        var title = new Label { Text = Texts.Garaz, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
         title.HorizontalAlignment = HorizontalAlignment.Center;
         title.AddThemeFontSizeOverride("font_size", 32);
         header.AddChild(title);
@@ -87,17 +88,17 @@ public partial class GameUi
         Button? firstPet = null;
         Button? firstQuiz = null;
         Button? selectedFocus = null;
-        catalogue.AddChild(new Label { Text = "Typy úkolů · alespoň jeden zapnutý" });
+        catalogue.AddChild(new Label { Text = Texts.TypyUkoluAlesponJedenZapnuty });
         var quizRow = new HBoxContainer();
         quizRow.AddThemeConstantOverride("separation", 8);
         catalogue.AddChild(quizRow);
         foreach (
             var (type, label, icon) in new[]
             {
-                (QuizType.Letters, "Písmenka", "quiz-letters"),
+                (QuizType.Letters, Texts.Pismenka, "quiz-letters"),
                 (QuizType.Syllables, "Slabiky", "quiz-syllables"),
-                (QuizType.Reading, "Čtení", "quiz-reading"),
-                (QuizType.Math, "Příklady", "quiz-math"),
+                (QuizType.Reading, Texts.Cteni, "quiz-reading"),
+                (QuizType.Math, Texts.Priklady, "quiz-math"),
             }
         )
         {
@@ -112,14 +113,14 @@ public partial class GameUi
                 required: quizzes == type
             );
         }
-        catalogue.AddChild(new Label { Text = "Úroveň příkladů" });
+        catalogue.AddChild(new Label { Text = Texts.UrovenPrikladu });
         var levelRow = new HBoxContainer();
         levelRow.AddThemeConstantOverride("separation", 8);
         catalogue.AddChild(levelRow);
-        QuizButton(levelRow, "GarageMathLevel1", "1 · Dvě čísla", !threeTermMath, () =>
+        QuizButton(levelRow, "GarageMathLevel1", Texts.N1DveCisla, !threeTermMath, () =>
             Send(new UiIntent.MathLevel(false))
         );
-        QuizButton(levelRow, "GarageMathLevel2", "2 · Tři čísla", threeTermMath, () =>
+        QuizButton(levelRow, "GarageMathLevel2", Texts.N2TriCisla, threeTermMath, () =>
             Send(new UiIntent.MathLevel(true))
         );
 
@@ -173,7 +174,7 @@ public partial class GameUi
             {
                 button.Disabled = true;
                 button.AddThemeStyleboxOverride("disabled", Style("cde6cb", 20));
-                button.TooltipText = "Alespoň jeden typ úkolů musí zůstat zapnutý.";
+                button.TooltipText = Texts.AlesponJedenTypUkoluMusiZustat;
             }
             if (garageFocus == name)
                 selectedFocus = button;
@@ -289,7 +290,7 @@ public partial class GameUi
                     button.AddThemeStyleboxOverride("disabled", Style("d5d5d5", 16));
                     button.AddThemeColorOverride("font_disabled_color", new Color("777777"));
                     if (price == null)
-                        button.TooltipText = "Tuto odměnu získáš za zvláštní úkol.";
+                        button.TooltipText = Texts.TutoOdmenuZiskasZaZvlastniUkol;
                 }
                 else
                     first ??= button;
@@ -297,7 +298,7 @@ public partial class GameUi
                     selectedFocus = button;
             }
         }
-        catalogue.AddChild(new Label { Text = "Mazlíčci" });
+        catalogue.AddChild(new Label { Text = Texts.Mazlicci });
         var petGrid = new GridContainer { Columns = 5 };
         petGrid.AddThemeConstantOverride("h_separation", 8);
         petGrid.AddThemeConstantOverride("v_separation", 8);
@@ -308,7 +309,7 @@ public partial class GameUi
                 ? active
                     ? "Vypnout"
                     : "Zapnout"
-                : "Zatím nezískán";
+                : Texts.ZatimNeziskan;
             var button = Button(
                 "",
                 () =>
@@ -345,7 +346,7 @@ public partial class GameUi
         var golemPreview = GolemModel.Create();
         golemPreview.Scale = Vector3.One * .64f;
         golemPreview.RotateY(Mathf.Pi);
-        PetButton("Golem", "Malý golem", golemPreview, golemOwned, golemActive, "Černokněžník Baltazar", () =>
+        PetButton("Golem", Texts.MalyGolem, golemPreview, golemOwned, golemActive, Texts.CernokneznikBaltazar, () =>
             Send(new UiIntent.ToggleGolem())
         );
         if (trailer is { } towing)
@@ -353,7 +354,7 @@ public partial class GameUi
         Category("Laky", System.Linq.Enumerable.Select(CarLook.Catalogue, l => (new CarReward(l.Id, false), l.Name)));
         Category("Modely", System.Linq.Enumerable.Select(CarBody.All, b => (new CarReward(b.Id, false, true), b.Name)));
         Category(
-            "Doplňky",
+            Texts.Doplnky,
             System.Linq.Enumerable.Select(CarAccessory.Catalogue, a => (new CarReward(a.Id, true), a.Name))
         );
         (selectedFocus ?? firstQuiz ?? firstPet ?? first)?.GrabFocus();

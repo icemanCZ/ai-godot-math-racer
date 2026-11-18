@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Godot;
+using MathRacer.App;
 using MathRacer.Characters;
 using MathRacer.Tasks;
 
@@ -11,7 +12,7 @@ public partial class GameUi
     internal void SorcererHint()
     {
         talkButton.Visible = !modal.Visible;
-        talkButton.Text = controller ? "A · Černokněžník" : "E · Černokněžník";
+        talkButton.Text = controller ? Texts.ACernokneznik : Texts.ECernokneznik;
     }
 
     internal void Sorcerer(Character sorcerer, Expedition? delivery, bool owned)
@@ -26,7 +27,7 @@ public partial class GameUi
         {
             Text("0 / 6", 32);
             var start = IconButton("play", () => Send(new UiIntent.GolemQuest()), "StartGolemQuest");
-            start.AccessibilityName = "Vyrazit pro dílky";
+            start.AccessibilityName = Texts.VyrazitProDilky;
             start.GrabFocus();
         }
         BackButton();

@@ -55,9 +55,9 @@ public partial class Game
         if (Haul != null || project.Complete)
             return;
         Speak(
-            !StepReady(project) ? "Zboží ještě není vyrobené. Pošlu tě pro surovinu!"
+            !StepReady(project) ? Texts.ZboziJesteNeniVyrobenePosluTe
                 : project.Stage == 0 ? builder.Greeting
-                : "Přivezeš mi další náklad?",
+                : Texts.PrivezesMiDalsiNaklad,
             builder
         );
     }
@@ -164,7 +164,7 @@ public partial class Game
         {
             EndHaul();
             CloseInteraction();
-            Speak("Zboží došlo. Zkus to znovu později.", trip.Asker);
+            Speak(Texts.ZboziDosloZkusToZnovuPozdeji, trip.Asker);
             return;
         }
         trip.SetLoaded(true);
@@ -210,7 +210,7 @@ public partial class Game
         );
         // The next load waits until the player asks the builder for it again.
         EndHaul();
-        Speak("Děkuju! Až budeš chtít, přijeď za mnou pro další náklad.", project.Builder);
+        Speak(Texts.DekujuAzBudesChtitPrijedZa, project.Builder);
         SaveProgress();
     }
 
@@ -223,13 +223,13 @@ public partial class Game
         {
             TrailerOwned = true;
             trailerParade = false;
-            CelebrateAt(project.Focus, "Most je hotový! Vozík je tvůj.");
-            Speak("Hurá, most je hotový! Teď můžeš přejet řeku. Vozík si nech, najdeš ho v garáži.", project.Builder);
+            CelebrateAt(project.Focus, Texts.MostJeHotovyVozikJeTvuj);
+            Speak(Texts.HuraMostJeHotovyTedMuzes, project.Builder);
         }
         else
         {
             CelebrateAt(project.Focus, $"Stavba je hotová!  +{BuildCoins}  ·  {BuildItemName(project.Index)}");
-            Speak("Hurá, je hotovo! Moc děkuju.", project.Builder);
+            Speak(Texts.HuraJeHotovoMocDekuju, project.Builder);
         }
         var outward = followCamera.GlobalPosition - project.Focus;
         outward.Y = 0;
@@ -319,23 +319,23 @@ public partial class Game
     private static string TripInstruction(HaulTrip trip) =>
         trip switch
         {
-            { Loaded: true, FarBank: true } => "Teď odvez náklad na druhý břeh řeky. Přejeď po velkém mostě.",
-            { Loaded: true, Project: not null } => "Teď odvez náklad na stavbu a vysyp ho do žlutého kruhu.",
-            { Loaded: true, House: >= 0 } => "Teď odvez náklad před domeček a vysyp ho do žlutého kruhu.",
-            { Loaded: true, Plot: not null } => "Teď odvez náklad na parcelu a vysyp ho do žlutého kruhu.",
-            { Loaded: true } => "Teď odvez náklad do žlutého kruhu před závodem.",
+            { Loaded: true, FarBank: true } => Texts.TedOdvezNakladNaDruhyBreh,
+            { Loaded: true, Project: not null } => Texts.TedOdvezNakladNaStavbuA,
+            { Loaded: true, House: >= 0 } => Texts.TedOdvezNakladPredDomecekA,
+            { Loaded: true, Plot: not null } => Texts.TedOdvezNakladNaParceluA,
+            { Loaded: true } => Texts.TedOdvezNakladDoZlutehoKruhu,
             _ => trip.Load switch
             {
-                HaulLoad.Stones => "Jeď s vozíkem pro kamení do lomu.",
-                HaulLoad.Soil => "Jeď s vozíkem pro hlínu.",
-                HaulLoad.Logs => "Jeď s vozíkem pro klády na skládku.",
-                HaulLoad.Planks => "Jeď s vozíkem pro prkna na pilu.",
-                HaulLoad.Bricks => "Jeď s vozíkem pro cihly do cihelny.",
-                HaulLoad.Gravel => "Jeď s vozíkem pro štěrk do štěrkovny.",
-                HaulLoad.Fabric => "Jeď s vozíkem pro látku k farmáři Tondovi.",
-                HaulLoad.Capstone => "Jeď s vozíkem pro kámen ke sběrateli drahokamů.",
-                HaulLoad.Flag => "Jeď s vozíkem pro vlaječku k hračkáři Pepovi.",
-                _ => "Jeď s vozíkem pro písek.",
+                HaulLoad.Stones => Texts.JedSVozikemProKameniDo,
+                HaulLoad.Soil => Texts.JedSVozikemProHlinu,
+                HaulLoad.Logs => Texts.JedSVozikemProKladyNa,
+                HaulLoad.Planks => Texts.JedSVozikemProPrknaNa,
+                HaulLoad.Bricks => Texts.JedSVozikemProCihlyDo,
+                HaulLoad.Gravel => Texts.JedSVozikemProSterkDo,
+                HaulLoad.Fabric => Texts.JedSVozikemProLatkuK,
+                HaulLoad.Capstone => Texts.JedSVozikemProKamenKe,
+                HaulLoad.Flag => Texts.JedSVozikemProVlajeckuK,
+                _ => Texts.JedSVozikemProPisek,
             },
         };
 }

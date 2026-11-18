@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Godot;
+using MathRacer.App;
 
 namespace MathRacer.Ui;
 
@@ -126,7 +127,5 @@ public partial class GameUi
     }
 
     private void UpdateControls() =>
-        controls.Text = controller
-            ? "RT / LT   ◀ ▶    A · ?    B · ↶    Menu · Ⅱ"
-            : "WASD / ↑↓←→    E / mezerník · ?    R · ↶    Esc · Ⅱ";
+        controls.Text = controller ? "RT / LT   ◀ ▶    A · ?    B · ↶    Menu · Ⅱ" : Texts.WasdEMezernikREscIi;
 }

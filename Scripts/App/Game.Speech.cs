@@ -48,11 +48,11 @@ public partial class Game
         string instruction = question switch
         {
             SyllableChallenge => "nejprve vybrala slabiky",
-            LetterChallenge => "nejprve vybrala obrázek podle prvního písmene",
-            ReadingChallenge => "nejprve přečetla slovo a vybrala obrázek",
-            DeliveryChallenge => "spočítala náklad",
-            LoadChallenge => "spočítala, kolik se toho ještě vejde do vozíku",
-            _ => "nejprve vyřešila příklad",
+            LetterChallenge => Texts.NejprveVybralaObrazekPodlePrvnihoPismene,
+            ReadingChallenge => Texts.NejprvePrecetlaSlovoAVybralaObrazek,
+            DeliveryChallenge => Texts.SpocitalaNaklad,
+            LoadChallenge => Texts.SpocitalaKolikSeTohoJesteVejde,
+            _ => Texts.NejprveVyresilaPriklad,
         };
         return $"{actor.DisplayName} chce, abys {instruction}.";
     }
@@ -61,11 +61,11 @@ public partial class Game
     {
         string task = expedition switch
         {
-            { Golem: true } => "přivez šest dílků golema",
+            { Golem: true } => Texts.PrivezSestDilkuGolema,
             { Farm: true } => $"přivez {expedition.FarmName}",
             { Garden: true } => $"přivez {expedition.FlowerName}",
             { Gems: true } or { Toys: true } => $"přivez {expedition.CollectionName}",
-            { Collection: true } => "přivez tři jablka",
+            { Collection: true } => Texts.PrivezTriJablka,
             _ => $"rozvez {DeliveryCargoInstruction(expedition.Cargo, expedition.Amount)}",
         };
         return $"Teď prosím {task}.";
@@ -75,12 +75,12 @@ public partial class Game
     {
         var (one, two, three) = cargo switch
         {
-            "bread" => ("jeden kus pečiva", "tyto dva kusy pečiva", "tyto tři kusy pečiva"),
-            "parcel" => ("jeden balíček", "tyto dva balíčky", "tyto tři balíčky"),
-            "cake" => ("jeden koláček", "tyto dva koláčky", "tyto tři koláčky"),
-            "carrot" => ("jednu mrkev", "tyto dvě mrkve", "tyto tři mrkve"),
-            "apple" => ("jedno jablko", "tato dvě jablka", "tato tři jablka"),
-            _ => ("jednu sklenici medu", "tyto dvě sklenice medu", "tyto tři sklenice medu"),
+            "bread" => (Texts.JedenKusPeciva, Texts.TytoDvaKusyPeciva, Texts.TytoTriKusyPeciva),
+            "parcel" => (Texts.JedenBalicek, Texts.TytoDvaBalicky, Texts.TytoTriBalicky),
+            "cake" => (Texts.JedenKolacek, Texts.TytoDvaKolacky, Texts.TytoTriKolacky),
+            "carrot" => ("jednu mrkev", Texts.TytoDveMrkve, Texts.TytoTriMrkve),
+            "apple" => ("jedno jablko", Texts.TatoDveJablka, Texts.TatoTriJablka),
+            _ => ("jednu sklenici medu", Texts.TytoDveSkleniceMedu, Texts.TytoTriSkleniceMedu),
         };
         return amount switch
         {
