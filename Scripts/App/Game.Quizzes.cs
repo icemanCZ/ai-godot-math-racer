@@ -21,6 +21,7 @@ public partial class Game
         Plot,
         House,
         Missing,
+        Playground,
     }
 
     /// <summary>Asks the quiz that must be solved before a trip starts; the trip continues in StartDeparture.</summary>

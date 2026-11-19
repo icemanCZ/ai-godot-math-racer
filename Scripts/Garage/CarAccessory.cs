@@ -36,8 +36,11 @@ public sealed record CarAccessory(string Id, string Name)
     /// <summary>The binoculars that the finished lookout tower brings.</summary>
     public static CarAccessory Binoculars { get; } = new("binoculars", "Dalekohled");
 
+    /// <summary>The bunch of balloons that the finished playground brings.</summary>
+    public static CarAccessory Balloons { get; } = new("balloons", "Balónky");
+
     public static IReadOnlyList<CarAccessory> Catalogue { get; } =
-        System.Array.AsReadOnly(All.Concat(new[] { ValleyMap, FlourSack, Binoculars }).ToArray());
+        System.Array.AsReadOnly(All.Concat(new[] { ValleyMap, FlourSack, Binoculars, Balloons }).ToArray());
 
     internal static void PlaceValleyMap(Node3D sticker, string model)
     {
@@ -72,6 +75,24 @@ public sealed record CarAccessory(string Id, string Name)
                 Art.Ball(root, new(.34f, 2.5f, 1.05f), new(.13f, .1f, .12f), "e0d3b4");
                 Art.Block(root, new(.34f, 2.4f, 1.05f), new(.2f, .04f, .18f), "b8895f");
                 Art.Block(root, new(.34f, 2.28f, .89f), new(.16f, .06f, .02f), "c4623f");
+                break;
+            case "balloons":
+                // Five balloons on strings tied behind the roof, on the other side from the sack of flour.
+                var tie = new Vector3(-.34f, 2.15f, 1.0f);
+                (string Color, float X, float Y, float Z)[] bunch =
+                {
+                    ("e2563b", -.05f, .95f, 0f),
+                    ("f2c14e", .3f, 1.15f, .1f),
+                    ("4f8fb8", -.35f, 1.2f, .05f),
+                    ("5aa86f", .1f, 1.5f, -.08f),
+                    ("d9718f", -.2f, 1.6f, .12f),
+                };
+                foreach (var (color, x, y, z) in bunch)
+                {
+                    Art.Beam(root, tie, tie + new Vector3(x, y - .26f, z), .012f, "f5f0e6");
+                    Art.Ball(root, tie + new Vector3(x, y, z), new(.2f, .25f, .2f), color);
+                    Art.Ball(root, tie + new Vector3(x, y - .27f, z), new(.03f, .03f, .03f), color);
+                }
                 break;
             case "binoculars":
                 // Two lenses and a bridge, pinned to the bonnet like the flower on the other side.

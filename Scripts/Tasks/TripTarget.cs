@@ -16,8 +16,9 @@ internal static class TripKinds
     public const string Supply = "supply";
     public const string House = "house";
     public const string Plot = "plot";
+    public const string Playground = "playground";
 
-    public static bool IsKnown(string? kind) => kind is Build or Supply or House or Plot;
+    public static bool IsKnown(string? kind) => kind is Build or Supply or House or Plot or Playground;
 }
 
 /// <summary>

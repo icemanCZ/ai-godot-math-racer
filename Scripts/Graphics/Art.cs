@@ -52,6 +52,9 @@ public static class Art
                     "M12 56 H120 M22 56 V98 M52 56 V98 M82 56 V98 M112 56 V98 M10 112 Q24 102 38 112 T66 112 T94 112 T122 112",
                 // A building plot of the village: a little house with a chimney.
                 "plot" => "M16 68 L66 22 L116 68 M30 58 V112 H102 V58 M54 112 V82 H78 V112 M82 30 V46 M92 30 V54",
+                // The playground: a swing set with a seat.
+                "playground" =>
+                    "M12 114 L36 24 L60 114 M72 114 L96 24 L120 114 M36 24 H96 M56 24 V84 M76 24 V84 M50 84 H82",
                 // Raw material sources: the quarry, the clay pit, the sand pit and the log yard.
                 "quarry" => "M12 106 L38 52 L58 80 L82 34 L120 106 Z M38 52 L46 106 M82 34 L72 106 M58 80 L64 106",
                 "clay" => "M90 14 L56 82 M50 70 L76 86 L62 114 Q42 114 38 92 Z M12 118 Q32 108 52 118",

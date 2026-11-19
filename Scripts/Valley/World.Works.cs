@@ -295,11 +295,13 @@ public partial class World
         out Vector3 spot,
         out Vector3 inward,
         VillageBand? band = null,
-        Func<Vector3, bool>? accept = null
+        Func<Vector3, bool>? accept = null,
+        SpurRules[]? passes = null,
+        Func<Vector3, Vector3, bool>? acceptWay = null
     )
     {
         var bank = BankSamples(ford, band, band == null ? 0 : 90);
-        foreach (var rules in band == null ? SpurPasses : EdgePasses)
+        foreach (var rules in passes ?? (band == null ? SpurPasses : EdgePasses))
         {
             // A log yard is small, so it may stand a little closer to the road and to other sites.
             float spacing = works ? rules.Spacing : Mathf.Min(rules.Spacing, 40);
@@ -322,6 +324,7 @@ public partial class World
                     : !FreeHaulSpot(point, friends, rules.RoadClearance, band) || accept?.Invoke(point) == false ? 3
                     : works && !WorksFootprintFits(point, outward, friends, rules, band) ? 4
                     : !ClearHaulPath(road, point, friends, toWater: false) ? 5
+                    : acceptWay?.Invoke(road, point) == false ? 5
                     : -1;
                 if (reason >= 0)
                 {

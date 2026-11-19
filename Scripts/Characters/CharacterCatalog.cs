@@ -60,6 +60,10 @@ internal static class CharacterCatalog
             new("Medvídek Jarda", PlotGreeting, 2, "a8c9a0"),
         };
 
+    /// <summary>The keeper of the playground at the edge of the village (<see cref="World.PlaygroundId"/>).</summary>
+    public static CharacterSpec PlaygroundKeeper { get; } =
+        new("Medvědice Madla", "Děti chtějí hřiště! Přivezeš nám štěrk, prkna a cihly?", 2, "c98f6a");
+
     /// <summary>Baker, shopkeeper and confectioner, matching <see cref="Village.TradeCargo"/>.</summary>
     public static IReadOnlyList<CharacterSpec> Traders { get; } =
         new CharacterSpec[]

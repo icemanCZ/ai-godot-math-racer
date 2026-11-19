@@ -25,6 +25,7 @@ public partial class Game
         Register("bandits", delta => TickBandits((float)delta));
         Register("coins", TickCoins);
         Register("hidden friends", delta => TickHidden((float)delta));
+        Register("playground", _ => TickPlayground());
         Register("mill", _ => TickMill());
         Register("lookout", delta => TickLookout((float)delta));
     }

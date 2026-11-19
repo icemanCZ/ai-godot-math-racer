@@ -60,6 +60,8 @@ internal abstract record UiIntent
 
     internal sealed record PlotTrip : UiIntent;
 
+    internal sealed record PlaygroundTrip : UiIntent;
+
     internal sealed record Lookout : UiIntent;
 
     // The trailer.

@@ -365,6 +365,15 @@ public partial class VisualCapture : Node
             camera.Position = ring - inward * back + right * 14 + Vector3.Up * (project == BuildPlans.Tower ? 16 : 9);
             camera.LookAt(build.Focus);
         }
+        else if (Game.ParsePlaygroundView(view) is { } && world.Playground is { } playground)
+        {
+            // The ring, the arch and all the toys from the road side, from above.
+            camera.SetProcess(false);
+            var inward = playground.Site.Inward;
+            var right = Vector3.Up.Cross(inward);
+            camera.Position = playground.Drop - inward * 9 + right * 11 + Vector3.Up * 12;
+            camera.LookAt(playground.Drop + inward * 11 + Vector3.Up * 1);
+        }
         else if (Game.ParsePlotView(view) is var (plotIndex, _) && plotIndex < world.Village.BuildPlots.Count)
         {
             // The lot, its ring and the street, seen from the road side and from above.

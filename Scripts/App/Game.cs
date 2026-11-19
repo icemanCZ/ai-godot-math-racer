@@ -39,6 +39,7 @@ public enum GameState
     SourceStatus = 19,
     HouseMaterialOffer = 20,
     PlotStatus = 21,
+    PlaygroundStatus = 22,
 }
 
 public partial class Game : Node3D

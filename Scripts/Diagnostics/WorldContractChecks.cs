@@ -230,6 +230,7 @@ public partial class ContractChecks : Node
         ("SourceStatus", 19),
         ("HouseMaterialOffer", 20),
         ("PlotStatus", 21),
+        ("PlaygroundStatus", 22),
     };
 
     public override void _Ready()
@@ -285,7 +286,8 @@ public partial class ContractChecks : Node
                 && ActorIds.LastPlotResident == 63
                 && ActorIds.Glassworks == 64
                 && ActorIds.Bakery == 65
-                && ActorIds.FieldFarmer == 66,
+                && ActorIds.FieldFarmer == 66
+                && ActorIds.Playground == 67,
             "the actor ID ranges are the ones saved games use"
         );
 
@@ -313,6 +315,7 @@ public partial class ContractChecks : Node
                 : id >= World.FirstSourceId && id <= World.LastSourceId || id == World.FieldFarmerId
                     ? nameof(SourceRole)
                 : World.IsPlotResident(id) ? nameof(PlotResidentRole)
+                : id == World.PlaygroundId ? nameof(PlaygroundRole)
                 : "(no actor may have this ID)";
             Check(actor.Role.GetType().Name == expected, $"ID {id} ({actor.DisplayName}) is a {expected}");
             if (actor.Role is HouseResidentRole house)

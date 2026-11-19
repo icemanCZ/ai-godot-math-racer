@@ -92,7 +92,7 @@ public partial class World : Node3D
                 || p.DistanceSquaredTo(sorcerer) < WorldTuning.SorcererTreeClearing * WorldTuning.SorcererTreeClearing
                 || IsPickupApproachReserved(p)
                 || IsHaulReserved(p),
-            p => InGlassworksZone(p) || InFarmZone(p) || InBakeryZone(p)
+            p => InGlassworksZone(p) || InFarmZone(p) || InBakeryZone(p) || InPlaygroundZone(p)
         );
         CreateHiddenFriends();
         CreateWorldPets();

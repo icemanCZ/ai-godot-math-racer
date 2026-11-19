@@ -52,6 +52,7 @@ public partial class ContentChecks : Node
             Need(world.AllWorks.Count() == WorksCatalog.Total, "all five works");
             Need(world.Bakery != null && world.Farm != null, "the wheat farm and the bakery");
             Need(world.WheatField != null && world.FieldFarmer != null, "the wheat field and its farmer");
+            Need(world.Playground is { Helper: not null }, "the playground and its keeper");
             Need(world.Hidden.Friends.Count == HiddenFriends.Total, "the small hidden friends");
             Need(world.AllWorks.All(works => works.Worker != null), "a worker at every works");
             Need(world.SourceWorkers.All(worker => worker != null), "the workers of the first sites");

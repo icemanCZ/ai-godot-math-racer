@@ -66,4 +66,7 @@ internal static class ActorIds
 
     /// <summary>The farmer at the wheat field outside the village, who loads the trailer for the bakery.</summary>
     public const int FieldFarmer = Bakery + 1;
+
+    /// <summary>The keeper of the playground at the edge of the village, which a valley gets after everything else.</summary>
+    public const int Playground = FieldFarmer + 1;
 }

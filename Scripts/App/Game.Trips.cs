@@ -21,6 +21,7 @@ public partial class Game
         {
             [Departure.Build] = BeginBuildTrip,
             [Departure.Plot] = BeginPlotTrip,
+            [Departure.Playground] = BeginPlaygroundTrip,
             [Departure.House] = BeginHouseTrip,
             [Departure.Missing] = BeginMissingSupply,
         };

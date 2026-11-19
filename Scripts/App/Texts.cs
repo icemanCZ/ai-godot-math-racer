@@ -86,6 +86,10 @@ internal static class Texts
     public const string PrivezesMiDalsiMaterial = "Přivezeš mi další materiál?";
     public const string DekujuAzBudesChtitPrivezDalsi = "Děkuju! Až budeš chtít, přivez další materiál.";
     public const string HuraDomecekJeHotovyTedTu = "Hurá, domeček je hotový! Teď tu budu bydlet. Moc děkuju!";
+    public const string TedOdvezNakladNaHristeA = "Teď odvez náklad na hřiště a vysyp ho do žlutého kruhu.";
+    public const string MocDekujuZaHristeDetiSeSmeji = "Moc děkuju za hřiště! Děti si hrají od rána do večera.";
+    public const string HuraHristeJeHotove = "Hurá, hřiště je hotové! Děti se můžou vyřádit! Moc děkuju!";
+    public const string HristeHint = "Hřiště";
 
     // Game.Postcards
     public const string MostALekniny = "Most a lekníny";
@@ -273,6 +277,11 @@ internal static class Texts
     public static string BuildDone(int coins, string item) => $"Stavba je hotová!  +{coins}  ·  {item}";
 
     public static string PlotDone(string name, int coins) => $"Domeček je hotový! {name} se nastěhoval.  +{coins}";
+
+    public static string PlaygroundToy(string toy, int stage, int trips) => $"Máme {toy}!  {stage} / {trips}";
+
+    public static string PlaygroundDone(int coins, string item) =>
+        $"Hřiště je hotové! Děti si hrají.  +{coins}  ·  {item}";
 
     public static string Bring(string what) => $"přivez {what}";
 

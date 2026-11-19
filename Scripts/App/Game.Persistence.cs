@@ -98,6 +98,7 @@ public partial class Game
                 DepartureState = quiz.Departure
                     is Departure.Build
                         or Departure.Plot
+                        or Departure.Playground
                         or Departure.House
                         or Departure.Missing
                     ? quiz.DepartureState
@@ -156,6 +157,7 @@ public partial class Game
                     .Select(p => p.Kind.ToString())
                     .ToArray(),
             },
+            Playground = new PlaygroundSave { Stage = world.Playground?.Stage ?? 0 },
             Postcards = new PostcardsSave { Cards = (PostcardProgress?[])postcards.Clone(), Page = postcardPage },
             Events = new EventsSave
             {

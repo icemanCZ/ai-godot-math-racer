@@ -45,6 +45,7 @@ public partial class Game
         Panel(GameState.SorcererStatus, _ => Shown(ShowSorcerer));
         Panel(GameState.BuildStatus, _ => nearby?.Role is BuilderRole && Shown(ShowBuilder));
         Panel(GameState.PlotStatus, _ => nearby?.Role is PlotResidentRole && Shown(ShowPlot));
+        Panel(GameState.PlaygroundStatus, _ => nearby?.Role is PlaygroundRole && Shown(ShowPlayground));
         Panel(GameState.SourceStatus, _ => nearby?.Role is SourceRole && Shown(ShowSource));
         Panel(GameState.WorksStatus, _ => nearby?.Role is WorksRole && Shown(ShowWorks));
         Panel(GameState.PostcardAlbum, _ => pendingPhoto < 0 && Shown(ShowPostcards));

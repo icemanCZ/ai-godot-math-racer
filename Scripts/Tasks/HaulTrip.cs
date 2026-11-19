@@ -53,6 +53,7 @@ public sealed partial class HaulTrip : Node3D
     // What the kinds of trip hold, for the code that is about one of them.
     internal BuildProject? Project => Target as BuildProject;
     internal HousePlot? Plot => Target as HousePlot;
+    internal Playground? Playground => Target as Playground;
     internal Works? Works => Target as Works;
     internal int House => Target is HouseTripTarget house ? house.House : -1;
 

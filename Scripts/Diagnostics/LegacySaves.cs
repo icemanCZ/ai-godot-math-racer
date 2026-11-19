@@ -91,6 +91,7 @@ internal static class LegacySaves
         ("Village", "Baked"),
         ("Hidden", "Found"),
         ("Vehicle", "Trail"),
+        ("Playground", "Stage"),
     };
 
     /// <summary>

@@ -49,6 +49,15 @@ public sealed class SaveData
 
     /// <summary>The small friends found so far, which earn their pets. Added after version 5 began.</summary>
     public HiddenSave Hidden { get; set; } = new();
+
+    /// <summary>The playground's progress. Added after version 5 began.</summary>
+    public PlaygroundSave Playground { get; set; } = new();
+}
+
+/// <summary>The deliveries made to the playground at the edge of the village, 0 to <see cref="PlaygroundPlans.Trips"/>.</summary>
+public sealed class PlaygroundSave
+{
+    public int Stage { get; set; }
 }
 
 /// <summary>The ladybugs, hedgehogs and frogs found beside the roads, by their numbers (the order they were placed in).</summary>

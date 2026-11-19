@@ -170,6 +170,33 @@ internal sealed class PlotResidentRole : ActorRole
 }
 
 /// <summary>
+/// The keeper of the playground. Talking to them offers the next delivery of goods for the yard; once it is finished
+/// the children play and she is glad of it. She sends the trailer and runs her own task marker, like a builder.
+/// </summary>
+internal sealed class PlaygroundRole : ActorRole
+{
+    public Playground Playground { get; }
+
+    public PlaygroundRole(Playground playground) => Playground = playground;
+
+    public override string Icon => "playground";
+    public override bool UsesDeliveryGuide => false;
+
+    public override bool InvitesTalk(bool expeditionActive) => true;
+
+    public override void ShowHint(GameUi ui, Character actor) => ui.PlaygroundHint();
+
+    public override void Open(Game game, Character actor) => game.OpenPlayground(actor);
+
+    /// <summary>The keeper asks no quiz of her own: the loading questions come from the works' workers.</summary>
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
+    {
+        game.CompleteHaulLoading();
+        return true;
+    }
+}
+
+/// <summary>
 /// The worker at the sawmill, brickworks, gravel works or glassworks. They show the stock and, for building trips, load the
 /// goods and ask the loading question from afar. Raw-material trips are started by the worker at the source.
 /// </summary>

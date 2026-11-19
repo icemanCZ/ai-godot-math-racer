@@ -378,6 +378,14 @@ public partial class Game
             plot.SetStage(plotStage);
             vehicle.SetPose(world.Ground.At(plot.Drop.X, plot.Drop.Z, .15f), 0);
         }
+        if (ParsePlaygroundView(view) is { } playgroundStage && world.Playground is { } yard)
+        {
+            yard.SetStage(playgroundStage);
+            // A few seconds pass so that the swings are swinging and the child is on the slide.
+            for (int i = 0; i < 35; i++)
+                yard._Process(.1);
+            vehicle.SetPose(world.Ground.At(yard.Drop.X, yard.Drop.Z, .15f), 0);
+        }
         if (view == "log-yard" && world.LogYard is { } logYard)
             vehicle.SetPose(world.Ground.At(logYard.Position.X, logYard.Position.Z, .15f), 0);
         if (view is "beaver" or "load-question" && world.Beaver != null)
@@ -427,6 +435,14 @@ public partial class Game
             return null;
         return (plot, stage);
     }
+
+    /// <summary>"playground-S" shows the playground with S of its six deliveries made.</summary>
+    internal static int? ParsePlaygroundView(string view) =>
+        view.StartsWith("playground-")
+        && int.TryParse(view["playground-".Length..], out int stage)
+        && stage is >= 0 and <= PlaygroundPlans.Trips
+            ? stage
+            : null;
 
     internal static (int Project, int Stage)? ParseBuildView(string view)
     {

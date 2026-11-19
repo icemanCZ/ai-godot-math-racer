@@ -31,6 +31,7 @@ internal static class SaveRules
         ("village houses and collections", HasInvalidVillageProgress),
         ("golem, sorcerer and witch", HasInvalidSpecialActorState),
         ("building plots", HasInvalidPlotState),
+        ("playground", HasInvalidPlaygroundState),
         ("buildings and trailer", HasInvalidBuildState),
         ("works", HasInvalidWorksState),
         ("hauled loads", HasInvalidHauls),
@@ -56,7 +57,8 @@ internal static class SaveRules
         || data.Events is null
         || data.Bandits is null
         || data.Hauls is null
-        || data.Hidden is null;
+        || data.Hidden is null
+        || data.Playground is null;
 
     /// <summary>Throws when the save is not one the game can restore.</summary>
     internal static void Validate(SaveData data)
@@ -127,7 +129,7 @@ internal static class SaveRules
         || data.Task.Picked == null
         || data.Quiz.Rejected == null
         || data.Nearby < -1
-        || data.Nearby > Math.Max(Game.BanditActorId, World.FieldFarmerId)
+        || data.Nearby > Math.Max(Game.BanditActorId, World.PlaygroundId)
         || data.Task.Sender < -1
         || data.Task.Sender > World.SorcererId
         || data.Task.Sender == World.WitchId
@@ -198,12 +200,15 @@ internal static class SaveRules
             Game.Departure.Build => !World.IsBuilder(data.Nearby) || data.Quiz.DepartureState != GameState.BuildStatus,
             Game.Departure.Plot => !World.IsPlotResident(data.Nearby)
                 || data.Quiz.DepartureState != GameState.PlotStatus,
+            Game.Departure.Playground => !World.IsPlaygroundHelper(data.Nearby)
+                || data.Quiz.DepartureState != GameState.PlaygroundStatus,
             Game.Departure.House => !resident || data.Quiz.DepartureState != GameState.HouseMaterialOffer,
             // The works' missing goods are asked for from a builder, a newcomer or a resident.
             Game.Departure.Missing => data.Quiz.DepartureState switch
             {
                 GameState.BuildStatus => !World.IsBuilder(data.Nearby),
                 GameState.PlotStatus => !World.IsPlotResident(data.Nearby),
+                GameState.PlaygroundStatus => !World.IsPlaygroundHelper(data.Nearby),
                 GameState.HouseMaterialOffer => !resident,
                 _ => true,
             },
@@ -381,6 +386,10 @@ internal static class SaveRules
         || data.Buildings.PlotStages.Length != PlotPlans.Count
         || data.Buildings.PlotStages.Any(stage => stage < 0 || stage > PlotPlans.Trips);
 
+    /// <summary>The progress of the playground, 0 to 6 deliveries.</summary>
+    private static bool HasInvalidPlaygroundState(SaveData data) =>
+        data.Playground.Stage is < 0 or > PlaygroundPlans.Trips;
+
     /// <summary>The cargo and the characters who may ask about it for the active trailer trip, or none without one.</summary>
     private static (HaulLoad Cargo, int[] Askers, bool Loaded) ActiveTripAsker(SaveData data)
     {
@@ -413,6 +422,11 @@ internal static class SaveRules
                     && plotStages[trip.Index] is >= 0 and < PlotPlans.Trips:
             {
                 var cargo = PlotPlans.CargoOf(plotStages[trip.Index]);
+                return (cargo, World.AskerIds(cargo, 0), trip.Loaded);
+            }
+            case TripKinds.Playground when trip.Index == 0 && data.Playground.Stage is >= 0 and < PlaygroundPlans.Trips:
+            {
+                var cargo = PlaygroundPlans.CargoOf(data.Playground.Stage);
                 return (cargo, World.AskerIds(cargo, 0), trip.Loaded);
             }
             case TripKinds.House when SavedTask(data, trip.Index) is { } kind && Village.MaterialOf(kind) is { } goods:
@@ -520,6 +534,7 @@ internal static class SaveRules
                 ),
             TripKinds.Plot => trip.Index is < 0 or >= PlotPlans.Count
                 || data.Buildings.PlotStages[trip.Index] >= PlotPlans.Trips,
+            TripKinds.Playground => trip.Index != 0 || data.Playground.Stage >= PlaygroundPlans.Trips,
             _ => true,
         };
     }
@@ -537,6 +552,7 @@ internal static class SaveRules
             : data.Nearby is >= World.FirstSourceId and <= World.LastSourceId or World.FieldFarmerId
                 ? GameState.SourceStatus
             : World.IsPlotResident(data.Nearby) ? GameState.PlotStatus
+            : World.IsPlaygroundHelper(data.Nearby) ? GameState.PlaygroundStatus
             : null;
         if (panel == null)
         {
@@ -546,6 +562,7 @@ internal static class SaveRules
                         or GameState.WorksStatus
                         or GameState.SourceStatus
                         or GameState.PlotStatus
+                        or GameState.PlaygroundStatus
                 || data.Quiz.Challenge is LoadChallenge;
         }
         if (data.State is not (GameState.Exploring or GameState.Challenge) && data.State != panel)

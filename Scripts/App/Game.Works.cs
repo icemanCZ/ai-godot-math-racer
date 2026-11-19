@@ -111,6 +111,18 @@ public partial class Game
                 return;
             (works, asker) = (missing, plot.Resident);
         }
+        else if (State == GameState.PlaygroundStatus)
+        {
+            // The playground's keeper, too, sends the player for the raw material of goods that are not made yet.
+            if (
+                PlaygroundOf(nearby) is not { Complete: false } yard
+                || Haul != null
+                || PlaygroundStepReady(yard)
+                || GoodsWorks(PlaygroundPlans.CargoOf(yard.Stage)) is not { Full: false } missing
+            )
+                return;
+            (works, asker) = (missing, yard.Helper);
+        }
         else if (State == GameState.HouseMaterialOffer)
         {
             // A resident who wants goods that the works has not made does the same: the way to the raw material.

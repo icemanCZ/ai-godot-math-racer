@@ -75,6 +75,9 @@ public partial class Game
             case UiIntent.PlotTrip:
                 BeginPlotTrip();
                 break;
+            case UiIntent.PlaygroundTrip:
+                BeginPlaygroundTrip();
+                break;
             case UiIntent.Lookout:
                 BeginLookout();
                 break;

@@ -148,6 +148,7 @@ public partial class World
         var extras = PlanExtraSources(site, sources, industry);
         var glass = industry == null ? null : PlanGlassworks(site);
         var farm = industry == null ? null : PlanFarm(site);
+        var playground = industry == null ? null : PlanPlayground(site, industry, builds, glass, farm);
         if (builds != null)
             Ground.Grade(builds.Grading, (x, z) => Routes.Distance(new Vector3(x, 0, z)));
         river.AddBankRocks(Ground, site.Z);
@@ -165,10 +166,11 @@ public partial class World
             BuildHaulSource(extra, extra: true);
             BuildExtraSourceWorker(extra);
         }
-        BuildTracks(site, sources, extras, industry, builds, glass, farm);
+        BuildTracks(site, sources, extras, industry, builds, glass, farm, playground);
         BuildIndustry(industry);
         BuildGlassworks(glass);
         BuildFarm(farm);
+        BuildPlayground(playground);
         Beaver = Character.Create(
             "Bobr Bóďa",
             "Postavíme most přes řeku? Přivez mi štěrk, cihly a prkna.",
@@ -531,7 +533,8 @@ public partial class World
         IndustryPlan? industry,
         BuildPlan? builds,
         WorksSite? glass,
-        FarmPlan? farm = null
+        FarmPlan? farm = null,
+        PlaygroundSite? playground = null
     )
     {
         Tracks = new Tracks { Name = "Tracks" };
@@ -584,6 +587,11 @@ public partial class World
                 Tracks.Pad(pad, WheatFarm.SoilRadius, Tracks.Kind.Path);
             Tracks.Line(farm.Bakery.Road, farm.Bakery.Position, WorksPathHalfWidth, Tracks.Kind.Path);
             Tracks.Pad(farm.Bakery.Position, 6, Tracks.Kind.Path);
+        }
+        if (playground != null)
+        {
+            Tracks.Line(playground.Road, playground.Position, WorksPathHalfWidth, Tracks.Kind.Path);
+            Tracks.Pad(playground.Position, 6, Tracks.Kind.Path);
         }
         if (builds != null)
             foreach (var build in builds.Sites)
