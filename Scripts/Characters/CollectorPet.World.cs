@@ -42,6 +42,12 @@ internal static class WorldPetCatalog
     public static readonly WorldPetSpec Wheat = new(CollectorPetKind.Wheat, "Zrníčko", "10 odvezených nákladů obilí");
     public static readonly WorldPetSpec Bakery = new(CollectorPetKind.Bakery, "Housánek", "20 upečených chlebů");
 
+    public static readonly WorldPetSpec Stationmaster = new(
+        CollectorPetKind.Stationmaster,
+        "Výpravčí Píšťalka",
+        "dostavěné nádraží"
+    );
+
     public static readonly WorldPetSpec Bridge = new(CollectorPetKind.Bridge, "Mostíček", "dostavěný most");
     public static readonly WorldPetSpec Mill = new(CollectorPetKind.Mill, "Mlýnek", "dostavěný mlýn");
     public static readonly WorldPetSpec Tower = new(CollectorPetKind.Tower, "Věžička", "dostavěnou rozhlednu");
@@ -198,6 +204,9 @@ internal sealed partial class CollectorPet
             case CollectorPetKind.Duckling2:
             case CollectorPetKind.Duckling3:
                 BuildDuckling();
+                break;
+            case CollectorPetKind.Stationmaster:
+                BuildStationmaster();
                 break;
             case CollectorPetKind.Bridge:
                 BuildBridge();
@@ -473,6 +482,29 @@ internal sealed partial class CollectorPet
         Art.Ball(model, new(0, .26f, 0), new(.52f, .34f, .44f), "5a867d");
         Eyes(.11f, .44f, .22f);
         Smile(.34f, .245f, .07f);
+    }
+
+    private void BuildStationmaster()
+    {
+        // A tiny rabbit stationmaster: a cream body, a red cap with a white band between two long ears, a yellow
+        // neckerchief and a signal paddle in the paw.
+        Ball(new(0, .46f, 0), new(.62f, .56f, .52f), "f3e8d5");
+        Ball(new(0, .32f, .2f), new(.36f, .26f, .16f), "fff6e6");
+        Ball(new(0, .66f, .2f), new(.4f, .1f, .2f), "f2c14e");
+        foreach (int side in new[] { -1, 1 })
+        {
+            Ball(new(side * .2f, 1.0f, 0), new(.11f, .42f, .08f), "f3e8d5").RotateZ(side * -.25f);
+            Ball(new(side * .2f, 1.0f, .03f), new(.05f, .3f, .03f), "eab4ad").RotateZ(side * -.25f);
+            Foot(new(side * .17f, .18f, .02f), .2f, .12f, "e0d0b8", side);
+        }
+        Art.Cylinder(model, new(0, .86f, 0), .24f, .27f, .16f, "d9432f");
+        Art.Cylinder(model, new(0, .77f, 0), .29f, .29f, .05f, "fff5df");
+        Art.Block(model, new(0, .76f, .26f), new(.36f, .03f, .15f), "b8321f");
+        Ball(new(0, .96f, 0), Vector3.One * .06f, "f2c14e");
+        Art.Cylinder(model, new(.36f, .62f, .12f), .015f, .015f, .56f, "a77a59");
+        Art.Cylinder(model, new(.36f, .92f, .12f), .12f, .12f, .03f, "d9432f").RotationDegrees = new(90, 0, 0);
+        Eyes(.11f, .52f, .245f);
+        Smile(.4f, .262f, .08f);
     }
 
     private void BuildMill()

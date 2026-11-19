@@ -17,7 +17,7 @@ namespace MathRacer.Diagnostics;
 /// <summary>
 /// The little railway round the playground: that every valley with a playground has it, that its loop and station lie
 /// inside the ground the playground clears, the stationmaster, six deliveries each of which adds to the track or the
-/// train, the train that runs round the loop and whistles, the finished railway with its coins and chimney, the way the
+/// train, the train that runs round the loop and whistles, the finished railway with its coins and its pet, the way the
 /// car still drives to the ring, and the saves.
 /// </summary>
 public partial class RailwayChecks : Node
@@ -100,6 +100,11 @@ public partial class RailwayChecks : Node
             Check(master.DisplayName == CharacterCatalog.Stationmaster.Name, "the stationmaster has their name");
             Check(railway.Stage == 0 && !railway.Complete, "the railway starts as pegs and a post");
             Check(!railway.TrainRunning && railway.CarsRunning == 0, "no train runs yet");
+            var waiting = world.WorldPets.SingleOrDefault(p => p.Kind == CollectorPetKind.Stationmaster);
+            Check(
+                waiting != null && !waiting.IsOwned,
+                "the little stationmaster is not a pet before the railway is done"
+            );
             Check(RailwayPlans.Trips == 6 && Railway.Trips == RailwayPlans.Trips, "six deliveries finish the railway");
             for (int i = 0; i < RailwayPlans.Trips; i++)
             {
@@ -310,15 +315,11 @@ public partial class RailwayChecks : Node
             Check(railway.Stage == RailwayPlans.Trips && railway.Complete, "six deliveries finish the railway");
             Check(railway.CarsRunning == 3, "the finished train has an engine and two wagons");
             Check(game.Coins == coinsBefore + RailwayPlans.Coins, "the finished railway paid its coins");
-            var finished = game.CaptureProgress();
+            var pet = world.WorldPets.Single(p => p.Kind == CollectorPetKind.Stationmaster);
+            Check(pet.IsOwned && pet.IsActive, "the finished railway brought the little stationmaster as a pet");
             Check(
-                finished.Economy.Owned.Contains(new CarReward(CarAccessory.Chimney.Id, true)),
-                "the finished railway brought the chimney"
-            );
-            Check(
-                CarAccessory.Catalogue.Contains(CarAccessory.Chimney)
-                    && new CarReward(CarAccessory.Chimney.Id, true).Price == null,
-                "the chimney cannot be bought, only won"
+                pet.DisplayName == WorldPetCatalog.Stationmaster.Name && pet.Collector == master,
+                "the pet belongs to the stationmaster"
             );
             RoundTrip("a finished railway");
 

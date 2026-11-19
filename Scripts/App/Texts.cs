@@ -318,8 +318,7 @@ internal static class Texts
 
     public static string RailwayPart(string part, int stage, int trips) => $"Máme {part}!  {stage} / {trips}";
 
-    public static string RailwayDone(int coins, string item) =>
-        $"Nádraží je hotové! Vláček jezdí.  +{coins}  ·  {item}";
+    public static string RailwayDone(int coins) => $"Nádraží je hotové! Vláček jezdí.  +{coins}";
 
     public static string PlaygroundDone(int coins, string item) =>
         $"Hřiště je hotové! Děti si hrají.  +{coins}  ·  {item}";

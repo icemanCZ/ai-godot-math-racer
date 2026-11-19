@@ -407,7 +407,7 @@ public partial class VisualCapture : Node
             camera.SetProcess(false);
             var inward = railway.Site.Inward;
             var right = Vector3.Up.Cross(inward);
-            if (view == "railway-close")
+            if (view is "railway-close" or "railway-pet")
             {
                 camera.Position = railway.ToGlobal(new Vector3(1.5f, 2.4f, -8.5f));
                 camera.LookAt(railway.ToGlobal(new Vector3(6f, 1.1f, -1.5f)));

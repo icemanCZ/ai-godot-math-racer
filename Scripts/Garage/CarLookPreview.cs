@@ -108,7 +108,6 @@ public partial class CarLookPreview : SubViewportContainer
         "valley-map",
         "flour-sack",
         "balloons",
-        "chimney",
     };
 
     private static void BuildAccessoryOnly(Node3D studio, string id)

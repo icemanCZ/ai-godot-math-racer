@@ -39,11 +39,8 @@ public sealed record CarAccessory(string Id, string Name)
     /// <summary>The bunch of balloons that the finished playground brings.</summary>
     public static CarAccessory Balloons { get; } = new("balloons", "Balónky");
 
-    /// <summary>The steam chimney that the finished little railway brings.</summary>
-    public static CarAccessory Chimney { get; } = new("chimney", "Parní komínek");
-
     public static IReadOnlyList<CarAccessory> Catalogue { get; } =
-        System.Array.AsReadOnly(All.Concat(new[] { ValleyMap, FlourSack, Binoculars, Balloons, Chimney }).ToArray());
+        System.Array.AsReadOnly(All.Concat(new[] { ValleyMap, FlourSack, Binoculars, Balloons }).ToArray());
 
     internal static void PlaceValleyMap(Node3D sticker, string model)
     {
@@ -85,7 +82,7 @@ public sealed record CarAccessory(string Id, string Name)
                 "antenna" => new(.5f, -.35f, -.5f),
                 "flag" => new(-.63f, 0, .35f),
                 "flour-sack" => new(-.34f, -.35f, -.05f),
-                "balloons" or "chimney" => new(.34f, -.45f, .3f),
+                "balloons" => new(.34f, -.45f, .3f),
                 "lights" => new(0, .9f, 1.1f),
                 "bumper" => new(0, 0, .55f),
                 _ when bonnet => Up(-.12f),
@@ -96,7 +93,7 @@ public sealed record CarAccessory(string Id, string Name)
                 "spare" => new(0, 0, -.2f),
                 "antenna" => Up(-.6f),
                 "flour-sack" => Up(-.7f),
-                "balloons" or "chimney" => Up(-.85f),
+                "balloons" => Up(-.85f),
                 "horns" => Up(-.3f),
                 _ when roof => Up(-.2f),
                 _ => Vector3.Zero,
@@ -105,7 +102,7 @@ public sealed record CarAccessory(string Id, string Name)
             {
                 "spare" or "exhaust" => new(0, 0, -.28f),
                 "flour-sack" => Up(.25f),
-                "balloons" or "chimney" => Up(.1f),
+                "balloons" => Up(.1f),
                 "horns" => new(0, .1f, .9f),
                 _ when roof => Up(.1f),
                 _ when bonnet => Up(.38f),
@@ -116,7 +113,7 @@ public sealed record CarAccessory(string Id, string Name)
                 "spare" => new(0, .21f, -.3f),
                 "exhaust" => new(0, 0, -.5f),
                 "antenna" => new(.35f, -.45f, -.25f),
-                "balloons" or "chimney" => Up(-.4f),
+                "balloons" => Up(-.4f),
                 "lights" => new(0, .2f, .2f),
                 "horns" => Up(-.75f),
                 _ when roof => Up(-.25f),
@@ -177,15 +174,6 @@ public sealed record CarAccessory(string Id, string Name)
                     Art.Ball(root, tie + new Vector3(x, y, z), new(.2f, .25f, .2f), color);
                     Art.Ball(root, tie + new Vector3(x, y - .27f, z), new(.03f, .03f, .03f), color);
                 }
-                break;
-            case "chimney":
-                // A black chimney with a golden rim behind the roof, puffing three clouds of steam.
-                Art.Cylinder(root, new(-.34f, 2.19f, 1.0f), .2f, .2f, .1f, "30363a");
-                Art.Cylinder(root, new(-.34f, 2.5f, 1.0f), .11f, .15f, .52f, "30363a");
-                Art.Cylinder(root, new(-.34f, 2.79f, 1.0f), .2f, .2f, .06f, "f2c14e");
-                Art.Ball(root, new(-.34f, 3.05f, 1.0f), new(.14f, .11f, .14f), "fafafa");
-                Art.Ball(root, new(-.27f, 3.32f, .97f), new(.19f, .15f, .19f), "f0f0f0");
-                Art.Ball(root, new(-.38f, 3.65f, 1.03f), new(.25f, .19f, .25f), "ebebeb");
                 break;
             case "binoculars":
                 // Two lenses and a bridge, pinned to the bonnet like the flower on the other side.

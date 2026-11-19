@@ -34,5 +34,17 @@ public partial class World
         railway.Helper = master;
         Register(StationId, master);
         Railway = railway;
+        // The finished railway's pet, a little stationmaster, waits on the platform beside the big one.
+        var pet = new CollectorPet(
+            WorldPetCatalog.Stationmaster,
+            master,
+            () => railway.Stage,
+            RailwayPlans.Trips,
+            worldPets.Count
+        );
+        var right = Vector3.Up.Cross(site.Inward);
+        pet.SetHome(railway.HelperSpot - right * 1.2f - site.Inward * .3f, master.Rotation.Y);
+        AddChild(pet);
+        AddWorldPet(pet);
     }
 }

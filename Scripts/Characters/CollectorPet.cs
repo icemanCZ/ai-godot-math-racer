@@ -44,6 +44,9 @@ internal enum CollectorPetKind
     Duckling1,
     Duckling2,
     Duckling3,
+
+    // The little stationmaster of the railway: owned once the railway is finished.
+    Stationmaster,
 }
 
 internal sealed partial class CollectorPet : Node3D

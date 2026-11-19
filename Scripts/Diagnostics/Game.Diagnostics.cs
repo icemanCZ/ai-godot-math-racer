@@ -392,7 +392,8 @@ public partial class Game
             // The train has gone a little way round the loop, with its steam and whistle.
             for (int i = 0; i < 160; i++)
                 railway._Process(.1);
-            vehicle.SetPose(world.Ground.At(railway.Drop.X, railway.Drop.Z - 6, .15f), 0);
+            var parked = railway.Drop - railway.Site.Inward * (view is "railway-close" or "railway-pet" ? 30 : 6);
+            vehicle.SetPose(world.Ground.At(parked.X, parked.Z, .15f), 0);
         }
         if (view is "mayor" or "mayor-shop" or "mayor-town" or "mayor-house" or "mayor-close")
         {
@@ -490,9 +491,10 @@ public partial class Game
         return (plot, stage);
     }
 
-    /// <summary>"railway-S" shows the railway with S of its six deliveries made, "railway-close" the finished station.</summary>
+    /// <summary>"railway-S" shows the railway with S of its six deliveries made, "railway-close" the finished station and "railway-pet" the station one delivery short, with the pet waiting.</summary>
     internal static int? ParseRailwayView(string view) =>
         view == "railway-close" ? RailwayPlans.Trips
+        : view == "railway-pet" ? RailwayPlans.Trips - 1
         : view.StartsWith("railway-")
         && int.TryParse(view["railway-".Length..], out int stage)
         && stage is >= 0 and <= RailwayPlans.Trips

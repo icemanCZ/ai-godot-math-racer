@@ -1,7 +1,6 @@
 using Godot;
 using MathRacer.Buildings;
 using MathRacer.Characters;
-using MathRacer.Garage;
 using MathRacer.Tasks;
 
 namespace MathRacer.App;
@@ -106,13 +105,12 @@ public partial class Game
         SaveProgress();
     }
 
-    /// <summary>The sixth load has been tipped out: the railway is finished and the chimney is the car's.</summary>
+    /// <summary>The sixth load has been tipped out: the railway is finished and the little stationmaster is a new pet.</summary>
     private void CompleteRailway(Railway railway)
     {
         EndHaul();
         AddCoins(RailwayPlans.Coins);
-        economy.Owned.Add(new CarReward(CarAccessory.Chimney.Id, true));
-        CelebrateAt(railway.Focus, Texts.RailwayDone(RailwayPlans.Coins, CarAccessory.Chimney.Name));
+        CelebrateAt(railway.Focus, WithPets(Texts.RailwayDone(RailwayPlans.Coins), EarnPets()));
         Speak(Texts.HuraNadraziJeHotove, railway.Helper);
         railway.Whistle();
         var outward = followCamera.GlobalPosition - railway.Focus;

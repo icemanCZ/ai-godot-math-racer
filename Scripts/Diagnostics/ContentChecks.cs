@@ -86,7 +86,10 @@ public partial class ContentChecks : Node
 
     private const int PlotCount = 6;
 
-    /// <summary>The duck, five raw materials (wheat too), every works, the bridge, the mill, the tower and a pet per hidden kind.</summary>
+    /// <summary>
+    /// The duck, five raw materials (wheat too), every works, the bridge, the mill, the tower, the ducklings, a pet per
+    /// hidden kind and the little stationmaster of the railway.
+    /// </summary>
     private static readonly int WorldPetsExpected =
-        1 + 5 + WorksCatalog.Total + 3 + WorldPetCatalog.DucklingDeliveries.Length + HiddenFriends.KindCount;
+        1 + 5 + WorksCatalog.Total + 3 + WorldPetCatalog.DucklingDeliveries.Length + HiddenFriends.KindCount + 1;
 }
