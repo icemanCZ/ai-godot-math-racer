@@ -617,7 +617,7 @@ public partial class Game : Node3D
         if (Delivery != null)
         {
             Delivery.Tick(delta);
-            ui.DeliveryDirection(Delivery.Waypoint, vehicle);
+            ui.DeliveryDirection(Delivery.Destination, vehicle);
             if (lastCollected != Delivery.Collected)
             {
                 lastCollected = Delivery.Collected;

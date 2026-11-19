@@ -127,7 +127,7 @@ public partial class Game
         if (Haul == null)
             return;
         Haul.Tick(delta);
-        ui.DeliveryDirection(Haul.Waypoint, vehicle);
+        ui.DeliveryDirection(Haul.Destination, vehicle);
         if (!Haul.Reached(vehicle.Position))
         {
             if (!trailer.Dumping)

@@ -34,8 +34,13 @@ internal sealed class RouteGuide
     private bool created;
 
     public Vector3 Destination => destination();
+
+    /// <summary>A point a little ahead along the road route (the target itself off the road); the HUD arrow does not use it.</summary>
     public Vector3 Waypoint => offRoad ? Destination : roadWaypoint;
     public int RouteLength { get; private set; }
+
+    /// <summary>The road samples from the car to the end of the road route, then the target itself.</summary>
+    internal IReadOnlyList<Vector3> RoutePoints { get; private set; } = Array.Empty<Vector3>();
 
     public RouteGuide(World world, Vehicle car, Node3D owner, Func<Vector3> destination)
     {
@@ -248,6 +253,7 @@ internal sealed class RouteGuide
         }
         var target = Destination;
         points.Add(target);
+        RoutePoints = points;
         // Aim ahead along the road instead of across the river or through trees.
         roadWaypoint = points[Math.Min(8, points.Count - 1)];
         showRoadExit = nodes.Count <= 8 && !OnRoad(target);
@@ -261,7 +267,23 @@ internal sealed class RouteGuide
             if (!shownAnchors.Add(anchorIndex))
                 continue;
             var anchor = world.Routes.NavigationAnchors[anchorIndex];
-            bool reverse = anchor.Forward.Dot(points[sample + 1] - points[sample]) < 0;
+            // A sample belongs to its nearest anchor, which can stand past the end of the route or past a turn,
+            // and the route may step over the anchor's own sample. The anchor is shown only where the route
+            // passes it and goes on, and its arrow follows the route from there.
+            int passing = -1;
+            float closest = 10.24f;
+            for (int k = Math.Max(0, sample - 12); k < Math.Min(nodes.Count, sample + 13); k++)
+            {
+                float d = points[k].DistanceSquaredTo(anchor.Position);
+                if (d < closest)
+                {
+                    closest = d;
+                    passing = k;
+                }
+            }
+            if (passing < 0 || passing == nodes.Count - 1)
+                continue;
+            bool reverse = anchor.Forward.Dot(points[passing + 1] - points[passing]) < 0;
             var key = (anchorIndex, reverse);
             if (!routeArrows.TryGetValue(key, out var arrow))
             {

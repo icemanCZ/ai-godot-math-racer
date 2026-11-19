@@ -161,6 +161,35 @@ public partial class GardenChecks : Node
                         && Mathf.IsEqualApprox(exitArrow.Position.Z, approach.Road.Z),
                     "final arrow marks the start of the clear approach"
                 );
+                bool strayArrow = false;
+                foreach (var start in world.Routes.Samples.Where(p => p.DistanceTo(approach.Road) is > 10 and < 60))
+                {
+                    car.SetPose(start, 0);
+                    game.Delivery.Tick(.25);
+                    var route = game.Delivery.RoutePoints;
+                    for (int turn = 0; turn < 8; turn++)
+                    {
+                        car.SetPose(start, turn * Mathf.Tau / 8);
+                        game.Delivery.Tick(.01);
+                        foreach (
+                            var arrow in game
+                                .Delivery.GetChildren()
+                                .OfType<MeshInstance3D>()
+                                .Where(a => a.Visible && a.Name.ToString().StartsWith("RouteArrow"))
+                        )
+                            // The last road point is where the route leaves the road; nothing guides on from it.
+                            strayArrow |= !Enumerable
+                                .Range(0, route.Count - 2)
+                                .Any(k =>
+                                    new Vector2(
+                                        arrow.Position.X - route[k].X,
+                                        arrow.Position.Z - route[k].Z
+                                    ).LengthSquared() < 10.24f
+                                    && (-arrow.Basis.Z).Dot(route[k + 1] - route[k]) > 0
+                                );
+                    }
+                }
+                Check(!strayArrow, "every road arrow stands on the route before its end and points along it");
                 var farOffRoad = world.SpecialPickupSpots.MaxBy(p => p.DistanceSquaredTo(destination));
                 car.SetPose(farOffRoad, 0);
                 game.Delivery.Tick(.01);

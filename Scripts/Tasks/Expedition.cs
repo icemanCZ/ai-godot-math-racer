@@ -66,6 +66,7 @@ public partial class Expedition : Node3D
     public Vector3 Waypoint => guide.Waypoint;
     internal bool CargoVisible => !cargoDetached && load != null && load.IsVisibleInTree();
     internal int RouteLength => guide.RouteLength;
+    internal IReadOnlyList<Vector3> RoutePoints => guide.RoutePoints;
 
     /// <summary>
     /// A stable number for this sender's trip that picks the delivery recipient and amount. It depends only

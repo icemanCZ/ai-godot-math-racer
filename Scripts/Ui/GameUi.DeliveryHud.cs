@@ -46,11 +46,12 @@ public partial class GameUi
         deliveryHud.AddChild(label);
     }
 
-    public void DeliveryDirection(Vector3 waypoint, Vehicle car)
+    /// <summary>Turns the top arrow straight toward <paramref name="target"/>, as seen from the camera.</summary>
+    public void DeliveryDirection(Vector3 target, Vehicle car)
     {
         if (directionPicture == null)
             return;
-        var delta = waypoint - car.Position;
+        var delta = target - car.Position;
         var camera = GetViewport().GetCamera3D();
         if (camera == null)
             return;
