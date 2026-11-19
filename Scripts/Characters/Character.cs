@@ -197,6 +197,18 @@ public partial class Character : Node3D
         Art.Ball(model, new(-.67f, 1.05f, 1.7f), Vector3.One * .2f, "ffd24a");
     }
 
+    /// <summary>A red cap with a white band, a yellow neckerchief and a signal paddle held up in the paw.</summary>
+    internal void DressAsStationmaster()
+    {
+        Art.Cylinder(model, new(0, 2.5f, 0), .6f, .52f, .36f, "d9432f");
+        Art.Cylinder(model, new(0, 2.38f, 0), .63f, .63f, .1f, "fff5df");
+        Art.Block(model, new(0, 2.34f, .56f), new(.74f, .06f, .34f), "b8321f");
+        Art.Ball(model, new(0, 2.7f, 0), Vector3.One * .09f, "f2c14e");
+        Art.Ball(model, new(0, 1.28f, .5f), new(.42f, .16f, .16f), "f2c14e");
+        Art.Cylinder(model, new(.9f, 1.6f, .1f), .035f, .035f, 1.5f, "a77a59");
+        Art.Cylinder(model, new(.9f, 2.4f, .1f), .3f, .3f, .05f, "d9432f").RotationDegrees = new(90, 0, 0);
+    }
+
     internal void DressAsBandit(string scarf)
     {
         nameLabel.Hide();

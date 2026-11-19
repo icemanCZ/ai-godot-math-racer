@@ -386,6 +386,14 @@ public partial class Game
                 yard._Process(.1);
             vehicle.SetPose(world.Ground.At(yard.Drop.X, yard.Drop.Z, .15f), 0);
         }
+        if (ParseRailwayView(view) is { } railwayStage && world.Railway is { } railway)
+        {
+            railway.SetStage(railwayStage);
+            // The train has gone a little way round the loop, with its steam and whistle.
+            for (int i = 0; i < 160; i++)
+                railway._Process(.1);
+            vehicle.SetPose(world.Ground.At(railway.Drop.X, railway.Drop.Z - 6, .15f), 0);
+        }
         if (view is "mayor" or "mayor-shop" or "mayor-town" or "mayor-house" or "mayor-close")
         {
             world.Village.RestoreDecorations(Settlement.TownDecorations.All.Select(d => d.Id));
@@ -481,6 +489,15 @@ public partial class Game
             return null;
         return (plot, stage);
     }
+
+    /// <summary>"railway-S" shows the railway with S of its six deliveries made, "railway-close" the finished station.</summary>
+    internal static int? ParseRailwayView(string view) =>
+        view == "railway-close" ? RailwayPlans.Trips
+        : view.StartsWith("railway-")
+        && int.TryParse(view["railway-".Length..], out int stage)
+        && stage is >= 0 and <= RailwayPlans.Trips
+            ? stage
+        : null;
 
     /// <summary>"playground-S" shows the playground with S of its six deliveries made.</summary>
     internal static int? ParsePlaygroundView(string view) =>

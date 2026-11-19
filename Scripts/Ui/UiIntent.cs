@@ -62,6 +62,8 @@ internal abstract record UiIntent
 
     internal sealed record PlaygroundTrip : UiIntent;
 
+    internal sealed record RailwayTrip : UiIntent;
+
     internal sealed record Lookout : UiIntent;
 
     // The mayor's shop.

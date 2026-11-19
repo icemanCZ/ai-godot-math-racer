@@ -78,6 +78,9 @@ public partial class Game
             case UiIntent.PlaygroundTrip:
                 BeginPlaygroundTrip();
                 break;
+            case UiIntent.RailwayTrip:
+                BeginRailwayTrip();
+                break;
             case UiIntent.BuyDecoration buy:
                 BuyDecoration(buy.Id);
                 break;

@@ -197,6 +197,33 @@ internal sealed class PlaygroundRole : ActorRole
 }
 
 /// <summary>
+/// The stationmaster of the little railway. Talking to them offers the next delivery of goods for the station and the
+/// track; once it is finished the train runs and they are glad of it. They send the trailer and run their own task marker.
+/// </summary>
+internal sealed class StationRole : ActorRole
+{
+    public Railway Railway { get; }
+
+    public StationRole(Railway railway) => Railway = railway;
+
+    public override string Icon => "railway";
+    public override bool UsesDeliveryGuide => false;
+
+    public override bool InvitesTalk(bool expeditionActive) => true;
+
+    public override void ShowHint(GameUi ui, Character actor) => ui.RailwayHint();
+
+    public override void Open(Game game, Character actor) => game.OpenRailway(actor);
+
+    /// <summary>The stationmaster asks no quiz of their own: the loading questions come from the works' workers.</summary>
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
+    {
+        game.CompleteHaulLoading();
+        return true;
+    }
+}
+
+/// <summary>
 /// The mayor of the village, who stands on the square and sells decorations for the town for coins. She sends no trip and
 /// asks no quiz: talking to her opens her shop.
 /// </summary>

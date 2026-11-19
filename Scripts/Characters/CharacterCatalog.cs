@@ -82,6 +82,15 @@ internal static class CharacterCatalog
             "a8856b"
         );
 
+    /// <summary>The stationmaster of the little railway round the playground (<see cref="World.StationId"/>).</summary>
+    public static CharacterSpec Stationmaster { get; } =
+        new(
+            "Králíček výpravčí Špendlík",
+            "Pííp! Děti by se chtěly svézt vláčkem! Postavíme kolem hřiště nádraží? Přivez mi štěrk, prkna a cihly.",
+            0,
+            "e8d9c4"
+        );
+
     /// <summary>Baker, shopkeeper and confectioner, matching <see cref="Village.TradeCargo"/>.</summary>
     public static IReadOnlyList<CharacterSpec> Traders { get; } =
         new CharacterSpec[]

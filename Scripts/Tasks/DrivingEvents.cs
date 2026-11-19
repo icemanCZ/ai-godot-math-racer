@@ -64,7 +64,7 @@ public partial class DrivingEvents : Node3D
         this.world = world;
         var actors = world
             .InteractionActors.Where(actor =>
-                actor.Role is not (WitchRole or SorcererRole or MayorRole or GlassmakerRole)
+                actor.Role is not (WitchRole or SorcererRole or MayorRole or GlassmakerRole or StationRole)
             )
             .ToArray();
         for (int course = 0; course < 2; course++)

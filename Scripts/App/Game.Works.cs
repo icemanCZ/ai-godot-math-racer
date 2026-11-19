@@ -123,6 +123,18 @@ public partial class Game
                 return;
             (works, asker) = (missing, yard.Helper);
         }
+        else if (State == GameState.RailwayStatus)
+        {
+            // So does the stationmaster, for the goods of the track and the station.
+            if (
+                RailwayOf(nearby) is not { Complete: false } railway
+                || Haul != null
+                || RailwayStepReady(railway)
+                || GoodsWorks(RailwayPlans.CargoOf(railway.Stage)) is not { Full: false } missing
+            )
+                return;
+            (works, asker) = (missing, railway.Helper);
+        }
         else if (State == GameState.HouseMaterialOffer)
         {
             // A resident who wants goods that the works has not made does the same: the way to the raw material.

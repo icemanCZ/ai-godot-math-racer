@@ -401,6 +401,23 @@ public partial class VisualCapture : Node
             camera.Position = ring - inward * back + right * 14 + Vector3.Up * (project == BuildPlans.Tower ? 16 : 9);
             camera.LookAt(build.Focus);
         }
+        else if (Game.ParseRailwayView(view) is { } && world.Railway is { } railway)
+        {
+            // The whole loop from the road side and from above; the close view looks along the platform.
+            camera.SetProcess(false);
+            var inward = railway.Site.Inward;
+            var right = Vector3.Up.Cross(inward);
+            if (view == "railway-close")
+            {
+                camera.Position = railway.ToGlobal(new Vector3(1.5f, 2.4f, -8.5f));
+                camera.LookAt(railway.ToGlobal(new Vector3(6f, 1.1f, -1.5f)));
+            }
+            else
+            {
+                camera.Position = railway.Drop - inward * 15 + right * 17 + Vector3.Up * 18;
+                camera.LookAt(railway.Drop + inward * 8 + Vector3.Up * 0);
+            }
+        }
         else if (Game.ParsePlaygroundView(view) is { } && world.Playground is { } playground)
         {
             // The ring, the arch and all the toys from the road side, from above.

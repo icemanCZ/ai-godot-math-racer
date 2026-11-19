@@ -329,7 +329,7 @@ public partial class GlassChecks : Node
                 },
                 "the lamp maker's shop beside someone else"
             );
-            Rejected(data => data.Nearby = World.GlassmakerId + 1, "a character beyond the lamp maker");
+            Rejected(data => data.Nearby = World.StationId + 1, "a character beyond the lamp maker");
 
             // A file made before there were lamps loads with none.
             var plain = game.CaptureProgress();

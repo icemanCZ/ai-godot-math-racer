@@ -102,7 +102,9 @@ public partial class Game
             world.Plants.MeadowPreview,
         };
         var actors = world
-            .InteractionActors.Where(actor => actor.Role is not (SorcererRole or MayorRole or GlassmakerRole))
+            .InteractionActors.Where(actor =>
+                actor.Role is not (SorcererRole or MayorRole or GlassmakerRole or StationRole)
+            )
             .ToArray();
         var candidates = world
             .Routes.Samples.Select(point =>

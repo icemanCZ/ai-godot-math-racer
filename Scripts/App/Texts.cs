@@ -90,6 +90,10 @@ internal static class Texts
     public const string MocDekujuZaHristeDetiSeSmeji = "Moc děkuju za hřiště! Děti si hrají od rána do večera.";
     public const string HuraHristeJeHotove = "Hurá, hřiště je hotové! Děti se můžou vyřádit! Moc děkuju!";
     public const string HristeHint = "Hřiště";
+    public const string TedOdvezNakladNaNadraziA = "Teď odvez náklad na nádraží a vysyp ho do žlutého kruhu.";
+    public const string VlacekJezdiDekujuZaNadrazi = "Vláček jezdí od rána do večera! Moc děkuju za nádraží.";
+    public const string HuraNadraziJeHotove = "Hurá, nádraží je hotové! Vláček veze zvířátka! Moc děkuju!";
+    public const string NadraziHint = "Nádraží";
 
     // Game.Postcards
     public const string MostALekniny = "Most a lekníny";
@@ -311,6 +315,11 @@ internal static class Texts
     public static string PlotDone(string name, int coins) => $"Domeček je hotový! {name} se nastěhoval.  +{coins}";
 
     public static string PlaygroundToy(string toy, int stage, int trips) => $"Máme {toy}!  {stage} / {trips}";
+
+    public static string RailwayPart(string part, int stage, int trips) => $"Máme {part}!  {stage} / {trips}";
+
+    public static string RailwayDone(int coins, string item) =>
+        $"Nádraží je hotové! Vláček jezdí.  +{coins}  ·  {item}";
 
     public static string PlaygroundDone(int coins, string item) =>
         $"Hřiště je hotové! Děti si hrají.  +{coins}  ·  {item}";

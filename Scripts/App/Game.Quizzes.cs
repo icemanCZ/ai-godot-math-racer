@@ -22,6 +22,7 @@ public partial class Game
         House,
         Missing,
         Playground,
+        Railway,
     }
 
     /// <summary>Asks the quiz that must be solved before a trip starts; the trip continues in StartDeparture.</summary>

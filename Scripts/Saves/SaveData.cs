@@ -58,6 +58,15 @@ public sealed class SaveData
 
     /// <summary>The glass lamps in the bag and on the ground. Added after version 5 began.</summary>
     public LampsSave Lamps { get; set; } = new();
+
+    /// <summary>The little railway's progress. Added after version 5 began.</summary>
+    public RailwaySave Railway { get; set; } = new();
+}
+
+/// <summary>The deliveries made to the railway round the playground, 0 to <see cref="RailwayPlans.Trips"/>.</summary>
+public sealed class RailwaySave
+{
+    public int Stage { get; set; }
 }
 
 /// <summary>

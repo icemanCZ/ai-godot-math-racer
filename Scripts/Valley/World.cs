@@ -107,6 +107,7 @@ public partial class World : Node3D
         // The mayor is registered last, after every search that keeps clear of the actors, so that none of them moves.
         Register(MayorId, Village.Mayor);
         Register(GlassmakerId, Village.Glassmaker);
+        BuildRailway();
         Village.CreateLamps();
         Village.Lamps.Surface = DriveSurface;
         Ground.BuildMeshes();

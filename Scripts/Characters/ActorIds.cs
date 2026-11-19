@@ -75,4 +75,7 @@ internal static class ActorIds
 
     /// <summary>The glass lamp maker on the village square, who hands out candles and lamps. Every valley has him.</summary>
     public const int Glassmaker = Mayor + 1;
+
+    /// <summary>The stationmaster of the little railway round the playground, which a valley with a playground gets last.</summary>
+    public const int Station = Glassmaker + 1;
 }

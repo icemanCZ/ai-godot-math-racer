@@ -111,6 +111,8 @@ public partial class Game
             plot.Resident.Guide(Haul == null && !plot.Complete);
         if (world.Playground is { } yard)
             yard.Helper.Guide(Haul == null && !yard.Complete);
+        if (world.Railway is { } railway)
+            railway.Helper.Guide(Haul == null && !railway.Complete);
         foreach (var works in world.AllWorks)
             works.Worker.Guide(true);
         // The sand pit's worker supplies the glassworks like the others supply their works.
@@ -272,6 +274,7 @@ public partial class Game
         world.Bakery?.SetStock(data.Buildings.BreadStock);
         world.Village.RestorePlots(data.Buildings.PlotStages!);
         world.Playground?.SetStage(data.Playground.Stage);
+        world.Railway?.SetStage(data.Railway.Stage);
         trailer.SetLoad(null);
         if (data.Task.Trip is { } saved && TripTarget(saved) is { } target)
         {
@@ -298,6 +301,7 @@ public partial class Game
                     && saved.Index < world.Village.BuildPlots.Count
                     && !world.Village.BuildPlots[saved.Index].Complete => world.Village.BuildPlots[saved.Index],
             TripKinds.Playground when saved.Index == 0 && world.Playground is { Complete: false } yard => yard,
+            TripKinds.Railway when saved.Index == 0 && world.Railway is { Complete: false } railway => railway,
             TripKinds.House
                 when saved.Index >= 0
                     && saved.Index < world.Village.Residents.Count
@@ -322,6 +326,7 @@ public partial class Game
             { Loaded: true, House: >= 0 } => Texts.TedOdvezNakladPredDomecekA,
             { Loaded: true, Plot: not null } => Texts.TedOdvezNakladNaParceluA,
             { Loaded: true, Playground: not null } => Texts.TedOdvezNakladNaHristeA,
+            { Loaded: true, Railway: not null } => Texts.TedOdvezNakladNaNadraziA,
             { Loaded: true } => Texts.TedOdvezNakladDoZlutehoKruhu,
             _ => trip.Load switch
             {

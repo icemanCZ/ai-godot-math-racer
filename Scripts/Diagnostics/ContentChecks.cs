@@ -53,6 +53,7 @@ public partial class ContentChecks : Node
             Need(world.Bakery != null && world.Farm != null, "the wheat farm and the bakery");
             Need(world.WheatField != null && world.FieldFarmer != null, "the wheat field and its farmer");
             Need(world.Playground is { Helper: not null }, "the playground and its keeper");
+            Need(world.Railway is { Helper: not null }, "the railway and its stationmaster");
             Need(village.Mayor != null && world.ActorAt(World.MayorId) == village.Mayor, "the mayor on the square");
             Need(
                 village.Glassmaker != null && world.ActorAt(World.GlassmakerId) == village.Glassmaker,
