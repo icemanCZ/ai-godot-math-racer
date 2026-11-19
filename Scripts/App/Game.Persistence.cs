@@ -5,6 +5,7 @@ using MathRacer.Characters;
 using MathRacer.Garage;
 using MathRacer.Quizzes;
 using MathRacer.Saves;
+using MathRacer.Settlement;
 using MathRacer.Tasks;
 using MathRacer.Vehicles;
 
@@ -159,6 +160,19 @@ public partial class Game
             },
             Playground = new PlaygroundSave { Stage = world.Playground?.Stage ?? 0 },
             Decorations = new DecorationsSave { Owned = world.Village.OwnedDecorationIds },
+            Lamps = new LampsSave
+            {
+                Carried = Lamps.Carried.ToArray(),
+                Placed = Lamps
+                    .Spots.Select(spot => new PlacedLampSave
+                    {
+                        Kind = spot.Kind,
+                        X = spot.X,
+                        Z = spot.Z,
+                        Yaw = spot.Yaw,
+                    })
+                    .ToArray(),
+            },
             Postcards = new PostcardsSave { Cards = (PostcardProgress?[])postcards.Clone(), Page = postcardPage },
             Events = new EventsSave
             {
@@ -299,6 +313,11 @@ public partial class Game
         world.Village.RestoreBaked(data.Village.Baked);
         world.Village.RestoreTrades(data.Village.TradeCounts);
         world.Village.RestoreDecorations(data.Decorations.Owned);
+        Lamps.Restore(
+            data.Lamps.Carried,
+            data.Lamps.Placed.Select(lamp => new LampSpot(lamp.Kind, lamp.X, lamp.Z, lamp.Yaw))
+        );
+        RefreshLampHud();
         world.Village.RestoreFarm(data.Village.FarmCount);
         world.Village.RestoreGarden(data.Village.GardenCount);
         world.Village.RestoreCollection(false, data.Village.GemCount);

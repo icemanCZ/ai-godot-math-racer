@@ -218,6 +218,29 @@ internal static class Texts
     public const string CoSiPriVybrat = "Co se ti líbí? Za penízky ozdobíme celé město!";
     public const string MestoJeKrasneDekujeme = "Naše město je krásné! Děkujeme ti!";
 
+    // GameUi.Glassmaker and Game.Lamps
+    public const string ASvetlar = "A · Světlař";
+    public const string ESvetlar = "E · Světlař";
+    public const string SklenenaSvetla = "Skleněná světla";
+    public const string Vzit = "Vzít si";
+    public const string JakeSvicticeSiVyberes = "Která se ti líbí? Postav ji, kam chceš. Večer se sama rozsvítí!";
+    public const string TadyMasPostavJi = "Tady máš! Postavíš ji tam, kde se ti bude líbit.";
+    public const string UzMasSpoustuLampSeberNejakou = "Už jich máš v údolí spoustu! Nějakou seber.";
+    public const string SemLampuPostavitNejde = "Sem lampu postavit nejde.";
+    public const string LampaStojiSeberesJi = "Lampa stojí. Až budeš u ní, zase ji sebereš.";
+    public const string VakJePlny = "Vak je plný. Nejdřív nějakou postav.";
+    public const string SebratLampu = "Sebrat";
+    public const string PostavitLampu = "Postavit lampu";
+
+    public static string LampsBag(int carried, int max) => $"Ve vaku: {carried} / {max}";
+
+    public static string LampsOut(int placed, int max) => $"Venku: {placed} / {max}";
+
+    public static string LampsHud(int carried, string next, bool controller) =>
+        $"Lampy ve vaku: {carried} · další: {next}\n{(controller ? "A" : "E")} · postavit";
+
+    public static string LampInBag(string name) => $"{name} je ve vaku.";
+
     // GameUi.Postcards
     public const string PohledniceZKouzelnehoUdoli = "Pohlednice z Kouzelného údolí";
 

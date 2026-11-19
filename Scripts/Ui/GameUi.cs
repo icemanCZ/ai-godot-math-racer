@@ -140,6 +140,7 @@ public partial class GameUi : CanvasLayer
         SetupEvents();
         SetupCoins();
         SetupHidden();
+        SetupLamps();
     }
 
     private static StyleBoxFlat Style(string color, int radius) =>

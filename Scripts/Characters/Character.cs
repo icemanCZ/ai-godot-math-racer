@@ -178,6 +178,25 @@ public partial class Character : Node3D
         Art.Ball(model, new(-.28f, 1.22f, .52f), Vector3.One * .15f, "f3cf70");
     }
 
+    /// <summary>A leather apron, a blue cap with goggles on it and a blowpipe with a glowing drop of glass.</summary>
+    internal void DressAsGlassmaker()
+    {
+        Art.Block(model, new(0, .95f, .46f), new(.8f, 1.1f, .12f), "8a5e3c");
+        Art.Block(model, new(0, 1.2f, .54f), new(.5f, .3f, .05f), "a87650");
+        Art.Block(model, new(0, 1.45f, .3f), new(.08f, .5f, .08f), "8a5e3c").RotationDegrees = new(0, 0, 30);
+        Art.Cylinder(model, new(0, 2.45f, 0), .66f, .58f, .3f, "3f6f9a");
+        Art.Block(model, new(0, 2.36f, .55f), new(.74f, .06f, .3f), "345e84");
+        foreach (float x in new[] { -.17f, .17f })
+        {
+            Art.Cylinder(model, new(x, 2.34f, .5f), .17f, .17f, .1f, "5b4636").RotationDegrees = new(90, 0, 0);
+            Art.Ball(model, new(x, 2.34f, .57f), new(.28f, .28f, .1f), "bfe6f2");
+        }
+        var pipe = Art.Cylinder(model, new(-.67f, 1.05f, .8f), .035f, .035f, 1.7f, "6b6f73");
+        pipe.RotationDegrees = new(90, 0, 0);
+        Art.Ball(model, new(-.67f, 1.05f, 1.68f), Vector3.One * .3f, "ff9a3c");
+        Art.Ball(model, new(-.67f, 1.05f, 1.7f), Vector3.One * .2f, "ffd24a");
+    }
+
     internal void DressAsBandit(string scarf)
     {
         nameLabel.Hide();

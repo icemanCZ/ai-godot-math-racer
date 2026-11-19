@@ -55,6 +55,28 @@ public sealed class SaveData
 
     /// <summary>The decorations of the town bought from the mayor. Added after version 5 began.</summary>
     public DecorationsSave Decorations { get; set; } = new();
+
+    /// <summary>The glass lamps in the bag and on the ground. Added after version 5 began.</summary>
+    public LampsSave Lamps { get; set; } = new();
+}
+
+/// <summary>
+/// The lamps from the glass lamp maker: the kinds in the bag (<see cref="GlassLamps"/>; an id is never renamed) and
+/// the lamps that stand on the ground. A lamp's height is not saved, the ground gives it again.
+/// </summary>
+public sealed class LampsSave
+{
+    public string[] Carried { get; set; } = Array.Empty<string>();
+    public PlacedLampSave[] Placed { get; set; } = Array.Empty<PlacedLampSave>();
+}
+
+/// <summary>One lamp on the ground: its kind, where it stands on the map (x, z) and the way it faces.</summary>
+public sealed class PlacedLampSave
+{
+    public string Kind { get; set; } = "";
+    public float X { get; set; }
+    public float Z { get; set; }
+    public float Yaw { get; set; }
 }
 
 /// <summary>The decorations bought from the mayor, by id (<see cref="TownDecorations"/>); an id is never renamed.</summary>

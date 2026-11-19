@@ -7,6 +7,7 @@ using MathRacer.Characters;
 using MathRacer.Garage;
 using MathRacer.Quizzes;
 using MathRacer.Saves;
+using MathRacer.Settlement;
 using MathRacer.Tasks;
 using MathRacer.Ui;
 using MathRacer.Valley;
@@ -41,6 +42,7 @@ public enum GameState
     PlotStatus = 21,
     PlaygroundStatus = 22,
     MayorShop = 23,
+    GlassmakerShop = 24,
 }
 
 public partial class Game : Node3D
@@ -247,7 +249,7 @@ public partial class Game : Node3D
             Interact();
     }
 
-    private void Interact()
+    internal void Interact()
     {
         if (State != GameState.Exploring)
             return;
@@ -260,6 +262,8 @@ public partial class Game : Node3D
             return;
         if (InteractWithEvent())
             return;
+        if (LampPickupAvailable && TakeUpLamp())
+            return;
         if (Haul is { Loaded: false, Arrived: true } && Haul.Reached(vehicle.Position))
             BeginLoading();
         else if (
@@ -270,6 +274,8 @@ public partial class Game : Node3D
             BeginDeliveryQuestion();
         else if (nearby != null)
             OpenChallenge(nearby);
+        else if (Lamps.Carried.Count > 0)
+            PutDownLamp();
     }
 
     private void ShowRewards() => ui.CoinReward(economy.RewardCoins);
@@ -637,5 +643,9 @@ public partial class Game : Node3D
         nearby?.Role.ShowHint(ui, nearby);
         if (AtGarage)
             ui.GarageHint();
+        else if (LampPickupAvailable && LampNearby() is { } lamp)
+            ui.LampPickupHint(GlassLamps.Find(Lamps.KindAt(lamp))?.Name ?? "");
+        else if (LampPickupAvailable && Lamps.Carried.Count > 0)
+            ui.LampPutHint();
     }
 }

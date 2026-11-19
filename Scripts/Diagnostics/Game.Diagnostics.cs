@@ -400,6 +400,37 @@ public partial class Game
                 OpenMayor(mayor);
             }
         }
+        if (view is "glass" or "glass-shop" or "glass-night" or "glass-close")
+        {
+            // A few lamps on the square, in the day or at night, and the lamp maker's shop.
+            var maker = world.Village.Glassmaker;
+            var square = world.Village.Square;
+            var lamps = new (float X, float Z, string Kind)[]
+            {
+                (-2.4f, 4.4f, "candle"),
+                (2.4f, 4.4f, "lamp"),
+                (-5.2f, 1.2f, "lamp"),
+                (5.4f, 1.4f, "candle"),
+                (-1.5f, -4.4f, "candle"),
+                (3.2f, -4.6f, "lamp"),
+                (-8, 3.2f, "candle"),
+                (8.2f, 3.4f, "candle"),
+            };
+            world.Village.Lamps.Restore(
+                view == "glass-shop" ? new[] { "candle", "lamp" } : Array.Empty<string>(),
+                lamps.Select(lamp =>
+                {
+                    var spot = square.Transform * new Vector3(lamp.X, 0, lamp.Z);
+                    return new Settlement.LampSpot(lamp.Kind, spot.X, spot.Z, lamp.X);
+                })
+            );
+            vehicle.SetPose(world.Ground.At(maker.Position.X - 3, maker.Position.Z + 5, .15f), 0);
+            if (view == "glass-night")
+                Weather.Begin(WeatherKind.Night, instant: true);
+            if (view == "glass-shop")
+                OpenGlassmaker(maker);
+            RefreshLampHud();
+        }
         if (view == "log-yard" && world.LogYard is { } logYard)
             vehicle.SetPose(world.Ground.At(logYard.Position.X, logYard.Position.Z, .15f), 0);
         if (view is "beaver" or "load-question" && world.Beaver != null)

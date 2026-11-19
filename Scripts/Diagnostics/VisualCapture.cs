@@ -310,6 +310,22 @@ public partial class VisualCapture : Node
             camera.GlobalPosition = mayor.ToGlobal(new Vector3(.9f, 1.9f, 3.4f));
             camera.LookAt(mayor.ToGlobal(new Vector3(0, 1.55f, 0)));
         }
+        else if (view == "glass-close")
+        {
+            // The lamp maker from the front and a little above, with his table of lamps beside him.
+            camera.SetProcess(false);
+            var maker = world.Village.Glassmaker;
+            camera.GlobalPosition = maker.ToGlobal(new Vector3(-1.2f, 2.4f, 4.6f));
+            camera.LookAt(maker.ToGlobal(new Vector3(.9f, 1.1f, -.9f)));
+        }
+        else if (view is "glass" or "glass-night")
+        {
+            // The whole square from the road side, with the lamps that stand on it.
+            camera.SetProcess(false);
+            var square = world.Village.Square;
+            camera.GlobalPosition = square.ToGlobal(new Vector3(9, 11, 19));
+            camera.LookAt(square.ToGlobal(new Vector3(0, 1.2f, 0)));
+        }
         else if (view == "mayor")
         {
             // The whole square from the road side, above the arch.

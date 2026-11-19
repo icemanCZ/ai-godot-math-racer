@@ -214,6 +214,7 @@ public partial class Weather : Node3D
         headlights.Visible = Darkness > .02f;
         headlights.LightEnergy = Darkness * 4.5f;
         village.SetNightLights(Darkness > .35f);
+        village.SetLampGlow(Darkness, car.GlobalPosition);
     }
 
     private void CreateNight()

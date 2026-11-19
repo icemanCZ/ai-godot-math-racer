@@ -54,6 +54,8 @@ public static class Art
                 "plot" => "M16 68 L66 22 L116 68 M30 58 V112 H102 V58 M54 112 V82 H78 V112 M82 30 V46 M92 30 V54",
                 // The mayor, who sells decorations: a pennant on a pole.
                 "flag" => "M30 118 V14 M30 20 H104 L86 44 L104 68 H30",
+                // The glass lamp maker: a lamp with a tulip shade on a pole.
+                "lamp" => "M66 118 V56 M44 118 H88 M38 30 Q38 12 66 12 Q94 12 94 30 L82 56 H50 Z M54 30 H78",
                 // The playground: a swing set with a seat.
                 "playground" =>
                     "M12 114 L36 24 L60 114 M72 114 L96 24 L120 114 M36 24 H96 M56 24 V84 M76 24 V84 M50 84 H82",

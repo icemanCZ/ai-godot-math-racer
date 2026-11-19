@@ -93,6 +93,8 @@ internal static class LegacySaves
         ("Vehicle", "Trail"),
         ("Playground", "Stage"),
         ("Decorations", "Owned"),
+        ("Lamps", "Carried"),
+        ("Lamps", "Placed"),
     };
 
     /// <summary>

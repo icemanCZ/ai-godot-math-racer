@@ -33,6 +33,7 @@ internal static class SaveRules
         ("building plots", HasInvalidPlotState),
         ("playground", HasInvalidPlaygroundState),
         ("decorations and the mayor's shop", HasInvalidDecorations),
+        ("glass lamps and the lamp maker's shop", HasInvalidLamps),
         ("buildings and trailer", HasInvalidBuildState),
         ("works", HasInvalidWorksState),
         ("hauled loads", HasInvalidHauls),
@@ -60,7 +61,8 @@ internal static class SaveRules
         || data.Hauls is null
         || data.Hidden is null
         || data.Playground is null
-        || data.Decorations is null;
+        || data.Decorations is null
+        || data.Lamps is null;
 
     /// <summary>Throws when the save is not one the game can restore.</summary>
     internal static void Validate(SaveData data)
@@ -131,7 +133,7 @@ internal static class SaveRules
         || data.Task.Picked == null
         || data.Quiz.Rejected == null
         || data.Nearby < -1
-        || data.Nearby > Math.Max(Game.BanditActorId, World.MayorId)
+        || data.Nearby > Math.Max(Game.BanditActorId, World.GlassmakerId)
         || data.Task.Sender < -1
         || data.Task.Sender > World.SorcererId
         || data.Task.Sender == World.WitchId
@@ -395,6 +397,27 @@ internal static class SaveRules
         || data.Decorations.Owned.Any(id => TownDecorations.Find(id) == null)
         || data.Decorations.Owned.Distinct().Count() != data.Decorations.Owned.Length
         || (data.State == GameState.MayorShop && !World.IsMayor(data.Nearby));
+
+    /// <summary>
+    /// Only known lamps, within the limits of the bag and of the valley, standing inside the playable ground with a
+    /// finite turn, and the lamp maker's shop is open only beside him.
+    /// </summary>
+    private static bool HasInvalidLamps(SaveData data) =>
+        data.Lamps.Carried == null
+        || data.Lamps.Placed == null
+        || data.Lamps.Carried.Length > LampField.MaxCarried
+        || data.Lamps.Placed.Length > LampField.MaxPlaced
+        || data.Lamps.Carried.Any(kind => GlassLamps.Find(kind) == null)
+        || data.Lamps.Placed.Any(lamp =>
+            lamp == null
+            || GlassLamps.Find(lamp.Kind) == null
+            || !float.IsFinite(lamp.X)
+            || !float.IsFinite(lamp.Z)
+            || !float.IsFinite(lamp.Yaw)
+            || Math.Abs(lamp.Yaw) > 100
+            || new System.Numerics.Vector2(lamp.X, lamp.Z).Length() > Settings.PlayableRadius
+        )
+        || (data.State == GameState.GlassmakerShop && !World.IsGlassmaker(data.Nearby));
 
     private static bool HasInvalidPlaygroundState(SaveData data) =>
         data.Playground.Stage is < 0 or > PlaygroundPlans.Trips;

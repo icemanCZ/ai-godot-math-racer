@@ -73,6 +73,15 @@ internal static class CharacterCatalog
             "d9825b"
         );
 
+    /// <summary>The glass lamp maker on the village square, who hands out candles and lamps (<see cref="World.GlassmakerId"/>).</summary>
+    public static CharacterSpec Glassmaker { get; } =
+        new(
+            "Medvěd světlař Ignác",
+            "Dobrý den! Foukám sklo do svíček a lamp. Vyber si, postav je, kam chceš, a večer se samy rozsvítí.",
+            2,
+            "a8856b"
+        );
+
     /// <summary>Baker, shopkeeper and confectioner, matching <see cref="Village.TradeCargo"/>.</summary>
     public static IReadOnlyList<CharacterSpec> Traders { get; } =
         new CharacterSpec[]

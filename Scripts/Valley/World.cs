@@ -29,6 +29,10 @@ public partial class World : Node3D
 
     internal static bool IsMayor(int id) => id == MayorId;
 
+    internal const int GlassmakerId = ActorIds.Glassmaker;
+
+    internal static bool IsGlassmaker(int id) => id == GlassmakerId;
+
     internal static bool IsPlotResident(int id) => id is >= FirstPlotResidentId and <= LastPlotResidentId;
 
     private readonly SortedList<int, Character> actors = new();
@@ -102,6 +106,9 @@ public partial class World : Node3D
         CreateWorldPets();
         // The mayor is registered last, after every search that keeps clear of the actors, so that none of them moves.
         Register(MayorId, Village.Mayor);
+        Register(GlassmakerId, Village.Glassmaker);
+        Village.CreateLamps();
+        Village.Lamps.Surface = DriveSurface;
         Ground.BuildMeshes();
         Roads.ReleaseFieldCache();
     }

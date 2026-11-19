@@ -81,6 +81,9 @@ public partial class Game
             case UiIntent.BuyDecoration buy:
                 BuyDecoration(buy.Id);
                 break;
+            case UiIntent.TakeLamp take:
+                TakeLamp(take.Id);
+                break;
             case UiIntent.Lookout:
                 BeginLookout();
                 break;

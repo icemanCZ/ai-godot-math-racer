@@ -67,6 +67,9 @@ internal abstract record UiIntent
     // The mayor's shop.
     internal sealed record BuyDecoration(string Id) : UiIntent;
 
+    // The glass lamp maker's shop.
+    internal sealed record TakeLamp(string Id) : UiIntent;
+
     // The trailer.
     internal sealed record ToggleTrailer : UiIntent;
 

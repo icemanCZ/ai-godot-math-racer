@@ -213,6 +213,22 @@ internal sealed class MayorRole : ActorRole
 }
 
 /// <summary>
+/// The glass lamp maker on the village square. He sends no trip and asks no quiz: talking to him opens a card for every
+/// lamp he blows, and the player takes the ones they like.
+/// </summary>
+internal sealed class GlassmakerRole : ActorRole
+{
+    public override string Icon => "lamp";
+    public override bool UsesDeliveryGuide => false;
+
+    public override bool InvitesTalk(bool expeditionActive) => true;
+
+    public override void ShowHint(GameUi ui, Character actor) => ui.GlassmakerHint();
+
+    public override void Open(Game game, Character actor) => game.OpenGlassmaker(actor);
+}
+
+/// <summary>
 /// The worker at the sawmill, brickworks, gravel works or glassworks. They show the stock and, for building trips, load the
 /// goods and ask the loading question from afar. Raw-material trips are started by the worker at the source.
 /// </summary>

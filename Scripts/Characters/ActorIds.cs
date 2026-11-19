@@ -72,4 +72,7 @@ internal static class ActorIds
 
     /// <summary>The mayor on the village square, who sells decorations for the town. Every valley has her.</summary>
     public const int Mayor = Playground + 1;
+
+    /// <summary>The glass lamp maker on the village square, who hands out candles and lamps. Every valley has him.</summary>
+    public const int Glassmaker = Mayor + 1;
 }
