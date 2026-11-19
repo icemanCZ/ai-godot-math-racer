@@ -37,7 +37,7 @@ public partial class GameUi
     /// shows the stock and, at the source, the play button sends the trailer. The button is missing while another
     /// trailer trip is under way and when the stock is full.
     /// </summary>
-    internal void WorksPanel(Character speaker, Works works, HaulTrip? trip, bool canStart)
+    internal void WorksPanel(Character speaker, Works works, HaulTrip? trip, bool canStart, int made, string pet)
     {
         var spec = works.Spec;
         Clear();
@@ -62,6 +62,8 @@ public partial class GameUi
                 unit.Modulate = new Color(1, 1, 1, .28f);
         }
         Text(works.Full ? $"✓  {works.Stock} / {Works.Capacity}" : $"{works.Stock} / {Works.Capacity}", 30);
+        // Everything the works has made since the start counts for its pet, not only what stands in the stock.
+        Text(Texts.MadeInAll(made, WorldPetCatalog.WorksPieces, pet), 22);
         if (trip != null)
             Picture(content, trip.Loaded ? LoadIcon(trip.Load) : "trailer");
         else if (canStart)

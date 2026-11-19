@@ -58,6 +58,33 @@ internal sealed class HaulTally
             Baked = Math.Min(Limit, Baked + 1);
     }
 
+    /// <summary>
+    /// Raises the loads a works has taken in to at least <paramref name="loads"/>. A stock that stands on the yard was
+    /// made from that many loads, so a count that is behind its stock (a save from before the counts) catches up when
+    /// the stock next changes; a restored save is left as it was saved.
+    /// </summary>
+    public void RaiseWorks(int index, int loads)
+    {
+        loads = Math.Clamp(loads, 0, Limit);
+        if (index is >= 0 and < WorksKinds)
+            works[index] = Math.Max(works[index], loads);
+        else if (index == WorksCatalog.BreadIndex)
+            Baked = Math.Max(Baked, loads);
+    }
+
+    /// <summary>
+    /// Raises the loads of a raw material that were hauled to at least <paramref name="loads"/>: the goods in a works were
+    /// made from loads of that material, so the stock is a lower bound for it just as for <see cref="RaiseWorks"/>.
+    /// </summary>
+    public void RaiseRaw(HaulLoad load, int loads)
+    {
+        loads = Math.Clamp(loads, 0, Limit);
+        if (IsRaw(load))
+            raw[(int)load] = Math.Max(raw[(int)load], loads);
+        else if (load == HaulLoad.Wheat)
+            Wheat = Math.Max(Wheat, loads);
+    }
+
     public int[] RawCounts() => (int[])raw.Clone();
 
     public int[] WorksCounts() => (int[])works.Clone();

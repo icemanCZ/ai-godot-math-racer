@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using Godot;
 using MathRacer.Buildings;
 using MathRacer.Characters;
@@ -7,6 +9,23 @@ namespace MathRacer.Valley;
 /// <summary>The pets that hauling and building earn: where they wait and what they count.</summary>
 public partial class World
 {
+    /// <summary>
+    /// The pieces a works has made in all, which earn its pet: the counted loads, but never fewer than the stock that
+    /// stands on the yard, because that was made there too even if an older save never counted it.
+    /// </summary>
+    internal int WorksMade(Works works) => Math.Max(Tally.WorksCount(works.Site.Index) * Works.PerLoad, works.Stock);
+
+    /// <summary>
+    /// The loads of a raw material that were hauled, which earn the pet of its source: the counted loads, but never fewer
+    /// than the loads that the goods standing in the works of this material were made from.
+    /// </summary>
+    internal int LoadsHauled(HaulLoad load) =>
+        AllWorks
+            .Where(works => works.Spec.Input == load)
+            .Select(works => (works.Stock + Works.PerLoad - 1) / Works.PerLoad)
+            .Append(Tally.RawCount(load))
+            .Max();
+
     private void AddWorldPet(CollectorPet pet)
     {
         worldPets.Add(pet);
@@ -36,17 +55,16 @@ public partial class World
             Add(
                 WorldPetCatalog.ForSource(load),
                 SourceWorker(load) ?? ExtraSourceWorker(load),
-                () => Tally.RawCount(load),
+                () => LoadsHauled(load),
                 WorldPetCatalog.SourceLoads
             );
         foreach (var works in AllWorks)
         {
-            int worksIndex = works.Site.Index;
             Add(
-                WorldPetCatalog.ForWorks(worksIndex),
+                WorldPetCatalog.ForWorks(works.Site.Index),
                 works.Worker,
-                () => Tally.WorksCount(worksIndex),
-                WorldPetCatalog.WorksLoads
+                () => WorksMade(works),
+                WorldPetCatalog.WorksPieces
             );
         }
         foreach (int project in new[] { BuildPlans.Bridge, BuildPlans.Mill, BuildPlans.Tower })

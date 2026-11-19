@@ -153,6 +153,12 @@ public partial class Game
         BeginQuiz(load: HaulLoads.IsSpecial(trip.Load) ? null : trip.Load);
     }
 
+    private bool TakeCounted(Works works)
+    {
+        CountStockMade(works);
+        return works.Take(Works.PerTrip);
+    }
+
     internal void CompleteHaulLoading()
     {
         ClearChallenge();
@@ -161,8 +167,8 @@ public partial class Game
             CloseInteraction();
             return;
         }
-        // Goods come out of the works' stock the moment they are loaded.
-        if (GoodsWorks(trip.Load) is { } works && !works.Take(Works.PerTrip))
+        // Goods come out of the works' stock the moment they are loaded; what stood there was made, so it is counted first.
+        if (GoodsWorks(trip.Load) is { } works && !TakeCounted(works))
         {
             EndHaul();
             CloseInteraction();

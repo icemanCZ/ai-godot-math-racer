@@ -11,15 +11,19 @@ internal sealed record WorldPetSpec(CollectorPetKind Kind, string Name, string R
 
 /// <summary>
 /// The pets that are earned by hauling and building rather than by a collection: one for each raw material (ten loads
-/// hauled), each works (twenty pieces made from ten loads) and each building (its completion; the jetty's is the duck).
+/// hauled), each works (twenty pieces made in all, however many of them were taken out of the stock since) and each
+/// building (its completion; the jetty's is the duck).
 /// </summary>
 internal static class WorldPetCatalog
 {
     /// <summary>The loads of a raw material that earn its pet.</summary>
     public const int SourceLoads = 10;
 
+    /// <summary>The pieces a works has to make in all for its pet. The stock holds only <see cref="Works.Capacity"/>.</summary>
+    public const int WorksPieces = 20;
+
     /// <summary>The loads a works takes in for its pet, which at <see cref="Works.PerLoad"/> pieces a load is twenty pieces.</summary>
-    public const int WorksLoads = 10;
+    public const int WorksLoads = WorksPieces / Works.PerLoad;
 
     public static readonly WorldPetSpec Logs = new(CollectorPetKind.Logs, "Kládička", "10 odvezených klád");
     public static readonly WorldPetSpec Stones = new(CollectorPetKind.Stones, "Kamínek", "10 odvezených kamenů");

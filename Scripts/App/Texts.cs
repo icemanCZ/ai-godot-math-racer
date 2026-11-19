@@ -383,6 +383,10 @@ internal static class Texts
     public const string KonecHry = "Konec hry";
 
     // Texts with values inside. A value that has to be worked out first (a time, a title) is passed in as the text.
+    /// <summary>The count of everything a works has made, which earns its pet at the goal.</summary>
+    public static string MadeInAll(int made, int goal, string pet) =>
+        made >= goal ? $"✓  Vyrobeno celkem {made}  ·  {pet}" : $"Vyrobeno celkem {made} / {goal}  ·  {pet}";
+
     public static string NewPet(string name) => $"Nový mazlíček: {name}!";
 
     public static string CourseBeat(string course, string time) => $"{course} — porazil jsi ducha! Čas {time} s";

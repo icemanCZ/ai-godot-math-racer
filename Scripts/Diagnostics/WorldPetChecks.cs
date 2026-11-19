@@ -206,6 +206,51 @@ internal sealed partial class WorldPetChecks(Game game, World world, Vehicle car
                 "a save from before the counts loads with no loads counted and no pet earned"
             );
 
+            // ---- A save with a full stock that was never counted: the stock was made, so it counts, for every works ----
+            foreach (var stocked in world.AllWorks.ToList())
+            {
+                int index = stocked.Site.Index;
+                var input = stocked.Spec.Input;
+                var madePet = Pet(WorldPetCatalog.ForWorks(index).Kind);
+                var sourcePet = world.WorldPets.FirstOrDefault(p => p.Kind == WorldPetCatalog.ForSource(input).Kind);
+                game.RestoreProgress(before);
+                stocked.SetStock(Works.Capacity);
+                int loads = Works.Capacity / Works.PerLoad;
+                Check(
+                    world.Tally.WorksCount(index) == 0
+                        && world.Tally.RawCount(input) == 0
+                        && madePet.Count == Works.Capacity
+                        && !madePet.IsOwned
+                        && (sourcePet == null || (sourcePet.Count == loads && !sourcePet.IsOwned)),
+                    $"{stocked.Spec.Name}: a full stock counts as twelve made and six loads hauled, and the restore changes no saved count"
+                );
+                // A trip takes one piece and its load comes back: the stock is counted first and the new load comes on top.
+                game.CountStockMade(stocked);
+                stocked.Take(Works.PerTrip);
+                game.CountStockMade(stocked);
+                stocked.Deliver();
+                world.Tally.AddRaw(input);
+                world.Tally.AddWorks(index);
+                Check(
+                    world.Tally.WorksCount(index) == loads + 1 && world.Tally.RawCount(input) == loads + 1,
+                    $"{stocked.Spec.Name}: the stock is counted once, before it changes, and the new load adds to it"
+                );
+                // Everything made counts, also what left the stock: the stock stays full while the counts grow.
+                while (madePet.Count < WorldPetCatalog.WorksPieces)
+                    world.Tally.AddWorks(index);
+                while (sourcePet != null && sourcePet.Count < WorldPetCatalog.SourceLoads)
+                    world.Tally.AddRaw(input);
+                Check(
+                    stocked.Stock == Works.Capacity && madePet.IsOwned && (sourcePet == null || sourcePet.IsOwned),
+                    $"{stocked.Spec.Name}: the pets are earned by what was made and hauled in all, not by the stock"
+                );
+                RoundTrip($"{stocked.Spec.Name} counted from the stock");
+                Check(
+                    madePet.IsOwned && (sourcePet == null || sourcePet.IsOwned),
+                    $"{stocked.Spec.Name}: the counts and the pets survive a save"
+                );
+            }
+
             // ---- Pets for the finished bridge, mill and tower ----
             foreach (
                 var (kind, project) in new[]

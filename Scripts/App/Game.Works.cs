@@ -34,10 +34,23 @@ public partial class Game
         Speak(works.Full ? Texts.SkladJePlnyDekuju : worker.Greeting, worker);
     }
 
+    /// <summary>The pieces a works has made in all, those already taken out of its stock included.</summary>
+    private int WorksMade(Works works) => world.WorksMade(works);
+
+    /// <summary>Counts the goods that stand in a works as made, before the stock changes and they can no longer be seen.</summary>
+    internal void CountStockMade(Works works)
+    {
+        int loads = (works.Stock + Works.PerLoad - 1) / Works.PerLoad;
+        world.Tally.RaiseWorks(works.Site.Index, loads);
+        world.Tally.RaiseRaw(works.Spec.Input, loads);
+    }
+
+    private static string WorksPetName(Works works) => WorldPetCatalog.ForWorks(works.Site.Index).Name;
+
     private void ShowWorks()
     {
         if (WorksOf(nearby) is { } works)
-            ui.WorksPanel(nearby!, works, Haul, canStart: false);
+            ui.WorksPanel(nearby!, works, Haul, canStart: false, WorksMade(works), WorksPetName(works));
     }
 
     internal void OpenSource(Character worker)
@@ -62,7 +75,14 @@ public partial class Game
     private void ShowSource()
     {
         if (WorksOfSource(nearby) is { } works)
-            ui.WorksPanel(nearby!, works, Haul, canStart: Haul == null && !works.Full);
+            ui.WorksPanel(
+                nearby!,
+                works,
+                Haul,
+                canStart: Haul == null && !works.Full,
+                WorksMade(works),
+                WorksPetName(works)
+            );
     }
 
     /// <summary>The source worker starts the trip: the loading question follows at once, then the load goes to the works.</summary>
@@ -174,6 +194,7 @@ public partial class Game
     internal void FinishSupplyDump(HaulTrip trip)
     {
         var works = trip.Works!;
+        CountStockMade(works);
         works.Deliver();
         world.Tally.AddRaw(trip.Load);
         world.Tally.AddWorks(works.Site.Index);
