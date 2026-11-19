@@ -4,6 +4,7 @@ using MathRacer.Buildings;
 using MathRacer.Garage;
 using MathRacer.Quizzes;
 using MathRacer.Settlement;
+using MathRacer.Valley;
 
 namespace MathRacer.Saves;
 
@@ -70,6 +71,18 @@ public sealed class SaveData
 
     /// <summary>The fireflies caught for the witch's collection of stars. Added after version 5 began.</summary>
     public FirefliesSave Fireflies { get; set; } = new();
+
+    /// <summary>The hour of the valley's day, so a game goes on at the same time of day. Added after version 5 began.</summary>
+    public DaySave Day { get; set; } = new();
+}
+
+/// <summary>
+/// The clock of the day: the seconds since the morning, 0 to <see cref="Weather.DayLength"/>. A save made before it existed
+/// begins in the morning. The weather of the sky is not saved; it starts clear.
+/// </summary>
+public sealed class DaySave
+{
+    public float Clock { get; set; }
 }
 
 /// <summary>

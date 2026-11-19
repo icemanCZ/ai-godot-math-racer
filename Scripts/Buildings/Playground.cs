@@ -365,6 +365,7 @@ public sealed partial class Playground : Node3D
         Wall(.5f, 1.5f, 0, .9f, z);
         Wall(.5f, 1.5f, 1.7f, height, z);
         Wall(1.5f, width / 2 - thick, 0, height, z);
+        Art.Window(stage, new(HouseX + 1f, top + 1.3f, z), new(1f, .8f, .06f), "88c7d8");
         Art.Block(stage, new(HouseX - 1f, top + .75f, frontZ + .02f), new(.92f, 1.5f, .08f), "4f8fb8");
         Art.Ball(stage, new(HouseX - .65f, top + .78f, frontZ - .04f), Vector3.One * .06f, "f5d36b");
         Art.Block(stage, new(HouseX + 1f, top + .98f, frontZ - .2f), new(1.3f, .18f, .32f), "a87b61");

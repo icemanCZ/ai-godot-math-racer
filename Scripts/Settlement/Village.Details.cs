@@ -26,7 +26,7 @@ public partial class Village
                 foreach (float x in new[] { -1.55f, 1.55f })
                 {
                     Art.Block(wall, new(x, 2.4f, 0), new(1.4f, 1.5f, .12f), "fff1d2");
-                    Art.Block(wall, new(x, 2.4f, .08f), new(1.15f, 1.25f, .08f), "88c7d8");
+                    Art.Window(wall, new(x, 2.4f, .08f), new(1.15f, 1.25f, .08f), "88c7d8");
                     WindowDetails(wall, new(x, 2.4f, .14f), 1.15f, 1.25f);
                 }
             }
@@ -209,7 +209,7 @@ public partial class Village
                 "916c51"
             );
         Art.Block(parent, new(x, height * .78f, z + .035f), new(.75f, .55f, .05f), "fff1d2");
-        Art.Block(parent, new(x, height * .78f, z + .07f), new(.59f, .39f, .04f), "88c7d8");
+        Art.Window(parent, new(x, height * .78f, z + .07f), new(.59f, .39f, .04f), "88c7d8");
     }
 
     private static void WindowDetails(Node3D parent, Vector3 center, float width, float height)

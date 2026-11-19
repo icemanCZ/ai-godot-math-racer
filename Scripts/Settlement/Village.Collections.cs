@@ -151,7 +151,7 @@ public partial class Village
             Art.Block(building, new(0, 3.85f, 0), new(8, .45f, 6.5f), toys ? "e97e83" : "80bacb");
             Art.Block(building, new(-1.5f, 1.3f, 2.8f), new(1.5f, 2.6f, .15f), "fff0d3");
             Art.Block(building, new(1.3f, 2, 2.84f), new(2, 1.5f, .17f), "fff0d3");
-            Art.Block(building, new(1.3f, 2, 2.96f), new(1.7f, 1.2f, .12f), "a4dceb");
+            Art.Window(building, new(1.3f, 2, 2.96f), new(1.7f, 1.2f, .12f), "a4dceb");
             if (!toys)
                 foreach (float x in new[] { -3f, 3f })
                     Art.Cylinder(building, new(x, 1.8f, 3.3f), .22f, .22f, 3.6f, "fff0d3");

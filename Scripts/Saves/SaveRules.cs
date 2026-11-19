@@ -36,6 +36,7 @@ internal static class SaveRules
         ("zoo", HasInvalidZooState),
         ("treasure hunt", HasInvalidTreasure),
         ("firefly hunt", HasInvalidFireflies),
+        ("time of day", HasInvalidDay),
         ("decorations and the mayor's shop", HasInvalidDecorations),
         ("glass lamps and the lamp maker's shop", HasInvalidLamps),
         ("buildings and trailer", HasInvalidBuildState),
@@ -70,7 +71,8 @@ internal static class SaveRules
         || data.Railway is null
         || data.Zoo is null
         || data.Treasure is null
-        || data.Fireflies is null;
+        || data.Fireflies is null
+        || data.Day is null;
 
     /// <summary>Throws when the save is not one the game can restore.</summary>
     internal static void Validate(SaveData data)
@@ -427,6 +429,10 @@ internal static class SaveRules
         data.Fireflies.Caught < 0
         || data.Fireflies.Caught > FireflyHunt.Limit
         || (data.State == GameState.FireflyStatus && data.Nearby != World.WitchId);
+
+    /// <summary>The clock of the day is a number of seconds within one day.</summary>
+    private static bool HasInvalidDay(SaveData data) =>
+        !float.IsFinite(data.Day.Clock) || data.Day.Clock < 0 || data.Day.Clock >= Weather.DayLength;
 
     /// <summary>The progress of the playground, 0 to 6 deliveries.</summary>
     /// <summary>Only known decorations, each at most once, and the shop is open only beside the mayor.</summary>

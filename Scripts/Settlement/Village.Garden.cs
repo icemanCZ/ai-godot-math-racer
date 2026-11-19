@@ -75,7 +75,7 @@ public partial class Village
         Art.Block(GardenBuilding, new(0, 3.55f, 0), new(7, .35f, 6), "e4ad64");
         Art.Block(GardenBuilding, new(-1, 1.2f, 2.55f), new(1.5f, 2.4f, .12f), "f7e7bd");
         Art.Block(GardenBuilding, new(1.4f, 2, 2.58f), new(1.5f, 1.4f, .16f), "fff4d7");
-        Art.Block(GardenBuilding, new(1.4f, 2, 2.7f), new(1.2f, 1.1f, .1f), "a8dfeb");
+        Art.Window(GardenBuilding, new(1.4f, 2, 2.7f), new(1.2f, 1.1f, .1f), "a8dfeb");
         Art.Sign(GardenBuilding, new(0, 4.5f, 0), "ZAHRADNICTVÍ", 34);
         gardenProgress = Art.Sign(GardenBuilding, new(10, 3.3f, 0), $"Květiny: 0 / {FlowerNames.Length}", 28);
         Gardener = Character.Create("Zahradník Vítek", "Přivezeš mi květiny do zahrádky?", 0, "a9d8b3");

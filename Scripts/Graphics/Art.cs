@@ -125,6 +125,63 @@ public static class Art
         return m;
     }
 
+    private static readonly Color WindowGlow = new Color("ffd77a").SrgbToLinear();
+    private static readonly List<(StandardMaterial3D Material, Color Day)> Windows = new();
+
+    /// <summary>How brightly every window glass shines, from 0 by day to 1 at night (<see cref="SetWindowLight"/>).</summary>
+    public static float WindowLight { get; private set; }
+
+    /// <summary>
+    /// The glass of a window, in <paramref name="color"/> by day. Every window shares the lamp of the valley: at night
+    /// <see cref="SetWindowLight"/> turns them all warm yellow at once, so no building has to switch its own lights.
+    /// </summary>
+    public static StandardMaterial3D WindowMat(string color)
+    {
+        string key = "window:" + color;
+        if (!Materials.TryGetValue(key, out var material))
+        {
+            material = new StandardMaterial3D
+            {
+                AlbedoColor = new Color(color).SrgbToLinear(),
+                Roughness = .88f,
+                EmissionEnabled = true,
+                Emission = WindowGlow,
+            };
+            Materials[key] = material;
+            Windows.Add((material, material.AlbedoColor));
+            Light(material, material.AlbedoColor, WindowLight);
+        }
+        return material;
+    }
+
+    /// <summary>A window pane: a block of <see cref="WindowMat"/> glass that lights up at night.</summary>
+    public static MeshInstance3D Window(Node3D parent, Vector3 pos, Vector3 scale, string color)
+    {
+        var window = Block(parent, pos, scale, color);
+        window.MaterialOverride = WindowMat(color);
+        return window;
+    }
+
+    /// <summary>The material is the glass of a window (<see cref="WindowMat"/>).</summary>
+    public static bool IsWindow(Material? material) => Windows.Exists(w => w.Material == material);
+
+    /// <summary>Lights every window of the valley: 0 is the plain glass of the day, 1 a warm lamp behind each one.</summary>
+    public static void SetWindowLight(float light)
+    {
+        light = Mathf.Clamp(light, 0, 1);
+        if (light == WindowLight || (Mathf.Abs(light - WindowLight) < .01f && light is > 0 and < 1))
+            return;
+        WindowLight = light;
+        foreach (var (material, day) in Windows)
+            Light(material, day, light);
+    }
+
+    private static void Light(StandardMaterial3D material, Color day, float light)
+    {
+        material.AlbedoColor = day.Lerp(WindowGlow, light);
+        material.EmissionEnergyMultiplier = light * 1.3f;
+    }
+
     /// <summary>A block that shines by itself and ignores the light of the day: a window with the lamp on.</summary>
     public static MeshInstance3D Lamp(Node3D parent, Vector3 pos, Vector3 scale, string color)
     {

@@ -652,7 +652,7 @@ public sealed partial class Zoo : Node3D
                 new(.46f, .08f, .5f),
                 i % 2 == 0 ? "d9432f" : "fff5df"
             );
-        Art.Block(frame, new(4.2f, booth + 1.3f, 1.34f), new(1.0f, .7f, .06f), "4f8fb8");
+        Art.Window(frame, new(4.2f, booth + 1.3f, 1.34f), new(1.0f, .7f, .06f), "4f8fb8");
         Art.Block(frame, new(4.2f, booth + .98f, 1.28f), new(1.2f, .08f, .22f), "c39771");
         Solid(0, new(4.2f, booth + 1.0f, 2.0f), new(2.0f, 2.0f, 1.8f));
 

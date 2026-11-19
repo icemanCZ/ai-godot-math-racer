@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using MathRacer.App;
+using MathRacer.Graphics;
 using MathRacer.Quizzes;
 using MathRacer.Saves;
 using MathRacer.Valley;
@@ -88,7 +90,7 @@ public partial class WeatherChecks(Game game, World world, Vehicle car) : Node
             Check(!rain.Visible && puddles.Visible, "Wind stops the rain while puddles remain");
             weather.Tick(36);
             Check(!puddles.Visible, "Puddles dry out after the rain");
-            CheckEveningAndNight(weather);
+            CheckEveningAndNight(weather, System.IO.Path.GetDirectoryName(path)!);
             game.RestoreProgress(progress!);
             var beforeBack = weather.Current;
             game._Input(new InputEventAction { Action = "back", Pressed = true });
@@ -107,21 +109,30 @@ public partial class WeatherChecks(Game game, World world, Vehicle car) : Node
         }
     }
 
-    /// <summary>The evening and the night: only the witch brings them, and they light the lamps of the valley.</summary>
-    private void CheckEveningAndNight(Weather weather)
+    /// <summary>
+    /// The day goes round by itself: day, evening, night and dawn, again and again. The witch moves the clock on, the
+    /// weather of the sky goes on beside it, every window shines at night, and a save keeps the hour.
+    /// </summary>
+    private void CheckEveningAndNight(Weather weather, string folder)
     {
         var sky = world.Atmosphere.GetNode<Node3D>("NightSky");
         var headlights = car.GetNode<SpotLight3D>("Headlights");
         var fireflies = weather.GetNode<Node3D>("Night");
+        weather.SetTime(DayTime.Day, instant: true);
+        weather.Tick(.1f);
         Check(
-            !sky.Visible && !headlights.Visible && !fireflies.Visible,
-            "By day there are no stars, lights or fireflies"
+            !sky.Visible && !headlights.Visible && !fireflies.Visible && Art.WindowLight == 0,
+            "By day there are no stars, lights or fireflies and the windows are not lit"
         );
 
         // Two finished houses, one of them given glasses by the glassworks, and a plot that is not built yet.
         world.Village.RestoreLevels(new[] { 10, 10, 0, 0 });
         world.Village.RestoreGlazed(new[] { true, false, false, false });
         weather.Begin(WeatherKind.Evening);
+        Check(
+            weather.TimeOfDay == DayTime.Evening && weather.Current == WeatherKind.Clear,
+            "The witch's evening moves the clock on to the evening, under a clear sky"
+        );
         weather.Tick(3);
         Check(!sky.Visible, "Evening has no stars yet");
         weather.Tick(10);
@@ -132,17 +143,19 @@ public partial class WeatherChecks(Game game, World world, Vehicle car) : Node
         Check(!weather.StarsOut, "Evening is not deep enough for the stargazer's pictures");
         Check(
             world.Village.Houses[0].GetNodeOrNull<Node3D>("WindowLights") is { Visible: true },
-            "A house with glasses has lit windows in the evening"
+            "A house with glasses has its brighter lamps in the evening"
         );
         Check(
             world.Village.Houses[1].GetNodeOrNull<Node3D>("WindowLights") is not { Visible: true },
-            "A finished house without glasses stays dark"
+            "A finished house without glasses has no extra lamps"
         );
 
         weather.Begin(WeatherKind.Night);
         weather.Tick(15);
+        Check(weather.TimeOfDay == DayTime.Night, "The witch's night moves the clock on to the night");
         Check(sky.Visible && weather.StarsOut, "Night brings the stars and the moon");
         Check(sky.GetNode<MultiMeshInstance3D>("Stars").Multimesh.InstanceCount > 100, "The night sky has stars");
+        CheckAllWindowsLit();
         var picture = Constellation.All[0];
         world.Atmosphere.ShowConstellation(picture, 0, 1);
         Check(
@@ -154,11 +167,78 @@ public partial class WeatherChecks(Game game, World world, Vehicle car) : Node
             "Every constellation joins stars that exist"
         );
 
-        weather.Begin(WeatherKind.Clear);
+        // The weather of the sky does not end the night: it rains in the dark, and the night goes on.
+        weather.Begin(WeatherKind.Rain);
+        weather.Tick(5);
+        Check(
+            weather.Current == WeatherKind.Rain && weather.TimeOfDay == DayTime.Night && weather.Darkness > .99f,
+            "Rain falls at night and the night goes on"
+        );
+        weather.Begin(WeatherKind.Clear, instant: true);
+
+        // A save keeps the hour of the day, and a game saved at night goes on at night.
+        float clock = weather.Clock;
+        string path = $"{folder}/night.json";
+        Check(SaveStore.Write(game.CaptureProgress(), path), "A game at night can be saved");
+        weather.SetTime(DayTime.Day, instant: true);
+        var saved = SaveStore.Read(path);
+        Check(saved != null && Mathf.Abs(saved.Day.Clock - clock) < .01f, $"The save keeps the hour ({clock:0.#} s)");
+        game.RestoreProgress(saved!);
+        Check(
+            weather.TimeOfDay == DayTime.Night && weather.StarsOut && Art.WindowLight == 1,
+            "A game saved at night is loaded at night"
+        );
+        foreach (float wrong in new[] { -1, Weather.DayLength, float.NaN })
+        {
+            saved!.Day.Clock = wrong;
+            Check(!Valid(saved), $"A clock of {wrong} s is not a time of day");
+        }
+
+        // Nobody touches the clock: the day goes round by itself, twice.
+        weather.SetTime(DayTime.Day, instant: true);
+        var changes = new List<(DayTime Time, float At)>();
+        var last = weather.TimeOfDay;
+        const float step = .5f;
+        for (float elapsed = step; elapsed <= 2 * Weather.DayLength + step / 2; elapsed += step)
+        {
+            weather.Tick(step);
+            if (weather.TimeOfDay != last)
+                changes.Add((last = weather.TimeOfDay, elapsed));
+            foreach (float day in new[] { 0, Weather.DayLength })
+            {
+                if (elapsed == day + 600)
+                    Check(
+                        weather.Darkness == 0 && Art.WindowLight == 0 && !weather.StarsOut && !headlights.Visible,
+                        $"In the middle of day {1 + day / Weather.DayLength} it is light"
+                    );
+                if (elapsed == day + 1100)
+                    Check(
+                        weather.Darkness == 1 && Art.WindowLight == 1 && weather.StarsOut && headlights.Visible,
+                        $"In the middle of night {1 + day / Weather.DayLength} it is dark and every window shines"
+                    );
+            }
+        }
+        var expected = new (DayTime, float)[]
+        {
+            (DayTime.Evening, 720),
+            (DayTime.Night, 840),
+            (DayTime.Dawn, 1140),
+            (DayTime.Day, 1200),
+            (DayTime.Evening, 1920),
+            (DayTime.Night, 2040),
+            (DayTime.Dawn, 2340),
+            (DayTime.Day, 2400),
+        };
+        Check(
+            changes.SequenceEqual(expected),
+            "Day, evening, night and dawn come round by themselves: "
+                + string.Join(", ", changes.Select(c => $"{c.Time} at {c.At:0.#} s"))
+        );
+
         weather.Tick(30);
         Check(
-            !sky.Visible && !headlights.Visible && !fireflies.Visible,
-            "Morning puts out the stars, the headlights and the fireflies"
+            !sky.Visible && !headlights.Visible && !fireflies.Visible && Art.WindowLight == 0,
+            "Morning puts out the stars, the headlights, the fireflies and the windows"
         );
         Check(
             world.Village.Houses[0].GetNodeOrNull<Node3D>("WindowLights") is { Visible: false },
@@ -166,6 +246,45 @@ public partial class WeatherChecks(Game game, World world, Vehicle car) : Node
         );
         world.Village.RestoreLevels(new[] { 0, 0, 0, 0 });
         world.Village.RestoreGlazed(null);
+
+        static bool Valid(SaveData data)
+        {
+            try
+            {
+                SaveRules.Validate(data);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+    }
+
+    /// <summary>At night every window of the valley shines: the houses, the shops, the museum and all the others.</summary>
+    private void CheckAllWindowsLit()
+    {
+        var village = world.Village;
+        var buildings = village
+            .Houses.Concat(village.Shops)
+            .Append(village.MuseumBuilding)
+            .Append(village.ToyBuilding)
+            .Append(village.GardenBuilding);
+        foreach (var building in buildings)
+            Check(Windows(building).Any(), $"{building.Name} has windows");
+        var windows = Windows(world).ToList();
+        Check(
+            windows.Count > 20
+                && windows.All(w =>
+                    w.MaterialOverride is StandardMaterial3D { EmissionEnabled: true, EmissionEnergyMultiplier: > 1 }
+                ),
+            $"At night every window shines ({windows.Count} windows)"
+        );
+
+        static IEnumerable<MeshInstance3D> Windows(Node root) =>
+            root.FindChildren("*", "MeshInstance3D", true, false)
+                .OfType<MeshInstance3D>()
+                .Where(m => Art.IsWindow(m.MaterialOverride));
     }
 
     private static void Check(bool ok, string message)

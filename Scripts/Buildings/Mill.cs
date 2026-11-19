@@ -67,7 +67,7 @@ public partial class Mill : SitedProject
             Art.Cylinder(stage, new(0, level, z), tops[course] + .08f, tops[course] + .08f, .14f, "e0c9a0");
             if (course > 0)
                 foreach (float angle in new[] { -.7f, 0, .7f, Mathf.Pi })
-                    Art.Block(
+                    Art.Window(
                         stage,
                         new(
                             Mathf.Sin(angle) * (tops[course] + .02f),

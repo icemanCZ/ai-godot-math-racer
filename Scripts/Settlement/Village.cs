@@ -522,7 +522,7 @@ public partial class Village : Node3D
         foreach (float wx in new[] { -2.15f, 2.15f })
         {
             Art.Block(h, new(wx, 2.5f, 3.08f), new(1.5f, 1.5f, .18f), "fff1d2");
-            Art.Block(h, new(wx, 2.5f, 3.2f), new(1.12f, 1.12f, .1f), "88c7d8");
+            Art.Window(h, new(wx, 2.5f, 3.2f), new(1.12f, 1.12f, .1f), "88c7d8");
             Art.Block(h, new(wx, 2.5f, 3.28f), new(.12f, 1.2f, .1f), "fff1d2");
         }
         Art.Block(h, new(2, 5.3f, 0), new(.85f, 3, 1), "f7ddac");

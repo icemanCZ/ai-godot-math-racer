@@ -65,7 +65,8 @@ public partial class Village
                         break;
                     case 7:
                         Art.Ball(part, new(0, 5.35f, 3.64f), new(.7f, .7f, .1f), "fff1d2");
-                        Art.Ball(part, new(0, 5.35f, 3.75f), new(.51f, .51f, .08f), "88c7d8");
+                        Art.Ball(part, new(0, 5.35f, 3.75f), new(.51f, .51f, .08f), "88c7d8").MaterialOverride =
+                            Art.WindowMat("88c7d8");
                         Art.Block(part, new(0, 5.35f, 3.85f), new(.08f, 1, .06f), "fff1d2");
                         break;
                     case 8:

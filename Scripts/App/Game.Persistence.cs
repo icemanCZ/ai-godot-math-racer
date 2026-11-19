@@ -165,6 +165,7 @@ public partial class Game
             Zoo = new ZooSave { Stage = world.Zoo?.Stage ?? 0 },
             Treasure = new TreasureSave { Found = treasure.Found, Active = treasure.Active },
             Fireflies = new FirefliesSave { Caught = fireflies.Caught },
+            Day = new DaySave { Clock = Weather.Clock },
             Decorations = new DecorationsSave { Owned = world.Village.OwnedDecorationIds },
             Lamps = new LampsSave
             {
@@ -232,6 +233,7 @@ public partial class Game
         RestoreVillage(data);
         RestoreTreasure(data.Treasure.Found, data.Treasure.Active);
         RestoreFireflies(data.Fireflies.Caught);
+        Weather.SetClock(data.Day.Clock, instant: true);
         roadside.Restore(world.Animals, data.Roadside.Unlocked, data.Roadside.Completed);
         economy.Restore(data.Economy.Owned, data.Economy.Coins, data.Economy.RewardCoins);
         ui.CoinCount(Coins, 0);

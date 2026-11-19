@@ -512,11 +512,11 @@ public partial class Works : Node3D
         Art.Block(this, new(0, y + 1.7f, z + .5f), new(7, 3.4f, 5), "d9d2c4");
         Art.Block(this, new(0, y + 3.5f, z + .5f), new(7.4f, .3f, 5.4f), "6f8b96");
         for (int i = 0; i < 5; i++)
-            Art.Block(this, new(-2.8f + i * 1.4f, y + 3.85f, z + .5f), new(1.2f, .5f, 4.6f), "bfe3ee");
+            Art.Window(this, new(-2.8f + i * 1.4f, y + 3.85f, z + .5f), new(1.2f, .5f, 4.6f), "bfe3ee");
         Art.Block(this, new(0, y + 1.1f, z - 2.02f), new(2.4f, 2.2f, .12f), "3a2a26");
         Art.Block(this, new(0, y + .75f, z - 2.0f), new(1.3f, .7f, .1f), "ff9a3d");
         foreach (float x in new[] { -2.5f, 2.5f })
-            Art.Block(this, new(x, y + 1.8f, z - 2.03f), new(1.2f, 1.1f, .1f), "9ed5df");
+            Art.Window(this, new(x, y + 1.8f, z - 2.03f), new(1.2f, 1.1f, .1f), "9ed5df");
         Art.Cylinder(this, new(-2.2f, y + 6, z + 2.4f), .6f, .45f, 5.2f, "8f8a7d");
         Art.Cylinder(this, new(-2.2f, y + 8.7f, z + 2.4f), .55f, .55f, .3f, "5a646b");
         // Finished glasses stand on a table at the door.
@@ -537,7 +537,7 @@ public partial class Works : Node3D
         Art.Block(this, new(-1.9f, y + 1.1f, z - 2.12f), new(1.2f, 2.2f, .12f), "8d5a3b");
         Art.Ball(this, new(-1.55f, y + 1.1f, z - 2.2f), Vector3.One * .09f, "f5d36b");
         Art.Block(this, new(1.5f, y + 1.8f, z - 2.12f), new(2.6f, 1.4f, .1f), "fff6e0");
-        Art.Block(this, new(1.5f, y + 1.8f, z - 2.17f), new(2.3f, 1.1f, .08f), "8fb8c9");
+        Art.Window(this, new(1.5f, y + 1.8f, z - 2.17f), new(2.3f, 1.1f, .08f), "8fb8c9");
         Art.Block(this, new(1.5f, y + 1.2f, z - 2.4f), new(2.7f, .12f, .55f), "8d5a3b");
         for (int i = 0; i < 4; i++)
             Art.Ball(

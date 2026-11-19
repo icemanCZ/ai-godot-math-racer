@@ -81,7 +81,7 @@ public partial class World
         for (int i = 0; i < 4; i++)
         {
             float a = i * Mathf.Pi / 2;
-            var window = Art.Block(
+            var window = Art.Window(
                 Tower,
                 new(Mathf.Sin(a) * 3.9f, 4.7f, Mathf.Cos(a) * 3.9f),
                 new(.85f, 1.5f, .12f),

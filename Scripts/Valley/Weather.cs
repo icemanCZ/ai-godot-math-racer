@@ -1,4 +1,5 @@
 using Godot;
+using MathRacer.Graphics;
 using MathRacer.Settlement;
 using MathRacer.Vehicles;
 
@@ -11,11 +12,20 @@ internal enum WeatherKind
     Wind,
     Storm,
 
-    /// <summary>A low orange sun. Only the witch brings it; the weather never turns to evening by itself.</summary>
+    /// <summary>The witch's evening: she moves the clock of the day on to the evening, under a clear sky.</summary>
     Evening,
 
-    /// <summary>A starry night with a moon and fireflies. Only the witch brings it.</summary>
+    /// <summary>The witch's night: she moves the clock of the day on to a starry night, under a clear sky.</summary>
     Night,
+}
+
+/// <summary>The parts of the day, in the order they come round (<see cref="Weather.TimeOfDay"/>).</summary>
+internal enum DayTime
+{
+    Day,
+    Evening,
+    Night,
+    Dawn,
 }
 
 public partial class Weather : Node3D
@@ -49,7 +59,50 @@ public partial class Weather : Node3D
         rainTime,
         nextBolt,
         flash;
+    private float clock;
+
+    /// <summary>The sky's weather: clear, rain, wind or a storm. The time of day goes on beside it.</summary>
     internal WeatherKind Current { get; private set; }
+
+    /// <summary>One whole day of the valley in seconds: a long day, an orange evening, a starry night and a short dawn.</summary>
+    internal const float DayLength = 1200;
+
+    private static readonly float[] DayTimeStarts = { 0, 720, 840, 1140 };
+
+    /// <summary>The second of the day <see cref="TimeOfDay"/> begins at; the day itself begins in the morning, at 0.</summary>
+    internal static float StartOf(DayTime time) => DayTimeStarts[(int)time];
+
+    /// <summary>The seconds since the morning, 0 to <see cref="DayLength"/>. Saved, so a game goes on at the same hour.</summary>
+    internal float Clock => clock;
+
+    internal DayTime TimeOfDay =>
+        clock >= StartOf(DayTime.Dawn) ? DayTime.Dawn
+        : clock >= StartOf(DayTime.Night) ? DayTime.Night
+        : clock >= StartOf(DayTime.Evening) ? DayTime.Evening
+        : DayTime.Day;
+
+    /// <summary>
+    /// Sets the clock of the day to <paramref name="seconds"/> after the morning. The sky follows over a few seconds, or
+    /// at once with <paramref name="instant"/> (a loaded game, a screenshot).
+    /// </summary>
+    internal void SetClock(float seconds, bool instant = false)
+    {
+        clock = float.IsFinite(seconds) ? Mathf.PosMod(seconds, DayLength) : 0;
+        if (instant)
+        {
+            cover = CoverTarget;
+            evening = EveningTarget;
+            nightfall = NightTarget;
+        }
+        atmosphere.ApplyWeather(cover, flash, evening, nightfall);
+        TickNight(0);
+    }
+
+    /// <summary>Moves the clock to the beginning of <paramref name="time"/>.</summary>
+    internal void SetTime(DayTime time, bool instant = false) => SetClock(StartOf(time), instant);
+
+    private float EveningTarget => TimeOfDay is DayTime.Evening or DayTime.Dawn ? 1 : 0;
+    private float NightTarget => TimeOfDay == DayTime.Night ? 1 : 0;
 
     internal void Setup(World world, Vehicle vehicle, FollowCamera view)
     {
@@ -79,27 +132,31 @@ public partial class Weather : Node3D
     }
 
     /// <summary>
-    /// Starts <paramref name="kind"/> of weather. The sky changes over several seconds, or at once with
-    /// <paramref name="instant"/> (a screenshot should not wait for it).
+    /// Starts <paramref name="kind"/> of weather. The witch's evening and night move the clock of the day on to them and
+    /// clear the sky. The sky changes over several seconds, or at once with <paramref name="instant"/> (a screenshot
+    /// should not wait for it).
     /// </summary>
     internal void Begin(WeatherKind kind, bool instant = false)
     {
+        if (kind is WeatherKind.Evening or WeatherKind.Night)
+        {
+            clock = StartOf(kind == WeatherKind.Evening ? DayTime.Evening : DayTime.Night);
+            kind = WeatherKind.Clear;
+        }
         Current = kind;
-        remaining =
-            kind == WeatherKind.Clear ? random.RandfRange(240, 420)
-            : kind is WeatherKind.Evening or WeatherKind.Night ? 300
-            : random.RandfRange(35, 60);
+        remaining = kind == WeatherKind.Clear ? random.RandfRange(240, 420) : random.RandfRange(35, 60);
         nextBolt = random.RandfRange(4, 7);
         flash = 0;
         bolt.Hide();
         if (instant)
         {
             cover = CoverTarget;
-            evening = kind == WeatherKind.Evening ? 1 : 0;
-            nightfall = kind == WeatherKind.Night ? 1 : 0;
+            evening = EveningTarget;
+            nightfall = NightTarget;
         }
         atmosphere.ApplyWeather(cover, 0, evening, nightfall);
-        if (kind is WeatherKind.Clear or WeatherKind.Evening or WeatherKind.Night)
+        TickNight(0);
+        if (kind == WeatherKind.Clear)
             return;
         windDirection = Vector2.Right.Rotated(random.RandfRange(0, Mathf.Tau));
         var drift = windDirection * (kind == WeatherKind.Storm ? 5f : 1.5f);
@@ -111,6 +168,7 @@ public partial class Weather : Node3D
 
     internal void Tick(float dt)
     {
+        clock = Mathf.PosMod(clock + dt, DayLength);
         remaining -= dt;
         if (remaining <= 0)
         {
@@ -143,8 +201,8 @@ public partial class Weather : Node3D
         float previousWind = wind,
             previousWetness = wetness;
         cover = Mathf.MoveToward(cover, CoverTarget, dt * .23f);
-        evening = Mathf.MoveToward(evening, Current == WeatherKind.Evening ? 1 : 0, dt * .12f);
-        nightfall = Mathf.MoveToward(nightfall, Current == WeatherKind.Night ? 1 : 0, dt * .12f);
+        evening = Mathf.MoveToward(evening, EveningTarget, dt * .12f);
+        nightfall = Mathf.MoveToward(nightfall, NightTarget, dt * .12f);
         wind = Mathf.MoveToward(wind, windTarget, dt * .45f);
         rainfall = Mathf.MoveToward(rainfall, rainTarget, dt * .35f);
         wetness = Mathf.MoveToward(wetness, rainTarget > 0 ? 1 : 0, dt * (rainTarget > 0 ? .075f : .028f));
@@ -189,8 +247,7 @@ public partial class Weather : Node3D
             WeatherKind.Rain => .62f,
             WeatherKind.Storm => 1,
             WeatherKind.Wind => .18f,
-            WeatherKind.Evening => .22f,
-            _ => 0,
+            _ => EveningTarget * .22f,
         };
 
     /// <summary>How dark it is, from 0 by day to 1 at night: the car's lights and the fireflies follow it.</summary>
@@ -215,6 +272,7 @@ public partial class Weather : Node3D
         headlights.LightEnergy = Darkness * 4.5f;
         village.SetNightLights(Darkness > .35f);
         village.SetLampGlow(Darkness, car.GlobalPosition);
+        Art.SetWindowLight((Darkness - .2f) / .4f);
     }
 
     private void CreateNight()

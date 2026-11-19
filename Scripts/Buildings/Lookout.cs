@@ -64,8 +64,8 @@ public partial class Lookout : SitedProject
                 );
             foreach (float side in new[] { -1f, 1f })
             {
-                Art.Block(stage, new(0, middle, z + side * (width / 2 + .02f)), new(.9f, 1.2f, .12f), "3a2a26");
-                Art.Block(stage, new(side * (width / 2 + .02f), middle, z), new(.12f, 1.2f, .9f), "3a2a26");
+                Art.Window(stage, new(0, middle, z + side * (width / 2 + .02f)), new(.9f, 1.2f, .12f), "3a2a26");
+                Art.Window(stage, new(side * (width / 2 + .02f), middle, z), new(.12f, 1.2f, .9f), "3a2a26");
             }
             Solid(3 + storey, new(0, middle, z), new(width, StoreyHeight, width));
         }

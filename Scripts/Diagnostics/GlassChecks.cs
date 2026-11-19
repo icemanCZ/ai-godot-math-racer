@@ -263,7 +263,7 @@ public partial class GlassChecks : Node
             game.Weather.Begin(WeatherKind.Night, instant: true);
             game.Weather.Tick(.1f);
             Check(lamps.IsGlowing, "the night of the weather switches the lamps on");
-            game.Weather.Begin(WeatherKind.Clear, instant: true);
+            game.Weather.SetTime(DayTime.Day, instant: true);
             game.Weather.Tick(.1f);
             Check(!lamps.IsGlowing && lamps.LitCount == 0, "and the day switches them off again");
             lamps.Restore(null, Enumerable.Range(0, 40).Select(i => new LampSpot("candle", i * 2, 40, 0)));

@@ -341,7 +341,7 @@ public sealed partial class HousePlot : Node3D
         foreach (float x in new[] { -1.825f, 1.825f })
         {
             Art.Block(stage, new(x, 1.7f, frontZ + .03f), new(1.3f, 1.1f, .08f), "fff1d2");
-            Art.Block(stage, new(x, 1.7f, frontZ + .08f), new(1.0f, .8f, .06f), "88c7d8");
+            Art.Window(stage, new(x, 1.7f, frontZ + .08f), new(1.0f, .8f, .06f), "88c7d8");
             Art.Block(stage, new(x, 1.7f, frontZ + .12f), new(.08f, .85f, .06f), "fff1d2");
             foreach (int side in new[] { -1, 1 })
                 Art.Block(stage, new(x + side * .85f, 1.7f, frontZ + .06f), new(.4f, 1.1f, .08f), look.Accent);
@@ -353,7 +353,7 @@ public sealed partial class HousePlot : Node3D
         {
             float x = side * (Width / 2 + .03f);
             Art.Block(stage, new(x, 1.7f, CenterZ), new(.08f, 1.1f, 1.3f), "fff1d2");
-            Art.Block(stage, new(x + side * .05f, 1.7f, CenterZ), new(.06f, .8f, 1.0f), "88c7d8");
+            Art.Window(stage, new(x + side * .05f, 1.7f, CenterZ), new(.06f, .8f, 1.0f), "88c7d8");
             foreach (float z in new[] { CenterZ - Depth / 2 + .1f, CenterZ + Depth / 2 - .1f })
                 Art.Block(stage, new(side * (Width / 2 + .06f), Height / 2, z), new(.2f, Height, .2f), "fff1d2");
         }

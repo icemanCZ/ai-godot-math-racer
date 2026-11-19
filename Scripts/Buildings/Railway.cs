@@ -485,7 +485,7 @@ public sealed partial class Railway : Node3D
         Art.Ball(stage, new(6.2f, top + .95f, HouseZ0 + .1f), Vector3.One * .05f, "f5d36b");
         foreach (float wx in new[] { 5.3f, 7.7f })
         {
-            Art.Block(stage, new(wx, top + 1.3f, HouseZ0 + .14f), new(.78f, .78f, .04f), "bfe6f2");
+            Art.Window(stage, new(wx, top + 1.3f, HouseZ0 + .14f), new(.78f, .78f, .04f), "bfe6f2");
             Art.Block(stage, new(wx, top + .86f, HouseZ0 - .1f), new(1f, .1f, .26f), "a87b61");
             foreach (float flower in new[] { -.3f, 0, .3f })
                 Art.Ball(stage, new(wx + flower, top + 1.0f, HouseZ0 - .1f), Vector3.One * .1f, "f56f8f");

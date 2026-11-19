@@ -73,8 +73,9 @@ public partial class Atmosphere : Node3D
             .Lerp(EveningCloud, evening)
             .Lerp(NightCloud, night);
 
-        // The moon stands where the sun's light comes from, and the stars fade in as the sky darkens.
-        float stars = Mathf.Clamp((night - .15f) / .85f, 0, 1);
+        // The moon stands where the sun's light comes from, and the stars fade in as the sky darkens; clouds of rain or a
+        // storm hide most of them.
+        float stars = Mathf.Clamp((night - .15f) / .85f, 0, 1) * (1 - cover * .85f);
         nightSky.Visible = stars > 0;
         starMaterial.AlbedoColor = new Color(1, 1, 1, stars);
         moonMaterial.AlbedoColor = new Color("fff3c9") with { A = stars };

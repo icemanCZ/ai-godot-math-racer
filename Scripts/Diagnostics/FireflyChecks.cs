@@ -151,9 +151,11 @@ public partial class FireflyChecks : Node
             game.BeginWeatherQuiz();
             Check(game.State == GameState.Challenge, "the other button leads to the weather question");
             game.RestoreProgress(SaveStore.Read(path)!);
-            weather.Begin(WeatherKind.Clear, instant: true);
+            // The save keeps the hour, so the same panel saved by day.
+            var byDay = SaveStore.Read(path)!;
+            byDay.Day.Clock = Weather.StartOf(DayTime.Day);
+            game.RestoreProgress(byDay);
             weather.Tick(1);
-            game.RestoreProgress(SaveStore.Read(path)!);
             Check(
                 game.State == GameState.FireflyStatus && !Has("StartFireflyHunt") && Has("ChangeWeather"),
                 "by day the same panel has no button for the hunt"
@@ -246,8 +248,15 @@ public partial class FireflyChecks : Node
                 world.Atmosphere.ShiningStars == 1 && !sparks.Shown,
                 "the sky shows the star again, and no lantern hangs on the car"
             );
+            // The clock of the day has gone on for the frames since the load; everything else is the same.
+            var again = game.CaptureProgress();
             Check(
-                JsonSerializer.Serialize(withStar) == JsonSerializer.Serialize(game.CaptureProgress()),
+                again.Day.Clock >= withStar.Day.Clock && again.Day.Clock - withStar.Day.Clock < 2,
+                "the clock of the day goes on from the hour of the save"
+            );
+            again.Day.Clock = withStar.Day.Clock;
+            Check(
+                JsonSerializer.Serialize(withStar) == JsonSerializer.Serialize(again),
                 "restoring and capturing again gives the same save"
             );
 
@@ -265,7 +274,7 @@ public partial class FireflyChecks : Node
             Check(FireflyHunt.StarAt(hunt.Stars).Picture == 1, "the next star belongs to the next picture");
 
             // ---- The morning ends the hunt ----
-            weather.Begin(WeatherKind.Clear);
+            weather.SetTime(DayTime.Day);
             weather.Tick(30);
             Frames(3);
             Check(!hunt.Active && !weather.StarsOut, "the morning puts the hunt out");
