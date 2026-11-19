@@ -123,8 +123,6 @@ public partial class Game : Node3D
         ui.CoinCount(Coins, 0);
         SetupGolem();
         SetupTrailer();
-        ui.AnimalCount(RemainingAnimals, world.Animals.Length);
-        ui.HiddenCount(world.Hidden);
 
         persistenceReady = true;
         bool skipTitle = false;
@@ -433,7 +431,6 @@ public partial class Game : Node3D
             return;
         }
         animal.SetRewardAvailable(false);
-        ui.AnimalCount(RemainingAnimals, world.Animals.Length);
         BeginChallenge(animal);
     }
 

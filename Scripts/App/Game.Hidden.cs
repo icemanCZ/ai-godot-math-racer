@@ -4,8 +4,8 @@ using MathRacer.Valley;
 namespace MathRacer.App;
 
 /// <summary>
-/// The small friends who hide beside the roads. Driving close to one finds it: it says "pšt!", the notebook in the
-/// corner counts it and the car's friends cheer. Finding the eighth of a kind earns that animal as a pet.
+/// The small friends who hide beside the roads. Driving close to one finds it: it says "pšt!", the car's friends say how many
+/// of that kind are found (for example 3/8) and cheer. Finding the eighth of a kind earns that animal as a pet.
 /// </summary>
 public partial class Game
 {
@@ -25,7 +25,6 @@ public partial class Game
     private void FoundHidden(HiddenFriend friend)
     {
         var hidden = world.Hidden;
-        ui.HiddenCount(hidden);
         int count = hidden.FoundOf(friend.Kind);
         string? pets = count == HiddenFriends.PerKind ? EarnPets() : null;
         if (pets != null)

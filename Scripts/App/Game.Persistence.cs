@@ -258,7 +258,6 @@ public partial class Game
         lastCollected = Delivery?.Collected ?? -1;
         ui.DeliveryHud(Delivery);
         RestoreBuilds(data);
-        ui.AnimalCount(RemainingAnimals, world.Animals.Length);
         UpdateDeliveryGuides();
         interaction.BeforePause = validEncounter ? data.State : GameState.Exploring;
         Resume();

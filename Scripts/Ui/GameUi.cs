@@ -28,7 +28,6 @@ public partial class GameUi : CanvasLayer
     private PanelContainer modal = null!;
     private VBoxContainer content = null!;
     private Label hint = null!;
-    private Label animalCount = null!;
     private Label controls = null!;
     private bool controller;
     private Vector2 menuStick;
@@ -76,16 +75,6 @@ public partial class GameUi : CanvasLayer
         brand.AddThemeColorOverride("font_outline_color", new Color("245693"));
         brand.AddThemeConstantOverride("outline_size", 3);
         root.AddChild(brand);
-        var counterPanel = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
-        root.AddChild(counterPanel);
-        counterPanel.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopRight);
-        counterPanel.OffsetLeft = -450;
-        counterPanel.OffsetRight = -32;
-        counterPanel.OffsetTop = 20;
-        counterPanel.OffsetBottom = 100;
-        animalCount = new Label { Name = "AnimalCount", HorizontalAlignment = HorizontalAlignment.Center };
-        animalCount.AddThemeFontSizeOverride("font_size", 25);
-        counterPanel.AddChild(animalCount);
         controls = new Label { HorizontalAlignment = HorizontalAlignment.Center };
         controller = Input.GetConnectedJoypads().Count > 0;
         UpdateControls();
@@ -139,7 +128,6 @@ public partial class GameUi : CanvasLayer
         talkButton.Name = "PrimaryTask";
         SetupEvents();
         SetupCoins();
-        SetupHidden();
         SetupLamps();
     }
 
@@ -256,9 +244,6 @@ public partial class GameUi : CanvasLayer
         modal.Hide();
         deliveryHud.Visible = directionPicture != null;
     }
-
-    public void AnimalCount(int remaining, int total) =>
-        animalCount.Text = remaining == 0 ? Texts.VsechnaZviratkaNavstivena : Texts.AnimalsLeft(remaining, total);
 
     public void Hint(bool visible, bool available) =>
         hint.Text =

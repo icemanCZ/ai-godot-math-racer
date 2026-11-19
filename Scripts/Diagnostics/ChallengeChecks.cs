@@ -167,19 +167,6 @@ public static class ChallengeChecks
                 throw new InvalidOperationException("Missing or disabled UI button: " + name);
             button.EmitSignal(Button.SignalName.Pressed);
         }
-        void CheckCounter()
-        {
-            var label = game.FindChild("AnimalCount", true, false) as Label;
-            string expected =
-                game.RemainingAnimals == 0
-                    ? "Všechna zvířátka navštívena!"
-                    : $"Zbývá zvířátek: {game.RemainingAnimals} / {world.Animals.Length}";
-            check(
-                label != null && label.IsVisibleInTree() && label.Text == expected,
-                "visible HUD matches remaining animals"
-            );
-        }
-
         // SmokeTest has already visited and left the first animal without answering.
         check(
             game.RemainingAnimals == world.Animals.Length - 1 && !world.Animals[0].RewardAvailable,
@@ -190,7 +177,6 @@ public static class ChallengeChecks
             game.State == GameState.Exploring && game.CurrentChallenge == null,
             "cancelled animal cannot be reopened"
         );
-        CheckCounter();
         string originalLook = car.Appearance.CurrentLookId;
         int startCoins = game.Coins;
         game.ConfigureCar(new CarReward("blueberry", false));
@@ -265,7 +251,6 @@ public static class ChallengeChecks
                     && game.RemainingAnimals == before - 1,
                 "opening a question consumes one visit and stops car"
             );
-            CheckCounter();
             game.SubmitAnswer(-1);
             check(
                 game.State == GameState.Challenge && ReferenceEquals(question, game.CurrentChallenge),
@@ -372,7 +357,6 @@ public static class ChallengeChecks
             "all 10 visits complete and free driving remains available"
         );
         ui.Intended -= RecordSpeech;
-        CheckCounter();
 
         // Verify the complete cosmetic catalogue independently of finite gameplay visits.
         foreach (var accessory in CarAccessory.All)

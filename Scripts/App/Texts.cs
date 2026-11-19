@@ -62,7 +62,7 @@ internal static class Texts
     public static string Pst(string name) => $"Pšt! {name}!";
 
     public static string HiddenFoundSpeech(string name, int count, int total) =>
-        $"Pšt! Tady je {name}! Už jich máš {count} z {total}.";
+        $"Pšt! Tady je {name}! {count}/{total}";
 
     public static string HiddenAllOfKind(HiddenKind kind, int total) =>
         kind switch
@@ -71,9 +71,6 @@ internal static class Texts
             HiddenKind.Hedgehog => $"Našel jsi všech {total} ježků!",
             _ => $"Našel jsi všech {total} žabek!",
         };
-
-    public static string HiddenNotebook(int ladybugs, int hedgehogs, int frogs, int total) =>
-        $"Berušky {ladybugs}/{total} · Ježci {hedgehogs}/{total} · Žabky {frogs}/{total}";
 
     public static string PodivejSeKdoSeSchovava(int remaining) =>
         $"Podívej se z věže! Oranžové sloupy ukazují, kde se schovávají kamarádi. Ještě jich hledáš {remaining}.";
@@ -270,7 +267,6 @@ internal static class Texts
     public const string Hrat = "Hrát";
     public const string NovaHra = "Nová hra";
     public const string NovaHraNahradiUlozenyPostup = "Nová hra nahradí uložený postup.";
-    public const string VsechnaZviratkaNavstivena = "Všechna zvířátka navštívena!";
     public const string StiskniAProUkolAOdmenu = "Stiskni A pro úkol a odměnu";
     public const string StiskniENeboMezernikProUkol = "Stiskni E nebo mezerník pro úkol a odměnu";
     public const string TotoZviratkoUzJsiNavstivilSleduj = "Toto zvířátko už jsi navštívil. Sleduj další otazníky!";
@@ -361,8 +357,6 @@ internal static class Texts
     public static string CoinsGained(int coins) => $"Získáváš {coins} penízků";
 
     public static string ValleySeed(int seed) => $"Seed údolí: {seed}";
-
-    public static string AnimalsLeft(int remaining, int total) => $"Zbývá zvířátek: {remaining} / {total}";
 
     public static string Switch(string label, bool on) => $"{label} · {(on ? "zapnuto" : "vypnuto")}";
 
