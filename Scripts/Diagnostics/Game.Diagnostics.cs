@@ -439,6 +439,40 @@ public partial class Game
                     world.Treasure.Tick(.1f, vehicle.Position, true);
             }
         }
+        if (view is "fireflies" or "fireflies-sky" or "fireflies-witch")
+        {
+            // A starry night, three stars and a few fireflies of the collection: the lantern and the fireflies beside the car,
+            // the first picture of the sky, or the witch's panel.
+            Weather.Begin(WeatherKind.Night, instant: true);
+            var open = world.TreasureSpot(0);
+            vehicle.SetPose(world.Ground.At(open.X, open.Z, .15f), 0);
+            fireflies.Restore(FireflyHunt.PerStar * 3 + 6);
+            DrawCollection();
+            if (view == "fireflies-witch")
+            {
+                var witch = world.Witch;
+                vehicle.SetPose(world.Ground.At(witch.Position.X, witch.Position.Z + 3, .15f), 0);
+                OpenFireflies();
+            }
+            else
+            {
+                fireflies.Start();
+                for (int i = 0; i < 20; i++)
+                    world.Sparks.Tick(.1f, true, fireflies.Lantern, true);
+                var offsets = new Vector2[]
+                {
+                    new(-5, -9),
+                    new(4, -12),
+                    new(8, -7),
+                    new(-9, -16),
+                    new(1, -19),
+                    new(-2, -6),
+                };
+                for (int i = 0; i < offsets.Length; i++)
+                    world.Sparks.Place(i, world.Ground.At(open.X + offsets[i].X, open.Z + offsets[i].Y));
+                world.Sparks.Tick(.016f, true, fireflies.Lantern, true);
+            }
+        }
         if (view is "glass" or "glass-shop" or "glass-night" or "glass-close")
         {
             // A few lamps on the square, in the day or at night, and the lamp maker's shop.

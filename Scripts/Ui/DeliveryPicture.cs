@@ -621,6 +621,24 @@ public partial class DeliveryPicture : Control
                     new Color("ffe27a")
                 );
         }
+        else if (Icon == "lantern")
+        {
+            // A little lantern with a handle, a warm glass and a bright flame inside.
+            var iron = new Color("4a5a60");
+            DrawArc(new(90, 40), 22, Mathf.Pi, Mathf.Tau, 20, iron, 6, true);
+            DrawRect(new Rect2(64, 46, 52, 12), iron);
+            DrawColoredPolygon(
+                new Vector2[] { new(68, 58), new(112, 58), new(118, 112), new(62, 112) },
+                new Color("ffe9a0")
+            );
+            DrawCircle(new(90, 88), 20, new Color("fff8d6"), true, -1, true);
+            DrawCircle(new(90, 88), 10, new Color("ffd24a"), true, -1, true);
+            foreach (float x in new[] { 79f, 101f })
+                DrawLine(new(x, 58), new(x + (x - 90) * .25f, 112), iron, 4, true);
+            DrawRect(new Rect2(56, 112, 68, 12), iron);
+            foreach (var (x, y, r) in new[] { (30f, 52f, 6f), (150f, 70f, 8f), (140f, 28f, 5f) })
+                DrawCircle(new(x, y), r, new Color("e9f56a", .8f), true, -1, true);
+        }
         else if (Icon.StartsWith("trail-"))
         {
             // A bit of road with what the rear wheels leave on it: tyre marks, or flowers, hearts or stars.

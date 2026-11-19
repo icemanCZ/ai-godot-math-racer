@@ -67,6 +67,19 @@ public sealed class SaveData
 
     /// <summary>The pirate captain's treasure hunt. Added after version 5 began.</summary>
     public TreasureSave Treasure { get; set; } = new();
+
+    /// <summary>The fireflies caught for the witch's collection of stars. Added after version 5 began.</summary>
+    public FirefliesSave Fireflies { get; set; } = new();
+}
+
+/// <summary>
+/// The fireflies caught in the lantern so far. The stars of the collection that shine (one for every
+/// <see cref="FireflyHunt.PerStar"/>) and the brightness of the lantern follow from this number, and a hunt lasts as long as
+/// the night that was asked for, so nothing else is saved.
+/// </summary>
+public sealed class FirefliesSave
+{
+    public int Caught { get; set; }
 }
 
 /// <summary>

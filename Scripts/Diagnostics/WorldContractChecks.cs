@@ -236,6 +236,7 @@ public partial class ContractChecks : Node
         ("RailwayStatus", 25),
         ("ZooStatus", 26),
         ("TreasureStatus", 27),
+        ("FireflyStatus", 28),
     };
 
     public override void _Ready()

@@ -35,6 +35,7 @@ internal static class SaveRules
         ("railway", HasInvalidRailwayState),
         ("zoo", HasInvalidZooState),
         ("treasure hunt", HasInvalidTreasure),
+        ("firefly hunt", HasInvalidFireflies),
         ("decorations and the mayor's shop", HasInvalidDecorations),
         ("glass lamps and the lamp maker's shop", HasInvalidLamps),
         ("buildings and trailer", HasInvalidBuildState),
@@ -68,7 +69,8 @@ internal static class SaveRules
         || data.Lamps is null
         || data.Railway is null
         || data.Zoo is null
-        || data.Treasure is null;
+        || data.Treasure is null
+        || data.Fireflies is null;
 
     /// <summary>Throws when the save is not one the game can restore.</summary>
     internal static void Validate(SaveData data)
@@ -374,7 +376,13 @@ internal static class SaveRules
         || (
             data.Nearby == World.WitchId
             && (
-                data.State is not (GameState.Exploring or GameState.Challenge or GameState.WeatherChoice)
+                data.State
+                    is not (
+                        GameState.Exploring
+                        or GameState.Challenge
+                        or GameState.WeatherChoice
+                        or GameState.FireflyStatus
+                    )
                 || (data.State == GameState.Challenge && data.Quiz.Challenge is DeliveryChallenge)
             )
         );
@@ -411,6 +419,14 @@ internal static class SaveRules
         || (data.State == GameState.TreasureStatus && !World.IsTreasurer(data.Nearby))
         || (data.State == GameState.Challenge && World.IsTreasurer(data.Nearby) && !data.Treasure.Active)
         || (World.IsTreasurer(data.Nearby) && data.Quiz.Handover);
+
+    /// <summary>
+    /// The number of fireflies caught is within the limit of the collection, and the witch's firefly panel is open only beside her.
+    /// </summary>
+    private static bool HasInvalidFireflies(SaveData data) =>
+        data.Fireflies.Caught < 0
+        || data.Fireflies.Caught > FireflyHunt.Limit
+        || (data.State == GameState.FireflyStatus && data.Nearby != World.WitchId);
 
     /// <summary>The progress of the playground, 0 to 6 deliveries.</summary>
     /// <summary>Only known decorations, each at most once, and the shop is open only beside the mayor.</summary>

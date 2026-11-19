@@ -87,6 +87,12 @@ public partial class Game
             case UiIntent.StartTreasureHunt:
                 BeginTreasureHunt();
                 break;
+            case UiIntent.StartFireflyHunt:
+                BeginFireflyHunt();
+                break;
+            case UiIntent.ChangeWeather:
+                BeginWeatherQuiz();
+                break;
             case UiIntent.BuyDecoration buy:
                 BuyDecoration(buy.Id);
                 break;

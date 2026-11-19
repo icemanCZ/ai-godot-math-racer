@@ -71,6 +71,11 @@ internal abstract record UiIntent
     // The pirate captain's treasure hunt.
     internal sealed record StartTreasureHunt : UiIntent;
 
+    // The witch's night panel: the firefly hunt, or the weather question.
+    internal sealed record StartFireflyHunt : UiIntent;
+
+    internal sealed record ChangeWeather : UiIntent;
+
     // The mayor's shop.
     internal sealed record BuyDecoration(string Id) : UiIntent;
 

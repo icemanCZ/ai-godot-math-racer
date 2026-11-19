@@ -326,6 +326,26 @@ public partial class VisualCapture : Node
             camera.GlobalPosition = site + new Vector3(3.2f, 2.4f, 4.4f);
             camera.LookAt(site + Vector3.Up * .6f);
         }
+        else if (view == "fireflies")
+        {
+            // The car with its lantern from behind and a little above, with the fireflies in front of it.
+            camera.SetProcess(false);
+            camera.GlobalPosition = car.GlobalPosition + new Vector3(3.2f, 3.6f, 7);
+            camera.LookAt(car.GlobalPosition + new Vector3(-1, 1.6f, -9));
+        }
+        else if (view == "fireflies-sky")
+        {
+            // The first picture of the collection, with the car's lantern shining under it.
+            camera.SetProcess(false);
+            float azimuth = Atmosphere.CollectionAzimuth(0);
+            var direction = new Vector3(
+                Mathf.Sin(azimuth) * Mathf.Cos(.3f),
+                Mathf.Sin(.3f),
+                Mathf.Cos(azimuth) * Mathf.Cos(.3f)
+            );
+            camera.GlobalPosition = car.GlobalPosition + Vector3.Up * 2;
+            camera.LookAt(camera.GlobalPosition + direction * 100);
+        }
         else if (view == "glass-close")
         {
             // The lamp maker from the front and a little above, with his table of lamps beside him.

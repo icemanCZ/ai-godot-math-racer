@@ -99,6 +99,7 @@ internal static class LegacySaves
         ("Lamps", "Placed"),
         ("Treasure", "Found"),
         ("Treasure", "Active"),
+        ("Fireflies", "Caught"),
     };
 
     /// <summary>

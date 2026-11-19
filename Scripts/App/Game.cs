@@ -46,6 +46,7 @@ public enum GameState
     RailwayStatus = 25,
     ZooStatus = 26,
     TreasureStatus = 27,
+    FireflyStatus = 28,
 }
 
 public partial class Game : Node3D
@@ -119,6 +120,7 @@ public partial class Game : Node3D
         camera.Snap();
         world.AddChild(Weather);
         Weather.Setup(world, vehicle, camera);
+        world.Sparks.Setup(vehicle);
         world.AddChild(world.Grass);
         world.Grass.Setup(world, vehicle);
         SetupUi();

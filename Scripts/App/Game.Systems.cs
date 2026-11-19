@@ -32,6 +32,7 @@ public partial class Game
         Register("lookout", delta => TickLookout((float)delta));
         Register("lamps", delta => TickLamps((float)delta));
         Register("treasure", delta => TickTreasure((float)delta));
+        Register("fireflies", delta => TickFireflies((float)delta));
     }
 
     private void Register(string name, Action<double> tick) => systems.Add(new GameSystem(name, tick));

@@ -80,6 +80,7 @@ internal static class DiagnosticSuites
         new("railway-checks", (g, w, v) => new RailwayChecks(g, w, v), Seeds: ThreeSeeds),
         new("zoo-checks", (g, w, v) => new ZooChecks(g, w, v), Seeds: ThreeSeeds),
         new("treasure-checks", (g, w, v) => new TreasureChecks(g, w, v), Seeds: ThreeSeeds),
+        new("firefly-checks", (g, w, v) => new FireflyChecks(g, w, v), Seeds: ThreeSeeds),
         new("mayor-checks", (g, w, v) => new MayorChecks(g, w, v), Seeds: ThreeSeeds),
         new("glass-checks", (g, w, v) => new GlassChecks(g, w, v), Seeds: ThreeSeeds),
         new(

@@ -285,6 +285,29 @@ internal static class Texts
 
     public static string TreasureFound(string contents, int coins) => $"Poklad! V truhle je {contents}.  +{coins}";
 
+    // GameUi.Fireflies and Game.Fireflies
+    public const string FireflyStart = "Chytat světlušky";
+    public const string FireflyChangeWeather = "Změnit počasí";
+    public const string FireflyWelcome =
+        "Je tu hvězdná noc! Půjčím ti lucernu. Jeď za blikajícími světluškami a chytej je.";
+    public const string FireflyNeedNight = "Světlušky se ukážou jen v noci. Až budu čarovat hvězdnou noc, vrať se.";
+    public const string FireflyStillOn = "Lucerna už svítí! Jeď za světluškami. Čím víc jich chytíš, tím víc září.";
+    public const string FireflyGoodLuck = "Hezky pomalu a klidně. Světlušky blikají, jeď za nimi!";
+    public const string FireflyMorning = "Je ráno, světlušky šly spát. Lucerna je zpátky u čarodějnice.";
+    public const string FireflyComplete =
+        "Všechny hvězdy svítí! Máš celou sbírku souhvězdí. Děkuju, že jsi mi pomáhal.";
+    public const string FireflyCollectionComplete = "Všechna souhvězdí už svítí na obloze!";
+    public const string FireflyLantern = "Lucerna";
+
+    public static string FireflyStars(int lit, int total) => $"Hvězdy ve sbírce: {lit} / {total}";
+
+    public static string FireflyCounter(int caught, int perStar) => $"{caught} / {perStar}";
+
+    public static string FireflyNewStar(int lit, int total) =>
+        $"Na obloze se rozsvítila nová hvězda! Máš jich {lit} z {total}.";
+
+    public static string FireflyPictureDone(string name) => $"Souhvězdí {name} je hotové! Podívej se na oblohu.";
+
     // GameUi.Postcards
     public const string PohledniceZKouzelnehoUdoli = "Pohlednice z Kouzelného údolí";
 

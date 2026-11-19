@@ -7,13 +7,6 @@ public partial class Game
 {
     internal Weather Weather { get; } = new();
 
-    internal void OpenWeatherChallenge()
-    {
-        nearby = world.Witch;
-        vehicle.Active = false;
-        BeginQuiz();
-    }
-
     internal void OfferWeatherChoice()
     {
         ClearChallenge();

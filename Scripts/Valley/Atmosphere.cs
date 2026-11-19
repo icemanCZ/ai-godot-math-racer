@@ -86,6 +86,7 @@ public partial class Atmosphere : Node3D
     {
         if (nightSky.Visible && GetViewport().GetCamera3D() is { } camera)
             nightSky.GlobalPosition = camera.GlobalPosition;
+        TickCollection((float)delta);
         if (constellation == null)
             return;
         constellationTime -= (float)delta;
@@ -121,21 +122,7 @@ public partial class Atmosphere : Node3D
         constellationTotal = constellationTime = seconds;
         constellation = new Node3D { Name = "Constellation" };
         nightSky.AddChild(constellation);
-        const float radius = SkyRadius * .96f;
-        const float elevation = .47f;
-        var centre = new Vector3(
-            Mathf.Sin(azimuth) * Mathf.Cos(elevation),
-            Mathf.Sin(elevation),
-            Mathf.Cos(azimuth) * Mathf.Cos(elevation)
-        );
-        var right = centre.Cross(Vector3.Up).Normalized();
-        var up = right.Cross(centre).Normalized();
-        // 1 degree of sky is about 17 m at this distance.
-        var points = picture
-            .Stars.Select(offset =>
-                (centre + (right * offset.X + up * offset.Y) * Mathf.DegToRad(1)).Normalized() * radius
-            )
-            .ToArray();
+        var points = SkyPoints(picture, azimuth, .47f);
         var ball = new SphereMesh
         {
             Radius = 1,
@@ -174,6 +161,132 @@ public partial class Atmosphere : Node3D
                 }
             );
         }
+    }
+
+    /// <summary>
+    /// Where the stars of <paramref name="picture"/> stand on the sky sphere when its middle is at <paramref name="azimuth"/>
+    /// (0 looks along +Z) and <paramref name="elevation"/> (radians over the horizon). 1 degree of sky is about 17 m there.
+    /// </summary>
+    private static Vector3[] SkyPoints(Constellation picture, float azimuth, float elevation)
+    {
+        const float radius = SkyRadius * .96f;
+        var centre = new Vector3(
+            Mathf.Sin(azimuth) * Mathf.Cos(elevation),
+            Mathf.Sin(elevation),
+            Mathf.Cos(azimuth) * Mathf.Cos(elevation)
+        );
+        var right = centre.Cross(Vector3.Up).Normalized();
+        var up = right.Cross(centre).Normalized();
+        return picture
+            .Stars.Select(offset =>
+                (centre + (right * offset.X + up * offset.Y) * Mathf.DegToRad(1)).Normalized() * radius
+            )
+            .ToArray();
+    }
+
+    /// <summary>Where picture <paramref name="index"/> of the child's collection hangs: the pictures are spread round the sky.</summary>
+    internal static float CollectionAzimuth(int index) => .6f + index * Mathf.Tau / Constellation.All.Count;
+
+    private const float CollectionElevation = .4f;
+    private Node3D? collection;
+    private MeshInstance3D? newestStar;
+    private float newestTime;
+
+    /// <summary>The stars of the collection that shine now, for the checks.</summary>
+    internal int ShiningStars =>
+        collection
+            ?.GetNodeOrNull<Node3D>("Lit")
+            ?.GetChildren()
+            .Count(node => node.Name.ToString().StartsWith("Star", System.StringComparison.Ordinal))
+        ?? 0;
+
+    /// <summary>
+    /// Draws the child's collection of stars on the night sky: picture n hangs at its own place (<see cref="CollectionAzimuth"/>),
+    /// <paramref name="lit"/>[n] of its stars shine and are joined by a line wherever both ends shine, and the rest are
+    /// faint dots that show where the next ones will be. The star that was lit last, <paramref name="newest"/>, swells for a
+    /// few seconds. It is part of the night sky, so it shows whenever the stars are out.
+    /// </summary>
+    internal void ShowCollection(int[] lit, (int Picture, int Star)? newest = null)
+    {
+        collection?.QueueFree();
+        newestStar = null;
+        newestTime = 0;
+        collection = new Node3D { Name = "Collection" };
+        nightSky.AddChild(collection);
+        var shining = new Node3D { Name = "Lit" };
+        var faint = new Node3D { Name = "Faint" };
+        collection.AddChild(shining);
+        collection.AddChild(faint);
+        collectionMaterial ??= SkyMaterial(new Color("ffe9a0"));
+        collectionFaintMaterial ??= SkyMaterial(new Color("b6c6ff") with { A = .3f });
+        var ball = new SphereMesh
+        {
+            Radius = 1,
+            Height = 2,
+            RadialSegments = 10,
+            Rings = 5,
+        };
+        var line = new BoxMesh { Size = Vector3.One };
+        for (int picture = 0; picture < Constellation.All.Count; picture++)
+        {
+            var shape = Constellation.All[picture];
+            int count = picture < lit.Length ? lit[picture] : 0;
+            var points = SkyPoints(shape, CollectionAzimuth(picture), CollectionElevation);
+            for (int star = 0; star < points.Length; star++)
+            {
+                bool on = star < count;
+                var mesh = new MeshInstance3D
+                {
+                    Name = $"Star{picture}_{star}",
+                    Mesh = ball,
+                    MaterialOverride = on ? collectionMaterial : collectionFaintMaterial,
+                    Position = points[star],
+                    Scale = Vector3.One * (on ? 11 : 4),
+                    CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+                };
+                (on ? shining : faint).AddChild(mesh);
+                if (newest is { } latest && latest.Picture == picture && latest.Star == star)
+                {
+                    newestStar = mesh;
+                    newestTime = 5;
+                }
+            }
+            for (int i = 0; i + 1 < shape.Lines.Length; i += 2)
+            {
+                if (shape.Lines[i] >= count || shape.Lines[i + 1] >= count)
+                    continue;
+                var from = points[shape.Lines[i]];
+                var to = points[shape.Lines[i + 1]];
+                shining.AddChild(
+                    new MeshInstance3D
+                    {
+                        Mesh = line,
+                        MaterialOverride = collectionMaterial,
+                        Transform = new Transform3D(
+                            Basis.LookingAt(to - from, Vector3.Up)
+                                * Basis.FromScale(new Vector3(2.4f, 2.4f, from.DistanceTo(to))),
+                            (from + to) / 2
+                        ),
+                        CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+                    }
+                );
+            }
+        }
+    }
+
+    private StandardMaterial3D? collectionMaterial;
+    private StandardMaterial3D? collectionFaintMaterial;
+
+    /// <summary>The newest star swells and shrinks back for a few seconds, so that the eye finds it.</summary>
+    private void TickCollection(float delta)
+    {
+        if (newestStar == null || !IsInstanceValid(newestStar))
+            return;
+        newestTime = Mathf.Max(0, newestTime - delta);
+        float swell = 1 + 2.2f * newestTime / 5 * (.6f + .4f * Mathf.Sin(newestTime * 7));
+        newestStar.Scale = Vector3.One * 11 * swell;
+        if (newestTime <= 0)
+            newestStar = null;
     }
 
     public void Generate()

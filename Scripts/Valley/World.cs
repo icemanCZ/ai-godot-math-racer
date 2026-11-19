@@ -115,6 +115,7 @@ public partial class World : Node3D
         BuildRailway();
         BuildZoo();
         CreateTreasure();
+        CreateFireflies();
         Village.CreateLamps();
         Village.Lamps.Surface = DriveSurface;
         Ground.BuildMeshes();
