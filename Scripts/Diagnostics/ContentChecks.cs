@@ -54,6 +54,7 @@ public partial class ContentChecks : Node
             Need(world.WheatField != null && world.FieldFarmer != null, "the wheat field and its farmer");
             Need(world.Playground is { Helper: not null }, "the playground and its keeper");
             Need(world.Railway is { Helper: not null }, "the railway and its stationmaster");
+            Need(world.Zoo is { Helper: not null }, "the zoo and its keeper");
             Need(village.Mayor != null && world.ActorAt(World.MayorId) == village.Mayor, "the mayor on the square");
             Need(
                 village.Glassmaker != null && world.ActorAt(World.GlassmakerId) == village.Glassmaker,
@@ -88,8 +89,8 @@ public partial class ContentChecks : Node
 
     /// <summary>
     /// The duck, five raw materials (wheat too), every works, the bridge, the mill, the tower, the ducklings, a pet per
-    /// hidden kind and the little stationmaster of the railway.
+    /// hidden kind, the little stationmaster of the railway and the baby panda of the zoo.
     /// </summary>
     private static readonly int WorldPetsExpected =
-        1 + 5 + WorksCatalog.Total + 3 + WorldPetCatalog.DucklingDeliveries.Length + HiddenFriends.KindCount + 1;
+        1 + 5 + WorksCatalog.Total + 3 + WorldPetCatalog.DucklingDeliveries.Length + HiddenFriends.KindCount + 2;
 }

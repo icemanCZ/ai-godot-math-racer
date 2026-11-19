@@ -209,6 +209,19 @@ public partial class Character : Node3D
         Art.Cylinder(model, new(.9f, 2.4f, .1f), .3f, .3f, .05f, "d9432f").RotationDegrees = new(90, 0, 0);
     }
 
+    /// <summary>A khaki safari hat with a brown band, a green neckerchief and a bucket of fish in the paw.</summary>
+    internal void DressAsZookeeper()
+    {
+        Art.Cylinder(model, new(0, 2.38f, 0), .8f, .8f, .07f, "cdae63");
+        Art.Cylinder(model, new(0, 2.62f, 0), .52f, .46f, .42f, "d9bc72");
+        Art.Cylinder(model, new(0, 2.47f, 0), .54f, .54f, .08f, "6b4a2e");
+        Art.Ball(model, new(0, 2.84f, 0), new(.46f, .08f, .46f), "d9bc72");
+        Art.Ball(model, new(0, 1.28f, .5f), new(.42f, .16f, .16f), "5aa86f");
+        Art.Cylinder(model, new(.92f, .95f, .35f), .26f, .21f, .34f, "d9432f");
+        Art.Ball(model, new(.88f, 1.18f, .35f), new(.22f, .06f, .09f), "b8c7d1");
+        Art.Ball(model, new(.97f, 1.2f, .38f), new(.18f, .05f, .08f), "9fb3c0");
+    }
+
     internal void DressAsBandit(string scarf)
     {
         nameLabel.Hide();

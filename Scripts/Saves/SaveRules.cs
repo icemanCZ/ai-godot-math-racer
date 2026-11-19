@@ -33,6 +33,7 @@ internal static class SaveRules
         ("building plots", HasInvalidPlotState),
         ("playground", HasInvalidPlaygroundState),
         ("railway", HasInvalidRailwayState),
+        ("zoo", HasInvalidZooState),
         ("decorations and the mayor's shop", HasInvalidDecorations),
         ("glass lamps and the lamp maker's shop", HasInvalidLamps),
         ("buildings and trailer", HasInvalidBuildState),
@@ -64,7 +65,8 @@ internal static class SaveRules
         || data.Playground is null
         || data.Decorations is null
         || data.Lamps is null
-        || data.Railway is null;
+        || data.Railway is null
+        || data.Zoo is null;
 
     /// <summary>Throws when the save is not one the game can restore.</summary>
     internal static void Validate(SaveData data)
@@ -135,7 +137,7 @@ internal static class SaveRules
         || data.Task.Picked == null
         || data.Quiz.Rejected == null
         || data.Nearby < -1
-        || data.Nearby > Math.Max(Game.BanditActorId, World.StationId)
+        || data.Nearby > Math.Max(Game.BanditActorId, World.ZooKeeperId)
         || data.Task.Sender < -1
         || data.Task.Sender > World.SorcererId
         || data.Task.Sender == World.WitchId
@@ -210,6 +212,7 @@ internal static class SaveRules
                 || data.Quiz.DepartureState != GameState.PlaygroundStatus,
             Game.Departure.Railway => !World.IsStationHelper(data.Nearby)
                 || data.Quiz.DepartureState != GameState.RailwayStatus,
+            Game.Departure.Zoo => !World.IsZooKeeper(data.Nearby) || data.Quiz.DepartureState != GameState.ZooStatus,
             Game.Departure.House => !resident || data.Quiz.DepartureState != GameState.HouseMaterialOffer,
             // The works' missing goods are asked for from a builder, a newcomer or a resident.
             Game.Departure.Missing => data.Quiz.DepartureState switch
@@ -218,6 +221,7 @@ internal static class SaveRules
                 GameState.PlotStatus => !World.IsPlotResident(data.Nearby),
                 GameState.PlaygroundStatus => !World.IsPlaygroundHelper(data.Nearby),
                 GameState.RailwayStatus => !World.IsStationHelper(data.Nearby),
+                GameState.ZooStatus => !World.IsZooKeeper(data.Nearby),
                 GameState.HouseMaterialOffer => !resident,
                 _ => true,
             },
@@ -430,6 +434,9 @@ internal static class SaveRules
     /// <summary>The progress of the railway, 0 to 6 deliveries.</summary>
     private static bool HasInvalidRailwayState(SaveData data) => data.Railway.Stage is < 0 or > RailwayPlans.Trips;
 
+    /// <summary>The progress of the zoo, 0 to 6 deliveries.</summary>
+    private static bool HasInvalidZooState(SaveData data) => data.Zoo.Stage is < 0 or > ZooPlans.Trips;
+
     /// <summary>The cargo and the characters who may ask about it for the active trailer trip, or none without one.</summary>
     private static (HaulLoad Cargo, int[] Askers, bool Loaded) ActiveTripAsker(SaveData data)
     {
@@ -472,6 +479,11 @@ internal static class SaveRules
             case TripKinds.Railway when trip.Index == 0 && data.Railway.Stage is >= 0 and < RailwayPlans.Trips:
             {
                 var cargo = RailwayPlans.CargoOf(data.Railway.Stage);
+                return (cargo, World.AskerIds(cargo, 0), trip.Loaded);
+            }
+            case TripKinds.Zoo when trip.Index == 0 && data.Zoo.Stage is >= 0 and < ZooPlans.Trips:
+            {
+                var cargo = ZooPlans.CargoOf(data.Zoo.Stage);
                 return (cargo, World.AskerIds(cargo, 0), trip.Loaded);
             }
             case TripKinds.House when SavedTask(data, trip.Index) is { } kind && Village.MaterialOf(kind) is { } goods:
@@ -581,6 +593,7 @@ internal static class SaveRules
                 || data.Buildings.PlotStages[trip.Index] >= PlotPlans.Trips,
             TripKinds.Playground => trip.Index != 0 || data.Playground.Stage >= PlaygroundPlans.Trips,
             TripKinds.Railway => trip.Index != 0 || data.Railway.Stage >= RailwayPlans.Trips,
+            TripKinds.Zoo => trip.Index != 0 || data.Zoo.Stage >= ZooPlans.Trips,
             _ => true,
         };
     }
@@ -600,6 +613,7 @@ internal static class SaveRules
             : World.IsPlotResident(data.Nearby) ? GameState.PlotStatus
             : World.IsPlaygroundHelper(data.Nearby) ? GameState.PlaygroundStatus
             : World.IsStationHelper(data.Nearby) ? GameState.RailwayStatus
+            : World.IsZooKeeper(data.Nearby) ? GameState.ZooStatus
             : null;
         if (panel == null)
         {
@@ -611,6 +625,7 @@ internal static class SaveRules
                         or GameState.PlotStatus
                         or GameState.PlaygroundStatus
                         or GameState.RailwayStatus
+                        or GameState.ZooStatus
                 || data.Quiz.Challenge is LoadChallenge;
         }
         if (data.State is not (GameState.Exploring or GameState.Challenge) && data.State != panel)

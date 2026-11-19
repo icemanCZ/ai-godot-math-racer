@@ -55,6 +55,7 @@ public sealed partial class HaulTrip : Node3D
     internal HousePlot? Plot => Target as HousePlot;
     internal Playground? Playground => Target as Playground;
     internal Railway? Railway => Target as Railway;
+    internal Zoo? Zoo => Target as Zoo;
     internal Works? Works => Target as Works;
     internal int House => Target is HouseTripTarget house ? house.House : -1;
 

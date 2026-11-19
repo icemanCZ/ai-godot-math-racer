@@ -135,6 +135,18 @@ public partial class Game
                 return;
             (works, asker) = (missing, railway.Helper);
         }
+        else if (State == GameState.ZooStatus)
+        {
+            // And the zoo keeper, for the goods of the paths, fences and houses of the animals.
+            if (
+                ZooOf(nearby) is not { Complete: false } zoo
+                || Haul != null
+                || ZooStepReady(zoo)
+                || GoodsWorks(ZooPlans.CargoOf(zoo.Stage)) is not { Full: false } missing
+            )
+                return;
+            (works, asker) = (missing, zoo.Helper);
+        }
         else if (State == GameState.HouseMaterialOffer)
         {
             // A resident who wants goods that the works has not made does the same: the way to the raw material.

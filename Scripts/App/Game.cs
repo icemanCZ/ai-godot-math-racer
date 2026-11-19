@@ -44,6 +44,7 @@ public enum GameState
     MayorShop = 23,
     GlassmakerShop = 24,
     RailwayStatus = 25,
+    ZooStatus = 26,
 }
 
 public partial class Game : Node3D

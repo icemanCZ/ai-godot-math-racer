@@ -224,6 +224,33 @@ internal sealed class StationRole : ActorRole
 }
 
 /// <summary>
+/// The keeper of the zoo. Talking to him offers the next delivery of goods for the paths and enclosures; once it is
+/// finished the animals are at home and he is glad of it. He sends the trailer and runs his own task marker.
+/// </summary>
+internal sealed class ZooRole : ActorRole
+{
+    public Zoo Zoo { get; }
+
+    public ZooRole(Zoo zoo) => Zoo = zoo;
+
+    public override string Icon => "zoo";
+    public override bool UsesDeliveryGuide => false;
+
+    public override bool InvitesTalk(bool expeditionActive) => true;
+
+    public override void ShowHint(GameUi ui, Character actor) => ui.ZooHint();
+
+    public override void Open(Game game, Character actor) => game.OpenZoo(actor);
+
+    /// <summary>The keeper asks no quiz of his own: the loading questions come from the works' workers.</summary>
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
+    {
+        game.CompleteHaulLoading();
+        return true;
+    }
+}
+
+/// <summary>
 /// The mayor of the village, who stands on the square and sells decorations for the town for coins. She sends no trip and
 /// asks no quiz: talking to her opens her shop.
 /// </summary>

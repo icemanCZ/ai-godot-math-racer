@@ -399,6 +399,15 @@ public partial class Game
             var parked = railway.Drop - railway.Site.Inward * (view is "railway-close" or "railway-pet" ? 30 : 6);
             vehicle.SetPose(world.Ground.At(parked.X, parked.Z, .15f), 0);
         }
+        if (ParseZooView(view) is { } zooStage && world.Zoo is { } zoo)
+        {
+            zoo.SetStage(zooStage);
+            // A few seconds pass so that the animals are at their business and the visitors are on the path.
+            for (int i = 0; i < 90; i++)
+                zoo._Process(.1);
+            var parked = zoo.Drop - zoo.Site.Inward * (view is "zoo-close" or "zoo-pet" ? 22 : 6);
+            vehicle.SetPose(world.Ground.At(parked.X, parked.Z, .15f), 0);
+        }
         if (view is "mayor" or "mayor-shop" or "mayor-town" or "mayor-house" or "mayor-close")
         {
             world.Village.RestoreDecorations(Settlement.TownDecorations.All.Select(d => d.Id));
@@ -502,6 +511,16 @@ public partial class Game
         : view.StartsWith("railway-")
         && int.TryParse(view["railway-".Length..], out int stage)
         && stage is >= 0 and <= RailwayPlans.Trips
+            ? stage
+        : null;
+
+    /// <summary>"zoo-S" shows the zoo with S of its six deliveries made, "zoo-close" the finished zoo from the gate and "zoo-pet" the zoo one delivery short, with the pet waiting.</summary>
+    internal static int? ParseZooView(string view) =>
+        view == "zoo-close" ? ZooPlans.Trips
+        : view == "zoo-pet" ? ZooPlans.Trips - 1
+        : view.StartsWith("zoo-")
+        && int.TryParse(view["zoo-".Length..], out int stage)
+        && stage is >= 0 and <= ZooPlans.Trips
             ? stage
         : null;
 

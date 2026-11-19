@@ -418,6 +418,23 @@ public partial class VisualCapture : Node
                 camera.LookAt(railway.Drop + inward * 8 + Vector3.Up * 0);
             }
         }
+        else if (Game.ParseZooView(view) is { } && world.Zoo is { } zoo)
+        {
+            // The whole zoo from the road side and from above; the close view looks along the path from the gate.
+            camera.SetProcess(false);
+            var inward = zoo.Site.Inward;
+            var right = Vector3.Up.Cross(inward);
+            if (view is "zoo-close" or "zoo-pet")
+            {
+                camera.Position = zoo.ToGlobal(new Vector3(0f, 3.4f, -6.5f));
+                camera.LookAt(zoo.ToGlobal(new Vector3(0f, 1.8f, 14.0f)));
+            }
+            else
+            {
+                camera.Position = zoo.Drop - inward * 12 + right * 22 + Vector3.Up * 22;
+                camera.LookAt(zoo.Drop + inward * 15 + Vector3.Up * 0);
+            }
+        }
         else if (Game.ParsePlaygroundView(view) is { } && world.Playground is { } playground)
         {
             // The ring, the arch and all the toys from the road side, from above.

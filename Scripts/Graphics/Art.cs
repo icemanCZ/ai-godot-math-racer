@@ -62,6 +62,9 @@ public static class Art
                 // The little railway: a steam engine with a chimney and two wheels, on a rail.
                 "railway" =>
                     "M12 92 V58 H62 V34 H94 V58 H120 V92 Z M26 58 V38 H44 V58 M30 108 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 M74 108 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 M6 122 H126",
+                // The zoo: the head of an elephant with big ears, a trunk and two eyes.
+                "zoo" =>
+                    "M20 52 a20 28 0 1 0 0 40 M112 52 a20 28 0 1 1 0 40 M34 38 Q66 6 98 38 L98 74 Q98 96 80 100 L80 122 Q80 128 70 128 Q58 128 58 122 L58 100 Q34 96 34 74 Z M52 56 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0 M72 56 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0",
                 // Raw material sources: the quarry, the clay pit, the sand pit and the log yard.
                 "quarry" => "M12 106 L38 52 L58 80 L82 34 L120 106 Z M38 52 L46 106 M82 34 L72 106 M58 80 L64 106",
                 "clay" => "M90 14 L56 82 M50 70 L76 86 L62 114 Q42 114 38 92 Z M12 118 Q32 108 52 118",

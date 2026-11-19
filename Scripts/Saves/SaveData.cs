@@ -61,6 +61,15 @@ public sealed class SaveData
 
     /// <summary>The little railway's progress. Added after version 5 began.</summary>
     public RailwaySave Railway { get; set; } = new();
+
+    /// <summary>The zoo's progress. Added after version 5 began.</summary>
+    public ZooSave Zoo { get; set; } = new();
+}
+
+/// <summary>The deliveries made to the zoo at the edge of the village, 0 to <see cref="ZooPlans.Trips"/>.</summary>
+public sealed class ZooSave
+{
+    public int Stage { get; set; }
 }
 
 /// <summary>The deliveries made to the railway round the playground, 0 to <see cref="RailwayPlans.Trips"/>.</summary>

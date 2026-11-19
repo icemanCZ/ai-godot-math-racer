@@ -78,4 +78,7 @@ internal static class ActorIds
 
     /// <summary>The stationmaster of the little railway round the playground, which a valley with a playground gets last.</summary>
     public const int Station = Glassmaker + 1;
+
+    /// <summary>The keeper of the zoo at the edge of the village, which a valley with room for it gets after the stationmaster.</summary>
+    public const int ZooKeeper = Station + 1;
 }

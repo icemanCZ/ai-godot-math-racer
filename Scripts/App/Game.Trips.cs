@@ -23,6 +23,7 @@ public partial class Game
             [Departure.Plot] = BeginPlotTrip,
             [Departure.Playground] = BeginPlaygroundTrip,
             [Departure.Railway] = BeginRailwayTrip,
+            [Departure.Zoo] = BeginZooTrip,
             [Departure.House] = BeginHouseTrip,
             [Departure.Missing] = BeginMissingSupply,
         };

@@ -47,6 +47,9 @@ internal enum CollectorPetKind
 
     // The little stationmaster of the railway: owned once the railway is finished.
     Stationmaster,
+
+    // The baby panda of the zoo: owned once the zoo is finished.
+    PandaCub,
 }
 
 internal sealed partial class CollectorPet : Node3D

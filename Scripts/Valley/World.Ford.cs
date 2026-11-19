@@ -149,6 +149,7 @@ public partial class World
         var glass = industry == null ? null : PlanGlassworks(site);
         var farm = industry == null ? null : PlanFarm(site);
         var playground = industry == null ? null : PlanPlayground(site, industry, builds, glass, farm);
+        var zoo = industry == null ? null : PlanZoo(site, industry, builds, glass, farm);
         if (builds != null)
             Ground.Grade(builds.Grading, (x, z) => Routes.Distance(new Vector3(x, 0, z)));
         river.AddBankRocks(Ground, site.Z);
@@ -166,7 +167,7 @@ public partial class World
             BuildHaulSource(extra, extra: true);
             BuildExtraSourceWorker(extra);
         }
-        BuildTracks(site, sources, extras, industry, builds, glass, farm, playground);
+        BuildTracks(site, sources, extras, industry, builds, glass, farm, playground, zoo);
         BuildIndustry(industry);
         BuildGlassworks(glass);
         BuildFarm(farm);
@@ -534,7 +535,8 @@ public partial class World
         BuildPlan? builds,
         WorksSite? glass,
         FarmPlan? farm = null,
-        PlaygroundSite? playground = null
+        PlaygroundSite? playground = null,
+        ZooSite? zoo = null
     )
     {
         Tracks = new Tracks { Name = "Tracks" };
@@ -592,6 +594,11 @@ public partial class World
         {
             Tracks.Line(playground.Road, playground.Position, WorksPathHalfWidth, Tracks.Kind.Path);
             Tracks.Pad(playground.Position, 6, Tracks.Kind.Path);
+        }
+        if (zoo != null)
+        {
+            Tracks.Line(zoo.Road, zoo.Position, WorksPathHalfWidth, Tracks.Kind.Path);
+            Tracks.Pad(zoo.Position, 6, Tracks.Kind.Path);
         }
         if (builds != null)
             foreach (var build in builds.Sites)

@@ -100,7 +100,7 @@ public partial class World : Node3D
                 || p.DistanceSquaredTo(sorcerer) < WorldTuning.SorcererTreeClearing * WorldTuning.SorcererTreeClearing
                 || IsPickupApproachReserved(p)
                 || IsHaulReserved(p),
-            p => InGlassworksZone(p) || InFarmZone(p) || InBakeryZone(p) || InPlaygroundZone(p)
+            p => InGlassworksZone(p) || InFarmZone(p) || InBakeryZone(p) || InPlaygroundZone(p) || InZooZone(p)
         );
         CreateHiddenFriends();
         CreateWorldPets();
@@ -108,6 +108,7 @@ public partial class World : Node3D
         Register(MayorId, Village.Mayor);
         Register(GlassmakerId, Village.Glassmaker);
         BuildRailway();
+        BuildZoo();
         Village.CreateLamps();
         Village.Lamps.Surface = DriveSurface;
         Ground.BuildMeshes();

@@ -234,6 +234,7 @@ public partial class ContractChecks : Node
         ("MayorShop", 23),
         ("GlassmakerShop", 24),
         ("RailwayStatus", 25),
+        ("ZooStatus", 26),
     };
 
     public override void _Ready()
@@ -293,7 +294,8 @@ public partial class ContractChecks : Node
                 && ActorIds.Playground == 67
                 && ActorIds.Mayor == 68
                 && ActorIds.Glassmaker == 69
-                && ActorIds.Station == 70,
+                && ActorIds.Station == 70
+                && ActorIds.ZooKeeper == 71,
             "the actor ID ranges are the ones saved games use"
         );
 
@@ -325,6 +327,7 @@ public partial class ContractChecks : Node
                 : id == World.MayorId ? nameof(MayorRole)
                 : id == World.GlassmakerId ? nameof(GlassmakerRole)
                 : id == World.StationId ? nameof(StationRole)
+                : id == World.ZooKeeperId ? nameof(ZooRole)
                 : "(no actor may have this ID)";
             Check(actor.Role.GetType().Name == expected, $"ID {id} ({actor.DisplayName}) is a {expected}");
             if (actor.Role is HouseResidentRole house)

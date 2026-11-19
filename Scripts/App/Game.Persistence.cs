@@ -101,6 +101,7 @@ public partial class Game
                         or Departure.Plot
                         or Departure.Playground
                         or Departure.Railway
+                        or Departure.Zoo
                         or Departure.House
                         or Departure.Missing
                     ? quiz.DepartureState
@@ -161,6 +162,7 @@ public partial class Game
             },
             Playground = new PlaygroundSave { Stage = world.Playground?.Stage ?? 0 },
             Railway = new RailwaySave { Stage = world.Railway?.Stage ?? 0 },
+            Zoo = new ZooSave { Stage = world.Zoo?.Stage ?? 0 },
             Decorations = new DecorationsSave { Owned = world.Village.OwnedDecorationIds },
             Lamps = new LampsSave
             {

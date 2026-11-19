@@ -119,7 +119,32 @@ public partial class World
     /// where raw materials are picked up. The older sites keep their distance from one another by the spacing of their
     /// rings, but the way to the playground can be long, so the whole way is looked at.
     /// </summary>
-    private bool YardIsFree(Vector3 road, Vector3 ring, IndustryPlan industry, BuildPlan? builds)
+    private bool YardIsFree(Vector3 road, Vector3 ring, IndustryPlan industry, BuildPlan? builds) =>
+        AreaIsFree(
+            road,
+            ring,
+            industry,
+            builds,
+            PlaygroundSite.AlongMin,
+            PlaygroundSite.AlongMax,
+            PlaygroundSite.AcrossMax
+        );
+
+    /// <summary>
+    /// <see cref="YardIsFree"/> for a site with another size: the area from <paramref name="alongMin"/> to
+    /// <paramref name="alongMax"/> behind the ring and <paramref name="acrossMax"/> to each side, and the way to it.
+    /// A later site (the zoo) also keeps clear of the playground's area (<paramref name="avoidPlayground"/>).
+    /// </summary>
+    private bool AreaIsFree(
+        Vector3 road,
+        Vector3 ring,
+        IndustryPlan industry,
+        BuildPlan? builds,
+        float alongMin,
+        float alongMax,
+        float acrossMax,
+        bool avoidPlayground = false
+    )
     {
         var inward = ring - road;
         inward.Y = 0;
@@ -127,7 +152,7 @@ public partial class World
         var right = Vector3.Up.Cross(inward);
         bool Taken(Vector3 q, float margin)
         {
-            if (InGlassworksZone(q) || InFarmZone(q) || InBakeryZone(q))
+            if (InGlassworksZone(q) || InFarmZone(q) || InBakeryZone(q) || (avoidPlayground && InPlaygroundZone(q)))
                 return true;
             foreach (var works in industry.Sites)
                 if (InYard(q, works.Position, works.Inward, -8 - margin, 23 + margin, 15 + margin))
@@ -142,8 +167,8 @@ public partial class World
             return false;
         }
         // The yard itself, with a little room all round, and then the way from the road to the ring.
-        for (float along = PlaygroundSite.AlongMin; along <= PlaygroundSite.AlongMax; along += 4.5f)
-        for (float across = -PlaygroundSite.AcrossMax; across <= PlaygroundSite.AcrossMax; across += 7)
+        for (float along = alongMin; along <= alongMax; along += 4.5f)
+        for (float across = -acrossMax; across <= acrossMax; across += 7)
             if (Taken(ring + inward * along + right * across, 2))
                 return false;
         int steps = Mathf.CeilToInt(FlatDistance(road, ring) / 2);

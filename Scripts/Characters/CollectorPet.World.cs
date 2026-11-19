@@ -48,6 +48,8 @@ internal static class WorldPetCatalog
         "dostavěné nádraží"
     );
 
+    public static readonly WorldPetSpec PandaCub = new(CollectorPetKind.PandaCub, "Pandička Bambulka", "dostavěná zoo");
+
     public static readonly WorldPetSpec Bridge = new(CollectorPetKind.Bridge, "Mostíček", "dostavěný most");
     public static readonly WorldPetSpec Mill = new(CollectorPetKind.Mill, "Mlýnek", "dostavěný mlýn");
     public static readonly WorldPetSpec Tower = new(CollectorPetKind.Tower, "Věžička", "dostavěnou rozhlednu");
@@ -207,6 +209,9 @@ internal sealed partial class CollectorPet
                 break;
             case CollectorPetKind.Stationmaster:
                 BuildStationmaster();
+                break;
+            case CollectorPetKind.PandaCub:
+                BuildPandaCub();
                 break;
             case CollectorPetKind.Bridge:
                 BuildBridge();
@@ -505,6 +510,32 @@ internal sealed partial class CollectorPet
         Art.Cylinder(model, new(.36f, .92f, .12f), .12f, .12f, .03f, "d9432f").RotationDegrees = new(90, 0, 0);
         Eyes(.11f, .52f, .245f);
         Smile(.4f, .262f, .08f);
+    }
+
+    private void BuildPandaCub()
+    {
+        // A round baby panda: a white body with black arms and legs, a big head with black ears and eye patches and a
+        // small bamboo stalk with a leaf in the paws.
+        Ball(new(0, .46f, 0), new(.66f, .6f, .56f), "f8f8f3");
+        Ball(new(0, .62f, .02f), new(.7f, .16f, .5f), "23252b");
+        foreach (int side in new[] { -1, 1 })
+        {
+            Ball(new(side * .31f, .52f, .24f), new(.17f, .26f, .2f), "23252b");
+            Ball(new(side * .3f, .98f, -.04f), new(.2f, .2f, .12f), "23252b");
+            Foot(new(side * .2f, .2f, .04f), .22f, .14f, "23252b", side);
+        }
+        Ball(new(0, .84f, .08f), new(.62f, .52f, .5f), "f8f8f3");
+        foreach (int side in new[] { -1, 1 })
+        {
+            var patch = Ball(new(side * .13f, .86f, .31f), new(.14f, .1f, .04f), "23252b");
+            patch.RotateZ(side * .5f);
+        }
+        Ball(new(0, .76f, .33f), new(.12f, .08f, .06f), "f1ecdd");
+        Ball(new(0, .8f, .365f), new(.06f, .04f, .03f), "23252b");
+        Art.Cylinder(model, new(.34f, .52f, .42f), .03f, .03f, .5f, "6dbb5f").RotationDegrees = new(-20, 0, -15);
+        Ball(new(.4f, .78f, .44f), new(.16f, .04f, .08f), "7ccf7a");
+        Eyes(.13f, .86f, .31f);
+        Smile(.72f, .34f, .06f);
     }
 
     private void BuildMill()

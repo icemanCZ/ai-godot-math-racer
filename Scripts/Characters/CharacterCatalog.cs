@@ -91,6 +91,15 @@ internal static class CharacterCatalog
             "e8d9c4"
         );
 
+    /// <summary>The keeper of the zoo at the edge of the village (<see cref="World.ZooKeeperId"/>).</summary>
+    public static CharacterSpec ZooKeeper { get; } =
+        new(
+            "Medvěd ošetřovatel Bruno",
+            "Brumm! Ve městě ještě nemáme zoo a děti by chtěly vidět zvířátka! Postavíme jim výběhy? Přivez mi štěrk, prkna a cihly.",
+            2,
+            "b98b5f"
+        );
+
     /// <summary>Baker, shopkeeper and confectioner, matching <see cref="Village.TradeCargo"/>.</summary>
     public static IReadOnlyList<CharacterSpec> Traders { get; } =
         new CharacterSpec[]
