@@ -182,7 +182,7 @@ public partial class FordChecks : Node
                     Check(load.Cargo == haul.Load && load.IsValid(), "loading question matches the load");
                     game.SubmitAnswer(load.Choices.First(choice => !load.Accepts(choice)));
                     Check(
-                        game.State == GameState.Challenge && game.CurrentChallenge == load,
+                        game.State == GameState.Challenge && ReferenceEquals(game.CurrentChallenge, load),
                         "a wrong count keeps the question open"
                     );
                 }

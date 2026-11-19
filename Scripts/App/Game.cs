@@ -358,13 +358,14 @@ public partial class Game : Node3D
     private void StartExpedition(Character sender, bool collection)
     {
         CancelActiveTask();
-        tasks.Begin(new Expedition(world, vehicle, sender, collection));
+        var expedition = new Expedition(world, vehicle, sender, collection);
+        tasks.Begin(expedition);
         ClearChallenge();
-        lastCollected = Delivery.Collected;
-        ui.DeliveryHud(Delivery);
+        lastCollected = expedition.Collected;
+        ui.DeliveryHud(expedition);
         Start();
         UpdateDeliveryGuides();
-        Speak(ExpeditionInstruction(Delivery), sender);
+        Speak(ExpeditionInstruction(expedition), sender);
     }
 
     private bool CanChooseExpedition(Character animal) => roadside.CanStart(animal, Delivery);

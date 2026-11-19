@@ -254,14 +254,13 @@ public partial class Game
         if (data.Task.Sender >= 0)
         {
             var sender = ActorAt(data.Task.Sender)!;
-            tasks.Begin(
-                new Expedition(world, vehicle, sender, data.Task.Collection, data.Task.Picked)
-                {
-                    Arrived = data.Task.Arrived,
-                }
-            );
+            var expedition = new Expedition(world, vehicle, sender, data.Task.Collection, data.Task.Picked)
+            {
+                Arrived = data.Task.Arrived,
+            };
+            tasks.Begin(expedition);
             if (deliveryReward)
-                Delivery.ReleaseCargo();
+                expedition.ReleaseCargo();
         }
         lastCollected = Delivery?.Collected ?? -1;
         ui.DeliveryHud(Delivery);
