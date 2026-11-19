@@ -13,7 +13,7 @@ public partial class Puddles : Node3D
     private readonly List<Patch> patches = new();
     private readonly ShaderMaterial water = new() { Shader = GD.Load<Shader>("res://Shaders/Puddle.gdshader") };
     private readonly CpuParticles3D[] spray = new CpuParticles3D[12];
-    private readonly float[] wheelTimers = new float[4];
+    private readonly float[] wheelTimers = new float[16];
     private int nextSpray;
     private World world = null!;
 
@@ -129,12 +129,15 @@ public partial class Puddles : Node3D
         water.SetShaderParameter("rain_amount", rainfall);
         var motion = new Vector3(car.Velocity.X, 0, car.Velocity.Z);
         float speed = motion.Length();
-        for (int i = 0; i < car.Wheels.Count; i++)
+        for (int i = 0; i < System.Math.Min(car.Wheels.Count, wheelTimers.Length); i++)
         {
             wheelTimers[i] -= dt;
             if (wheelTimers[i] > 0 || speed < 1.6f || !car.IsOnFloor() || wetness < .16f)
                 continue;
             var wheel = car.Wheels[i];
+            // The tyres of a car that has put on a toy's wheels, and the propeller, throw no spray.
+            if (!car.Appearance.IsTyreShown(wheel))
+                continue;
             var point = wheel.GlobalPosition;
             if (!patches.Exists(p => Contains(p, point)))
                 continue;

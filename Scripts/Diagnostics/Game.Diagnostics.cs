@@ -405,13 +405,14 @@ public partial class Game
         if (view == "decorated")
             foreach (var accessory in CarAccessory.All)
                 vehicle.Appearance.ToggleAccessory(accessory.Id);
-        if (CarBody.All.Any(body => body.Id == view))
+        if (ParseModelView(view) is { } modelView)
         {
-            vehicle.Appearance.ApplyModel(view);
+            vehicle.Appearance.ApplyModel(modelView.Model);
             vehicle.Appearance.Apply(CarLook.All.First(look => look.Id == "ocean"));
             foreach (
-                var id in view == "buggy" ? new[] { "surfboard", "lights", "bumper" }
-                : view == "pickup" ? new[] { "spoiler", "exhaust", "antenna" }
+                var id in modelView.Decorated ? CarAccessory.Catalogue.Select(a => a.Id).Where(id => id != "wheels")
+                : modelView.Model == "buggy" ? new[] { "surfboard", "lights", "bumper" }
+                : modelView.Model == "pickup" ? new[] { "spoiler", "exhaust", "antenna" }
                 : new[] { "rack", "suitcase", "spare" }
             )
                 vehicle.Appearance.ToggleAccessory(id);
@@ -461,5 +462,23 @@ public partial class Game
             )
                 return (project, stage);
         return null;
+    }
+}
+
+public partial class Game
+{
+    /// <summary>
+    /// A view of one model, as <c>plane</c>, <c>plane-decorated</c> (every accessory on) or <c>plane-rear</c> (decorated,
+    /// seen from behind); the model is the id of a <see cref="CarBody"/>.
+    /// </summary>
+    internal static (string Model, bool Decorated, bool Rear)? ParseModelView(string view)
+    {
+        bool rear = view.EndsWith("-rear"),
+            decorated = rear || view.EndsWith("-decorated");
+        string model =
+            rear ? view[..^"-rear".Length]
+            : decorated ? view[..^"-decorated".Length]
+            : view;
+        return CarBody.All.Any(body => body.Id == model) ? (model, decorated, rear) : null;
     }
 }

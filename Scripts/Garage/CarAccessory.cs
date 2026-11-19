@@ -44,14 +44,95 @@ public sealed record CarAccessory(string Id, string Name)
 
     internal static void PlaceValleyMap(Node3D sticker, string model)
     {
-        sticker.Position = model switch
+        // The sticker faces backwards and is tipped by the angle of the surface it lies on; on the toys it lies on
+        // the deck of the tank, the back wall of the cab, the cap of the saucer or beside the pilot.
+        var (position, tilt) = model switch
         {
-            "pickup" => new(-.23f, 1.62f, .60f),
-            "wagon" => new(-.23f, 1.62f, 1.29f),
-            "buggy" => new(0, 1.95f, .798f),
-            _ => new(-.23f, 1.62f, .93f),
+            "pickup" => (new Vector3(-.23f, 1.62f, .60f), 0f),
+            "wagon" => (new(-.23f, 1.62f, 1.29f), 0f),
+            "buggy" => (new(0, 1.95f, .798f), 0f),
+            "plane" => (new(0, 1.64f, .5f), 0f),
+            "tank" => (new(0, 1.28f, .98f), -90f),
+            "train" => (new(-.58f, 1.3f, 1.375f), 0f),
+            "rocket" => (new(0, 1.945f, .025f), -90f),
+            "ufo" => (new(0, 1.35f, .73f), -56f),
+            "classic" => (new(-.23f, 1.62f, .93f), -34f),
+            _ => (new(-.23f, 1.62f, .93f), 0f),
         };
-        sticker.RotationDegrees = new Vector3(model == "classic" ? -34 : 0, 0, 0);
+        sticker.Position = position;
+        sticker.RotationDegrees = new Vector3(tilt, 0, 0);
+    }
+
+    /// <summary>
+    /// How far an accessory moves so that it sits on a model that is not shaped like the car it was drawn for: the
+    /// flag on the plane's tail fin, the sack on the tank's rear deck, the spare wheel on the back wall of the cab.
+    /// Everything that is not listed stays where it was drawn.
+    /// </summary>
+    internal static Vector3 Offset(string model, string accessory)
+    {
+        bool roof = accessory is "rack" or "suitcase" or "surfboard" or "bow";
+        bool bonnet = accessory is "flower" or "binoculars";
+        static Vector3 Up(float y) => new(0, y, 0);
+        return model switch
+        {
+            "plane" => accessory switch
+            {
+                "spare" => new(0, .11f, -.25f),
+                "exhaust" => new(0, .42f, -1.08f),
+                "antenna" => new(.5f, -.35f, -.5f),
+                "flag" => new(-.63f, 0, .35f),
+                "flour-sack" => new(-.34f, -.35f, -.05f),
+                "balloons" => new(.34f, -.45f, .3f),
+                "lights" => new(0, .9f, 1.1f),
+                "bumper" => new(0, 0, .55f),
+                _ when bonnet => Up(-.12f),
+                _ => Vector3.Zero,
+            },
+            "tank" => accessory switch
+            {
+                "spare" => new(0, 0, -.2f),
+                "antenna" => Up(-.6f),
+                "flour-sack" => Up(-.7f),
+                "balloons" => Up(-.85f),
+                "horns" => Up(-.3f),
+                _ when roof => Up(-.2f),
+                _ => Vector3.Zero,
+            },
+            "train" => accessory switch
+            {
+                "spare" or "exhaust" => new(0, 0, -.28f),
+                "flour-sack" => Up(.25f),
+                "balloons" => Up(.1f),
+                "horns" => new(0, .1f, .9f),
+                _ when roof => Up(.1f),
+                _ when bonnet => Up(.38f),
+                _ => Vector3.Zero,
+            },
+            "rocket" => accessory switch
+            {
+                "spare" => new(0, .21f, -.3f),
+                "exhaust" => new(0, 0, -.5f),
+                "antenna" => new(.35f, -.45f, -.25f),
+                "balloons" => Up(-.4f),
+                "lights" => new(0, .2f, .2f),
+                "horns" => Up(-.75f),
+                _ when roof => Up(-.25f),
+                _ when bonnet => Up(.38f),
+                _ => Vector3.Zero,
+            },
+            "ufo" => accessory switch
+            {
+                "spoiler" => new(0, 0, -.5f),
+                "spare" => new(0, .1f, -.45f),
+                "exhaust" => new(0, .55f, -.55f),
+                "antenna" => new(.2f, -.5f, -.4f),
+                "lights" or "bumper" => new(0, 0, .4f),
+                "horns" => Up(-.7f),
+                _ when roof => Up(-.45f),
+                _ => Vector3.Zero,
+            },
+            _ => Vector3.Zero,
+        };
     }
 
     public Node3D Create(Node3D parent)

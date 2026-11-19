@@ -8,7 +8,7 @@ namespace MathRacer.Vehicles;
 /// <summary>Rounded coachwork and fitted details, all in the vehicle's local space.</summary>
 public static class VehicleModel
 {
-    private static readonly SphereMesh SmoothSphere = new()
+    internal static readonly SphereMesh SmoothSphere = new()
     {
         Radius = 1,
         Height = 2,
@@ -32,6 +32,10 @@ public static class VehicleModel
         return material;
     }
 
+    /// <summary>
+    /// Builds the coachwork of the car (<paramref name="onlyModel"/> is null) or only that of one model, and the four
+    /// tyres; a toy with wheels of its own adds them to <paramref name="wheels"/> too, so that they turn with the car.
+    /// </summary>
     public static void BuildDisplay(
         Node3D model,
         VehicleAppearance appearance,
@@ -51,7 +55,10 @@ public static class VehicleModel
                 continue;
             var variant = new Node3D { Name = "Coachwork_" + body.Id };
             model.AddChild(variant);
-            BuildVariant(variant, appearance, body.Id);
+            if (VehicleToys.Handles(body.Id))
+                VehicleToys.Build(variant, appearance, body.Id, wheels);
+            else
+                BuildVariant(variant, appearance, body.Id);
             appearance.RegisterModel(body.Id, variant);
         }
         appearance.SetupStripes(model);
@@ -365,9 +372,9 @@ public static class VehicleModel
         Art.Block(root, new(0, .83f, -1.51f), new(.65f, .17f, .035f), "344555");
     }
 
-    private readonly record struct Ring(float Y, float Width, float Length, float Z, float Radius);
+    internal readonly record struct Ring(float Y, float Width, float Length, float Z, float Radius);
 
-    private static MeshInstance3D Loft(Node3D parent, Ring[] rings, string color)
+    internal static MeshInstance3D Loft(Node3D parent, Ring[] rings, string color)
     {
         const int segments = 32;
         var vertices = new List<Vector3>();

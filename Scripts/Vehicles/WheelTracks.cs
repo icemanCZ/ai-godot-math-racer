@@ -103,8 +103,9 @@ public partial class WheelTracks : MeshInstance3D
         else
         {
             var side = car.GlobalBasis.X * (car.Appearance.BigWheels ? .15f : .13f);
-            var left = car.ToGlobal(new Vector3(-.9875f, 0, .96f));
-            var right = car.ToGlobal(new Vector3(.9875f, 0, .96f));
+            var (rearX, rearZ) = car.Appearance.RearWheel;
+            var left = car.ToGlobal(new Vector3(-rearX, 0, rearZ));
+            var right = car.ToGlobal(new Vector3(rearX, 0, rearZ));
             bool wet = Submerged(left) || Submerged(right);
             float distance = connected
                 ? Mathf.Max(FlatDistance(left, previous[0]), FlatDistance(right, previous[1]))

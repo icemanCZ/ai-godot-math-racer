@@ -31,6 +31,74 @@ public partial class GarageChecks : Node
         GD.Print("PASS: " + message);
     }
 
+    /// <summary>Every model fits the car's footprint and trailer hitch, and swaps in and out cleanly.</summary>
+    private void CheckModels()
+    {
+        foreach (var body in CarBody.All)
+        {
+            var holder = new Node3D();
+            AddChild(holder);
+            var wheels = new System.Collections.Generic.List<Node3D>();
+            VehicleModel.BuildDisplay(holder, new VehicleAppearance(), wheels, body.Id);
+            Aabb? bounds = null;
+            foreach (var node in holder.FindChildren("*", "MeshInstance3D", true, false))
+            {
+                var mesh = (MeshInstance3D)node;
+                if (!mesh.IsVisibleInTree())
+                    continue;
+                var box = mesh.GlobalTransform * mesh.GetAabb();
+                bounds = bounds is { } known ? known.Merge(box) : box;
+            }
+            var area = bounds ?? default;
+            Check(
+                bounds != null
+                    && area.Position.X >= -1.4f
+                    && area.End.X <= 1.4f
+                    && area.Position.Z >= -1.95f
+                    && area.End.Z <= 1.75f
+                    && area.Position.Y >= -.02f
+                    && area.Position.Y <= .1f
+                    && area.End.Y <= 3.2f,
+                $"model {body.Id} stands on the ground inside the car's footprint, clear of the trailer hitch: {area}"
+            );
+            Check(
+                wheels.Count >= 4 && (!body.OwnWheels || wheels.Count > 4),
+                "the four tyres turn, and a model with wheels of its own adds them: " + body.Id
+            );
+            holder.QueueFree();
+        }
+        var ocean = CarLook.All.First(look => look.Id == "ocean");
+        var plain = CarLook.All[0];
+        var homes = car.FindChildren("Attachment_*", "Node3D", true, false)
+            .OfType<Node3D>()
+            .ToDictionary(node => node.Name.ToString(), node => node.Position);
+        foreach (var body in CarBody.All)
+        {
+            car.Appearance.ApplyModel(body.Id);
+            car.Appearance.Apply(ocean);
+            bool striped = car.Appearance.HasStripes;
+            car.Appearance.Apply(plain);
+            var shared = car.Wheels.Take(4);
+            Check(
+                striped
+                    && !car.Appearance.HasStripes
+                    && car.Appearance.RearWheel == (body.TrackX, body.TrackZ)
+                    && shared.All(wheel => wheel.IsVisibleInTree() == !body.OwnWheels)
+                    && car.Wheels.Any(wheel => wheel.IsVisibleInTree()),
+                "model shows its own stripes, tyre-mark position and wheels: " + body.Id
+            );
+        }
+        car.Appearance.ApplyModel("classic");
+        Check(
+            car.FindChildren("Attachment_*", "Node3D", true, false)
+                .OfType<Node3D>()
+                .All(node =>
+                    node.Name == "Attachment_valley-map" || node.Position.IsEqualApprox(homes[node.Name.ToString()])
+                ),
+            "accessories return to their places on the car after a toy"
+        );
+    }
+
     public override async void _Ready()
     {
         try
@@ -55,6 +123,7 @@ public partial class GarageChecks : Node
                     == CarLook.All.Count + CarBody.All.Count + CarAccessory.All.Count + CarTrail.All.Count - 2,
                 "every standard item not owned shows its price; the special sticker has none"
             );
+            CheckModels();
             var defaults = game.CaptureProgress();
             void Press(string name) =>
                 ((Button)game.FindChild(name, true, false)).EmitSignal(Button.SignalName.Pressed);

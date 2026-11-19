@@ -75,7 +75,8 @@ public partial class TrailStamps : MultiMeshInstance3D
             connected = false;
             return;
         }
-        var wheels = new[] { car.ToGlobal(new Vector3(-.9875f, 0, .96f)), car.ToGlobal(new Vector3(.9875f, 0, .96f)) };
+        var (rearX, rearZ) = car.Appearance.RearWheel;
+        var wheels = new[] { car.ToGlobal(new Vector3(-rearX, 0, rearZ)), car.ToGlobal(new Vector3(rearX, 0, rearZ)) };
         var middle = (wheels[0] + wheels[1]) / 2;
         bool wet = wheels.Any(p => Submerged(p, terrain));
         if (wet)

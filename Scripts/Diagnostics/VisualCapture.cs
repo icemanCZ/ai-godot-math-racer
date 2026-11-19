@@ -292,18 +292,12 @@ public partial class VisualCapture : Node
             camera.Position = new Vector3(-460, 320, 480);
             camera.LookAt(new Vector3(0, 0, 0));
         }
-        else if (
-            view == "decorated"
-            || view == "car"
-            || view == "car-rear"
-            || view == "buggy"
-            || view == "pickup"
-            || view == "wagon"
-        )
+        else if (view == "decorated" || view == "car" || view == "car-rear" || Game.ParseModelView(view) != null)
         {
             camera.SetProcess(false);
             var focus = car.Position + Vector3.Up * 1.2f;
-            camera.Position = focus + (view == "car-rear" ? new Vector3(-4, 2.5f, 5) : new Vector3(4, 2.5f, -5));
+            bool rear = view == "car-rear" || Game.ParseModelView(view) is { Rear: true };
+            camera.Position = focus + (rear ? new Vector3(-4, 2.5f, 5) : new Vector3(4, 2.5f, -5));
             camera.LookAt(focus);
         }
         else if (
