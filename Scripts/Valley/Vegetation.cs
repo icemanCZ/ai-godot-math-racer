@@ -357,15 +357,28 @@ public partial class Vegetation : Node3D
     private void ClearArea(System.Func<Vector3, bool> inside)
     {
         clearedArea = inside;
-        foreach (var batch in batches.Values)
-            for (int i = 0; i < batch.Count; i++)
-            {
-                var origin = batch[i].Transform.Origin;
-                if (inside(origin))
-                    batch[i] = (new Transform3D(Basis.Identity.Scaled(Vector3.Zero), origin), batch[i].Wind);
-            }
-        foreach (var body in GetChildren().OfType<StaticBody3D>().Where(body => inside(body.Position)).ToList())
+        static (Transform3D, Color) Hidden((Transform3D Transform, Color Wind) part) =>
+            (new Transform3D(Basis.Identity.Scaled(Vector3.Zero), part.Transform.Origin), part.Wind);
+        // Loose plants go by where they stand.
+        foreach (var pair in batches)
         {
+            if (pair.Key.Tree)
+                continue;
+            var batch = pair.Value;
+            for (int i = 0; i < batch.Count; i++)
+                if (inside(batch[i].Transform.Origin))
+                    batch[i] = Hidden(batch[i]);
+        }
+        // A tree goes as a whole by its foot, like its trunk collision and NearTrunk, so a tree at the edge of the
+        // area never loses only the branches or leaves that reach into it.
+        foreach (var body in GetChildren().OfType<StaticBody3D>().ToList())
+        {
+            bool isTree = treeVisuals.TryGetValue(body.GetInstanceId(), out var tree);
+            if (!inside(isTree ? tree!.Foot : body.Position))
+                continue;
+            if (isTree)
+                foreach (var part in tree!.Parts)
+                    batches[part.Batch][part.Index] = Hidden(batches[part.Batch][part.Index]);
             treeVisuals.Remove(body.GetInstanceId());
             body.QueueFree();
         }
