@@ -422,6 +422,23 @@ public partial class Game
                 OpenMayor(mayor);
             }
         }
+        if (view is "treasure-captain" or "treasure-hunt" or "treasure-chest")
+        {
+            // The pirate captain on the square, a treasure with its red cross in sight, or its open chest.
+            var captain = world.Village.Treasurer;
+            vehicle.SetPose(world.Ground.At(captain.Position.X + 3, captain.Position.Z + 5, .15f), 0);
+            if (view != "treasure-captain")
+            {
+                treasure.Restore(0, true);
+                BuryTreasure();
+                var near = treasureSpot + new Vector3(9, 0, 6);
+                vehicle.SetPose(world.Ground.At(near.X, near.Z, .15f), 0);
+                if (view == "treasure-chest")
+                    world.Treasure.OpenChest();
+                for (int i = 0; i < 30; i++)
+                    world.Treasure.Tick(.1f, vehicle.Position, true);
+            }
+        }
         if (view is "glass" or "glass-shop" or "glass-night" or "glass-close")
         {
             // A few lamps on the square, in the day or at night, and the lamp maker's shop.

@@ -100,6 +100,15 @@ internal static class CharacterCatalog
             "b98b5f"
         );
 
+    /// <summary>The pirate captain on the village square, who hides treasures for the player to dig up (<see cref="World.TreasurerId"/>).</summary>
+    public static CharacterSpec Treasurer { get; } =
+        new(
+            "Liška kapitánka Zlatuška",
+            "Ahoj, pirátko! Zakopala jsem poklad a zapomněla kam! Vezmi si můj zlatý detektor a jeď hledat. Čím blíž, tím rychleji pípá!",
+            1,
+            "e0884a"
+        );
+
     /// <summary>Baker, shopkeeper and confectioner, matching <see cref="Village.TradeCargo"/>.</summary>
     public static IReadOnlyList<CharacterSpec> Traders { get; } =
         new CharacterSpec[]

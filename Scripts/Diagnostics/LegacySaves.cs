@@ -97,6 +97,8 @@ internal static class LegacySaves
         ("Decorations", "Owned"),
         ("Lamps", "Carried"),
         ("Lamps", "Placed"),
+        ("Treasure", "Found"),
+        ("Treasure", "Active"),
     };
 
     /// <summary>

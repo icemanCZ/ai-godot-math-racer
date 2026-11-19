@@ -33,6 +33,10 @@ public partial class World : Node3D
 
     internal static bool IsGlassmaker(int id) => id == GlassmakerId;
 
+    internal const int TreasurerId = ActorIds.Treasurer;
+
+    internal static bool IsTreasurer(int id) => id == TreasurerId;
+
     internal static bool IsPlotResident(int id) => id is >= FirstPlotResidentId and <= LastPlotResidentId;
 
     private readonly SortedList<int, Character> actors = new();
@@ -107,8 +111,10 @@ public partial class World : Node3D
         // The mayor is registered last, after every search that keeps clear of the actors, so that none of them moves.
         Register(MayorId, Village.Mayor);
         Register(GlassmakerId, Village.Glassmaker);
+        Register(TreasurerId, Village.Treasurer);
         BuildRailway();
         BuildZoo();
+        CreateTreasure();
         Village.CreateLamps();
         Village.Lamps.Surface = DriveSurface;
         Ground.BuildMeshes();

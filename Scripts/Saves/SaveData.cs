@@ -64,6 +64,19 @@ public sealed class SaveData
 
     /// <summary>The zoo's progress. Added after version 5 began.</summary>
     public ZooSave Zoo { get; set; } = new();
+
+    /// <summary>The pirate captain's treasure hunt. Added after version 5 began.</summary>
+    public TreasureSave Treasure { get; set; } = new();
+}
+
+/// <summary>
+/// The treasures dug up so far and whether one is being looked for. Where the next one lies follows from the valley's seed and
+/// <see cref="Found"/>, so nothing else is saved; a hunt is over once its chest is open, and a new one begins at the captain.
+/// </summary>
+public sealed class TreasureSave
+{
+    public int Found { get; set; }
+    public bool Active { get; set; }
 }
 
 /// <summary>The deliveries made to the zoo at the edge of the village, 0 to <see cref="ZooPlans.Trips"/>.</summary>

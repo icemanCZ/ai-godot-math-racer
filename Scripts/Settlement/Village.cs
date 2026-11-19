@@ -210,6 +210,7 @@ public partial class Village : Node3D
         GenerateSquare();
         GenerateMayor();
         GenerateGlassmaker();
+        GenerateTreasurer();
         GeneratePlots();
         AddVillageDetails();
         foreach (var trader in Traders)
@@ -220,6 +221,7 @@ public partial class Village : Node3D
             resident.Position = ApproachSpot(resident.Position);
         Mayor.Position = ApproachSpot(Mayor.Position);
         Glassmaker.Position = ApproachSpot(Glassmaker.Position);
+        Treasurer.Position = ApproachSpot(Treasurer.Position);
         GenerateCollectorPets();
         GarageEntrance = ApproachSpot(GarageEntrance);
     }

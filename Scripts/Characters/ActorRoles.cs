@@ -283,6 +283,29 @@ internal sealed class GlassmakerRole : ActorRole
 }
 
 /// <summary>
+/// The pirate captain on the village square, who sends the player to dig up a treasure. Talking to her opens her panel,
+/// where a new hunt begins; the question that opens the chest is asked on her behalf at the digging spot.
+/// </summary>
+internal sealed class TreasureRole : ActorRole
+{
+    public override string Icon => "treasure";
+    public override bool UsesDeliveryGuide => false;
+
+    public override bool InvitesTalk(bool expeditionActive) => true;
+
+    public override void ShowHint(GameUi ui, Character actor) => ui.TreasureHint();
+
+    public override void Open(Game game, Character actor) => game.OpenTreasurer(actor);
+
+    /// <summary>The only question of this role is the lock of the chest: solving it opens the chest.</summary>
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
+    {
+        game.OpenTreasureChest();
+        return true;
+    }
+}
+
+/// <summary>
 /// The worker at the sawmill, brickworks, gravel works or glassworks. They show the stock and, for building trips, load the
 /// goods and ask the loading question from afar. Raw-material trips are started by the worker at the source.
 /// </summary>

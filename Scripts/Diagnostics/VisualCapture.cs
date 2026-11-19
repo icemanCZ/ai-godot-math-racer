@@ -310,6 +310,22 @@ public partial class VisualCapture : Node
             camera.GlobalPosition = mayor.ToGlobal(new Vector3(.9f, 1.9f, 3.4f));
             camera.LookAt(mayor.ToGlobal(new Vector3(0, 1.55f, 0)));
         }
+        else if (view == "treasure-captain")
+        {
+            // The captain from the front and a little above, with her parrot, rug and shovel.
+            camera.SetProcess(false);
+            var captain = world.Village.Treasurer;
+            camera.GlobalPosition = captain.ToGlobal(new Vector3(-.8f, 2.2f, 4.4f));
+            camera.LookAt(captain.ToGlobal(new Vector3(.6f, 1.5f, 0)));
+        }
+        else if (view is "treasure-hunt" or "treasure-chest")
+        {
+            // The buried treasure from the car's side: the red cross, or the open chest with its sparkles.
+            camera.SetProcess(false);
+            var site = world.Treasure.GlobalPosition;
+            camera.GlobalPosition = site + new Vector3(3.2f, 2.4f, 4.4f);
+            camera.LookAt(site + Vector3.Up * .6f);
+        }
         else if (view == "glass-close")
         {
             // The lamp maker from the front and a little above, with his table of lamps beside him.

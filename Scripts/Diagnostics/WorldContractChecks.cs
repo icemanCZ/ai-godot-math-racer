@@ -235,6 +235,7 @@ public partial class ContractChecks : Node
         ("GlassmakerShop", 24),
         ("RailwayStatus", 25),
         ("ZooStatus", 26),
+        ("TreasureStatus", 27),
     };
 
     public override void _Ready()
@@ -295,7 +296,8 @@ public partial class ContractChecks : Node
                 && ActorIds.Mayor == 68
                 && ActorIds.Glassmaker == 69
                 && ActorIds.Station == 70
-                && ActorIds.ZooKeeper == 71,
+                && ActorIds.ZooKeeper == 71
+                && ActorIds.Treasurer == 72,
             "the actor ID ranges are the ones saved games use"
         );
 
@@ -328,6 +330,7 @@ public partial class ContractChecks : Node
                 : id == World.GlassmakerId ? nameof(GlassmakerRole)
                 : id == World.StationId ? nameof(StationRole)
                 : id == World.ZooKeeperId ? nameof(ZooRole)
+                : id == World.TreasurerId ? nameof(TreasureRole)
                 : "(no actor may have this ID)";
             Check(actor.Role.GetType().Name == expected, $"ID {id} ({actor.DisplayName}) is a {expected}");
             if (actor.Role is HouseResidentRole house)
@@ -361,6 +364,7 @@ public partial class ContractChecks : Node
         Check(seen.ContainsKey(World.MayorId), "every valley has the mayor");
         Check(seen.ContainsKey(World.GlassmakerId), "every valley has the lamp maker");
         Check(seen.ContainsKey(World.StationId), "every valley has the stationmaster");
+        Check(seen.ContainsKey(World.TreasurerId), "every valley has the pirate captain");
         for (int id = World.FirstPlotResidentId; id <= World.LastPlotResidentId; id++)
             Check(seen.ContainsKey(id), $"every valley has the newcomer with ID {id}");
         // The quarry, the clay pit and the log yard keep their own IDs in this order.

@@ -246,6 +246,45 @@ internal static class Texts
 
     public static string LampInBag(string name) => $"{name} je ve vaku.";
 
+    // GameUi.Treasure and Game.Treasure
+    public const string TreasureHint = "Poklad";
+    public const string TreasureDig = "Kopat!";
+    public const string TreasureStart = "Vyrazit na poklad";
+    public const string TreasureStillLooking = "Poklad už hledáš! Jeď podle detektoru: čím blíž, tím rychleji pípá.";
+    public const string TreasureAnotherOne =
+        "Skvělé! Mám pro tebe další poklad. Zakopala jsem ho jinde. Půjdeš hledat?";
+    public const string TreasureGoodLuck = "Hodně štěstí! Poslouchej pípání a sleduj, jestli je ti teplo.";
+
+    public static string TreasuresFound(int count) => $"Nalezené poklady: {count}";
+
+    public static string TreasureBigOne(int left) =>
+        left == 1 ? "Další truhla je velká!" : $"Do velké truhly zbývá {left}.";
+
+    public static string TreasureWarmthWord(TreasureWarmth warmth) =>
+        warmth switch
+        {
+            TreasureWarmth.Freezing => "Studeno",
+            TreasureWarmth.Cold => "Chladno",
+            TreasureWarmth.Warm => "Teplo",
+            TreasureWarmth.Hot => "Horko!",
+            TreasureWarmth.Burning => "Pálí!",
+            _ => "Kopej!",
+        };
+
+    private static readonly string[] Contents =
+    {
+        "zlatá korunka",
+        "zářivý rubín",
+        "zlatá kachnička",
+        "perlový náhrdelník",
+        "starý kompas",
+        "kouzelná mušle",
+    };
+
+    public static string TreasureContents(int index) => Contents[index % Contents.Length];
+
+    public static string TreasureFound(string contents, int coins) => $"Poklad! V truhle je {contents}.  +{coins}";
+
     // GameUi.Postcards
     public const string PohledniceZKouzelnehoUdoli = "Pohlednice z Kouzelného údolí";
 

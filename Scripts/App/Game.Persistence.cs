@@ -163,6 +163,7 @@ public partial class Game
             Playground = new PlaygroundSave { Stage = world.Playground?.Stage ?? 0 },
             Railway = new RailwaySave { Stage = world.Railway?.Stage ?? 0 },
             Zoo = new ZooSave { Stage = world.Zoo?.Stage ?? 0 },
+            Treasure = new TreasureSave { Found = treasure.Found, Active = treasure.Active },
             Decorations = new DecorationsSave { Owned = world.Village.OwnedDecorationIds },
             Lamps = new LampsSave
             {
@@ -228,6 +229,7 @@ public partial class Game
         RestoreGolem(data.Companions.GolemOwned, data.Companions.GolemActive);
         RestoreCarLook(data);
         RestoreVillage(data);
+        RestoreTreasure(data.Treasure.Found, data.Treasure.Active);
         roadside.Restore(world.Animals, data.Roadside.Unlocked, data.Roadside.Completed);
         economy.Restore(data.Economy.Owned, data.Economy.Coins, data.Economy.RewardCoins);
         ui.CoinCount(Coins, 0);

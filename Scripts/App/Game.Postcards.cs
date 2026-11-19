@@ -103,7 +103,8 @@ public partial class Game
         };
         var actors = world
             .InteractionActors.Where(actor =>
-                actor.Role is not (SorcererRole or MayorRole or GlassmakerRole or StationRole or ZooRole)
+                actor.Role
+                    is not (SorcererRole or MayorRole or GlassmakerRole or StationRole or ZooRole or TreasureRole)
             )
             .ToArray();
         var candidates = world

@@ -68,6 +68,9 @@ internal abstract record UiIntent
 
     internal sealed record Lookout : UiIntent;
 
+    // The pirate captain's treasure hunt.
+    internal sealed record StartTreasureHunt : UiIntent;
+
     // The mayor's shop.
     internal sealed record BuyDecoration(string Id) : UiIntent;
 

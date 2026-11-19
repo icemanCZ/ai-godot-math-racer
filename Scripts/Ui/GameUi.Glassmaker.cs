@@ -29,8 +29,8 @@ public partial class GameUi
         lampHud.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopRight);
         lampHud.OffsetLeft = -450;
         lampHud.OffsetRight = -32;
-        lampHud.OffsetTop = 256;
-        lampHud.OffsetBottom = 336;
+        lampHud.OffsetTop = 168;
+        lampHud.OffsetBottom = 248;
         lampHudText = new Label
         {
             Name = "LampHudText",

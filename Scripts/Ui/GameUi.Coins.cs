@@ -18,8 +18,8 @@ public partial class GameUi
         panel.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.TopRight);
         panel.OffsetLeft = -240;
         panel.OffsetRight = -32;
-        panel.OffsetTop = 112;
-        panel.OffsetBottom = 180;
+        panel.OffsetTop = 24;
+        panel.OffsetBottom = 92;
         coinHud = panel;
         var row = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         row.AddThemeConstantOverride("separation", 10);

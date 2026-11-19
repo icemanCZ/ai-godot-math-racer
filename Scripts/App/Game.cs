@@ -45,6 +45,7 @@ public enum GameState
     GlassmakerShop = 24,
     RailwayStatus = 25,
     ZooStatus = 26,
+    TreasureStatus = 27,
 }
 
 public partial class Game : Node3D
@@ -256,6 +257,11 @@ public partial class Game : Node3D
         if (AtGarage)
         {
             OpenGarage();
+            return;
+        }
+        if (TreasureDigAvailable)
+        {
+            DigTreasure();
             return;
         }
         if (nearby == null && InteractWithPostcards())
@@ -644,6 +650,8 @@ public partial class Game : Node3D
         nearby?.Role.ShowHint(ui, nearby);
         if (AtGarage)
             ui.GarageHint();
+        else if (TreasureDigAvailable)
+            ui.TreasureDigHint();
         else if (LampPickupAvailable && LampNearby() is { } lamp)
             ui.LampPickupHint(GlassLamps.Find(Lamps.KindAt(lamp))?.Name ?? "");
         else if (LampPickupAvailable && Lamps.Carried.Count > 0)

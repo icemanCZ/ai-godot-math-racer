@@ -34,6 +34,7 @@ internal static class SaveRules
         ("playground", HasInvalidPlaygroundState),
         ("railway", HasInvalidRailwayState),
         ("zoo", HasInvalidZooState),
+        ("treasure hunt", HasInvalidTreasure),
         ("decorations and the mayor's shop", HasInvalidDecorations),
         ("glass lamps and the lamp maker's shop", HasInvalidLamps),
         ("buildings and trailer", HasInvalidBuildState),
@@ -66,7 +67,8 @@ internal static class SaveRules
         || data.Decorations is null
         || data.Lamps is null
         || data.Railway is null
-        || data.Zoo is null;
+        || data.Zoo is null
+        || data.Treasure is null;
 
     /// <summary>Throws when the save is not one the game can restore.</summary>
     internal static void Validate(SaveData data)
@@ -137,7 +139,7 @@ internal static class SaveRules
         || data.Task.Picked == null
         || data.Quiz.Rejected == null
         || data.Nearby < -1
-        || data.Nearby > Math.Max(Game.BanditActorId, World.ZooKeeperId)
+        || data.Nearby > Math.Max(Game.BanditActorId, World.TreasurerId)
         || data.Task.Sender < -1
         || data.Task.Sender > World.SorcererId
         || data.Task.Sender == World.WitchId
@@ -398,6 +400,17 @@ internal static class SaveRules
         data.Buildings.PlotStages == null
         || data.Buildings.PlotStages.Length != PlotPlans.Count
         || data.Buildings.PlotStages.Any(stage => stage < 0 || stage > PlotPlans.Trips);
+
+    /// <summary>
+    /// The number of treasures found is within the limit, the captain's panel is open only beside her, and her question (the
+    /// lock of a chest) is open only while a treasure is being looked for, with none of the trips that other characters ask
+    /// their questions for.
+    /// </summary>
+    private static bool HasInvalidTreasure(SaveData data) =>
+        data.Treasure.Found is < 0 or > TreasureHunt.Limit
+        || (data.State == GameState.TreasureStatus && !World.IsTreasurer(data.Nearby))
+        || (data.State == GameState.Challenge && World.IsTreasurer(data.Nearby) && !data.Treasure.Active)
+        || (World.IsTreasurer(data.Nearby) && data.Quiz.Handover);
 
     /// <summary>The progress of the playground, 0 to 6 deliveries.</summary>
     /// <summary>Only known decorations, each at most once, and the shop is open only beside the mayor.</summary>
