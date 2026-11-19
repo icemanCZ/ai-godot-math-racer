@@ -101,7 +101,7 @@ public partial class Game
             world.Village.GardenBuilding.GlobalPosition,
             world.Plants.MeadowPreview,
         };
-        var actors = world.InteractionActors.Where(actor => actor.Role is not SorcererRole).ToArray();
+        var actors = world.InteractionActors.Where(actor => actor.Role is not (SorcererRole or MayorRole)).ToArray();
         var candidates = world
             .Routes.Samples.Select(point =>
             {

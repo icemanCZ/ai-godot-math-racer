@@ -22,6 +22,15 @@ internal sealed class CarRewards
         return true;
     }
 
+    /// <summary>Pays for something that is not a garage item. Returns false, and keeps the coins, when there are too few.</summary>
+    public bool Spend(int amount)
+    {
+        if (amount < 0 || Coins < amount)
+            return false;
+        Coins -= amount;
+        return true;
+    }
+
     public void Restore(IEnumerable<CarReward> owned, int coins)
     {
         Owned.Clear();

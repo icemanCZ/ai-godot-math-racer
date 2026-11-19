@@ -52,6 +52,15 @@ public sealed class SaveData
 
     /// <summary>The playground's progress. Added after version 5 began.</summary>
     public PlaygroundSave Playground { get; set; } = new();
+
+    /// <summary>The decorations of the town bought from the mayor. Added after version 5 began.</summary>
+    public DecorationsSave Decorations { get; set; } = new();
+}
+
+/// <summary>The decorations bought from the mayor, by id (<see cref="TownDecorations"/>); an id is never renamed.</summary>
+public sealed class DecorationsSave
+{
+    public string[] Owned { get; set; } = Array.Empty<string>();
 }
 
 /// <summary>The deliveries made to the playground at the edge of the village, 0 to <see cref="PlaygroundPlans.Trips"/>.</summary>

@@ -64,6 +64,15 @@ internal static class CharacterCatalog
     public static CharacterSpec PlaygroundKeeper { get; } =
         new("Medvědice Madla", "Děti chtějí hřiště! Přivezeš nám štěrk, prkna a cihly?", 2, "c98f6a");
 
+    /// <summary>The mayor on the village square, who sells decorations for the town (<see cref="World.MayorId"/>).</summary>
+    public static CharacterSpec Mayor { get; } =
+        new(
+            "Liška starostka Božena",
+            "Dobrý den! Za pár penízků ti ráda prodám nové ozdoby do našeho města.",
+            1,
+            "d9825b"
+        );
+
     /// <summary>Baker, shopkeeper and confectioner, matching <see cref="Village.TradeCargo"/>.</summary>
     public static IReadOnlyList<CharacterSpec> Traders { get; } =
         new CharacterSpec[]

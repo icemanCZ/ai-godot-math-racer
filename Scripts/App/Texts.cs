@@ -209,6 +209,15 @@ internal static class Texts
     // GameUi.Input
     public const string WasdEMezernikREscIi = "WASD / ↑↓←→    E / mezerník · ?    R · ↶    Esc · Ⅱ";
 
+    // GameUi.Mayor and Game.Mayor
+    public const string AStarostka = "A · Starostka";
+    public const string EStarostka = "E · Starostka";
+    public const string DekoraceDoMesta = "Dekorace do města";
+    public const string Koupeno = "✓ Máme";
+    public const string DekujiHnedToOzdobime = "Děkuji! Hned to ozdobíme.";
+    public const string CoSiPriVybrat = "Co se ti líbí? Za penízky ozdobíme celé město!";
+    public const string MestoJeKrasneDekujeme = "Naše město je krásné! Děkujeme ti!";
+
     // GameUi.Postcards
     public const string PohledniceZKouzelnehoUdoli = "Pohlednice z Kouzelného údolí";
 

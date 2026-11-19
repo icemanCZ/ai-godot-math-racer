@@ -69,4 +69,7 @@ internal static class ActorIds
 
     /// <summary>The keeper of the playground at the edge of the village, which a valley gets after everything else.</summary>
     public const int Playground = FieldFarmer + 1;
+
+    /// <summary>The mayor on the village square, who sells decorations for the town. Every valley has her.</summary>
+    public const int Mayor = Playground + 1;
 }

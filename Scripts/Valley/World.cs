@@ -25,6 +25,10 @@ public partial class World : Node3D
     internal const int FirstPlotResidentId = ActorIds.FirstPlotResident;
     internal const int LastPlotResidentId = ActorIds.LastPlotResident;
 
+    internal const int MayorId = ActorIds.Mayor;
+
+    internal static bool IsMayor(int id) => id == MayorId;
+
     internal static bool IsPlotResident(int id) => id is >= FirstPlotResidentId and <= LastPlotResidentId;
 
     private readonly SortedList<int, Character> actors = new();
@@ -96,6 +100,8 @@ public partial class World : Node3D
         );
         CreateHiddenFriends();
         CreateWorldPets();
+        // The mayor is registered last, after every search that keeps clear of the actors, so that none of them moves.
+        Register(MayorId, Village.Mayor);
         Ground.BuildMeshes();
         Roads.ReleaseFieldCache();
     }

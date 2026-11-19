@@ -158,6 +158,7 @@ public partial class Game
                     .ToArray(),
             },
             Playground = new PlaygroundSave { Stage = world.Playground?.Stage ?? 0 },
+            Decorations = new DecorationsSave { Owned = world.Village.OwnedDecorationIds },
             Postcards = new PostcardsSave { Cards = (PostcardProgress?[])postcards.Clone(), Page = postcardPage },
             Events = new EventsSave
             {
@@ -297,6 +298,7 @@ public partial class Game
         world.Village.RestoreGlazed(data.Village.Glazed);
         world.Village.RestoreBaked(data.Village.Baked);
         world.Village.RestoreTrades(data.Village.TradeCounts);
+        world.Village.RestoreDecorations(data.Decorations.Owned);
         world.Village.RestoreFarm(data.Village.FarmCount);
         world.Village.RestoreGarden(data.Village.GardenCount);
         world.Village.RestoreCollection(false, data.Village.GemCount);

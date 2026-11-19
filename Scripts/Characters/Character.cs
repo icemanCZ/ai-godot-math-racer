@@ -160,6 +160,24 @@ public partial class Character : Node3D
         Art.Block(model, new(0, .95f, .46f), new(.78f, .8f, .12f), "56707a");
     }
 
+    /// <summary>A wide flowered hat, a sash across the chest and the golden medal of the mayor.</summary>
+    internal void DressAsMayor()
+    {
+        Art.Cylinder(model, new(0, 2.5f, 0), .92f, .86f, .1f, "f2d6e4");
+        Art.Cylinder(model, new(0, 2.78f, 0), .56f, .5f, .5f, "f2d6e4");
+        Art.Cylinder(model, new(0, 2.64f, 0), .58f, .58f, .12f, "b5436b");
+        Art.Ball(model, new(.38f, 2.82f, .4f), new(.19f, .13f, .19f), "ffd966");
+        foreach (float angle in new[] { 0f, 1.25f, 2.5f, 3.75f, 5f })
+            Art.Ball(
+                model,
+                new(.38f + Mathf.Sin(angle) * .17f, 2.82f, .4f + Mathf.Cos(angle) * .17f),
+                new(.1f, .08f, .1f),
+                "f4b1c6"
+            );
+        Art.Block(model, new(0, 1.05f, .5f), new(.16f, 1.25f, .1f), "c0504d").RotationDegrees = new(0, 0, 35);
+        Art.Ball(model, new(-.28f, 1.22f, .52f), Vector3.One * .15f, "f3cf70");
+    }
+
     internal void DressAsBandit(string scarf)
     {
         nameLabel.Hide();

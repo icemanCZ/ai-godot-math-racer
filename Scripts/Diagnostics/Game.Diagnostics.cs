@@ -386,6 +386,20 @@ public partial class Game
                 yard._Process(.1);
             vehicle.SetPose(world.Ground.At(yard.Drop.X, yard.Drop.Z, .15f), 0);
         }
+        if (view is "mayor" or "mayor-shop" or "mayor-town" or "mayor-house" or "mayor-close")
+        {
+            world.Village.RestoreDecorations(Settlement.TownDecorations.All.Select(d => d.Id));
+            var mayor = world.Village.Mayor;
+            vehicle.SetPose(world.Ground.At(mayor.Position.X + 3, mayor.Position.Z + 4, .15f), 0);
+            if (view == "mayor-close")
+                vehicle.SetPose(world.Ground.At(mayor.Position.X, mayor.Position.Z + 40, .15f), 0);
+            if (view == "mayor-shop")
+            {
+                AddCoins(40);
+                world.Village.RestoreDecorations(new[] { "arch", "tree" });
+                OpenMayor(mayor);
+            }
+        }
         if (view == "log-yard" && world.LogYard is { } logYard)
             vehicle.SetPose(world.Ground.At(logYard.Position.X, logYard.Position.Z, .15f), 0);
         if (view is "beaver" or "load-question" && world.Beaver != null)

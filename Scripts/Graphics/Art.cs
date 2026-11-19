@@ -52,6 +52,8 @@ public static class Art
                     "M12 56 H120 M22 56 V98 M52 56 V98 M82 56 V98 M112 56 V98 M10 112 Q24 102 38 112 T66 112 T94 112 T122 112",
                 // A building plot of the village: a little house with a chimney.
                 "plot" => "M16 68 L66 22 L116 68 M30 58 V112 H102 V58 M54 112 V82 H78 V112 M82 30 V46 M92 30 V54",
+                // The mayor, who sells decorations: a pennant on a pole.
+                "flag" => "M30 118 V14 M30 20 H104 L86 44 L104 68 H30",
                 // The playground: a swing set with a seat.
                 "playground" =>
                     "M12 114 L36 24 L60 114 M72 114 L96 24 L120 114 M36 24 H96 M56 24 V84 M76 24 V84 M50 84 H82",

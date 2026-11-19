@@ -32,6 +32,7 @@ internal static class SaveRules
         ("golem, sorcerer and witch", HasInvalidSpecialActorState),
         ("building plots", HasInvalidPlotState),
         ("playground", HasInvalidPlaygroundState),
+        ("decorations and the mayor's shop", HasInvalidDecorations),
         ("buildings and trailer", HasInvalidBuildState),
         ("works", HasInvalidWorksState),
         ("hauled loads", HasInvalidHauls),
@@ -58,7 +59,8 @@ internal static class SaveRules
         || data.Bandits is null
         || data.Hauls is null
         || data.Hidden is null
-        || data.Playground is null;
+        || data.Playground is null
+        || data.Decorations is null;
 
     /// <summary>Throws when the save is not one the game can restore.</summary>
     internal static void Validate(SaveData data)
@@ -129,7 +131,7 @@ internal static class SaveRules
         || data.Task.Picked == null
         || data.Quiz.Rejected == null
         || data.Nearby < -1
-        || data.Nearby > Math.Max(Game.BanditActorId, World.PlaygroundId)
+        || data.Nearby > Math.Max(Game.BanditActorId, World.MayorId)
         || data.Task.Sender < -1
         || data.Task.Sender > World.SorcererId
         || data.Task.Sender == World.WitchId
@@ -387,6 +389,13 @@ internal static class SaveRules
         || data.Buildings.PlotStages.Any(stage => stage < 0 || stage > PlotPlans.Trips);
 
     /// <summary>The progress of the playground, 0 to 6 deliveries.</summary>
+    /// <summary>Only known decorations, each at most once, and the shop is open only beside the mayor.</summary>
+    private static bool HasInvalidDecorations(SaveData data) =>
+        data.Decorations.Owned == null
+        || data.Decorations.Owned.Any(id => TownDecorations.Find(id) == null)
+        || data.Decorations.Owned.Distinct().Count() != data.Decorations.Owned.Length
+        || (data.State == GameState.MayorShop && !World.IsMayor(data.Nearby));
+
     private static bool HasInvalidPlaygroundState(SaveData data) =>
         data.Playground.Stage is < 0 or > PlaygroundPlans.Trips;
 

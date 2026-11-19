@@ -92,6 +92,7 @@ internal static class LegacySaves
         ("Hidden", "Found"),
         ("Vehicle", "Trail"),
         ("Playground", "Stage"),
+        ("Decorations", "Owned"),
     };
 
     /// <summary>

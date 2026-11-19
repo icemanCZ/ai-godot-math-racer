@@ -292,6 +292,32 @@ public partial class VisualCapture : Node
             camera.Position = new Vector3(-460, 320, 480);
             camera.LookAt(new Vector3(0, 0, 0));
         }
+        else if (view is "mayor-town" or "mayor-house")
+        {
+            // The whole village from above, or the front yard of the first house, with every decoration bought.
+            camera.SetProcess(false);
+            var house = world.Village.Houses[0];
+            var focus = view == "mayor-town" ? world.Village.Center : house.GlobalPosition;
+            camera.GlobalPosition =
+                view == "mayor-town" ? focus + new Vector3(0, 95, 80) : house.ToGlobal(new Vector3(0, 12, 21));
+            camera.LookAt(view == "mayor-town" ? focus : house.ToGlobal(new Vector3(0, 1, 2)));
+        }
+        else if (view == "mayor-close")
+        {
+            // The mayor from the front and a little above, with her rug and the clock pillar behind her.
+            camera.SetProcess(false);
+            var mayor = world.Village.Mayor;
+            camera.GlobalPosition = mayor.ToGlobal(new Vector3(.9f, 1.9f, 3.4f));
+            camera.LookAt(mayor.ToGlobal(new Vector3(0, 1.55f, 0)));
+        }
+        else if (view == "mayor")
+        {
+            // The whole square from the road side, above the arch.
+            camera.SetProcess(false);
+            var square = world.Village.Square;
+            camera.GlobalPosition = square.ToGlobal(new Vector3(-9, 11, 19));
+            camera.LookAt(square.ToGlobal(new Vector3(0, 1.2f, 0)));
+        }
         else if (view == "decorated" || view == "car" || view == "car-rear" || Game.ParseModelView(view) != null)
         {
             camera.SetProcess(false);

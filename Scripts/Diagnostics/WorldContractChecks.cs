@@ -231,6 +231,7 @@ public partial class ContractChecks : Node
         ("HouseMaterialOffer", 20),
         ("PlotStatus", 21),
         ("PlaygroundStatus", 22),
+        ("MayorShop", 23),
     };
 
     public override void _Ready()
@@ -287,7 +288,8 @@ public partial class ContractChecks : Node
                 && ActorIds.Glassworks == 64
                 && ActorIds.Bakery == 65
                 && ActorIds.FieldFarmer == 66
-                && ActorIds.Playground == 67,
+                && ActorIds.Playground == 67
+                && ActorIds.Mayor == 68,
             "the actor ID ranges are the ones saved games use"
         );
 
@@ -316,6 +318,7 @@ public partial class ContractChecks : Node
                     ? nameof(SourceRole)
                 : World.IsPlotResident(id) ? nameof(PlotResidentRole)
                 : id == World.PlaygroundId ? nameof(PlaygroundRole)
+                : id == World.MayorId ? nameof(MayorRole)
                 : "(no actor may have this ID)";
             Check(actor.Role.GetType().Name == expected, $"ID {id} ({actor.DisplayName}) is a {expected}");
             if (actor.Role is HouseResidentRole house)
@@ -346,6 +349,7 @@ public partial class ContractChecks : Node
         )
             Check(seen.ContainsKey(id), $"every valley has the actor with ID {id}");
         Check(seen.ContainsKey(World.BeaverId), "every valley has the beaver");
+        Check(seen.ContainsKey(World.MayorId), "every valley has the mayor");
         for (int id = World.FirstPlotResidentId; id <= World.LastPlotResidentId; id++)
             Check(seen.ContainsKey(id), $"every valley has the newcomer with ID {id}");
         // The quarry, the clay pit and the log yard keep their own IDs in this order.

@@ -197,6 +197,22 @@ internal sealed class PlaygroundRole : ActorRole
 }
 
 /// <summary>
+/// The mayor of the village, who stands on the square and sells decorations for the town for coins. She sends no trip and
+/// asks no quiz: talking to her opens her shop.
+/// </summary>
+internal sealed class MayorRole : ActorRole
+{
+    public override string Icon => "flag";
+    public override bool UsesDeliveryGuide => false;
+
+    public override bool InvitesTalk(bool expeditionActive) => true;
+
+    public override void ShowHint(GameUi ui, Character actor) => ui.MayorHint();
+
+    public override void Open(Game game, Character actor) => game.OpenMayor(actor);
+}
+
+/// <summary>
 /// The worker at the sawmill, brickworks, gravel works or glassworks. They show the stock and, for building trips, load the
 /// goods and ask the loading question from afar. Raw-material trips are started by the worker at the source.
 /// </summary>

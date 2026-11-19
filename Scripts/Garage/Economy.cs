@@ -29,6 +29,9 @@ internal sealed class Economy
     /// <summary>Buys a priced item the player can afford; false when it is owned, special or too dear.</summary>
     public bool Buy(CarReward reward) => Garage.Buy(reward);
 
+    /// <summary>Pays coins for something that is not a garage item, such as a decoration of the town.</summary>
+    public bool Spend(int amount) => Garage.Spend(amount);
+
     public void Restore(IEnumerable<CarReward> owned, int coins, int rewardCoins)
     {
         Garage.Restore(owned, coins);
