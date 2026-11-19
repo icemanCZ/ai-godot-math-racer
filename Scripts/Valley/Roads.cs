@@ -207,47 +207,62 @@ public partial class Roads : Node3D
         cachedFieldPlan = null;
     }
 
+    /// <summary>
+    /// The signed distance to the union of the roads at a point of the mesh grid, with the texture coordinates of the
+    /// nearest segment. It is asked for hundreds of thousands of points, so it is written in floats; every step is the
+    /// Godot vector operation it replaces (see <see cref="FlatMath"/>), so the surface comes out the same.
+    /// </summary>
     private FieldPoint SampleField(Vector2 point)
     {
+        float px = point.X,
+            pz = point.Y;
         float best = 1000;
         Vector2 uv = Vector2.Zero;
-        var key = new Vector2I(Mathf.FloorToInt(point.X / BucketSize), Mathf.FloorToInt(point.Y / BucketSize));
+        var key = new Vector2I((int)System.MathF.Floor(px / BucketSize), (int)System.MathF.Floor(pz / BucketSize));
         if (segments.TryGetValue(key, out var entries))
             foreach (var segment in entries)
             {
                 // The segment cannot be nearer than its middle minus its half length. When even that is further than
                 // the best so far (with a centimetre to spare for rounding), the full test would skip it as well.
                 float reach = best + segment.Width + segment.HalfLength + .01f;
-                if (reach > 0 && (point - segment.Middle).LengthSquared() >= reach * reach)
+                float mx = px - segment.Middle.X,
+                    mz = pz - segment.Middle.Y;
+                if (reach > 0 && mx * mx + mz * mz >= reach * reach)
                     continue;
-                var delta = segment.B - segment.A;
-                float lengthSquared = delta.LengthSquared();
+                float ax = segment.A.X,
+                    az = segment.A.Y;
+                float dx = segment.B.X - ax,
+                    dz = segment.B.Y - az;
+                float lengthSquared = dx * dx + dz * dz;
+                float fromX = px - ax,
+                    fromZ = pz - az;
                 float t =
-                    lengthSquared < .000001f ? 0 : Mathf.Clamp((point - segment.A).Dot(delta) / lengthSquared, 0, 1);
-                float signed = point.DistanceTo(segment.A + delta * t) - segment.Width;
+                    lengthSquared < .000001f ? 0 : FlatMath.Clamp((fromX * dx + fromZ * dz) / lengthSquared, 0, 1);
+                float signed = FlatMath.Length(px - (ax + dx * t), pz - (az + dz * t)) - segment.Width;
                 if (signed >= best)
                     continue;
                 best = signed;
-                float length = Mathf.Sqrt(lengthSquared);
+                float length = System.MathF.Sqrt(lengthSquared);
+                // (point - A).Cross(delta / length) / Width.
                 uv = new Vector2(
-                    length > .0001f ? (point - segment.A).Cross(delta / length) / segment.Width : 0,
+                    length > .0001f ? (fromX * (dz / length) - fromZ * (dx / length)) / segment.Width : 0,
                     segment.Along + t * length
                 );
             }
         float marks = 1;
         foreach (var junction in junctions)
         {
-            float distance = point.DistanceTo(junction);
-            best = Mathf.Min(best, distance - 7);
+            float distance = FlatMath.Length(px - junction.X, pz - junction.Y);
+            best = System.Math.Min(best, distance - 7);
             if (distance < 14)
-                marks = Mathf.Min(marks, Mathf.SmoothStep(7, 14, distance));
+                marks = System.Math.Min(marks, Mathf.SmoothStep(7, 14, distance));
         }
         // A rectangular opening meets the wooden deck; ramps cover its ends.
-        float deck = Mathf.Max(
-            Mathf.Abs(point.X - River.CenterX(River.BridgeZ)) - 18.9f,
-            Mathf.Abs(point.Y - River.BridgeZ) - 3.7f
+        float deck = System.Math.Max(
+            System.MathF.Abs(px - River.CenterX(River.BridgeZ)) - 18.9f,
+            System.MathF.Abs(pz - River.BridgeZ) - 3.7f
         );
-        best = Mathf.Max(best, -deck);
+        best = System.Math.Max(best, -deck);
         return new FieldPoint(point, best, uv, marks);
     }
 
@@ -384,10 +399,10 @@ public partial class Roads : Node3D
     public bool Contains(Vector3 p) => !float.IsNegativeInfinity(SurfaceHeight(p, float.NegativeInfinity));
 
     private static Vector2I BucketOf(float x, float z) =>
-        new(Mathf.FloorToInt(x / BucketSize), Mathf.FloorToInt(z / BucketSize));
+        new((int)System.MathF.Floor(x / BucketSize), (int)System.MathF.Floor(z / BucketSize));
 
     private static Vector2I TriangleCellOf(float x, float z) =>
-        new(Mathf.FloorToInt(x / TriangleCell), Mathf.FloorToInt(z / TriangleCell));
+        new((int)System.MathF.Floor(x / TriangleCell), (int)System.MathF.Floor(z / TriangleCell));
 
     public float SurfaceHeight(Vector3 p, float groundHeight)
     {
@@ -405,16 +420,20 @@ public partial class Roads : Node3D
                 || bucket.Y > triangle.MaxBucket.Y
             )
                 continue;
-            var a = new Vector2(triangle.A.X, triangle.A.Z);
-            var b = new Vector2(triangle.B.X, triangle.B.Z);
-            var c = new Vector2(triangle.C.X, triangle.C.Z);
-            float area = (b - a).Cross(c - a);
-            if (Mathf.Abs(area) < .000001f)
+            // The Vector2 cross products, in floats (see FlatMath): the grass asks for every blade.
+            float abX = triangle.B.X - triangle.A.X,
+                abZ = triangle.B.Z - triangle.A.Z;
+            float acX = triangle.C.X - triangle.A.X,
+                acZ = triangle.C.Z - triangle.A.Z;
+            float apX = flat.X - triangle.A.X,
+                apZ = flat.Y - triangle.A.Z;
+            float area = abX * acZ - abZ * acX;
+            if (System.MathF.Abs(area) < .000001f)
                 continue;
-            float u = (flat - a).Cross(c - a) / area;
-            float v = (b - a).Cross(flat - a) / area;
+            float u = (apX * acZ - apZ * acX) / area;
+            float v = (abX * apZ - abZ * apX) / area;
             if (u >= -.0001f && v >= -.0001f && u + v <= 1.0001f)
-                height = Mathf.Max(
+                height = System.Math.Max(
                     height,
                     triangle.A.Y + u * (triangle.B.Y - triangle.A.Y) + v * (triangle.C.Y - triangle.A.Y)
                 );
@@ -434,7 +453,7 @@ public partial class Roads : Node3D
     private int sampleColumns;
 
     private static Vector2I SampleCell(float x, float z) =>
-        new(Mathf.FloorToInt(x / SampleCellSize), Mathf.FloorToInt(z / SampleCellSize));
+        new((int)System.MathF.Floor(x / SampleCellSize), (int)System.MathF.Floor(z / SampleCellSize));
 
     private void IndexSamples()
     {
@@ -488,16 +507,16 @@ public partial class Roads : Node3D
         // The squares are compared and the root taken once: the root of the smallest square is the smallest root.
         float nearestSquared = float.MaxValue;
         var center = SampleCell(p.X, p.Z);
-        int lastRing = Mathf.Max(
-            Mathf.Max(Mathf.Abs(center.X - sampleCellMin.X), Mathf.Abs(center.X - sampleCellMax.X)),
-            Mathf.Max(Mathf.Abs(center.Y - sampleCellMin.Y), Mathf.Abs(center.Y - sampleCellMax.Y))
+        int lastRing = System.Math.Max(
+            System.Math.Max(System.Math.Abs(center.X - sampleCellMin.X), System.Math.Abs(center.X - sampleCellMax.X)),
+            System.Math.Max(System.Math.Abs(center.Y - sampleCellMin.Y), System.Math.Abs(center.Y - sampleCellMax.Y))
         );
         for (int ring = 0; ring <= lastRing; ring++)
         {
             for (int z = center.Y - ring; z <= center.Y + ring; z++)
             {
                 // Inner rows of a ring only contribute their two edge cells.
-                int step = z == center.Y - ring || z == center.Y + ring ? 1 : Mathf.Max(1, 2 * ring);
+                int step = z == center.Y - ring || z == center.Y + ring ? 1 : System.Math.Max(1, 2 * ring);
                 if (z < sampleCellMin.Y || z > sampleCellMax.Y)
                     continue;
                 for (int x = center.X - ring; x <= center.X + ring; x += step)
@@ -517,9 +536,9 @@ public partial class Roads : Node3D
                 }
             }
             // Every unvisited cell is at least `ring` whole cells away from p along X or Z.
-            if (nearestSquared != float.MaxValue && Mathf.Sqrt(nearestSquared) <= ring * SampleCellSize)
+            if (nearestSquared != float.MaxValue && System.MathF.Sqrt(nearestSquared) <= ring * SampleCellSize)
                 break;
         }
-        return nearestSquared == float.MaxValue ? float.MaxValue : Mathf.Sqrt(nearestSquared);
+        return nearestSquared == float.MaxValue ? float.MaxValue : System.MathF.Sqrt(nearestSquared);
     }
 }

@@ -120,10 +120,7 @@ public partial class World
     {
         if (farmSite is not { } site)
             return false;
-        var offset = new Vector3(p.X - site.Position.X, 0, p.Z - site.Position.Z);
-        float along = offset.Dot(site.Inward);
-        float across = offset.Dot(Vector3.Up.Cross(site.Inward));
-        if (along >= FarmSite.AlongMin && along <= FarmSite.AlongMax && Mathf.Abs(across) <= FarmSite.AcrossMax)
+        if (InSiteRectangle(p, site.Position, site.Inward, FarmSite.AlongMin, FarmSite.AlongMax, FarmSite.AcrossMax))
             return true;
         return SegmentDistance(p, site.Road, site.Position) < 5;
     }
@@ -133,10 +130,7 @@ public partial class World
     {
         if (bakerySite is not { } site)
             return false;
-        var offset = new Vector3(p.X - site.Position.X, 0, p.Z - site.Position.Z);
-        float along = offset.Dot(site.Inward);
-        float across = offset.Dot(Vector3.Up.Cross(site.Inward));
-        if (along is >= -8 and <= 23 && Mathf.Abs(across) <= 15)
+        if (InSiteRectangle(p, site.Position, site.Inward, -8, 23, 15))
             return true;
         return SegmentDistance(p, site.Road, site.Position) < 5;
     }

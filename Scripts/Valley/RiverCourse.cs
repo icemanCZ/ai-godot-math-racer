@@ -70,8 +70,9 @@ public sealed class RiverCourse
 
     public float At(float z)
     {
-        float offset = Mathf.Clamp((z + Settings.WorldRadius) / step, 0, centers.Length - 1);
+        // Plain floats (see FlatMath): the searches ask for the river thousands of times.
+        float offset = FlatMath.Clamp((z + Settings.WorldRadius) / step, 0, centers.Length - 1);
         int index = Math.Min((int)offset, centers.Length - 2);
-        return Mathf.Lerp(centers[index], centers[index + 1], offset - index);
+        return FlatMath.Lerp(centers[index], centers[index + 1], offset - index);
     }
 }

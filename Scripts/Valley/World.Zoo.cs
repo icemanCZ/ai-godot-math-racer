@@ -179,10 +179,7 @@ public partial class World
     {
         if (zooSite is not { } site)
             return false;
-        var offset = new Vector3(p.X - site.Position.X, 0, p.Z - site.Position.Z);
-        float along = offset.Dot(site.Inward);
-        float across = offset.Dot(Vector3.Up.Cross(site.Inward));
-        if (along >= ZooSite.AlongMin && along <= ZooSite.AlongMax && Mathf.Abs(across) <= ZooSite.AcrossMax)
+        if (InSiteRectangle(p, site.Position, site.Inward, ZooSite.AlongMin, ZooSite.AlongMax, ZooSite.AcrossMax))
             return true;
         return SegmentDistance(p, site.Road, site.Position) < 5;
     }

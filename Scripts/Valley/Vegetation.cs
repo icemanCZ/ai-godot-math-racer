@@ -40,7 +40,8 @@ public partial class Vegetation : Node3D
         );
         if (!batches.TryGetValue(key, out var batch))
             batches[key] = batch = new();
-        var transform = new Transform3D((rotation ?? Basis.Identity).ScaledLocal(scale), p);
+        // FlatBasis gives what Basis.ScaledLocal gives; a valley has some two hundred thousand parts.
+        var transform = new Transform3D(FlatBasis.ScaledLocal(rotation ?? Basis.Identity, scale), p);
         Color wind = default;
         if (buildingTree is { } tree)
         {
@@ -63,9 +64,15 @@ public partial class Vegetation : Node3D
         var animalSpots = animals.Select(a => a.Position).ToArray();
         bool Reserved(Vector3 p)
         {
+            // spot.DistanceTo(p), in floats (see FlatMath).
             foreach (var spot in animalSpots)
-                if (spot.DistanceTo(p) < 6)
+            {
+                float dx = spot.X - p.X,
+                    dy = spot.Y - p.Y,
+                    dz = spot.Z - p.Z;
+                if (System.MathF.Sqrt(dx * dx + dy * dy + dz * dz) < 6)
                     return true;
+            }
             return village.IsReserved(p) || pickupReserved(p);
         }
         // Dense groves with open clearings between them.
@@ -86,14 +93,14 @@ public partial class Vegetation : Node3D
         {
             float x = rng.RandfRange(-510, 510),
                 z = rng.RandfRange(-510, 510);
-            if (new Vector2(x, z).Length() > Settings.PlayableRadius - 8)
+            if (FlatMath.Length(x, z) > Settings.PlayableRadius - 8)
                 continue;
             var p = terrain.At(x, z);
             if (
                 Reserved(p)
                 || River.Distance(x, z) < River.HalfWidth(z) + 10
                 || roads.Distance(p) < 7
-                || new Vector2(x - 100, z - 46).Length() < 20
+                || FlatMath.Length(x - 100, z - 46) < 20
             )
                 continue;
             bool forest =
@@ -138,7 +145,7 @@ public partial class Vegetation : Node3D
                 Bush(p, rng.RandfRange(.6f, 1.1f), i % 3);
         }
         bool Safe(Vector3 p, float roadClearance) =>
-            new Vector2(p.X, p.Z).Length() < Settings.PlayableRadius - 8
+            FlatMath.Length(p.X, p.Z) < Settings.PlayableRadius - 8
             && !Reserved(p)
             && River.Distance(p.X, p.Z) > River.HalfWidth(p.Z) + 8
             && roads.Distance(p) > roadClearance;
@@ -386,16 +393,19 @@ public partial class Vegetation : Node3D
 
     internal bool NearTrunk(Vector3 p, float clearance)
     {
-        var cell = new Vector2I(Mathf.FloorToInt(p.X / 5), Mathf.FloorToInt(p.Z / 5));
+        // The grass asks for every blade, so this is written in floats (see FlatMath).
+        int cellX = (int)System.MathF.Floor(p.X / 5),
+            cellZ = (int)System.MathF.Floor(p.Z / 5);
         for (int x = -1; x <= 1; x++)
         for (int z = -1; z <= 1; z++)
-            if (treePositions.TryGetValue(cell + new Vector2I(x, z), out var nearby))
+            if (treePositions.TryGetValue(new Vector2I(cellX + x, cellZ + z), out var nearby))
                 foreach (var other in nearby)
-                    if (
-                        new Vector2(other.X - p.X, other.Z - p.Z).LengthSquared() < clearance * clearance
-                        && clearedArea?.Invoke(other) != true
-                    )
+                {
+                    float dx = other.X - p.X,
+                        dz = other.Z - p.Z;
+                    if (dx * dx + dz * dz < clearance * clearance && clearedArea?.Invoke(other) != true)
                         return true;
+                }
         return false;
     }
 
@@ -471,8 +481,16 @@ public partial class Vegetation : Node3D
 
     private void Tree(Vector3 p, float s, int type)
     {
-        var turn = new Basis(Vector3.Up, rng.RandfRange(0, Mathf.Tau));
-        Vector3 At(float x, float y, float z) => p + turn * new Vector3(x, y, z) * s;
+        // The rotations below are FlatBasis forms of Godot's, which give the same parts, bit for bit, much faster.
+        var up = Vector3.Up;
+        var forward = Vector3.Forward;
+        var turn = FlatBasis.AxisAngle(up, rng.RandfRange(0, Mathf.Tau));
+        Vector3 At(float x, float y, float z)
+        {
+            // p + turn * new Vector3(x, y, z) * s
+            var turned = FlatBasis.Times(turn, new Vector3(x, y, z));
+            return new Vector3(p.X + turned.X * s, p.Y + turned.Y * s, p.Z + turned.Z * s);
+        }
         void Crown(float x, float y, float z, Vector3 size, string color)
         {
             if (size.Length() < .8f)
@@ -482,7 +500,7 @@ public partial class Vegetation : Node3D
             }
             var center = At(x, y, z);
             buildingTree!.Crowns.Add((center, size * s, color));
-            var twist = turn.Rotated(Vector3.Up, detailRng.RandfRange(-.4f, .4f));
+            var twist = FlatBasis.Rotated(turn, up, detailRng.RandfRange(-.4f, .4f));
             Part(center, size * s, color, "canopy", twist);
             // Small overlapping leaf sprays break the silhouette without filling the whole crown.
             for (int leaf = 0; leaf < 7; leaf++)
@@ -490,14 +508,22 @@ public partial class Vegetation : Node3D
                 float a = leaf * 2.39996f + x + z;
                 float elevation = .12f + (leaf % 3) * .25f;
                 var offset = new Vector3(Mathf.Cos(a) * size.X * .9f, elevation * size.Y, Mathf.Sin(a) * size.Z * .9f);
-                var orientation = twist.Rotated(Vector3.Up, a).Rotated(Vector3.Forward, .35f);
-                Part(center + turn * offset * s, new Vector3(.28f, .075f, .12f) * s, color, "detail", orientation);
+                var orientation = FlatBasis.Rotated(FlatBasis.Rotated(twist, up, a), forward, .35f);
+                // center + turn * offset * s
+                var turned = FlatBasis.Times(turn, offset);
+                Part(
+                    new Vector3(center.X + turned.X * s, center.Y + turned.Y * s, center.Z + turned.Z * s),
+                    new Vector3(.28f, .075f, .12f) * s,
+                    color,
+                    "detail",
+                    orientation
+                );
             }
         }
         void Wood(Vector3 a, Vector3 b, float width, string color)
         {
-            var from = p + turn * a * s;
-            var to = p + turn * b * s;
+            var from = At(a.X, a.Y, a.Z);
+            var to = At(b.X, b.Y, b.Z);
             var rotation = new Basis(new Quaternion(Vector3.Up, (to - from).Normalized()));
             Part((from + to) / 2, new Vector3(width * s, from.DistanceTo(to) / 2, width * s), color, "wood", rotation);
         }
@@ -669,7 +695,7 @@ public partial class Vegetation : Node3D
             {
                 float b = a + leaf * 1.25f;
                 var outward = new Vector3(Mathf.Cos(b), .4f + leaf * .06f, Mathf.Sin(b));
-                var orientation = new Basis(Vector3.Up, -b).Rotated(Vector3.Forward, .35f);
+                var orientation = FlatBasis.Rotated(FlatBasis.AxisAngle(Vector3.Up, -b), Vector3.Forward, .35f);
                 Part(
                     center + outward * s * .55f,
                     new Vector3(.24f, .065f, .11f) * s,

@@ -214,13 +214,15 @@ public partial class World
     {
         if (playgroundSite is not { } site)
             return false;
-        var offset = new Vector3(p.X - site.Position.X, 0, p.Z - site.Position.Z);
-        float along = offset.Dot(site.Inward);
-        float across = offset.Dot(Vector3.Up.Cross(site.Inward));
         if (
-            along >= PlaygroundSite.AlongMin
-            && along <= PlaygroundSite.AlongMax
-            && Mathf.Abs(across) <= PlaygroundSite.AcrossMax
+            InSiteRectangle(
+                p,
+                site.Position,
+                site.Inward,
+                PlaygroundSite.AlongMin,
+                PlaygroundSite.AlongMax,
+                PlaygroundSite.AcrossMax
+            )
         )
             return true;
         return SegmentDistance(p, site.Road, site.Position) < 5;

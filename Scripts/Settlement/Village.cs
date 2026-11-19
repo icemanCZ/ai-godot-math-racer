@@ -252,35 +252,79 @@ public partial class Village : Node3D
     {
         // Leave a quiet belt around every house and the garage for village residents.
         foreach (var plot in plots)
-            if (new Vector2(point.X - plot.Origin.X, point.Z - plot.Origin.Z).Length() < TaskAnimalClearance)
+            if (FlatMath.Length(point.X - plot.Origin.X, point.Z - plot.Origin.Z) < TaskAnimalClearance)
                 return true;
         return false;
     }
 
     /// <summary>
-    /// Inverse transforms of the plots, kept because <see cref="IsReserved"/> runs thousands of times while the world
-    /// is planned. An entry is worked out again whenever its transform is not the one it was made from.
+    /// Inverse transforms of the plots, kept because <see cref="IsReserved"/> runs hundreds of thousands of times
+    /// while the world is planned. An entry is worked out again whenever its transform is not the one it was made
+    /// from. With the inverse it keeps how far from the origin, flat, a point inside the plot's rectangle can lie, so
+    /// that a point farther away is turned down before it is transformed. The arithmetic is written out in floats
+    /// (see <see cref="FlatMath"/>) and gives what Godot's transform and comparison give.
     /// </summary>
     private sealed class InverseCache
     {
-        private readonly List<(Transform3D Source, Transform3D Inverse)> entries = new();
+        private readonly List<(Transform3D Source, Transform3D Inverse, float ReachSquared)> entries = new();
 
-        public Transform3D Of(int slot, Transform3D source)
+        /// <summary>
+        /// Whether <paramref name="point"/> lies in the rectangle <c>minX &lt; x &lt; maxX</c>, <c>|z| &lt; halfZ</c>
+        /// of <paramref name="source"/>'s local space; the local height does not matter.
+        /// </summary>
+        public bool Contains(int slot, in Transform3D source, Vector3 point, float minX, float maxX, float halfZ)
         {
-            if (slot < entries.Count)
+            float dx = point.X - source.Origin.X,
+                dz = point.Z - source.Origin.Z;
+            if (slot < entries.Count && Same(entries[slot].Source, source))
             {
-                var entry = entries[slot];
-                if (entry.Source == source)
-                    return entry.Inverse;
-                var replaced = source.AffineInverse();
-                entries[slot] = (source, replaced);
-                return replaced;
+                if (dx * dx + dz * dz > entries[slot].ReachSquared)
+                    return false;
             }
-            while (entries.Count < slot)
-                entries.Add((default, default));
-            var created = source.AffineInverse();
-            entries.Add((source, created));
-            return created;
+            else
+            {
+                float reachSquared = ReachSquared(source.Basis, Mathf.Max(-minX, maxX), halfZ);
+                while (entries.Count <= slot)
+                    entries.Add((default, default, 0));
+                entries[slot] = (source, source.AffineInverse(), reachSquared);
+                if (dx * dx + dz * dz > reachSquared)
+                    return false;
+            }
+            // Transform3D * Vector3, without its height, which the rectangle does not use.
+            var inverse = entries[slot].Inverse;
+            var basis = inverse.Basis;
+            float x = basis.Row0.X * point.X + basis.Row0.Y * point.Y + basis.Row0.Z * point.Z + inverse.Origin.X;
+            float z = basis.Row2.X * point.X + basis.Row2.Y * point.Y + basis.Row2.Z * point.Z + inverse.Origin.Z;
+            return x > minX && x < maxX && System.MathF.Abs(z) < halfZ;
+        }
+
+        /// <summary><c>a == b</c> for two transforms, which compares every component.</summary>
+        private static bool Same(in Transform3D a, in Transform3D b) =>
+            a.Origin.X == b.Origin.X
+            && a.Origin.Y == b.Origin.Y
+            && a.Origin.Z == b.Origin.Z
+            && a.Basis.Row0.X == b.Basis.Row0.X
+            && a.Basis.Row0.Y == b.Basis.Row0.Y
+            && a.Basis.Row0.Z == b.Basis.Row0.Z
+            && a.Basis.Row1.X == b.Basis.Row1.X
+            && a.Basis.Row1.Y == b.Basis.Row1.Y
+            && a.Basis.Row1.Z == b.Basis.Row1.Z
+            && a.Basis.Row2.X == b.Basis.Row2.X
+            && a.Basis.Row2.Y == b.Basis.Row2.Y
+            && a.Basis.Row2.Z == b.Basis.Row2.Z;
+
+        /// <summary>
+        /// A point in the rectangle is origin + X·x + Y·y + Z·z with |x| ≤ halfX and |z| ≤ halfZ. While the local
+        /// up axis stays vertical, y moves it only up and down, so it lies at most |X| halfX + |Z| halfZ away, flat.
+        /// The margin covers rounding; a tilted plot gets no limit and is always transformed.
+        /// </summary>
+        private static float ReachSquared(Basis basis, float halfX, float halfZ)
+        {
+            if (basis.Y.X != 0 || basis.Y.Z != 0)
+                return float.PositiveInfinity;
+            float reach = FlatMath.Length(basis.X.X, basis.X.Z) * halfX + FlatMath.Length(basis.Z.X, basis.Z.Z) * halfZ;
+            reach = reach * 1.01f + .05f;
+            return reach * reach;
         }
     }
 
@@ -294,60 +338,35 @@ public partial class Village : Node3D
     {
         float nearest = float.PositiveInfinity;
         foreach (var plot in plots)
-            nearest = Mathf.Min(nearest, new Vector2(point.X - plot.Origin.X, point.Z - plot.Origin.Z).Length());
+            nearest = System.Math.Min(nearest, FlatMath.Length(point.X - plot.Origin.X, point.Z - plot.Origin.Z));
         return nearest;
     }
 
     public bool IsReserved(Vector3 point)
     {
-        if (Square != null)
-        {
-            var local = buildingInverses.Of(0, Square.Transform) * point;
-            if (Mathf.Abs(local.X) < 11.5f && Mathf.Abs(local.Z) < 7.5f)
-                return true;
-        }
+        if (Square != null && buildingInverses.Contains(0, Square.Transform, point, -11.5f, 11.5f, 7.5f))
+            return true;
         for (int i = 0; i < collectionPlots.Count; i++)
-        {
-            var local = collectionInverses.Of(i, collectionPlots[i]) * point;
-            if (local.X > -5 && local.X < 17 && Mathf.Abs(local.Z) < 8)
+            if (collectionInverses.Contains(i, collectionPlots[i], point, -5, 17, 8))
                 return true;
-        }
-        if (GardenBuilding != null)
-        {
-            var gardenLocal = buildingInverses.Of(1, gardenPlot) * point;
-            if (gardenLocal.X > -5 && gardenLocal.X < 17 && Mathf.Abs(gardenLocal.Z) < 8)
-                return true;
-        }
-        if (FarmBuilding != null)
-        {
-            var farmLocal = buildingInverses.Of(2, farmPlot) * point;
-            if (farmLocal.X > -6 && farmLocal.X < 19 && Mathf.Abs(farmLocal.Z) < 8)
-                return true;
-        }
+        if (GardenBuilding != null && buildingInverses.Contains(1, gardenPlot, point, -5, 17, 8))
+            return true;
+        if (FarmBuilding != null && buildingInverses.Contains(2, farmPlot, point, -6, 19, 8))
+            return true;
         foreach (var path in paths)
-        {
-            var a = new Vector2(path.From.X, path.From.Z);
-            var b = new Vector2(path.To.X, path.To.Z);
-            var p = new Vector2(point.X, point.Z);
-            var delta = b - a;
-            float t = Mathf.Clamp((p - a).Dot(delta) / delta.LengthSquared(), 0, 1);
-            if (p.DistanceTo(a + delta * t) < path.HalfWidth + .35f)
+            if (
+                FlatMath.SegmentDistance(point.X, point.Z, path.From.X, path.From.Z, path.To.X, path.To.Z)
+                < path.HalfWidth + .35f
+            )
                 return true;
-        }
         for (int i = 0; i < plots.Count; i++)
-        {
-            var local = plotInverses.Of(i, plots[i]) * point;
-            if (Mathf.Abs(local.X) < 6.5f && Mathf.Abs(local.Z) < 7.7f)
+            if (plotInverses.Contains(i, plots[i], point, -6.5f, 6.5f, 7.7f))
                 return true;
-        }
         // The building plots are reserved too, but stay out of `plots`, which also shapes the terrain and the search
         // for the works and landmarks.
         for (int i = 0; i < buildPlots.Count; i++)
-        {
-            var local = lotInverses.Of(i, buildPlots[i].Transform) * point;
-            if (Mathf.Abs(local.X) < 6.5f && Mathf.Abs(local.Z) < 7.7f)
+            if (lotInverses.Contains(i, buildPlots[i].Transform, point, -6.5f, 6.5f, 7.7f))
                 return true;
-        }
         return false;
     }
 

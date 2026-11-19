@@ -128,13 +128,32 @@ public partial class Grass : Node3D
         : lod == 1 ? 190
         : 282;
 
-    internal bool CanGrow(Vector3 p)
+    internal bool CanGrow(Vector3 p) => CanGrow(p, AnimalSpots());
+
+    /// <summary>Where the roadside friends stand, read once for a whole tile: a position is a call into the engine.</summary>
+    private Vector2[] AnimalSpots()
+    {
+        var spots = new Vector2[world.Animals.Length];
+        for (int i = 0; i < spots.Length; i++)
+        {
+            var position = world.Animals[i].Position;
+            spots[i] = new Vector2(position.X, position.Z);
+        }
+        return spots;
+    }
+
+    // Asked for every blade of a new tile, so the distances are worked out in floats (see FlatMath).
+    private bool CanGrow(Vector3 p, Vector2[] animals)
     {
         foreach (var spot in world.SpecialPickupSpots)
-            if (new Vector2(p.X - spot.X, p.Z - spot.Z).LengthSquared() < 4)
+        {
+            float dx = p.X - spot.X,
+                dz = p.Z - spot.Z;
+            if (dx * dx + dz * dz < 4)
                 return false;
+        }
         if (
-            new Vector2(p.X, p.Z).Length() > Settings.PlayableRadius - 3
+            FlatMath.Length(p.X, p.Z) > Settings.PlayableRadius - 3
             || River.Distance(p.X, p.Z) < River.HalfWidth(p.Z) + 3
             || River.OnBridge(p.X, p.Z)
             || world.Village.IsReserved(p)
@@ -144,9 +163,13 @@ public partial class Grass : Node3D
             || world.Plants.NearTrunk(p, .65f)
         )
             return false;
-        foreach (var animal in world.Animals)
-            if (new Vector2(p.X - animal.Position.X, p.Z - animal.Position.Z).LengthSquared() < 5)
+        foreach (var animal in animals)
+        {
+            float dx = p.X - animal.X,
+                dz = p.Z - animal.Y;
+            if (dx * dx + dz * dz < 5)
                 return false;
+        }
         return true;
     }
 
@@ -158,6 +181,7 @@ public partial class Grass : Node3D
         };
         var transforms = new List<Transform3D>();
         var colors = new List<Color>();
+        var animals = AnimalSpots();
         var origin = new Vector3(key.X * TileSize, 0, key.Y * TileSize);
         const int rows = 28;
         for (int z = 0; z < rows; z++)
@@ -180,7 +204,7 @@ public partial class Grass : Node3D
             color.G = lod * .5f;
             color.B = grassTime;
             var p = world.Ground.At(px, pz, -.025f);
-            if (!CanGrow(p))
+            if (!CanGrow(p, animals))
                 continue;
             transforms.Add(
                 new Transform3D(

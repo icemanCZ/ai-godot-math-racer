@@ -142,10 +142,7 @@ public partial class World
     {
         if (glassSite is not { } site)
             return false;
-        var offset = new Vector3(p.X - site.Position.X, 0, p.Z - site.Position.Z);
-        float along = offset.Dot(site.Inward);
-        float across = offset.Dot(Vector3.Up.Cross(site.Inward));
-        if (along is >= -8 and <= 23 && Mathf.Abs(across) <= 15)
+        if (InSiteRectangle(p, site.Position, site.Inward, -8, 23, 15))
             return true;
         return SegmentDistance(p, site.Road, site.Position) < 5;
     }

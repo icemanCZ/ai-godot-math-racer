@@ -161,8 +161,8 @@ public partial class Terrain : Node3D
         const float step = Settings.TerrainStep;
         float gx = (x + Settings.WorldRadius) / step,
             gz = (z + Settings.WorldRadius) / step;
-        float ix = Mathf.Floor(gx),
-            iz = Mathf.Floor(gz),
+        float ix = System.MathF.Floor(gx),
+            iz = System.MathF.Floor(gz),
             u = gx - ix,
             v = gz - iz;
         float px = ix * step - Settings.WorldRadius,

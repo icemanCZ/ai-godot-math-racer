@@ -12,11 +12,11 @@ public partial class River : Node3D
 
     public static float CenterX(float z) => WorldLayout.Plan.CenterX(z);
 
-    public static float HalfWidth(float z) => 5.5f + .7f * Mathf.Sin(z * .037f + WorldLayout.Plan.RiverPhase);
+    public static float HalfWidth(float z) => 5.5f + .7f * System.MathF.Sin(z * .037f + WorldLayout.Plan.RiverPhase);
 
     public static float Level(float z) => -.8f - z * .008f;
 
-    public static float Distance(float x, float z) => Mathf.Abs(x - CenterX(z));
+    public static float Distance(float x, float z) => System.MathF.Abs(x - CenterX(z));
 
     public static float BridgeHeight => Level(BridgeZ) + 1;
 
@@ -24,7 +24,7 @@ public partial class River : Node3D
     public static float BridgeGroundHeight => BridgeHeight - .32f;
 
     public static bool OnBridge(float x, float z) =>
-        Mathf.Abs(z - BridgeZ) < 4.3f && Mathf.Abs(x - CenterX(BridgeZ)) < 22;
+        System.MathF.Abs(z - BridgeZ) < 4.3f && System.MathF.Abs(x - CenterX(BridgeZ)) < 22;
 
     public static float BridgeSurfaceHeight(float x) =>
         BridgeHeight + .01f - Mathf.Clamp((Mathf.Abs(x - CenterX(BridgeZ)) - 19) / 3, 0, 1) * .2f;

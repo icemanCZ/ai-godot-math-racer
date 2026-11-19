@@ -80,7 +80,7 @@ public partial class SmokeTest : Node
             game.TogglePause();
             Check(game.State == GameState.Exploring && car.Active, "pause resume");
             Check(world.Animals.Length == World.QuestAnimalCount && world.Routes.Samples.Count > 100, "world content");
-            // Smoke checks run in real time; a busy machine renders fewer frames before this point.
+            // The grass streams a few tiles a frame; the rest is loaded so that the counts do not depend on the frames.
             world.Grass.CompletePendingTiles();
             Check(
                 world.Grass.TileCount > 200

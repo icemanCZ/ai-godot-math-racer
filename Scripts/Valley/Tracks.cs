@@ -36,7 +36,29 @@ public partial class Tracks : Node3D
     internal void Pad(Vector3 center, float radius, Kind kind) =>
         pieces.Add(new Piece(new(center.X, center.Z), new(center.X, center.Z), radius, 0, kind));
 
-    public bool Contains(Vector3 p) => Field(new Vector2(p.X, p.Z), null).Distance < 0;
+    /// <summary>
+    /// Whether <paramref name="p"/> is on a field way: <c>Field(p, null).Distance &lt; 0</c>, which is so exactly when
+    /// one piece is nearer than its width. The grass asks for every blade, so this skips the texture coordinates and
+    /// works in floats (see <see cref="FlatMath"/>).
+    /// </summary>
+    public bool Contains(Vector3 p)
+    {
+        float px = p.X,
+            pz = p.Z;
+        foreach (var piece in pieces)
+        {
+            float ax = piece.A.X,
+                az = piece.A.Y;
+            float dx = piece.B.X - ax,
+                dz = piece.B.Y - az;
+            float lengthSquared = dx * dx + dz * dz;
+            float t =
+                lengthSquared < .000001f ? 0 : FlatMath.Clamp(((px - ax) * dx + (pz - az) * dz) / lengthSquared, 0, 1);
+            if (FlatMath.Length(px - (ax + dx * t), pz - (az + dz * t)) - piece.Width < 0)
+                return true;
+        }
+        return false;
+    }
 
     private FieldPoint Field(Vector2 point, Kind? kind)
     {

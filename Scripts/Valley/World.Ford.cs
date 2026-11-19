@@ -364,12 +364,16 @@ public partial class World
 
     private Vector2 TowerSpot => towerSpot ??= new Vector2(Tower.Position.X, Tower.Position.Z);
 
+    // The searches below run these tests hundreds of thousands of times, so they are written in plain floats: outside
+    // an exported game Godot's vector and Mathf methods are not optimised, and each costs a call. FlatMath gives the
+    // same float results, bit for bit, as the Vector2 methods it replaces.
+
     /// <summary>Whether any spot is nearer to (x, z) than <paramref name="distance"/> (or exactly that near).</summary>
     private static bool AnyCloserThan(Vector2[] spots, float x, float z, float distance, bool inclusive = false)
     {
         foreach (var spot in spots)
         {
-            float flat = new Vector2(spot.X - x, spot.Y - z).Length();
+            float flat = FlatMath.Length(spot.X - x, spot.Y - z);
             if (inclusive ? flat <= distance : flat < distance)
                 return true;
         }
@@ -379,17 +383,17 @@ public partial class World
     private static bool AnyCloserThan(Vector3[] spots, float x, float z, float distance)
     {
         foreach (var spot in spots)
-            if (new Vector2(spot.X - x, spot.Z - z).Length() < distance)
+            if (FlatMath.Length(spot.X - x, spot.Z - z) < distance)
                 return true;
         return false;
     }
 
     private static bool CloserThan(Vector2 spot, float x, float z, float distance) =>
-        new Vector2(spot.X - x, spot.Y - z).Length() < distance;
+        FlatMath.Length(spot.X - x, spot.Y - z) < distance;
 
     // Every test below is a pure predicate, so the cheap ones come first and the answer stays the same.
     private bool FreeHaulSpot(Vector3 spot, Character[] friends, float roadClearance, VillageBand? band = null) =>
-        new Vector2(spot.X, spot.Z).Length() < Settings.PlayableRadius - 15
+        FlatMath.Length(spot.X, spot.Z) < Settings.PlayableRadius - 15
         && !River.OnBridge(spot.X, spot.Z)
         && Mathf.Abs(spot.Z - River.BridgeZ) > 14
         && !CloserThan(TowerSpot, spot.X, spot.Z, 24)
@@ -415,13 +419,22 @@ public partial class World
         var tower = TowerSpot;
         for (int step = 0; step <= steps; step++)
         {
-            var center = from.Lerp(to, step / (float)steps);
+            float weight = step / (float)steps;
+            var center = new Vector3(
+                FlatMath.Lerp(from.X, to.X, weight),
+                FlatMath.Lerp(from.Y, to.Y, weight),
+                FlatMath.Lerp(from.Z, to.Z, weight)
+            );
             foreach (float lateral in Laterals)
             {
-                var q = center + across * lateral;
+                var q = new Vector3(
+                    center.X + across.X * lateral,
+                    center.Y + across.Y * lateral,
+                    center.Z + across.Z * lateral
+                );
                 bool water = River.Distance(q.X, q.Z) < River.HalfWidth(q.Z) + 6;
                 if (
-                    new Vector2(q.X, q.Z).Length() > Settings.PlayableRadius - 10
+                    FlatMath.Length(q.X, q.Z) > Settings.PlayableRadius - 10
                     || River.OnBridge(q.X, q.Z)
                     || (water && !toWater)
                     || CloserThan(tower, q.X, q.Z, 14)
@@ -514,14 +527,27 @@ public partial class World
         return haulIndex.NearSegmentDistance(point);
     }
 
+    /// <summary>The flat distance from a point to a segment, in floats (see <see cref="FlatMath"/>).</summary>
     private static float SegmentDistance(Vector3 point, Vector3 from, Vector3 to)
     {
-        var p = new Vector2(point.X, point.Z);
-        var a = new Vector2(from.X, from.Z);
-        var edge = new Vector2(to.X, to.Z) - a;
-        float t = edge.LengthSquared() < .0001f ? 0 : Mathf.Clamp((p - a).Dot(edge) / edge.LengthSquared(), 0, 1);
-        return p.DistanceTo(a + edge * t);
+        float ex = to.X - from.X,
+            ez = to.Z - from.Z;
+        float lengthSquared = ex * ex + ez * ez;
+        if (lengthSquared >= .0001f)
+            return FlatMath.SegmentDistance(point.X, point.Z, from.X, from.Z, to.X, to.Z);
+        return FlatMath.Length(point.X - from.X, point.Z - from.Z);
     }
+
+    /// <summary>A site's ground (see <see cref="FlatMath.InRectangle"/>); the trees and the grass ask for every plant.</summary>
+    private static bool InSiteRectangle(
+        Vector3 p,
+        Vector3 origin,
+        Vector3 inward,
+        float alongMin,
+        float alongMax,
+        float acrossMax
+    ) =>
+        FlatMath.InRectangle(p.X, p.Z, origin.X, origin.Z, inward.X, inward.Y, inward.Z, alongMin, alongMax, acrossMax);
 
     /// <summary>
     /// Draws the already cleared approaches: a road from the network to each bridge end through its

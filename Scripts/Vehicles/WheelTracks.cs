@@ -25,7 +25,10 @@ public partial class WheelTracks : MeshInstance3D
     );
 
     private readonly Queue<Segment> segments = new();
-    private readonly ImmediateMesh ribbon = new();
+
+    // Rebuilt whenever a segment is added, which is most frames while driving: the vertices go to the engine in one
+    // call, where an ImmediateMesh took four calls for each of up to 24 576 vertices.
+    private readonly ArrayMesh ribbon = new();
     private readonly ShaderMaterial material = new() { Shader = GD.Load<Shader>("res://Shaders/WheelTracks.gdshader") };
     private readonly Vector3[] previous = new Vector3[2];
     private readonly Vector3[] previousSide = new Vector3[2];
@@ -183,7 +186,12 @@ public partial class WheelTracks : MeshInstance3D
         ribbon.ClearSurfaces();
         if (segments.Count == 0)
             return;
-        ribbon.SurfaceBegin(Mesh.PrimitiveType.Triangles);
+        int count = segments.Count * 6;
+        var vertices = new Vector3[count];
+        var normals = new Vector3[count];
+        var uvs = new Vector2[count];
+        var births = new Vector2[count];
+        int next = 0;
         foreach (var s in segments)
         {
             Vertex(s.A, 0, s.Along);
@@ -194,12 +202,19 @@ public partial class WheelTracks : MeshInstance3D
             Vertex(s.C, 0, s.Along + s.Length);
             void Vertex(Vector3 p, float across, float distance)
             {
-                ribbon.SurfaceSetUV2(new Vector2(s.Born, 0));
-                ribbon.SurfaceSetUV(new Vector2(across, distance));
-                ribbon.SurfaceSetNormal(Vector3.Up);
-                ribbon.SurfaceAddVertex(p);
+                vertices[next] = p;
+                normals[next] = Vector3.Up;
+                uvs[next] = new Vector2(across, distance);
+                births[next] = new Vector2(s.Born, 0);
+                next++;
             }
         }
-        ribbon.SurfaceEnd();
+        var arrays = new Godot.Collections.Array();
+        arrays.Resize((int)Mesh.ArrayType.Max);
+        arrays[(int)Mesh.ArrayType.Vertex] = vertices;
+        arrays[(int)Mesh.ArrayType.Normal] = normals;
+        arrays[(int)Mesh.ArrayType.TexUV] = uvs;
+        arrays[(int)Mesh.ArrayType.TexUV2] = births;
+        ribbon.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
     }
 }

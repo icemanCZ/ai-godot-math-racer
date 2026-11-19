@@ -22,7 +22,10 @@ internal sealed record DiagnosticVariant(string Argument, string Suffix);
 /// <param name="ContinuesGame">Whether the game skips the title screen and continues at startup.</param>
 /// <param name="Seeds">The world seeds the suite runs with in the test run; none means one run with the default seed.</param>
 /// <param name="Variants">Extra runs with an argument each; none means one plain run per seed.</param>
-/// <param name="FixedFps">Whether the run uses a fixed frame rate (the road audit and the smoke test do not).</param>
+/// <param name="FixedFps">
+/// Whether the run uses a fixed frame rate, so that it runs as fast as the machine allows instead of in real time (the
+/// road audit and the unit checks, which run no frames, do not need it).
+/// </param>
 /// <param name="InSuite">False for tools that write files and are not part of the test run.</param>
 internal sealed record DiagnosticSuite(
     string Mode,
@@ -56,7 +59,7 @@ internal static class DiagnosticSuites
     internal static readonly DiagnosticSuite[] All =
     {
         new("road-driving-checks", Seeds: new[] { 1, 16 }, Variants: Routes("2", "3", "0,1,4-")),
-        new("smoke-test", (g, w, v) => new SmokeTest(g, w, v), NeedsStart: false, ContinuesGame: true, FixedFps: false),
+        new("smoke-test", (g, w, v) => new SmokeTest(g, w, v), NeedsStart: false, ContinuesGame: true),
         new("new-game-checks", (g, w, v) => new NewGameChecks(g, w, v), NeedsStart: false, Seeds: Seed42),
         new(
             "track-checks",

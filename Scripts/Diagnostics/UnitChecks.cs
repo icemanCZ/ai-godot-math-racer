@@ -9,6 +9,7 @@ using MathRacer.Buildings;
 using MathRacer.Characters;
 using MathRacer.Quizzes;
 using MathRacer.Saves;
+using MathRacer.Valley;
 
 namespace MathRacer.Diagnostics;
 
@@ -45,6 +46,7 @@ internal static class UnitChecks
             Questions();
             ActorRanges();
             CollectionTitles();
+            FlatMathMatchesGodot();
         }
         catch (Exception error)
         {
@@ -55,6 +57,169 @@ internal static class UnitChecks
         if (failed == 0)
             GD.Print("UNIT_CHECKS_PASSED");
         return failed == 0 ? 0 : 1;
+    }
+
+    /// <summary>
+    /// The world searches, the grass and the road surface compute in plain floats (<see cref="FlatMath"/>) what they
+    /// used to compute with Godot's vectors, and the valley must come out the same, bit for bit: on random input every
+    /// form gives exactly what the Godot method gives.
+    /// </summary>
+    private static void FlatMathMatchesGodot()
+    {
+        var random = new Random(7);
+        float Next() =>
+            random.Next(8) switch
+            {
+                0 => (float)(random.NextDouble() * 2 - 1) * 1e-3f,
+                1 => random.Next(-600, 600),
+                2 => (float)random.NextDouble() * 1e5f - 5e4f,
+                _ => (float)(random.NextDouble() * 1400 - 700),
+            };
+        static bool Same(float a, float b) => BitConverter.SingleToInt32Bits(a) == BitConverter.SingleToInt32Bits(b);
+        var wrong = new int[12];
+        for (int i = 0; i < 200_000; i++)
+        {
+            float a = Next(),
+                b = Next(),
+                c = Next(),
+                d = Next(),
+                e = Next(),
+                f = Next();
+            float weight = (float)random.NextDouble() * 1.2f - .1f;
+            float low = Math.Min(c, d),
+                high = Math.Max(c, d);
+            if (!Same(FlatMath.Length(a, b), new Vector2(a, b).Length()))
+                wrong[0]++;
+            if (!Same(FlatMath.Lerp(a, b, weight), Mathf.Lerp(a, b, weight)))
+                wrong[1]++;
+            if (!Same(FlatMath.Clamp(a, low, high), Mathf.Clamp(a, low, high)))
+                wrong[2]++;
+            var p = new Vector2(a, b);
+            var from = new Vector2(c, d);
+            var delta = new Vector2(e, f) - from;
+            float t = Mathf.Clamp((p - from).Dot(delta) / delta.LengthSquared(), 0, 1);
+            if (!Same(FlatMath.SegmentDistance(a, b, c, d, e, f), p.DistanceTo(from + delta * t)))
+                wrong[3]++;
+            // The forms written out where they are used: squared distance, 3D distance, cross product, transform.
+            if (!Same((a - c) * (a - c) + (b - d) * (b - d), p.DistanceSquaredTo(from)))
+                wrong[4]++;
+            float dx = a - d,
+                dy = b - e,
+                dz = c - f;
+            if (!Same(MathF.Sqrt(dx * dx + dy * dy + dz * dz), new Vector3(a, b, c).DistanceTo(new Vector3(d, e, f))))
+                wrong[5]++;
+            if (!Same(a * d - b * c, new Vector2(a, b).Cross(new Vector2(c, d))))
+                wrong[6]++;
+            var transform = new Transform3D(
+                new Basis(Vector3.Up, a * .01f).Scaled(new Vector3(1.3f, 1, .7f)),
+                new Vector3(b, c, d)
+            );
+            var point = new Vector3(e, f, a);
+            var moved = transform * point;
+            var rows = transform.Basis;
+            if (
+                !Same(rows.Row0.X * e + rows.Row0.Y * f + rows.Row0.Z * a + transform.Origin.X, moved.X)
+                || !Same(rows.Row2.X * e + rows.Row2.Y * f + rows.Row2.Z * a + transform.Origin.Z, moved.Z)
+            )
+                wrong[7]++;
+            if (!Same(MathF.Floor(a), Mathf.Floor(a)) || (int)MathF.Floor(a / 16) != Mathf.FloorToInt(a / 16))
+                wrong[8]++;
+            if (!Same(MathF.Abs(a), Mathf.Abs(a)) || !Same(MathF.Sin(a), Mathf.Sin(a)))
+                wrong[9]++;
+            if (!Same(Math.Max(a, b), Mathf.Max(a, b)) || !Same(Math.Min(a, b), Mathf.Min(a, b)))
+                wrong[10]++;
+            var inward = new Vector3(c, d * .01f, e).Normalized();
+            var offset = new Vector3(a - f, 0, b - c);
+            float along = offset.Dot(inward),
+                across = offset.Dot(Vector3.Up.Cross(inward));
+            float alongMin = -weight * 20,
+                alongMax = weight * 30,
+                acrossMax = weight * 15;
+            bool inside = along >= alongMin && along <= alongMax && Mathf.Abs(across) <= acrossMax;
+            if (
+                !Same(FlatMath.Dot(a, b, c, d, e, f), new Vector3(a, b, c).Dot(new Vector3(d, e, f)))
+                || FlatMath.InRectangle(a, b, f, c, inward.X, inward.Y, inward.Z, alongMin, alongMax, acrossMax)
+                    != inside
+            )
+                wrong[11]++;
+            // The same rectangle test with the point at the edge, where the rounding decides.
+            float edgeX = f + inward.X * alongMax,
+                edgeZ = c + inward.Z * alongMax;
+            var edgeOffset = new Vector3(edgeX - f, 0, edgeZ - c);
+            bool edgeInside =
+                edgeOffset.Dot(inward) >= alongMin
+                && edgeOffset.Dot(inward) <= alongMax
+                && Mathf.Abs(edgeOffset.Dot(Vector3.Up.Cross(inward))) <= acrossMax;
+            if (
+                FlatMath.InRectangle(edgeX, edgeZ, f, c, inward.X, inward.Y, inward.Z, alongMin, alongMax, acrossMax)
+                != edgeInside
+            )
+                wrong[11]++;
+        }
+        string[] names =
+        {
+            "Length",
+            "Lerp",
+            "Clamp",
+            "SegmentDistance",
+            "squared distance",
+            "3D distance",
+            "cross product",
+            "transform",
+            "floor",
+            "abs and sin",
+            "min and max",
+            "site rectangle",
+        };
+        for (int i = 0; i < names.Length; i++)
+            Check(wrong[i] == 0, $"FlatMath: {names[i]} gives what Godot gives ({wrong[i]} differ)");
+        FlatBasisMatchesGodot(random);
+    }
+
+    /// <summary>The tree drawing's rotations and scalings (<see cref="FlatBasis"/>) give what Godot's give, bit for bit.</summary>
+    private static void FlatBasisMatchesGodot(Random random)
+    {
+        float Angle() => (float)(random.NextDouble() * 14 - 7);
+        float Size() => (float)(random.NextDouble() * 3);
+        Vector3 Axis() =>
+            random.Next(4) switch
+            {
+                0 => Vector3.Up,
+                1 => Vector3.Forward,
+                _ => new Vector3(Angle(), Angle(), Angle()).Normalized(),
+            };
+        static bool Same(float a, float b) => BitConverter.SingleToInt32Bits(a) == BitConverter.SingleToInt32Bits(b);
+        static bool SameVector(Vector3 a, Vector3 b) => Same(a.X, b.X) && Same(a.Y, b.Y) && Same(a.Z, b.Z);
+        static bool SameBasis(Basis a, Basis b) =>
+            SameVector(a.Row0, b.Row0) && SameVector(a.Row1, b.Row1) && SameVector(a.Row2, b.Row2);
+        var wrong = new int[5];
+        for (int i = 0; i < 100_000; i++)
+        {
+            var axis = Axis();
+            float angle = Angle();
+            if (!SameBasis(FlatBasis.AxisAngle(axis, angle), new Basis(axis, angle)))
+                wrong[0]++;
+            var left = new Basis(Axis(), Angle()).Scaled(new Vector3(Size(), Size(), Size()));
+            var right = new Basis(Axis(), Angle());
+            if (!SameBasis(FlatBasis.Multiply(left, right), left * right))
+                wrong[1]++;
+            var turn = Axis();
+            float by = Angle();
+            if (!SameBasis(FlatBasis.Rotated(left, turn, by), left.Rotated(turn, by)))
+                wrong[2]++;
+            var scale = new Vector3(Size(), Size(), Size());
+            if (
+                !SameBasis(FlatBasis.ScaledLocal(left, scale), left.ScaledLocal(scale))
+                || !SameBasis(FlatBasis.ScaledLocal(Basis.Identity, scale), Basis.Identity.ScaledLocal(scale))
+            )
+                wrong[3]++;
+            var v = new Vector3(Angle(), Angle(), Angle());
+            if (!SameVector(FlatBasis.Times(left, v), left * v))
+                wrong[4]++;
+        }
+        string[] names = { "axis and angle", "product", "Rotated", "ScaledLocal", "basis times vector" };
+        for (int i = 0; i < names.Length; i++)
+            Check(wrong[i] == 0, $"FlatBasis: {names[i]} gives what Godot gives ({wrong[i]} differ)");
     }
 
     /// <summary>

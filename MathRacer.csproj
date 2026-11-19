@@ -3,6 +3,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <Nullable>enable</Nullable>
+    <!-- The valley is planned in C# at startup and in every check; unoptimised code made that slower. -->
+    <Optimize>true</Optimize>
   </PropertyGroup>
   <!-- Release exports ship without the headless checks and capture views. -->
   <ItemGroup Condition="'$(Configuration)' == 'ExportRelease'">

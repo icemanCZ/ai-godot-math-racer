@@ -74,6 +74,21 @@ The namespaces depend on one another in both directions (every one of them can r
 
 `Game` owns the current state and activates the vehicle during exploration. The UI sends intents such as submitting an answer or choosing an expedition. Pause records the previous state. Resume restores its panel, question and selections. Loading a save reuses the same panel restoration.
 
+### Startup speed
+
+Everything the player sees is generated in `_Ready`, so startup time is the time the C# planning takes. Outside an
+exported game (`run.ps1` and every check) Godot loads its `GodotSharp.dll` from `GodotSharp/Api/Debug`, which is built
+without optimisation: each `Vector2`, `Vector3`, `Basis` or `Mathf` method is a call that the JIT cannot inline, about
+twenty times slower than the same arithmetic in our own code. The loops that run hundreds of thousands of times while a
+valley is planned (`Village.IsReserved`, the haul and site searches, `Roads.SampleField` and `SurfaceHeight`,
+`Grass.CanGrow`, `Tracks.Contains`, the site zones) are therefore written in plain floats with `FlatMath`, and the
+rotations of the tree drawing with `FlatBasis`; both repeat each Godot operation in the same order, so the valley stays
+the same, bit for bit. `unit-checks` compares every such form with Godot's on random input and the world fingerprints
+pin the result. Keep new hot loops in floats, and read an engine property such as `Position` once outside a loop: each
+read is a call into the engine. For the same reason a mesh that is rebuilt often goes to the engine as arrays in one
+call (`WheelTracks`), not vertex by vertex. The project is built with `Optimize` even in the Debug configuration for the
+same reason.
+
 ## Questions and activities
 
 - Add question data and generation alongside the existing quiz types. `Game.Quizzes.cs` selects an enabled type, rotates through language activities and opens the question. `Game.SubmitAnswer` handles answers and forwards successful interactions to the appropriate activity. `GameUi` renders the choices. Keep a new quiz's pending question and partial selections restorable from disk.

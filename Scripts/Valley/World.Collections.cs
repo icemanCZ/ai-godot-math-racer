@@ -75,7 +75,7 @@ public partial class World
         return spots.ToArray();
     }
 
-    private static float FlatDistance(Vector3 a, Vector3 b) => new Vector2(a.X - b.X, a.Z - b.Z).Length();
+    private static float FlatDistance(Vector3 a, Vector3 b) => FlatMath.Length(a.X - b.X, a.Z - b.Z);
 
     private ApproachIndex? pickupIndex;
     private int pickupIndexCount = -1;
@@ -136,13 +136,19 @@ public partial class World
         /// <summary>The pickup approaches' test: the point is nearer than the radius to the clamped projection.</summary>
         public bool NearClamped(Vector3 point)
         {
-            var p = new Vector2(point.X, point.Z);
+            float px = point.X,
+                pz = point.Z;
             for (int i = 0; i < from.Length; i++)
             {
-                if (p.X < minX[i] || p.X > maxX[i] || p.Y < minZ[i] || p.Y > maxZ[i])
+                if (px < minX[i] || px > maxX[i] || pz < minZ[i] || pz > maxZ[i])
                     continue;
-                float t = Mathf.Clamp((p - from[i]).Dot(edge[i]) / lengthSquared[i], 0, 1);
-                if (p.DistanceSquaredTo(from[i] + edge[i] * t) < radius * radius)
+                // p.DistanceSquaredTo(from + edge * t), in floats (see FlatMath).
+                var a = from[i];
+                var e = edge[i];
+                float t = FlatMath.Clamp(((px - a.X) * e.X + (pz - a.Y) * e.Y) / lengthSquared[i], 0, 1);
+                float dx = px - (a.X + e.X * t),
+                    dz = pz - (a.Y + e.Y * t);
+                if (dx * dx + dz * dz < radius * radius)
                     return true;
             }
             return false;
@@ -151,14 +157,19 @@ public partial class World
         /// <summary>The haul approaches' test, which treats a (nearly) zero-length segment as a point.</summary>
         public bool NearSegmentDistance(Vector3 point)
         {
-            var p = new Vector2(point.X, point.Z);
+            float px = point.X,
+                pz = point.Z;
             for (int i = 0; i < from.Length; i++)
             {
-                if (p.X < minX[i] || p.X > maxX[i] || p.Y < minZ[i] || p.Y > maxZ[i])
+                if (px < minX[i] || px > maxX[i] || pz < minZ[i] || pz > maxZ[i])
                     continue;
+                var a = from[i];
+                var e = edge[i];
                 float t =
-                    lengthSquared[i] < .0001f ? 0 : Mathf.Clamp((p - from[i]).Dot(edge[i]) / lengthSquared[i], 0, 1);
-                if (p.DistanceTo(from[i] + edge[i] * t) < radius)
+                    lengthSquared[i] < .0001f
+                        ? 0
+                        : FlatMath.Clamp(((px - a.X) * e.X + (pz - a.Y) * e.Y) / lengthSquared[i], 0, 1);
+                if (FlatMath.Length(px - (a.X + e.X * t), pz - (a.Y + e.Y * t)) < radius)
                     return true;
             }
             return false;
