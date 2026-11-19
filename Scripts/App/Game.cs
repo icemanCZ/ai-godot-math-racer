@@ -298,6 +298,7 @@ public partial class Game : Node3D
             return;
         EnterInteraction(GameState.Garage);
         ShowGarage();
+        Speak(Texts.GarazVyberSiAutoDruhyUkolu);
     }
 
     internal void ConfigureCar(CarReward reward)
@@ -550,6 +551,7 @@ public partial class Game : Node3D
     {
         economy.RewardCoins = coins;
         AddCoins(coins);
+        Speak(Texts.CoinsGained(coins), null, interrupt: false);
         State = GameState.Reward;
         ShowRewards();
         ShowCelebrationView();

@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Text.RegularExpressions;
 using Godot;
 using MathRacer.Characters;
 using MathRacer.Quizzes;
@@ -14,17 +15,22 @@ public partial class Game
 
     private void Speak(string text) => Speak(text, null);
 
-    private void Speak(string text, Character? speaker)
+    /// <summary>
+    /// Reads a text aloud. A new text normally cuts off the one being read; with <paramref name="interrupt"/> off it
+    /// waits for it, which is how the coins of a reward follow the thanks of the character.
+    /// </summary>
+    private void Speak(string text, Character? speaker, bool interrupt = true)
     {
         if (!DisplayServer.HasFeature(DisplayServer.Feature.TextToSpeech))
             return;
         czechVoices ??= DisplayServer.TtsGetVoicesForLanguage("cs");
         if (czechVoices.Length == 0)
             return;
+        text = Spoken(text);
 
         if (speaker == null)
         {
-            DisplayServer.TtsSpeak(text, czechVoices[0], rate: .9f, interrupt: true);
+            DisplayServer.TtsSpeak(text, czechVoices[0], rate: .9f, interrupt: interrupt);
             return;
         }
 
@@ -34,8 +40,29 @@ public partial class Game
         int variation = speakerIndex / czechVoices.Length;
         float pitch = AnimalSpeechPitches[variation % AnimalSpeechPitches.Length];
         float rate = AnimalSpeechRates[variation / AnimalSpeechPitches.Length % AnimalSpeechRates.Length];
-        DisplayServer.TtsSpeak(text, voice, pitch: pitch, rate: rate, interrupt: true);
+        DisplayServer.TtsSpeak(text, voice, pitch: pitch, rate: rate, interrupt: interrupt);
     }
+
+    /// <summary>
+    /// The text of a panel or a celebration as it is read: the signs that are only drawn (<c>+3</c>, <c>2 / 6</c>,
+    /// the dot between two parts) become words, because a voice would spell them out.
+    /// </summary>
+    internal static string Spoken(string text) =>
+        Regex.Replace(
+            Regex.Replace(text, @"\+(\d+)", "plus $1").Replace("·", ",").Replace("✓", "").Replace("—", ","),
+            @"(\d+)\s*/\s*(\d+)",
+            "$1 z $2"
+        );
+
+    /// <summary>What a postcard's question asks, in words a voice can read before the child sees the answers.</summary>
+    private static string PostcardInstruction(IChallenge question) =>
+        question switch
+        {
+            SyllableChallenge => Texts.VyberSlabikyPodleObrazku,
+            LetterChallenge => Texts.VyberObrazekPodlePrvnihoPismena,
+            ReadingChallenge => Texts.PrectiSlovoAVyberObrazek,
+            _ => Texts.VyresPriklad,
+        };
 
     private void StopSpeech()
     {

@@ -24,6 +24,23 @@ public partial class Village
         "jiřinu",
         "kosatec",
     };
+
+    /// <summary>The flowers as they are called on a sign or a panel; <see cref="FlowerNames"/> is the form after "přivez".</summary>
+    public static readonly string[] FlowerTitles =
+    {
+        "Kopretina",
+        "Tulipán",
+        "Slunečnice",
+        "Vlčí mák",
+        "Fialka",
+        "Růže",
+        "Sedmikráska",
+        "Narcis",
+        "Chrpa",
+        "Měsíček",
+        "Jiřina",
+        "Kosatec",
+    };
     public static readonly string[] FlowerColors =
     {
         "fff8e5",

@@ -42,6 +42,7 @@ public partial class Game
     private void CelebrateCompletion(Character owner, string message, bool unload = false, Node3D? building = null)
     {
         owner.Celebrate();
+        Speak(message, owner);
         var position =
             building != null
                 ? building.GlobalPosition + building.GlobalBasis.Z * 3.5f + Vector3.Up * 3

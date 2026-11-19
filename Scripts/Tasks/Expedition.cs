@@ -35,6 +35,11 @@ public partial class Expedition : Node3D
     public string FarmName => Village.FarmNames[ItemIndex];
     public string FlowerName => Village.FlowerNames[ItemIndex];
     public string CollectionName => Village.CollectionNames(Toys)[ItemIndex];
+
+    /// <summary>What the item is called on a sign and on a panel: the name itself, not the form after "přivez".</summary>
+    public string FarmTitle => Village.FarmTitles[ItemIndex];
+    public string FlowerTitle => Village.FlowerTitles[ItemIndex];
+    public string CollectionTitle => Village.CollectionTitles(Toys)[ItemIndex];
     public string Cargo =>
         Sender.Role is TraderRole shop ? Village.TradeCargo[shop.Index]
         : Collection ? "apple"
@@ -189,7 +194,7 @@ public partial class Expedition : Node3D
                 waitingAnimal = animal;
                 pickup.AddChild(animal);
                 animal.Animate(0, false);
-                Art.Sign(pickup, Vector3.Up * 3.5f, FarmName, 28);
+                Art.Sign(pickup, Vector3.Up * 3.5f, FarmTitle, 28);
             }
             else if (Gems || Toys)
             {
@@ -197,13 +202,13 @@ public partial class Expedition : Node3D
                     ? Village.CreateToy(pickup, Vector3.Zero, ItemIndex)
                     : Village.CreateGem(pickup, Vector3.Zero, ItemIndex);
                 item.Scale = Vector3.One * 1.5f;
-                Art.Sign(pickup, Vector3.Up * 3.5f, CollectionName, 28);
+                Art.Sign(pickup, Vector3.Up * 3.5f, CollectionTitle, 28);
             }
             else if (Garden)
             {
                 var flower = Village.CreateFlower(pickup, Vector3.Zero, ItemIndex);
                 flower.Scale = Vector3.One * 1.7f;
-                Art.Sign(pickup, Vector3.Up * 3.5f, FlowerName, 28);
+                Art.Sign(pickup, Vector3.Up * 3.5f, FlowerTitle, 28);
             }
             else
             {

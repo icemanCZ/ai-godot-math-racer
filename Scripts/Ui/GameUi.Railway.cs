@@ -40,7 +40,7 @@ public partial class GameUi
             Picture(content, trip.Loaded ? LoadIcon(trip.Load) : "trailer");
         else if (canStart)
         {
-            var start = IconButton("play", () => Send(new UiIntent.RailwayTrip()), "StartRailwayTrip");
+            var start = IconButton("check", () => Send(new UiIntent.RailwayTrip()), "StartRailwayTrip");
             start.AccessibilityName = Texts.ZaprahnoutVozik;
             start.GrabFocus();
         }
@@ -55,7 +55,7 @@ public partial class GameUi
             arrow.CustomMinimumSize = new(70, 64);
             arrow.Direction = Mathf.Pi / 2;
             Picture(need, WorksCatalog.ProductIcon(missing.Spec.Product))!.CustomMinimumSize = new(100, 84);
-            var fetch = IconButton("play", () => Send(new UiIntent.MissingSupply()), "StartMissingSupply");
+            var fetch = IconButton("check", () => Send(new UiIntent.MissingSupply()), "StartMissingSupply");
             fetch.AccessibilityName = Texts.ZaprahnoutVozikProSurovinu;
             fetch.GrabFocus();
         }

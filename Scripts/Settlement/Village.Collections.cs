@@ -25,6 +25,23 @@ public partial class Village
         "olivín",
         "lazurit",
     };
+
+    /// <summary>The gems as they are called on a sign or a panel.</summary>
+    public static readonly string[] GemTitles =
+    {
+        "Rubín",
+        "Safír",
+        "Smaragd",
+        "Ametyst",
+        "Citrín",
+        "Růženín",
+        "Tyrkys",
+        "Opál",
+        "Topaz",
+        "Akvamarín",
+        "Olivín",
+        "Lazurit",
+    };
     public static readonly string[] GemColors =
     {
         "ed586e",
@@ -55,6 +72,23 @@ public partial class Village
         "letadélko",
         "plachetnici",
     };
+
+    /// <summary>The toys as they are called on a sign or a panel; <see cref="ToyNames"/> is the form after "přivez".</summary>
+    public static readonly string[] ToyTitles =
+    {
+        "Míč",
+        "Autíčko",
+        "Medvídek",
+        "Káča",
+        "Vláček",
+        "Kostky",
+        "Bubínek",
+        "Raketa",
+        "Kachnička",
+        "Robot",
+        "Letadélko",
+        "Plachetnice",
+    };
     public Character GemCollector { get; private set; } = null!;
     public Character Toymaker { get; private set; } = null!;
     public Node3D MuseumBuilding { get; private set; } = null!;
@@ -69,6 +103,8 @@ public partial class Village
     public int CollectionCount(bool toys) => toys ? ToyCount : GemCount;
 
     public static string[] CollectionNames(bool toys) => toys ? ToyNames : GemNames;
+
+    public static string[] CollectionTitles(bool toys) => toys ? ToyTitles : GemTitles;
 
     private void GenerateCollectorPets()
     {

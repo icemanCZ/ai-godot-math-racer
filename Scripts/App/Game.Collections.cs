@@ -19,6 +19,7 @@ public partial class Game
         {
             State = role.StatusState;
             role.ShowStatus(ui, world.Village, owner, Delivery);
+            Speak(Texts.CollectorProgress(role.Count(world.Village), role.Total), owner);
             return;
         }
         // Every new trip requires a fresh quiz; an abandoned quiz never unlocks a departure.

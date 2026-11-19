@@ -196,6 +196,10 @@ public partial class GarageChecks : Node
                 buttonsSeen.SetEquals(selectable) && reachedBelowFold,
                 "arrow keys reach every enabled garage button, including scrolled items and Back"
             );
+            Check(
+                ChallengeChecks.AnswerIcon(game, "LeaveGarage") == "cross",
+                "the garage is left with the same red X as every other panel"
+            );
             ui._Input(new InputEventJoypadMotion { Axis = JoyAxis.RightY, AxisValue = 1 });
             ui._Process(.4);
             ui._Input(new InputEventJoypadMotion { Axis = JoyAxis.RightY, AxisValue = 0 });

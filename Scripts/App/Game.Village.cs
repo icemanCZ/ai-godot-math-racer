@@ -30,6 +30,7 @@ public partial class Game
             ClearChallenge();
             EnterInteraction(GameState.HouseCollection, resident);
             ui.HouseCollection(resident, Delivery.Collected);
+            Speak(Texts.CollectedProgress(Delivery.Collected, 3), resident);
             return;
         }
         if (HouseMaterial(house) is HaulLoad.Glass or HaulLoad.Bread)
@@ -45,6 +46,7 @@ public partial class Game
         {
             EnterInteraction(GameState.HouseReward, resident);
             ui.HouseReward(resident, world.Village.Level(house));
+            Speak(Texts.HouseProgress(world.Village.Level(house), Village.Upgrades.Length), resident);
             return;
         }
         if (world.Village.TaskAt(house) == VillageTaskKind.Fruit)
@@ -52,6 +54,7 @@ public partial class Game
             ClearChallenge();
             EnterInteraction(GameState.HouseFruitOffer, resident);
             ui.HouseFruitOffer(resident, world.Village.Level(house), true);
+            Speak(Texts.OvoceNabidka, resident);
             return;
         }
         if (HouseMaterial(house) != null)

@@ -14,6 +14,7 @@ public partial class Game
         {
             State = GameState.TradeStatus;
             ui.TradeStatus(owner, Delivery);
+            Speak(Texts.ObjednavkaJeNaCesteDorucJi, owner);
             return;
         }
         BeginQuiz();

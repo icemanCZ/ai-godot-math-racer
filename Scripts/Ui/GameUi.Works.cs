@@ -66,7 +66,7 @@ public partial class GameUi
             Picture(content, trip.Loaded ? LoadIcon(trip.Load) : "trailer");
         else if (canStart)
         {
-            var start = IconButton("play", () => Send(new UiIntent.SupplyQuest()), "StartSupplyTrip");
+            var start = IconButton("check", () => Send(new UiIntent.SupplyQuest()), "StartSupplyTrip");
             start.AccessibilityName = Texts.ZaprahnoutVozik;
             start.GrabFocus();
         }

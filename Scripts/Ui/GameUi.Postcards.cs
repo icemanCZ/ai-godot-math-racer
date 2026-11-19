@@ -126,7 +126,7 @@ public partial class GameUi
         }
         var actions = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         content.AddChild(actions);
-        Button("Album", album, actions).Name = "PostcardBack";
+        IconButton("album", album, "PostcardBack", actions).AccessibilityName = Texts.AlbumPohlednic;
         BackButton("LeavePostcard", actions);
     }
 }

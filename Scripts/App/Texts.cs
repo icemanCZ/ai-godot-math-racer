@@ -272,6 +272,35 @@ internal static class Texts
     public const string TotoZviratkoUzJsiNavstivilSleduj = "Toto zvířátko už jsi navštívil. Sleduj další otazníky!";
     public const string Zpet = "Zpět";
 
+    // Spoken descriptions of panels that open without a character speaking. The green check mark accepts what the
+    // panel offers and the red X declines it, so the offers say so in the same words everywhere.
+    public const string Potvrdit = "Potvrdit";
+    public const string GarazVyberSiAutoDruhyUkolu =
+        "Garáž. Vyber si auto, druhy úkolů a mazlíčky. Červený křížek tě vrátí na cestu.";
+    public const string OvoceNabidka = "Chci tři jablka. Zelená fajfka tě pro ně pošle, červený křížek okno zavře.";
+    public const string GolemNabidka =
+        "Přiveď mi šest dílků golema. Zelená fajfka tě pro ně pošle, červený křížek okno zavře.";
+    public const string GolemJeHotovy = "Golem je hotový! Najdeš ho v garáži.";
+    public const string ObjednavkaJeNaCesteDorucJi = "Tvoje objednávka je na cestě. Doruč ji zvířátku na obrázku.";
+    public const string AlbumVyberObrazekAOdpovez =
+        "Album pohlednic. Vyber obrázek a odpověz na otázku, ať pohlednice dostane razítko.";
+    public const string VyberSlabikyPodleObrazku = "Vyber slabiky podle obrázku a potvrď je zelenou fajfkou.";
+    public const string VyberObrazekPodlePrvnihoPismena = "Vyber obrázek podle prvního písmene.";
+    public const string PrectiSlovoAVyberObrazek = "Přečti slovo a vyber obrázek.";
+    public const string VyresPriklad = "Vyřeš příklad.";
+    public const string RozvozPopis = "Rozvoz. Odvezeš kamarádovi zboží z obrázku.";
+    public const string DovozPopis = "Dovoz. Přivezeš kamarádovi, co chybí do sbírky.";
+    public const string Pauza = "Pauza";
+
+    public static string HouseProgress(int level, int total) => $"Domeček má {level} z {total} vylepšení.";
+
+    public static string CollectedProgress(int collected, int total) => $"Už máš {collected} z {total}. Jeď pro další.";
+
+    public static string CollectorProgress(int count, int total) =>
+        count >= total ? $"Máme všech {total}! Děkujeme!" : $"Už máme {count} z {total}.";
+
+    public static string GolemProgress(int collected) => $"Už máš {collected} z 6 dílků golema. Jeď pro další.";
+
     // Words and phrases without diacritics
     public const string FarmaMeziLoukami = "Farma mezi loukami";
     public const string NaSilniciUFarmy = "Na silnici u farmy";

@@ -39,6 +39,23 @@ public partial class Village
         "lišku Ryšku",
         "srnku Hvězdičku",
     };
+
+    /// <summary>The animals as they are called on a sign or a panel; <see cref="FarmNames"/> is the form after "přivez".</summary>
+    public static readonly string[] FarmTitles =
+    {
+        "Králíček Ušáček",
+        "Ptáček Pírko",
+        "Liška Zrzečka",
+        "Srnka Puntíkatá",
+        "Králíček Hopík",
+        "Ptáček Zpěváček",
+        "Liška Bystrouška",
+        "Srnka Jiskřička",
+        "Králíček Chlupáček",
+        "Ptáček Modrásek",
+        "Liška Ryška",
+        "Srnka Hvězdička",
+    };
     public Character Farmer { get; private set; } = null!;
     public Node3D FarmBuilding { get; private set; } = null!;
     public int FarmCount => farmAnimals.Count;

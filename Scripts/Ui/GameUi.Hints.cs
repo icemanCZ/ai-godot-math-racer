@@ -46,10 +46,11 @@ public partial class GameUi
         bool toys = owner.Role is ExhibitCollectorRole { Toys: true };
         int count = village.CollectionCount(toys);
         Clear();
+        StatusPicture(toys ? "toy" : "gem");
         Text(owner.DisplayName, 30);
         Text($"{(returned ? "✓  " : "")}{count} / {Village.CollectionNames(toys).Length}", 28);
         if (expedition?.Sender == owner)
-            Text(expedition.CollectionName, 22);
+            Text(expedition.CollectionTitle, 22);
         else if (expedition != null)
             Text("…", 26);
         CollectorPetStatus(village.PetFor(owner));
@@ -59,10 +60,11 @@ public partial class GameUi
     public void GardenStatus(Village village, Expedition? expedition, bool returned = false)
     {
         Clear();
+        StatusPicture("flower");
         Text(Texts.ZahradnikVitek, 32);
         Text($"{(returned ? "✓  " : "")}{village.GardenCount} / {Village.FlowerNames.Length}", 28);
         if (expedition?.Garden == true)
-            Text(expedition.FlowerName, 22);
+            Text(expedition.FlowerTitle, 22);
         else if (expedition != null)
             Text("…", 26);
         CollectorPetStatus(village.PetFor(village.Gardener));
@@ -72,15 +74,19 @@ public partial class GameUi
     public void FarmStatus(Village village, Expedition? expedition, bool returned = false)
     {
         Clear();
+        StatusPicture("barn");
         Text(Texts.FarmarTonda, 32);
         Text($"{(returned ? "✓  " : "")}{village.FarmCount} / {Village.FarmKinds.Length}", 28);
         if (expedition?.Farm == true)
-            Text(expedition.FarmName, 22);
+            Text(expedition.FarmTitle, 22);
         else if (expedition != null)
             Text("…", 26);
         CollectorPetStatus(village.PetFor(village.Farmer));
         BackButton().GrabFocus();
     }
+
+    /// <summary>The picture of what a collector gathers: animals for the barn, flowers, gems or toys.</summary>
+    private void StatusPicture(string icon) => Picture(content, icon)!.CustomMinimumSize = new(120, 96);
 
     private void CollectorPetStatus(CollectorPet pet) =>
         Text(pet.IsOwned ? $"✓ {pet.DisplayName}" : $"{pet.DisplayName} · {pet.Goal}", 20);

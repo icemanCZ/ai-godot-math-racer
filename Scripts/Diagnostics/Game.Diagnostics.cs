@@ -146,25 +146,29 @@ public partial class Game
             if (view.EndsWith("expedition"))
                 ChallengeChecks.Solve(this);
         }
-        if (view is "garden" or "garden-full" or "garden-question" or "garden-expedition")
+        if (view is "garden" or "garden-full" or "garden-question" or "garden-expedition" or "garden-status")
         {
             if (view == "garden-full")
                 world.Village.RestoreGarden(Village.FlowerNames.Length);
             vehicle.SetPose(world.Village.Gardener.Position + Vector3.Right * 3, 0);
-            if (view is "garden-question" or "garden-expedition")
+            if (view is "garden-question" or "garden-expedition" or "garden-status")
                 OpenChallenge(world.Village.Gardener);
-            if (view == "garden-expedition")
+            if (view is "garden-expedition" or "garden-status")
                 ChallengeChecks.Solve(this);
+            if (view == "garden-status")
+                OpenChallenge(world.Village.Gardener);
         }
-        if (view is "farm" or "farm-full" or "farm-question" or "farm-expedition")
+        if (view is "farm" or "farm-full" or "farm-question" or "farm-expedition" or "farm-status")
         {
             if (view == "farm-full")
                 world.Village.RestoreFarm(Village.FarmKinds.Length);
             vehicle.SetPose(world.Village.Farmer.Position + Vector3.Right * 3, 0);
-            if (view is "farm-question" or "farm-expedition")
+            if (view is "farm-question" or "farm-expedition" or "farm-status")
                 OpenChallenge(world.Village.Farmer);
-            if (view == "farm-expedition")
+            if (view is "farm-expedition" or "farm-status")
                 ChallengeChecks.Solve(this);
+            if (view == "farm-status")
+                OpenChallenge(world.Village.Farmer);
         }
         if (view == "house-celebration")
         {

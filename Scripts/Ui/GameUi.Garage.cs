@@ -29,7 +29,7 @@ public partial class GameUi
         header.AddThemeConstantOverride("separation", 14);
         content.AddChild(header);
         var leave = IconButton(
-            "back",
+            "cross",
             () =>
             {
                 garageScroll = 0;

@@ -127,5 +127,5 @@ public partial class GameUi
     }
 
     private void UpdateControls() =>
-        controls.Text = controller ? "RT / LT   ◀ ▶    A · ?    B · ↶    Menu · Ⅱ" : Texts.WasdEMezernikREscIi;
+        controls.Text = controller ? "RT / LT   ◀ ▶    A · ?    B · ✕    Menu · Ⅱ" : Texts.WasdEMezernikREscIi;
 }

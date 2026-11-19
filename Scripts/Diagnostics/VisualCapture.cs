@@ -128,7 +128,7 @@ public partial class VisualCapture : Node
             camera.Position = focus + building.GlobalBasis * new Vector3(17, 17, 29);
             camera.LookAt(focus);
         }
-        else if (view is "garden" or "garden-full" or "garden-question")
+        else if (view is "garden" or "garden-full" or "garden-question" or "garden-status")
         {
             camera.SetProcess(false);
             car.Active = false;
@@ -137,7 +137,7 @@ public partial class VisualCapture : Node
             camera.Position = focus + garden.GlobalBasis * new Vector3(17, 17, 29);
             camera.LookAt(focus);
         }
-        else if (view is "farm" or "farm-full" or "farm-question")
+        else if (view is "farm" or "farm-full" or "farm-question" or "farm-status")
         {
             camera.SetProcess(false);
             car.Active = false;

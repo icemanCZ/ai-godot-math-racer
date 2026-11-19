@@ -23,7 +23,7 @@ public partial class GameUi
             Picture(content, trip.Loaded ? LoadIcon(trip.Load) : "trailer");
         else if (canStart)
         {
-            action = IconButton("play", () => Send(new UiIntent.HouseTrip()), "StartHouseTrip");
+            action = IconButton("check", () => Send(new UiIntent.HouseTrip()), "StartHouseTrip");
             action.AccessibilityName = Texts.ZaprahnoutVozikProMaterial;
         }
         else if (missing != null)
@@ -37,7 +37,7 @@ public partial class GameUi
             arrow.CustomMinimumSize = new(70, 64);
             arrow.Direction = Mathf.Pi / 2;
             Picture(need, WorksCatalog.ProductIcon(missing.Spec.Product))!.CustomMinimumSize = new(100, 84);
-            action = IconButton("play", () => Send(new UiIntent.MissingSupply()), "StartMissingSupply");
+            action = IconButton("check", () => Send(new UiIntent.MissingSupply()), "StartMissingSupply");
             action.AccessibilityName = Texts.ZaprahnoutVozikProSurovinu;
         }
         else

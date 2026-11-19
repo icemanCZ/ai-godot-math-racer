@@ -87,6 +87,12 @@ public partial class Game
         vehicle.Active = false;
         State = GameState.SorcererStatus;
         ShowSorcerer();
+        Speak(
+            GolemOwned ? Texts.GolemJeHotovy
+                : Delivery?.Golem == true ? Texts.GolemProgress(Delivery.Collected)
+                : Texts.GolemNabidka,
+            world.Sorcerer
+        );
     }
 
     private void ShowSorcerer() => ui.Sorcerer(world.Sorcerer, Delivery, GolemOwned);
@@ -113,6 +119,7 @@ public partial class Game
         UpdateDeliveryGuides();
         State = GameState.SorcererStatus;
         ShowSorcerer();
+        Speak(Texts.GolemJeHotovy, world.Sorcerer);
         SaveProgress();
     }
 }

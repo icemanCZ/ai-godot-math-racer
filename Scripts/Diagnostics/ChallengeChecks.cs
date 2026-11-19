@@ -23,6 +23,10 @@ public static class ChallengeChecks
             game.ConfirmSyllables();
     }
 
+    /// <summary>The picture on an icon button of the open panel: "check" accepts and "cross" declines, in every dialog.</summary>
+    internal static string? AnswerIcon(Game game, string button) =>
+        game.FindChild(button, true, false)?.GetChildren().OfType<DeliveryPicture>().FirstOrDefault()?.Icon;
+
     public static void Run(Game game, World world, Vehicle car, Action<bool, string> check)
     {
         var generator = new ChallengeGenerator(53);
@@ -222,6 +226,10 @@ public static class ChallengeChecks
                     game.State == GameState.Challenge
                         && ((Button)game.FindChild("ConfirmSyllables", true, false)).Disabled,
                     "a syllable word cannot be confirmed before all tiles are selected"
+                );
+                check(
+                    AnswerIcon(game, "ConfirmSyllables") == "check" && AnswerIcon(game, "LeaveChallenge") == "cross",
+                    "a question is accepted with a check mark and left with an X"
                 );
             }
             else if (question is IPictureChallenge)

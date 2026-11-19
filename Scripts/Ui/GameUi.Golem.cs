@@ -26,7 +26,7 @@ public partial class GameUi
         else
         {
             Text("0 / 6", 32);
-            var start = IconButton("play", () => Send(new UiIntent.GolemQuest()), "StartGolemQuest");
+            var start = IconButton("check", () => Send(new UiIntent.GolemQuest()), "StartGolemQuest");
             start.AccessibilityName = Texts.VyrazitProDilky;
             start.GrabFocus();
         }

@@ -692,10 +692,93 @@ public partial class DeliveryPicture : Control
         }
         else if (Icon == "check")
             DrawPolyline(new Vector2[] { new(50, 76), new(77, 103), new(132, 45) }, Colors.White, 12, true);
-        else if (Icon == "back")
+        else if (Icon == "delivery")
         {
-            DrawLine(new(132, 75), new(48, 75), Colors.White, 10, true);
-            DrawPolyline(new Vector2[] { new(77, 45), new(47, 75), new(77, 105) }, Colors.White, 10, true);
+            // Rozvoz: a parcel and an arrow that leaves it.
+            DrawRect(new(14, 54, 58, 58), new Color("bf9565"));
+            DrawRect(new(37, 54, 12, 58), new Color("fff0cf"));
+            DrawRect(new(14, 76, 58, 12), new Color("fff0cf"));
+            DrawLine(new(86, 83), new(150, 83), Colors.White, 11, true);
+            DrawPolyline(new Vector2[] { new(126, 55), new(154, 83), new(126, 111) }, Colors.White, 11, true);
+        }
+        else if (Icon == "collection")
+        {
+            // Dovoz: a basket of apples and an arrow that comes back to it.
+            DrawColoredPolygon(
+                new Vector2[] { new(14, 82), new(76, 82), new(68, 120), new(22, 120) },
+                new Color("c0873f")
+            );
+            DrawRect(new(10, 76, 70, 10), new Color("e0b06a"));
+            foreach (int x in new[] { 30, 54 })
+            {
+                DrawCircle(new(x, 66), 14, new Color("ed776b"));
+                DrawLine(new(x, 53), new(x + 3, 44), ink, 3, true);
+            }
+            DrawLine(new(166, 83), new(104, 83), Colors.White, 11, true);
+            DrawPolyline(new Vector2[] { new(128, 55), new(100, 83), new(128, 111) }, Colors.White, 11, true);
+        }
+        else if (Icon == "album")
+        {
+            // An open album with two photographs: a sky with a hill, and a sun.
+            DrawRect(new(26, 32, 128, 88), new Color("fff2ce"));
+            DrawLine(new(90, 32), new(90, 120), ink, 4, true);
+            DrawRect(new(36, 44, 44, 58), new Color("9ed5df"));
+            DrawColoredPolygon(
+                new Vector2[] { new(36, 102), new(36, 84), new(58, 70), new(80, 88), new(80, 102) },
+                green
+            );
+            DrawRect(new(100, 44, 44, 58), new Color("ffe0a3"));
+            DrawCircle(new(122, 66), 11, new Color("f3a02c"));
+            DrawRect(new(100, 88, 44, 14), green);
+        }
+        else if (Icon == "barn")
+        {
+            DrawRect(new(36, 66, 108, 58), new Color("c0573e"));
+            DrawColoredPolygon(new Vector2[] { new(26, 70), new(90, 26), new(154, 70) }, new Color("7d4a35"));
+            DrawRect(new(70, 88, 40, 36), new Color("fff0cf"));
+            DrawLine(new(70, 88), new(110, 124), new Color("c0573e"), 4, true);
+            DrawLine(new(110, 88), new(70, 124), new Color("c0573e"), 4, true);
+        }
+        else if (Icon == "flower")
+        {
+            DrawLine(new(90, 74), new(90, 126), green, 7, true);
+            Oval(new(110, 104), new(17, 8), green);
+            for (int petal = 0; petal < 6; petal++)
+            {
+                float angle = petal * Mathf.Tau / 6;
+                DrawCircle(
+                    new Vector2(90, 54) + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * 24,
+                    15,
+                    new Color("ed7fa6")
+                );
+            }
+            DrawCircle(new(90, 54), 13, new Color("f3c23c"));
+        }
+        else if (Icon == "gem")
+        {
+            DrawColoredPolygon(
+                new Vector2[] { new(58, 38), new(122, 38), new(150, 70), new(90, 126), new(30, 70) },
+                new Color("6ec7e8")
+            );
+            DrawColoredPolygon(
+                new Vector2[] { new(58, 38), new(122, 38), new(112, 70), new(68, 70) },
+                new Color("b5e8f7")
+            );
+            DrawPolyline(new Vector2[] { new(30, 70), new(150, 70) }, Colors.White, 4, true);
+            DrawLine(new(68, 70), new(90, 126), Colors.White, 4, true);
+            DrawLine(new(112, 70), new(90, 126), Colors.White, 4, true);
+        }
+        else if (Icon == "toy")
+        {
+            DrawCircle(new(90, 78), 46, new Color("ed776b"));
+            DrawArc(new(90, 78), 46, Mathf.Pi * .15f, Mathf.Pi * .85f, 24, Colors.White, 14, true);
+            DrawArc(new(90, 78), 46, Mathf.Pi * 1.15f, Mathf.Pi * 1.85f, 24, new Color("f3c23c"), 14, true);
+            DrawCircle(new(72, 58), 8, new Color(1, 1, 1, .55f));
+        }
+        else if (Icon == "cross")
+        {
+            DrawLine(new(58, 45), new(122, 105), Colors.White, 12, true);
+            DrawLine(new(122, 45), new(58, 105), Colors.White, 12, true);
         }
         else if (Icon == "arrow")
         {

@@ -292,6 +292,10 @@ public partial class Game
         rejectedPostcardAnswers = 0;
         postcardFeedback = "";
         ShowPostcards();
+        if (index < 0)
+            Speak(Texts.AlbumVyberObrazekAOdpovez);
+        else if (postcards[index] is { Stamped: false })
+            Speak(PostcardInstruction(PostcardQuestion(index)));
     }
 
     private void ShowPostcards()

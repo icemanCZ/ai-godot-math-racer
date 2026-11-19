@@ -44,6 +44,7 @@ internal static class UnitChecks
             DamagedSaves();
             Questions();
             ActorRanges();
+            CollectionTitles();
         }
         catch (Exception error)
         {
@@ -54,6 +55,29 @@ internal static class UnitChecks
         if (failed == 0)
             GD.Print("UNIT_CHECKS_PASSED");
         return failed == 0 ? 0 : 1;
+    }
+
+    /// <summary>
+    /// Every collected item has a name for signs and panels beside the form used after "přivez": the same number, and a
+    /// name, so it starts with a capital letter.
+    /// </summary>
+    private static void CollectionTitles()
+    {
+        var sets = new (string Set, string[] Names, string[] Titles)[]
+        {
+            ("animals", Settlement.Village.FarmNames, Settlement.Village.FarmTitles),
+            ("flowers", Settlement.Village.FlowerNames, Settlement.Village.FlowerTitles),
+            ("gems", Settlement.Village.GemNames, Settlement.Village.GemTitles),
+            ("toys", Settlement.Village.ToyNames, Settlement.Village.ToyTitles),
+        };
+        foreach (var (set, names, titles) in sets)
+        {
+            Check(names.Length == titles.Length, $"{set}: every name has a title");
+            Check(
+                titles.All(title => title.Length > 0 && char.IsUpper(title[0])),
+                $"{set}: titles are names and start with a capital letter"
+            );
+        }
     }
 
     private static string Scratch() => DiagnosticArtifacts.PathFor($"unit-checks/{files++}.json");

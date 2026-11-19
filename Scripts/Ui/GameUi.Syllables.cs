@@ -1,5 +1,7 @@
 using System;
+using System.Linq;
 using Godot;
+using MathRacer.App;
 using MathRacer.Quizzes;
 
 namespace MathRacer.Ui;
@@ -47,10 +49,19 @@ public partial class GameUi
             if (!button.Disabled)
                 first ??= button;
         }
-        var confirm = Button("Potvrdit", () => Send(new UiIntent.ConfirmSyllables()), group, narrate: false);
-        confirm.Name = "ConfirmSyllables";
+        var confirm = AcceptButton(
+            () => Send(new UiIntent.ConfirmSyllables()),
+            "ConfirmSyllables",
+            Texts.Potvrdit,
+            group
+        );
+        confirm.SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter;
         confirm.ActionMode = BaseButton.ActionModeEnum.Release;
         confirm.Disabled = !selection.IsComplete(question);
+        if (confirm.Disabled)
+            // The disabled button is pale, so the white check mark is drawn in the colour of the text instead.
+            foreach (var picture in confirm.GetChildren().OfType<DeliveryPicture>())
+                picture.Modulate = new Color("8a9a8f");
         (confirm.Disabled ? first : confirm)?.GrabFocus();
     }
 }

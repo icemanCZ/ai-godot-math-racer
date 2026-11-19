@@ -33,7 +33,7 @@ public partial class GameUi
         Picture(content, "apple", count: 3);
         if (canStart)
         {
-            var start = IconButton("play", () => Send(new UiIntent.VillageFruit()), "VillageFruitTask");
+            var start = IconButton("check", () => Send(new UiIntent.VillageFruit()), "VillageFruitTask");
             start.AccessibilityName = Texts.VyrazitProOvoce;
         }
         else
@@ -45,7 +45,6 @@ public partial class GameUi
     {
         Clear();
         talkButton.Hide();
-        Text("✓", 38);
         var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         row.AddThemeConstantOverride("separation", 24);
         content.AddChild(row);
@@ -68,8 +67,14 @@ public partial class GameUi
                     CargoAmount = collection ? 0 : 1,
                 }
             );
-            var select = Button(collection ? "Dovoz" : "Rozvoz", () => Send(new UiIntent.Expedition(collection)), card);
-            select.Name = collection ? "ChooseCollection" : "ChooseDelivery";
+            var select = IconButton(
+                collection ? "collection" : "delivery",
+                () => Send(new UiIntent.Expedition(collection)),
+                collection ? "ChooseCollection" : "ChooseDelivery",
+                card
+            );
+            select.CustomMinimumSize = new(170, 104);
+            select.AccessibilityName = collection ? Texts.DovozPopis : Texts.RozvozPopis;
             first ??= select;
         }
         BackButton("LeaveExpeditionChoice");

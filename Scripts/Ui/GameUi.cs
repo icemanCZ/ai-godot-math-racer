@@ -217,10 +217,12 @@ public partial class GameUi : CanvasLayer
         Clear();
         Text(Texts.KouzelneUdoli, 34);
         Text(Texts.ValleySeed(Settings.Seed), 20);
-        Button(saved ? Texts.Pokracovat : Texts.Hrat, () => Send(new UiIntent.Play())).GrabFocus();
+        string primary = saved ? Texts.Pokracovat : Texts.Hrat;
+        Button(primary, () => Send(new UiIntent.Play())).GrabFocus();
         Button(Texts.NovaHra, () => Send(new UiIntent.NewGame())).Name = "NewGame";
         if (saved)
             Text(Texts.NovaHraNahradiUlozenyPostup, 18);
+        Send(new UiIntent.Speak($"{Texts.KouzelneUdoli}. {primary}."));
     }
 
     public void Pause()
@@ -231,6 +233,7 @@ public partial class GameUi : CanvasLayer
         Button(Texts.NovaHra, () => Send(new UiIntent.NewGame())).Name = "NewGame";
         Text(Texts.NovaHraNahradiUlozenyPostup, 18);
         Button(Texts.KonecHry, () => GetTree().Quit());
+        Send(new UiIntent.Speak($"{Texts.Pauza}. {Texts.Pokracovat}."));
     }
 
     public void LoadingWorld()
@@ -278,20 +281,45 @@ public partial class GameUi : CanvasLayer
         return picture;
     }
 
+    /// <summary>
+    /// A button that is only a picture. Every dialog answers the same way: a green check mark accepts (starts the
+    /// task, takes the reward, confirms the choice) and a red X declines (leaves the panel). No other picture is used
+    /// for these two answers, so a child learns them once.
+    /// </summary>
     private Button IconButton(string icon, Action action, string name, Container? parent = null)
     {
         var button = Button("", action, parent);
         button.Name = name;
         button.CustomMinimumSize = new(150, 76);
+        if (icon == "check")
+            TintAnswer(button, "4f9d5e", "62b571", "3f8a4e");
+        else if (icon == "cross")
+            TintAnswer(button, "d1695c", "e07f72", "b9584c");
         var picture = new DeliveryPicture { Icon = icon, MouseFilter = Control.MouseFilterEnum.Ignore };
         button.AddChild(picture);
         picture.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         return button;
     }
 
+    private static void TintAnswer(Button button, string normal, string hover, string pressed)
+    {
+        button.AddThemeStyleboxOverride("normal", Style(normal, 20));
+        button.AddThemeStyleboxOverride("hover", Style(hover, 20));
+        button.AddThemeStyleboxOverride("pressed", Style(pressed, 20));
+    }
+
+    /// <summary>The green check mark that accepts what the panel offers; <paramref name="spoken"/> is read aloud.</summary>
+    private Button AcceptButton(Action action, string name, string spoken, Container? parent = null)
+    {
+        var button = IconButton("check", action, name, parent);
+        button.AccessibilityName = spoken;
+        return button;
+    }
+
+    /// <summary>The red X that declines and leaves the panel.</summary>
     private Button BackButton(string name = "Back", Container? parent = null)
     {
-        var button = IconButton("back", () => Send(new UiIntent.CloseInteraction()), name, parent);
+        var button = IconButton("cross", () => Send(new UiIntent.CloseInteraction()), name, parent);
         button.AccessibilityName = Texts.Zpet;
         return button;
     }
