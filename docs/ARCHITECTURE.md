@@ -15,7 +15,7 @@ parts in the folder of the class, with one exception: `Diagnostics/Game.Diagnost
 | --- | --- |
 | `App` | `Game` and every `Game.*.cs`, `Texts`, `Interaction`, `GameControls`, `Settings`, `LaunchOptions`, `GameState` |
 | `Ui` | `GameUi` and every `GameUi.*.cs`, `UiIntent`, `DeliveryPicture`, `TaskMarker` |
-| `Graphics` | `Art` (procedural meshes and icons), `Obstacles` (collision helpers), `Celebration` |
+| `Graphics` | `Art` (procedural meshes and icons), `Obstacles` (collision helpers), `Celebration`, `DistantDetails` (visibility ranges of small meshes) |
 | `Quizzes` | `IChallenge` and the generators of the four kinds of question (`Mathematics`, `Letters`), `QuizType`, `QuizSession` |
 | `Saves` | `SaveData` and its sections, `SaveDataV4`, `SaveRules`, `SaveMigrations`, `SaveStore`, `PostcardProgress` |
 | `Valley` | `World` and every `World.*.cs`, the terrain, roads, river, vegetation, grass, weather, wildlife |
@@ -87,7 +87,13 @@ the same, bit for bit. `unit-checks` compares every such form with Godot's on ra
 pin the result. Keep new hot loops in floats, and read an engine property such as `Position` once outside a loop: each
 read is a call into the engine. For the same reason a mesh that is rebuilt often goes to the engine as arrays in one
 call (`WheelTracks`), not vertex by vertex. The project is built with `Optimize` even in the Debug configuration for the
-same reason.
+same reason. Random numbers drawn while the game runs come from `FlatRandom`, Godot's generator in plain C# (the grass
+tiles built as the car drives draw thousands each).
+
+What the GPU and the processor spend per frame is measured with `./benchmark.ps1`. The valley is bound by geometry and
+draw calls, not by pixels, so the distance limits matter most: the far blocks of `Vegetation` are drawn with simpler
+shapes (`FarDistance`), small single meshes get a visibility range from their size (`DistantDetails`), and new grass
+tiles are built within a time slice of each frame so that driving does not stutter.
 
 ## Questions and activities
 

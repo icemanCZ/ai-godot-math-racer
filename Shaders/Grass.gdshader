@@ -12,8 +12,9 @@ varying float tint;
 varying float tip_height;
 varying float meadow_tint;
 
-uniform vec4 grass_low : source_color = vec4(0.43, 0.64, 0.29, 1.0);
-uniform vec4 grass_high : source_color = vec4(0.67, 0.77, 0.43, 1.0);
+// Darker and less yellow than the first meadow, which was bright enough to draw the eye from the road.
+uniform vec4 grass_low : source_color = vec4(0.30, 0.49, 0.21, 1.0);
+uniform vec4 grass_high : source_color = vec4(0.46, 0.58, 0.29, 1.0);
 
 void vertex() {
     vec3 root = MODEL_MATRIX[3].xyz;
@@ -60,9 +61,9 @@ void vertex() {
 
 void fragment() {
     vec3 green = mix(grass_low.rgb, grass_high.rgb, tint * 0.55 + meadow_tint * 0.45);
-    ALBEDO = green * mix(0.87, 1.14, tip_height);
-    // Soft fill preserves the light meadow color even on blades facing away from the sun.
-    EMISSION = green * 0.12;
+    ALBEDO = green * mix(0.84, 1.05, tip_height);
+    // Soft fill keeps the meadow color even on blades facing away from the sun.
+    EMISSION = green * 0.06;
     ROUGHNESS = 0.95;
     BACKLIGHT = green * 0.3;
 }

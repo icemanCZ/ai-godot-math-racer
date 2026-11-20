@@ -19,6 +19,15 @@ public partial class Vegetation : Node3D
     private readonly record struct BatchKey(string Shape, string Color, int X, int Z, bool Tree);
 
     private readonly Dictionary<BatchKey, List<(Transform3D Transform, Color Wind)>> batches = new();
+
+    /// <summary>
+    /// From this distance between the camera and the middle of a 64 m block, the block's trees, bushes and rocks are
+    /// drawn with simpler shapes and without their outline, and its flowers not at all. A block reaches some 45 m from
+    /// its middle, so every plant drawn this way is about 85 m away or more: a flower is two or three pixels there, and
+    /// the outline has thinned to a tenth of a pixel (FoliageOutline). Most of the valley in view is that far, and it
+    /// was most of the triangles.
+    /// </summary>
+    private const float FarDistance = 130;
     private readonly Dictionary<Vector2I, List<Vector3>> treePositions = new();
     internal IEnumerable<Vector3> TreePositions => treePositions.Values.SelectMany(trees => trees);
     private Terrain ground = null!;
@@ -211,6 +220,25 @@ public partial class Vegetation : Node3D
             },
             ["cone"] = ConiferMesh(),
         };
+        // The simpler shapes of the far blocks (see FarDistance); the cone has none.
+        var farMeshes = new Dictionary<string, Mesh>
+        {
+            ["leaf"] = new SphereMesh
+            {
+                Radius = 1,
+                Height = 2,
+                RadialSegments = 6,
+                Rings = 3,
+            },
+            ["canopy"] = FoliageMesh(8, 12),
+            ["wood"] = new CylinderMesh
+            {
+                BottomRadius = 1,
+                TopRadius = .7f,
+                Height = 2,
+                RadialSegments = 5,
+            },
+        };
         var foliageShader = GD.Load<Shader>("res://Shaders/Foliage.gdshader");
         var foliageMaterials = new Dictionary<(string Color, bool Tree, bool Leaves), ShaderMaterial>();
         // Trees and bushes get a soft outline that sways with them; small leaves, bark marks and pads do not.
@@ -258,18 +286,51 @@ public partial class Vegetation : Node3D
                 material = foliage;
             }
             bool small = pair.Key.Shape is "detail" or "sprig" or "pad";
+            // Flowers, berries and mushrooms are a pixel or two from beyond the near blocks; rocks are not.
+            bool tiny =
+                !pair.Key.Tree
+                && pair.Key.Shape == "leaf"
+                && pair.Value.All(part => Extent(part.Transform.Basis) < .5f);
+            var near = new MultiMeshInstance3D
+            {
+                Multimesh = mm,
+                MaterialOverride = material,
+                MaterialOverlay = (pair.Key.Tree || leaves) && !small ? Outline(pair.Key.Tree) : null,
+                // Small leaves and bark marks only matter near the camera.
+                VisibilityRangeEnd =
+                    small ? 85
+                    : tiny ? FarDistance
+                    : 0,
+                VisibilityRangeEndMargin = small ? 10 : 0,
+                CastShadow = small
+                    ? GeometryInstance3D.ShadowCastingSetting.Off
+                    : GeometryInstance3D.ShadowCastingSetting.On,
+            };
+            AddChild(near);
+            if (small || tiny)
+                continue;
+            // The same plants once more for the far blocks: simpler shapes and no outline, which has thinned out to
+            // nothing there (FoliageOutline). The near copy stops where this one begins, so a block is drawn once.
+            near.VisibilityRangeEnd = FarDistance;
+            var far = new MultiMesh
+            {
+                TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
+                UseCustomData = mm.UseCustomData,
+                Mesh = farMeshes.GetValueOrDefault(pair.Key.Shape, mm.Mesh),
+                InstanceCount = mm.InstanceCount,
+            };
+            // A headless run keeps no instance data and draws nothing, so its far copy stays empty.
+            var buffer = mm.Buffer;
+            if (buffer.Length > 0)
+                far.Buffer = buffer;
+            farBatches[pair.Key] = far;
             AddChild(
                 new MultiMeshInstance3D
                 {
-                    Multimesh = mm,
+                    Multimesh = far,
                     MaterialOverride = material,
-                    MaterialOverlay = (pair.Key.Tree || leaves) && !small ? Outline(pair.Key.Tree) : null,
-                    // Small leaves and bark marks only matter near the camera.
-                    VisibilityRangeEnd = pair.Key.Shape is "detail" or "sprig" or "pad" ? 85 : 0,
-                    VisibilityRangeEndMargin = pair.Key.Shape is "detail" or "sprig" or "pad" ? 10 : 0,
-                    CastShadow = pair.Key.Shape is "detail" or "sprig" or "pad"
-                        ? GeometryInstance3D.ShadowCastingSetting.Off
-                        : GeometryInstance3D.ShadowCastingSetting.On,
+                    VisibilityRangeBegin = FarDistance,
+                    CastShadow = GeometryInstance3D.ShadowCastingSetting.On,
                 }
             );
         }
@@ -328,11 +389,13 @@ public partial class Vegetation : Node3D
         return type;
     }
 
-    private static ArrayMesh FoliageMesh()
+    /// <summary>The longest half axis of a part, the radius of its sphere.</summary>
+    private static float Extent(Basis basis) =>
+        Mathf.Max(basis.Column0.Length(), Mathf.Max(basis.Column1.Length(), basis.Column2.Length()));
+
+    /// <summary>A scalloped, asymmetric surface instead of an obvious scaled sphere; the far blocks use fewer faces.</summary>
+    private static ArrayMesh FoliageMesh(int rings = 12, int sides = 20)
     {
-        // A scalloped, asymmetric surface instead of an obvious scaled sphere.
-        const int rings = 12,
-            sides = 20;
         var surface = new SurfaceTool();
         surface.Begin(Mesh.PrimitiveType.Triangles);
         surface.SetSmoothGroup(0);

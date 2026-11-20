@@ -46,6 +46,7 @@ internal static class LaunchOptions
                 is "--smoke-test"
                     or "--road-audit"
                     or "--capture"
+                    or "--benchmark"
                     or "--no-save"
                     or "--save-fixtures"
                     or "--write-world-fingerprint"

@@ -100,10 +100,17 @@ public partial class Game
                 Start();
             AddChild(suite.Create(this, world, vehicle));
         }
+        if (args.Contains("--benchmark"))
+        {
+            Start();
+            AddChild(new FrameBenchmark(this, world, vehicle));
+        }
         if (args.Contains("--capture"))
         {
             string view = args.FirstOrDefault(arg => arg.StartsWith("--view="))?[7..] ?? "gameplay";
             PrepareCapture(view);
+            // The picture shows the valley as it looks once every part has its visibility range.
+            DistantDetails.Complete();
             AddChild(new VisualCapture(camera, world, vehicle, view));
         }
     }

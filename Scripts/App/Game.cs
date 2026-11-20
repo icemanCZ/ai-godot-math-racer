@@ -5,6 +5,7 @@ using Godot;
 using MathRacer.Buildings;
 using MathRacer.Characters;
 using MathRacer.Garage;
+using MathRacer.Graphics;
 using MathRacer.Quizzes;
 using MathRacer.Saves;
 using MathRacer.Settlement;
@@ -69,6 +70,7 @@ public partial class Game : Node3D
     }
 
     private readonly RoadsideProgress roadside = new();
+    internal DistantDetails DistantDetails { get; } = new();
     private readonly Economy economy = new();
     private bool deliveryReward;
     private int lastCollected = -1;
@@ -142,6 +144,8 @@ public partial class Game : Node3D
         else if (skipTitle)
             ContinueGame();
 
+        // The sky, the weather and the ground are far by design or too big to leave out.
+        DistantDetails.Watch(world, node => node is Atmosphere or Valley.Weather or Terrain or Roads or River);
         AttachDiagnostics(camera);
         GD.Print(
             $"WORLD_READY seed={Settings.Seed} animals={world.Animals.Length} road_samples={world.Routes.Samples.Count}"

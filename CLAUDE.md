@@ -29,6 +29,8 @@ not write a runner of your own.
 - A suite is added in one place, `Scripts/Diagnostics/DiagnosticSuites.cs` (flag, how to create it, seeds). The game
   starts it from there, `test.ps1` and `build.ps1` read the list back, and `contract-checks` fails when a suite file is
   not listed.
+- Frame rate and graphics load are measured with `./benchmark.ps1` (a real window, one run after another so the runs do
+  not share the GPU; `-Off plants,shadows` shows what a part costs). It is not a check and is not part of the test run.
 - Seeds matter: a check that is run without a seed uses a random one, so pass seeds when a failure must be repeated.
 
 ## Saved games must never break

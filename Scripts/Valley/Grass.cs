@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using Godot;
 using MathRacer.App;
 using MathRacer.Vehicles;
@@ -10,6 +11,9 @@ public partial class Grass : Node3D
 {
     private const int TileSize = 16,
         TrailSize = 8;
+
+    /// <summary>How long a frame may spend building new tiles.</summary>
+    private const double TileMillisecondsPerFrame = 1.5;
     private readonly Dictionary<(Vector2I Key, int Lod), MultiMeshInstance3D> tiles = new();
     private readonly Queue<(Vector2I Key, int Lod)> pending = new();
     private readonly ShaderMaterial material = new() { Shader = GD.Load<Shader>("res://Shaders/Grass.gdshader") };
@@ -64,19 +68,15 @@ public partial class Grass : Node3D
             lastFocus = focus;
             refreshTimer = .3f;
         }
-        // Budget by complexity: distant tiles contain far fewer instances and triangles.
-        int budget = 24;
-        while (pending.TryPeek(out var job))
+        // Tiles are built until a slice of the frame is used, at least one a frame, so that a ring of new tiles coming
+        // in as the car drives on spreads over a few frames instead of holding one up. They are queued nearest first
+        // and loaded outside the shader's fade band, so a few frames of delay never show.
+        long started = Stopwatch.GetTimestamp();
+        while (pending.TryDequeue(out var job))
         {
-            int cost =
-                job.Lod == 0 ? 6
-                : job.Lod == 1 ? 2
-                : 1;
-            if (cost > budget)
-                break;
-            pending.Dequeue();
-            budget -= cost;
             AddTile(job.Key, job.Lod);
+            if (Stopwatch.GetElapsedTime(started).TotalMilliseconds > TileMillisecondsPerFrame)
+                break;
         }
     }
 
@@ -194,10 +194,8 @@ public partial class Grass : Node3D
 
     private void AddTile(Vector2I key, int lod)
     {
-        var rng = new RandomNumberGenerator
-        {
-            Seed = unchecked((ulong)(Settings.Seed + key.X * 73856093L + key.Y * 19349663L)),
-        };
+        // Godot's generator for this seed, in plain C# (see FlatRandom): a tile draws some five thousand numbers.
+        var rng = new FlatRandom(unchecked((ulong)(Settings.Seed + key.X * 73856093L + key.Y * 19349663L)));
         var transforms = new List<Transform3D>();
         var colors = new List<Color>();
         var animals = AnimalSpots();

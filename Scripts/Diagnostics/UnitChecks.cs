@@ -47,6 +47,7 @@ internal static class UnitChecks
             ActorRanges();
             CollectionTitles();
             FlatMathMatchesGodot();
+            FlatRandomMatchesGodot();
         }
         catch (Exception error)
         {
@@ -177,6 +178,47 @@ internal static class UnitChecks
     }
 
     /// <summary>The tree drawing's rotations and scalings (<see cref="FlatBasis"/>) give what Godot's give, bit for bit.</summary>
+    /// <summary>The grass draws its blades from <see cref="FlatRandom"/>, which must give Godot's numbers.</summary>
+    private static void FlatRandomMatchesGodot()
+    {
+        static bool Same(float a, float b) => BitConverter.SingleToInt32Bits(a) == BitConverter.SingleToInt32Bits(b);
+        var random = new Random(7);
+        var wrong = new int[3];
+        for (int run = 0; run < 2000; run++)
+        {
+            // Seeds as the grass makes them, and any 64-bit number.
+            ulong seed =
+                run % 2 == 0
+                    ? unchecked((ulong)(random.Next(1, int.MaxValue) + random.Next(-40, 40) * 73856093L))
+                    : ((ulong)random.NextInt64() << 1) | (uint)random.Next(2);
+            var godot = new RandomNumberGenerator { Seed = seed };
+            var flat = new FlatRandom(seed);
+            for (int i = 0; i < 200; i++)
+            {
+                switch (i % 3)
+                {
+                    case 0:
+                        if (!Same(godot.Randf(), flat.Randf()))
+                            wrong[0]++;
+                        break;
+                    case 1:
+                        float from = (float)(random.NextDouble() * 20 - 10),
+                            to = from + (float)(random.NextDouble() * 10);
+                        if (!Same(godot.RandfRange(from, to), flat.RandfRange(from, to)))
+                            wrong[1]++;
+                        break;
+                    default:
+                        if (godot.Randi() != flat.Next())
+                            wrong[2]++;
+                        break;
+                }
+            }
+        }
+        string[] names = { "Randf", "RandfRange", "Randi" };
+        for (int i = 0; i < names.Length; i++)
+            Check(wrong[i] == 0, $"FlatRandom: {names[i]} gives what Godot gives ({wrong[i]} differ)");
+    }
+
     private static void FlatBasisMatchesGodot(Random random)
     {
         float Angle() => (float)(random.NextDouble() * 14 - 7);

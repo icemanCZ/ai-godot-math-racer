@@ -32,6 +32,9 @@ public partial class Vegetation
     private TreeVisual? buildingTree;
     private readonly Dictionary<ulong, TreeVisual> treeVisuals = new();
     private readonly Dictionary<BatchKey, MultiMesh> renderedBatches = new();
+
+    /// <summary>The simpler copies of the batches for the far blocks (Vegetation.FarDistance), moved with them.</summary>
+    private readonly Dictionary<BatchKey, MultiMesh> farBatches = new();
     private readonly List<TreeVisual> shakingTrees = new();
     private readonly List<FallingLeaf> fallingLeaves = new();
     private readonly RandomNumberGenerator impactRng = new() { Seed = (ulong)Settings.Seed + 902 };
@@ -107,16 +110,16 @@ public partial class Vegetation
             float angle = finished ? 0 : Mathf.Sin(tree.Age * 19) * Mathf.Exp(-tree.Age * 2.8f) * tree.Strength;
             var rotation = new Basis(tree.Axis, angle);
             foreach (var part in tree.Parts)
-                renderedBatches[part.Batch]
-                    .SetInstanceTransform(
-                        part.Index,
-                        finished
-                            ? part.Rest
-                            : new Transform3D(
-                                rotation * part.Rest.Basis,
-                                tree.Foot + rotation * (part.Rest.Origin - tree.Foot)
-                            )
+            {
+                var transform = finished
+                    ? part.Rest
+                    : new Transform3D(
+                        rotation * part.Rest.Basis,
+                        tree.Foot + rotation * (part.Rest.Origin - tree.Foot)
                     );
+                renderedBatches[part.Batch].SetInstanceTransform(part.Index, transform);
+                farBatches.GetValueOrDefault(part.Batch)?.SetInstanceTransform(part.Index, transform);
+            }
             if (finished)
                 shakingTrees.RemoveAt(i);
         }
