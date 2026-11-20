@@ -44,6 +44,24 @@ public partial class VisualCapture : Node
                 camera.LookAt(focus + Vector3.Up * .6f);
             }
         }
+        else if (view is "trampling" or "trampling-down")
+        {
+            // The car has just driven across the meadow ahead of it, seen from the camera behind the car: petals in
+            // the air, or the flowers lying down. The game's start puts the car and camera back, so wait for it first.
+            await ToSignal(GetTree().CreateTimer(1.5), SceneTreeTimer.SignalName.Timeout);
+            car.Active = false;
+            var meadow = world.Plants.MeadowPreview;
+            car.SetPose(world.Ground.At(meadow.X, meadow.Z + 6, .15f), 0);
+            camera.Snap();
+            var forward = -car.Transform.Basis.Z;
+            var right = forward.Cross(Vector3.Up);
+            for (float across = -3.5f; across <= 3.5f; across += 1.4f)
+            for (float ahead = 1; ahead <= 10; ahead += 1.2f)
+            {
+                var at = car.Position + right * across + forward * ahead;
+                world.Plants.Trampling.Touch(world.Ground.At(at.X, at.Z), forward, .92f, 1.55f, forward * 7);
+            }
+        }
         else if (view == "constellation")
         {
             // The view from the tower at night: the line of sight is lifted and a picture of stars hangs ahead.
@@ -708,6 +726,8 @@ public partial class VisualCapture : Node
                 .CreateTimer(
                     view == "grass" ? .15
                     : view == "tree-impact" ? .5
+                    : view == "trampling" ? .45
+                    : view == "trampling-down" ? 2.5
                     : view == "delivery-reward" || view == "house-celebration" ? 1.2
                     : 3
                 ),

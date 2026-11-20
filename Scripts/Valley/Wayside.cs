@@ -9,7 +9,9 @@ namespace MathRacer.Valley;
 /// Little things in the grass just beyond the roads' gravel verge: dandelions, dandelion clocks, toadstools and smooth
 /// pebbles. They are scenery only, with no solid parts, and come from a random generator of their own (the valley's seed
 /// plus <see cref="SeedOffset"/>) after everything else is placed, so nothing else in the valley moves. Each kind is a
-/// <see cref="MultiMesh"/> per block of the valley, drawn only near the camera.
+/// <see cref="MultiMesh"/> per block of the valley, drawn only near the camera. The flower heads of the dandelions and
+/// the clocks are a MultiMesh of their own with the same instances, so that the car can knock them off
+/// (<see cref="Trampling"/>): the yellow head flies apart in petals and the clock in seeds, and both grow back.
 /// </summary>
 internal sealed partial class Wayside : Node3D
 {
@@ -33,6 +35,7 @@ internal sealed partial class Wayside : Node3D
     {
         var random = new RandomNumberGenerator { Seed = (ulong)(Settings.Seed + SeedOffset) };
         var meshes = new[] { Dandelion(), Clock(), Toadstool(), Pebbles() };
+        var heads = new Mesh?[] { DandelionHead(), ClockHead(), null, null };
         var placed = new Dictionary<(Kind, Vector2I), List<Transform3D>>();
         var samples = world.Routes.Samples;
         var spots = new List<Vector3>();
@@ -90,28 +93,63 @@ internal sealed partial class Wayside : Node3D
         foreach (var ((kind, block), transforms) in placed)
         {
             var origin = new Vector3((block.X + .5f) * Block, 0, (block.Y + .5f) * Block);
-            var multimesh = new MultiMesh
-            {
-                TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
-                Mesh = meshes[(int)kind],
-                InstanceCount = transforms.Count,
-            };
+            var multimesh = Instances(meshes[(int)kind], transforms, origin);
+            Draw($"{kind}{block.X}_{block.Y}", multimesh, origin);
+            if (heads[(int)kind] is not { } head)
+                continue;
+            var headMultimesh = Instances(head, transforms, origin);
+            Draw($"{kind}Head{block.X}_{block.Y}", headMultimesh, origin);
+            var trampling = world.Plants.Trampling;
+            bool clock = kind == Kind.Clock;
+            int stems = trampling.AddBatch(new Color("6bb85a"), origin);
+            int blossoms = clock
+                ? trampling.AddBatch(
+                    new Color("fbfbf4"),
+                    origin,
+                    perHead: 12,
+                    petalSize: .022f,
+                    fluff: true,
+                    lift: .42f
+                )
+                : trampling.AddBatch(new Color("ffd23f"), origin, perHead: 7, petalSize: .045f, lift: .34f);
+            trampling.Bind(stems, multimesh);
+            trampling.Bind(blossoms, headMultimesh);
             for (int i = 0; i < transforms.Count; i++)
-                multimesh.SetInstanceTransform(i, transforms[i] with { Origin = transforms[i].Origin - origin });
-            AddChild(
-                new MultiMeshInstance3D
-                {
-                    Name = $"{kind}{block.X}_{block.Y}",
-                    Multimesh = multimesh,
-                    Position = origin,
-                    CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
-                    VisibilityRangeEnd = DrawDistance,
-                    VisibilityRangeEndMargin = 10,
-                    VisibilityRangeFadeMode = GeometryInstance3D.VisibilityRangeFadeModeEnum.Disabled,
-                }
-            );
+            {
+                trampling.Begin(transforms[i].Origin, .2f, Trampling.Kind.Flower);
+                trampling.Add(stems, i, false);
+                trampling.Add(blossoms, i, true);
+                trampling.End();
+            }
         }
     }
+
+    private static MultiMesh Instances(Mesh mesh, List<Transform3D> transforms, Vector3 origin)
+    {
+        var multimesh = new MultiMesh
+        {
+            TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
+            Mesh = mesh,
+            InstanceCount = transforms.Count,
+        };
+        for (int i = 0; i < transforms.Count; i++)
+            multimesh.SetInstanceTransform(i, transforms[i] with { Origin = transforms[i].Origin - origin });
+        return multimesh;
+    }
+
+    private void Draw(string name, MultiMesh multimesh, Vector3 origin) =>
+        AddChild(
+            new MultiMeshInstance3D
+            {
+                Name = name,
+                Multimesh = multimesh,
+                Position = origin,
+                CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+                VisibilityRangeEnd = DrawDistance,
+                VisibilityRangeEndMargin = 10,
+                VisibilityRangeFadeMode = GeometryInstance3D.VisibilityRangeFadeModeEnum.Disabled,
+            }
+        );
 
     /// <summary>Off the roads and ways, out of the village, the river and the trees, and clear of the characters.</summary>
     private static bool Fits(World world, Vector3 p, List<Vector3> spots)
@@ -143,6 +181,12 @@ internal sealed partial class Wayside : Node3D
         var root = new Node3D();
         Leaves(root, "5fb35a");
         Art.Cylinder(root, new(0, .16f, 0), .012f, .012f, .32f, "6bb85a");
+        return Merge(root);
+    }
+
+    private static Mesh DandelionHead()
+    {
+        var root = new Node3D();
         Art.Ball(root, new(0, .34f, 0), new(.07f, .045f, .07f), "ffd23f");
         Art.Ball(root, new(0, .365f, 0), new(.045f, .03f, .045f), "ffe377");
         return Merge(root);
@@ -153,6 +197,12 @@ internal sealed partial class Wayside : Node3D
         var root = new Node3D();
         Leaves(root, "5aa857");
         Art.Cylinder(root, new(0, .2f, 0), .011f, .011f, .4f, "86c06b");
+        return Merge(root);
+    }
+
+    private static Mesh ClockHead()
+    {
+        var root = new Node3D();
         Art.Ball(root, new(0, .42f, 0), Vector3.One * .075f, "fbfbf4");
         Art.Ball(root, new(0, .42f, 0), Vector3.One * .02f, "c9b98a");
         return Merge(root);

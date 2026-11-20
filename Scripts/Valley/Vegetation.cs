@@ -36,6 +36,15 @@ public partial class Vegetation : Node3D
     public int TreeCount { get; private set; }
     public int BushCount { get; private set; }
 
+    /// <summary>The flowers and small bushes the car knocks over, and the petals it throws up.</summary>
+    internal Trampling Trampling { get; } = new();
+
+    /// <summary>The Trampling batch of each batch that has a part of a flower or a bush.</summary>
+    private readonly Dictionary<BatchKey, int> trampledBatches = new();
+
+    /// <summary>Whether the parts now placed are the petals of a flower or a bush, which fly off.</summary>
+    private bool heads;
+
     private void Leaf(Vector3 p, Vector3 scale, string color) => Part(p, scale, color, "leaf");
 
     private void Part(Vector3 p, Vector3 scale, string color, string shape, Basis? rotation = null)
@@ -49,6 +58,12 @@ public partial class Vegetation : Node3D
         );
         if (!batches.TryGetValue(key, out var batch))
             batches[key] = batch = new();
+        if (Trampling.Building)
+        {
+            if (!trampledBatches.TryGetValue(key, out int trampled))
+                trampledBatches[key] = trampled = Trampling.AddBatch(new Color(key.Color));
+            Trampling.Add(trampled, batch.Count, heads);
+        }
         // FlatBasis gives what Basis.ScaledLocal gives; a valley has some two hundred thousand parts.
         var transform = new Transform3D(FlatBasis.ScaledLocal(rotation ?? Basis.Identity, scale), p);
         Color wind = default;
@@ -70,6 +85,8 @@ public partial class Vegetation : Node3D
     )
     {
         ground = terrain;
+        Trampling.Setup(terrain.Height);
+        AddChild(Trampling);
         var animalSpots = animals.Select(a => a.Position).ToArray();
         bool Reserved(Vector3 p)
         {
@@ -164,7 +181,9 @@ public partial class Vegetation : Node3D
             if (Reserved(p) || River.Distance(p.X, p.Z) < River.HalfWidth(p.Z) + 6 || roads.Distance(p) < 4.2f)
                 continue;
             string color = new[] { "ff60ab", "ffd240", "fff5de", "ae78ed" }[i % 4];
+            Trampling.Begin(p, .16f, Trampling.Kind.Flower);
             Leaf(p + Vector3.Up * .18f, new Vector3(.035f, .2f, .035f), "238e73");
+            heads = true;
             for (int petal = 0; petal < 4; petal++)
                 Leaf(
                     p
@@ -177,6 +196,8 @@ public partial class Vegetation : Node3D
                     color
                 );
             Leaf(p + Vector3.Up * .38f, new Vector3(.075f, .065f, .075f), "ffd240");
+            heads = false;
+            Trampling.End();
             if (i % 15 == 0)
             {
                 var size = new Vector3(1.15f, .75f, .95f);
@@ -191,7 +212,10 @@ public partial class Vegetation : Node3D
         }
         GenerateNatureDetails(terrain, roads, Reserved);
         if (cleared != null)
+        {
             ClearArea(cleared);
+            Trampling.Forget(cleared);
+        }
         var meshes = new Dictionary<string, Mesh>
         {
             ["leaf"] = new SphereMesh
@@ -270,6 +294,8 @@ public partial class Vegetation : Node3D
                     mm.SetInstanceCustomData(i, pair.Value[i].Wind);
             }
             renderedBatches[pair.Key] = mm;
+            if (trampledBatches.TryGetValue(pair.Key, out int trampled))
+                Trampling.Bind(trampled, mm);
             Material material = Art.Mat(pair.Key.Color);
             bool leaves = pair.Key.Shape is "canopy" or "sprig" or "cone";
             if (pair.Key.Tree || leaves)
@@ -335,6 +361,7 @@ public partial class Vegetation : Node3D
             );
         }
         batches.Clear();
+        trampledBatches.Clear();
         GD.Print($"VEGETATION_READY trees={TreeCount} bushes={BushCount}");
     }
 
@@ -762,6 +789,7 @@ public partial class Vegetation : Node3D
     private void Bush(Vector3 p, float s, int type)
     {
         BushCount++;
+        Trampling.Begin(p, 1.05f * s, Trampling.Kind.Bush);
         float turn = rng.RandfRange(0, Mathf.Tau);
         for (int n = 0; n < 5; n++)
         {
@@ -793,8 +821,11 @@ public partial class Vegetation : Node3D
             }
             else
             {
+                heads = true;
                 Blossom(detail, new Vector3(Mathf.Cos(a), 1, Mathf.Sin(a)).Normalized(), .19f * s, "ffe0e5");
+                heads = false;
             }
         }
+        Trampling.End();
     }
 }

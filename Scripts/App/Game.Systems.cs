@@ -34,6 +34,7 @@ public partial class Game
         Register("treasure", delta => TickTreasure((float)delta));
         Register("fireflies", delta => TickFireflies((float)delta));
         Register("flutters", delta => TickFlutters((float)delta));
+        Register("trampling", delta => TickTrampling((float)delta));
         Register("distant details", _ => DistantDetails.Tick());
     }
 

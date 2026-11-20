@@ -77,6 +77,7 @@ internal static class DiagnosticSuites
         new("works-checks", (g, w, v) => new WorksChecks(g, w, v), Seeds: ThreeSeeds),
         new("bakery-checks", (g, w, v) => new BakeryChecks(g, w, v), Seeds: ThreeSeeds),
         new("hidden-checks", (g, w, v) => new HiddenChecks(g, w, v), Seeds: ThreeSeeds),
+        new("trampling-checks", (g, w, v) => new TramplingChecks(g, w, v), Seeds: ThreeSeeds),
         new("build-checks", (g, w, v) => new BuildChecks(g, w, v), Seeds: ThreeSeeds),
         new("plot-checks", (g, w, v) => new PlotChecks(g, w, v), Seeds: ThreeSeeds),
         new("playground-checks", (g, w, v) => new PlaygroundChecks(g, w, v), Seeds: ThreeSeeds),

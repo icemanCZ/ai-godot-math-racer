@@ -121,6 +121,7 @@ public partial class Vegetation
                 if (!Clear(p))
                     continue;
                 float height = random.RandfRange(.55f, 1.05f);
+                Trampling.Begin(p, .22f, Trampling.Kind.Flower);
                 Part(p + Vector3.Up * height / 2, new(.025f, height / 2, .025f), "648752", "detail");
                 for (int leaf = 0; leaf < 2; leaf++)
                 {
@@ -134,6 +135,7 @@ public partial class Vegetation
                         new Basis(Vector3.Up, -a + Mathf.Pi / 2)
                     );
                 }
+                heads = true;
                 if (kind == 2)
                 {
                     for (int tier = 0; tier < 5; tier++)
@@ -160,6 +162,8 @@ public partial class Vegetation
                         kind == 0 ? .27f : .2f,
                         kind == 0 ? "fff0df" : "edcd72"
                     );
+                heads = false;
+                Trampling.End();
             }
         }
 
@@ -263,6 +267,7 @@ public partial class Vegetation
 
     private void Fern(Vector3 p, float size, float turn)
     {
+        Trampling.Begin(p, .8f * size, Trampling.Kind.Bush);
         for (int frond = 0; frond < 6; frond++)
         {
             float angle = turn + frond * Mathf.Tau / 6;
@@ -282,5 +287,6 @@ public partial class Vegetation
                     );
             }
         }
+        Trampling.End();
     }
 }
