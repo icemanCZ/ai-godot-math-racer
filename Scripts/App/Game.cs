@@ -271,6 +271,8 @@ public partial class Game : Node3D
             DigTreasure();
             return;
         }
+        if (CollectHidden())
+            return;
         if (nearby == null && InteractWithPostcards())
             return;
         if (InteractWithEvent())
@@ -660,6 +662,8 @@ public partial class Game : Node3D
             ui.GarageHint();
         else if (TreasureDigAvailable)
             ui.TreasureDigHint();
+        else if (HiddenNearby is { } friend)
+            ui.HiddenFriendHint(Texts.HiddenTake(friend.Kind));
         else if (LampPickupAvailable && LampNearby() is { } lamp)
             ui.LampPickupHint(GlassLamps.Find(Lamps.KindAt(lamp))?.Name ?? "");
         else if (LampPickupAvailable && Lamps.Carried.Count > 0)

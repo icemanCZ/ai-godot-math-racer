@@ -12,8 +12,8 @@ using MathRacer.Vehicles;
 namespace MathRacer.Diagnostics;
 
 /// <summary>
-/// The small friends who hide beside the roads: eight ladybugs, hedgehogs and frogs, found by driving close, saved by
-/// their numbers and earning a pet for every kind that is found completely.
+/// The small friends who hide beside the roads: eight ladybugs, hedgehogs and frogs, found by driving close and pressing
+/// E or the space bar, saved by their numbers and earning a pet for every kind that is found completely.
 /// </summary>
 public partial class HiddenChecks : Node
 {
@@ -44,6 +44,18 @@ public partial class HiddenChecks : Node
             game._Process(.1);
     }
 
+    private void Talk() => game._UnhandledInput(new InputEventAction { Action = "talk", Pressed = true });
+
+    private void Space() =>
+        game._UnhandledInput(
+            new InputEventKey
+            {
+                Keycode = Key.Space,
+                PhysicalKeycode = Key.Space,
+                Pressed = true,
+            }
+        );
+
     private CollectorPet Pet(CollectorPetKind kind) => world.WorldPets.First(p => p.Kind == kind);
 
     private void FindAll(HiddenKind kind)
@@ -52,6 +64,7 @@ public partial class HiddenChecks : Node
         {
             car.SetPose(friend.Position, 0);
             Frames(1);
+            Talk();
         }
     }
 
@@ -121,8 +134,15 @@ public partial class HiddenChecks : Node
             hidden.Ping(5);
             Check(friends.All(f => f.Pinged), "the lookout lights every friend who is still hiding");
             car.SetPose(friends[0].Position, 0);
-            Frames(1);
-            Check(friends[0].Found && hidden.FoundCount == 1, "driving close finds a friend, once");
+            Frames(3);
+            Check(
+                !friends[0].Found && hidden.FoundCount == 0 && game.HiddenNearby == friends[0],
+                "driving close alone does not find a friend, it only offers it"
+            );
+            Space();
+            Check(friends[0].Found && hidden.FoundCount == 1, "the space bar finds the friend beside the car");
+            Check(game.HiddenNearby != friends[0], "a friend who is found is not offered again");
+            Space();
             Frames(1);
             Check(hidden.FoundCount == 1, "a friend who is found stays one");
             Frames(20);

@@ -15,8 +15,9 @@ internal enum HiddenKind
 
 /// <summary>
 /// A small friend who hides beside a road: a ladybug on a leaf, a hedgehog or a frog on a lily pad. A question mark
-/// grows over it when the car comes near, the lookout tower lights it with an orange beam, and when the car gets
-/// close it goes "pšt!", hops with a few hearts and is gone from the valley (and written into the notebook).
+/// grows over it when the car comes near, the lookout tower lights it with an orange beam, and when the player stops
+/// close by and presses E or the space bar it goes "pšt!", hops with a few hearts and is gone from the valley (and written
+/// into the notebook).
 /// </summary>
 internal sealed partial class HiddenFriend : Node3D
 {

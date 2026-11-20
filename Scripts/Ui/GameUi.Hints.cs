@@ -11,6 +11,13 @@ namespace MathRacer.Ui;
 /// <summary>The hints under the screen and the status lines of the collectors.</summary>
 public partial class GameUi
 {
+    /// <summary>A hiding friend is close: E, the space bar or A finds it.</summary>
+    internal void HiddenFriendHint(string text)
+    {
+        talkButton.Visible = !modal.Visible;
+        talkButton.Text = (controller ? "A · " : Texts.EMezernik + " · ") + text;
+    }
+
     public void GarageHint()
     {
         talkButton.Visible = !modal.Visible;

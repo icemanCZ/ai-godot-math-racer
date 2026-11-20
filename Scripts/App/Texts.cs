@@ -61,6 +61,15 @@ internal static class Texts
 
     public static string Pst(string name) => $"Pšt! {name}!";
 
+    /// <summary>The button under the screen when a friend is close enough to be found.</summary>
+    public static string HiddenTake(HiddenKind kind) =>
+        kind switch
+        {
+            HiddenKind.Ladybug => "Vzít berušku",
+            HiddenKind.Hedgehog => "Vzít ježka",
+            _ => "Vzít žabku",
+        };
+
     public static string HiddenFoundSpeech(string name, int count, int total) =>
         $"Pšt! Tady je {name}! {count}/{total}";
 

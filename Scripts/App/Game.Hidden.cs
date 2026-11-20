@@ -4,8 +4,9 @@ using MathRacer.Valley;
 namespace MathRacer.App;
 
 /// <summary>
-/// The small friends who hide beside the roads. Driving close to one finds it: it says "pšt!", the car's friends say how many
-/// of that kind are found (for example 3/8) and cheer. Finding the eighth of a kind earns that animal as a pet.
+/// The small friends who hide beside the roads. Driving close to one shows a button under the screen, and pressing E,
+/// the space bar or A finds it: it says "pšt!", the car's friends say how many of that kind are found (for example 3/8)
+/// and cheer. Finding the eighth of a kind earns that animal as a pet.
 /// </summary>
 public partial class Game
 {
@@ -13,13 +14,20 @@ public partial class Game
     {
         bool running = State is not (GameState.Paused or GameState.Title);
         world.Hidden.Animate(delta, running, vehicle.Position);
-        if (State != GameState.Exploring)
-            return;
-        var found = world.Hidden.Find(vehicle.Position);
-        foreach (int index in found)
-            FoundHidden(world.Hidden.Friends[index]);
-        if (found.Count > 0)
-            SaveProgress();
+    }
+
+    /// <summary>The friend still hiding close enough to the car to be found by pressing E or the space bar.</summary>
+    internal HiddenFriend? HiddenNearby => State == GameState.Exploring ? world.Hidden.Nearby(vehicle.Position) : null;
+
+    /// <summary>Finds the friend beside the car, if there is one; returns whether one was found.</summary>
+    internal bool CollectHidden()
+    {
+        if (HiddenNearby is not { } friend)
+            return false;
+        friend.MarkFound(true);
+        FoundHidden(friend);
+        SaveProgress();
+        return true;
     }
 
     private void FoundHidden(HiddenFriend friend)

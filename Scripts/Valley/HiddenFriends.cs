@@ -6,7 +6,7 @@ namespace MathRacer.Valley;
 
 /// <summary>
 /// The small friends who hide beside the roads: <see cref="PerKind"/> ladybugs, hedgehogs and frogs. A friend is found
-/// when the car comes within <see cref="FindRadius"/>; finding all of one kind earns that animal as a pet. The friends
+/// when the player presses E or the space bar with the car within <see cref="FindRadius"/>; finding all of one kind earns that animal as a pet. The friends
 /// stand at the same places in every game of a valley and are numbered in the order they were placed, so a save only
 /// needs the numbers of those found.
 /// </summary>
@@ -45,23 +45,24 @@ internal sealed partial class HiddenFriends : Node3D
                 friends[index].MarkFound(false);
     }
 
-    /// <summary>Finds the friends the car is close to and returns their numbers, each only once.</summary>
-    internal List<int> Find(Vector3 car)
+    /// <summary>The nearest friend still hiding within <see cref="FindRadius"/> of the car, or null.</summary>
+    internal HiddenFriend? Nearby(Vector3 car)
     {
-        var result = new List<int>();
-        for (int i = 0; i < friends.Count; i++)
+        HiddenFriend? nearest = null;
+        float best = FindRadius * FindRadius;
+        foreach (var friend in friends)
         {
-            var friend = friends[i];
             if (friend.Found)
                 continue;
             float dx = friend.GlobalPosition.X - car.X,
                 dz = friend.GlobalPosition.Z - car.Z;
-            if (dx * dx + dz * dz > FindRadius * FindRadius)
+            float distance = dx * dx + dz * dz;
+            if (distance > best)
                 continue;
-            friend.MarkFound(true);
-            result.Add(i);
+            best = distance;
+            nearest = friend;
         }
-        return result;
+        return nearest;
     }
 
     internal void Ping(float seconds)
