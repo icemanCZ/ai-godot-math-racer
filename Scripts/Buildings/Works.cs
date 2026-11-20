@@ -401,11 +401,12 @@ public partial class Works : Node3D
         float length = half / Mathf.Cos(angle) + .3f;
         foreach (int side in new[] { -1, 1 })
         {
-            var panel = Art.Block(
+            var panel = Art.Wall(
                 this,
                 new(center.X + side * half / 2, center.Y + half / 2 * Mathf.Tan(angle) + .1f, center.Z),
                 new(length, .16f, depth),
-                color
+                color,
+                FacadeStyle.Shingles
             );
             panel.RotationDegrees = new Vector3(0, 0, -side * Mathf.RadToDeg(angle));
         }
@@ -451,10 +452,10 @@ public partial class Works : Node3D
     {
         const float z = BuildingZ;
         const string wall = "b99a6a";
-        Art.Block(this, new(0, y + 1.6f, z + 2.95f), new(8, 3.2f, .3f), wall);
+        Art.Wall(this, new(0, y + 1.6f, z + 2.95f), new(8, 3.2f, .3f), wall, FacadeStyle.Boards);
         foreach (float x in new[] { -3.85f, 3.85f })
         {
-            Art.Block(this, new(x, y + 1.6f, z), new(.3f, 3.2f, 6), wall);
+            Art.Wall(this, new(x, y + 1.6f, z), new(.3f, 3.2f, 6), wall, FacadeStyle.Boards);
             Art.Cylinder(this, new(x, y + 1.6f, z - 2.95f), .17f, .17f, 3.2f, "7a4b32");
         }
         Roof(new(0, y + 3.2f, z), 8.8f, 6.6f, "7a4b32", "5c3826");
@@ -484,7 +485,7 @@ public partial class Works : Node3D
     private void BuildBrickworks(float y)
     {
         const float z = BuildingZ;
-        Art.Block(this, new(0, y + 1.9f, z + .5f), new(6, 3.8f, 5), "b5533b");
+        Art.Wall(this, new(0, y + 1.9f, z + .5f), new(6, 3.8f, 5), "b5533b", FacadeStyle.Bricks);
         Art.Block(this, new(0, y + 3.95f, z + .5f), new(6.5f, .3f, 5.5f), "8a3f2d");
         Art.Block(this, new(0, y + 1.1f, z - 2.02f), new(2.4f, 2.2f, .12f), "3a2a26");
         Art.Block(this, new(0, y + 2.4f, z - 2.02f), new(1.7f, .6f, .12f), "3a2a26");
@@ -509,7 +510,7 @@ public partial class Works : Node3D
     {
         const float z = BuildingZ;
         // A pale hall with a glass roof, a furnace glowing orange in front and a tall chimney.
-        Art.Block(this, new(0, y + 1.7f, z + .5f), new(7, 3.4f, 5), "d9d2c4");
+        Art.Wall(this, new(0, y + 1.7f, z + .5f), new(7, 3.4f, 5), "d9d2c4", FacadeStyle.Plaster);
         Art.Block(this, new(0, y + 3.5f, z + .5f), new(7.4f, .3f, 5.4f), "6f8b96");
         for (int i = 0; i < 5; i++)
             Art.Window(this, new(-2.8f + i * 1.4f, y + 3.85f, z + .5f), new(1.2f, .5f, 4.6f), "bfe3ee");
@@ -531,7 +532,7 @@ public partial class Works : Node3D
     {
         const float z = BuildingZ;
         // A cosy bakery: cream walls, a warm red roof, a brick oven with a chimney and a window full of loaves.
-        Art.Block(this, new(0, y + 1.55f, z + .4f), new(6.4f, 3.1f, 5), "f1dfb8");
+        Art.Wall(this, new(0, y + 1.55f, z + .4f), new(6.4f, 3.1f, 5), "f1dfb8", FacadeStyle.Plaster);
         Art.Block(this, new(0, y + .25f, z + .4f), new(6.6f, .5f, 5.2f), "b8895f");
         Roof(new(0, y + 3.1f, z + .4f), 7.2f, 5.8f, "c9553f", "8f3a2a");
         Art.Block(this, new(-1.9f, y + 1.1f, z - 2.12f), new(1.2f, 2.2f, .12f), "8d5a3b");

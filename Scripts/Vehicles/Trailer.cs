@@ -287,6 +287,8 @@ public partial class Trailer : Node3D
     public override void _Ready()
     {
         parts = TrailerModel.Build(this, TrailerModel.PaintColor(paint));
+        // Every load is built in advance and only shown, so the outline covers them all at once.
+        Art.Outline(this, .028f);
         dust = new CpuParticles3D
         {
             Name = "SoilDust",

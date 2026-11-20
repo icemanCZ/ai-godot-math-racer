@@ -76,6 +76,12 @@ public partial class Village : Node3D
     private readonly List<Transform3D> plots = new();
     private readonly List<(Vector3 From, Vector3 To, float HalfWidth)> paths = new();
     private readonly List<(Vector3 A, Vector3 B, Vector3 C)> walkwayTriangles = new();
+
+    /// <summary>Rounded paving stones that give way to the road's gravel at the street (<c>Walkway.gdshader</c>).</summary>
+    private readonly ShaderMaterial walkwayMaterial = new()
+    {
+        Shader = GD.Load<Shader>("res://Shaders/Walkway.gdshader"),
+    };
     public Vector3 Center { get; private set; }
     public Vector3 GreetingSpot { get; private set; }
     public Vector3 GarageEntrance { get; private set; }
@@ -143,10 +149,10 @@ public partial class Village : Node3D
         Art.Block(GarageBuilding, new(0, .08f, 0), new(9, .16f, 8), "dfd4bd");
         foreach (float x in new[] { -3.7f, 3.7f })
         {
-            Art.Block(GarageBuilding, new(x, 2, 0), new(.45f, 4, 6), "79bba7");
+            Art.Wall(GarageBuilding, new(x, 2, 0), new(.45f, 4, 6), "79bba7", FacadeStyle.Boards);
             Obstacles.Box(GarageBuilding, new(x, 2, 0), new(.45f, 4, 6));
         }
-        Art.Block(GarageBuilding, new(0, 2, -2.8f), new(7.5f, 4, .4f), "79bba7");
+        Art.Wall(GarageBuilding, new(0, 2, -2.8f), new(7.5f, 4, .4f), "79bba7", FacadeStyle.Boards);
         Obstacles.Box(GarageBuilding, new(0, 2, -2.8f), new(7.5f, 4, .4f));
         Art.Block(GarageBuilding, new(0, 4.1f, 0), new(8.5f, .4f, 7), "edb45e");
         Art.Block(GarageBuilding, new(0, 3.5f, 3), new(7.5f, .7f, .4f), "fff1d2");
@@ -194,6 +200,7 @@ public partial class Village : Node3D
             Path(doorway, frame.Center);
             Fence(plot, -5, -1.4f);
             Fence(plot, 1.4f, 5);
+            GateArch(plot, 1.4f);
             var shrub = plot * new Vector3(-4.4f, 0, 1.5f);
             Art.Ball(this, ground.At(shrub.X, shrub.Z, .4f), new(.7f, .6f, .7f), "56c980");
             HouseMailbox(plot, site.Color);
@@ -425,6 +432,16 @@ public partial class Village : Node3D
             p.Y = Mathf.Max(p.Y, Mathf.Lerp(start.Y + .015f, endHeight, t));
             return p;
         }
+        var forward = direction.Normalized();
+        // The walkway shader lays its stones by the texture coordinates (across from -1 to 1, along in metres from the
+        // house); red marks the part over the road, where the stones give way to the road's gravel, and green carries
+        // the half width (four metres at 1).
+        void Add(Vector3 p, float lateral)
+        {
+            surface.SetUV(new Vector2(lateral / (width / 2), (p - from).Dot(forward)));
+            surface.SetColor(new Color(roads.Contains(p) ? 1 : 0, width / 2 / 4, 0));
+            surface.AddVertex(p);
+        }
         for (int column = 0; column < columns; column++)
         {
             float left = Mathf.Lerp(-width / 2, width / 2, (float)column / columns);
@@ -443,12 +460,12 @@ public partial class Village : Node3D
                 var d = Point(rightStart, rightEnd, next);
                 walkwayTriangles.Add((a, c, b));
                 walkwayTriangles.Add((b, c, d));
-                surface.AddVertex(a);
-                surface.AddVertex(c);
-                surface.AddVertex(b);
-                surface.AddVertex(b);
-                surface.AddVertex(c);
-                surface.AddVertex(d);
+                Add(a, left);
+                Add(c, left);
+                Add(b, right);
+                Add(b, right);
+                Add(c, left);
+                Add(d, right);
             }
         }
         surface.GenerateNormals();
@@ -456,7 +473,7 @@ public partial class Village : Node3D
         {
             Name = "Walkway",
             Mesh = surface.Commit(),
-            MaterialOverride = Art.Mat("e9cf9e"),
+            MaterialOverride = walkwayMaterial,
             CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
         };
         AddChild(walkway);
@@ -475,7 +492,10 @@ public partial class Village : Node3D
         {
             var center = Position(Mathf.Lerp(left, right, i / 2f), .65f);
             Art.Cylinder(this, center, .1f, .085f, 1.3f, "f2ddb0");
-            Art.Cylinder(detail, center + Vector3.Up * .72f, .15f, .025f, .18f, "fff1d2");
+            // Round knobs on the posts, and a little heart on the middle one.
+            Art.Ball(detail, center + Vector3.Up * .74f, new(.15f, .13f, .15f), "fff1d2");
+            if (i == 1)
+                Heart(detail, plot, center + Vector3.Up * .32f + plot.Basis.Z * .12f, .7f, "ff8fab");
             Obstacles.Trunk(this, center - Vector3.Up * .65f, .1f, 1.3f);
         }
         foreach (float lift in new[] { .45f, .95f })
@@ -500,8 +520,54 @@ public partial class Village : Node3D
                 "fff1d2"
             );
             picket.Rotation = plot.Basis.GetEuler();
+            Art.Ball(detail, picket.Position + Vector3.Up * .425f, new(.05f, .055f, .045f), "fff1d2");
         }
         BakeDetails(detail);
+    }
+
+    /// <summary>
+    /// A flowering arch over the gap in a cottage's fence, where the walkway goes through, with a heart at its top. It is
+    /// only scenery: it has no solid parts and stands high enough for the car to pass under it.
+    /// </summary>
+    private void GateArch(Transform3D plot, float half)
+    {
+        var detail = DetailRoot(this);
+        var middle = plot * new Vector3(0, 0, 4.8f);
+        float floor = ground.Height(middle.X, middle.Z);
+        var across = plot.Basis.X;
+        Vector3 Point(float x, float y) => new Vector3(middle.X, floor + y, middle.Z) + across * x;
+        foreach (int side in new[] { -1, 1 })
+            Art.Beam(detail, Point(side * half, 1.2f), Point(side * half, 2.35f), .09f, "fff1d2");
+        string[] flowers = { "ff86b3", "ffe58a", "fff6fb", "ffb38a" };
+        const int segments = 9;
+        for (int i = 0; i < segments; i++)
+        {
+            float a = Mathf.Pi * i / segments,
+                b = Mathf.Pi * (i + 1) / segments;
+            var from = Point(Mathf.Cos(a) * half, 2.35f + Mathf.Sin(a) * .75f);
+            var to = Point(Mathf.Cos(b) * half, 2.35f + Mathf.Sin(b) * .75f);
+            Art.Beam(detail, from, to, .1f, "fff1d2");
+            Art.Ball(detail, from + Vector3.Up * .02f, new(.17f, .12f, .17f), "56c980");
+            Art.Ball(detail, from + Vector3.Up * .09f + plot.Basis.Z * .06f, Vector3.One * .1f, flowers[i % 4]);
+        }
+        Heart(detail, plot, Point(0, 3.32f) + plot.Basis.Z * .1f, 1.3f, "ff6b8a");
+        BakeDetails(detail);
+    }
+
+    /// <summary>A small puffy heart facing along the plot's z, its point at the bottom.</summary>
+    private static void Heart(Node3D parent, Transform3D plot, Vector3 center, float size, string color)
+    {
+        var across = plot.Basis.X;
+        foreach (int side in new[] { -1, 1 })
+            Art.Ball(
+                parent,
+                center + across * side * .075f * size + Vector3.Up * .05f * size,
+                new Vector3(.1f, .1f, .05f) * size,
+                color
+            );
+        var point = Art.Block(parent, center - Vector3.Up * .04f * size, new Vector3(.14f, .14f, .09f) * size, color);
+        point.Basis =
+            plot.Basis * new Basis(Vector3.Back, Mathf.Pi / 4) * Basis.FromScale(new Vector3(.14f, .14f, .09f) * size);
     }
 
     private void House(float x, float z, string color, float yaw)
@@ -516,7 +582,7 @@ public partial class Village : Node3D
         var details = new Node3D { Name = "Upgrades" };
         h.AddChild(details);
         decorations.Add(details);
-        Art.Block(h, new(0, 2.1f, 0), new(7, 4.2f, 6), color);
+        Art.Block(h, new(0, 2.1f, 0), new(7, 4.2f, 6), color).MaterialOverride = Art.Facade(color);
         // A gabled roof, with a deliberately generous overhang.
         var st = new SurfaceTool();
         st.Begin(Mesh.PrimitiveType.Triangles);
@@ -534,9 +600,7 @@ public partial class Village : Node3D
             st.AddVertex(v[i]);
         st.GenerateNormals();
         var roof = Art.Mesh(h, st.Commit(), Vector3.Zero, Vector3.One, "eb644b");
-        var roofMaterial = (StandardMaterial3D)Art.Mat("eb644b").Duplicate();
-        roofMaterial.CullMode = BaseMaterial3D.CullModeEnum.Disabled;
-        roof.MaterialOverride = roofMaterial;
+        roof.MaterialOverride = Art.RoofTiles(RoofColors[(Houses.Count - 1) % RoofColors.Length], color);
         Art.Block(h, new(0, 1.25f, 3.04f), new(1.35f, 2.5f, .15f), "a87b61");
         foreach (float wx in new[] { -2.15f, 2.15f })
         {
@@ -545,6 +609,7 @@ public partial class Village : Node3D
             Art.Block(h, new(wx, 2.5f, 3.28f), new(.12f, 1.2f, .1f), "fff1d2");
         }
         Art.Block(h, new(2, 5.3f, 0), new(.85f, 3, 1), "f7ddac");
+        Art.ChimneySmoke(h, new(2, 6.95f, 0));
         var body = new StaticBody3D();
         h.AddChild(body);
         body.AddChild(

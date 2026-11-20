@@ -70,7 +70,7 @@ public partial class Village
         gardenPlot = GardenBuilding.Transform;
         plots.Add(gardenPlot);
         plots.Add(new(gardenPlot.Basis, gardenPlot * new Vector3(10, 0, 0)));
-        Art.Block(GardenBuilding, new(0, 1.7f, 0), new(6, 3.4f, 5), "83bfa0");
+        Art.Wall(GardenBuilding, new(0, 1.7f, 0), new(6, 3.4f, 5), "83bfa0", FacadeStyle.Siding);
         Obstacles.Box(GardenBuilding, new(0, 1.7f, 0), new(6, 3.4f, 5));
         Art.Block(GardenBuilding, new(0, 3.55f, 0), new(7, .35f, 6), "e4ad64");
         Art.Block(GardenBuilding, new(-1, 1.2f, 2.55f), new(1.5f, 2.4f, .12f), "f7e7bd");

@@ -120,6 +120,7 @@ public partial class Game : Node3D
         camera.Snap();
         world.AddChild(Weather);
         Weather.Setup(world, vehicle, camera);
+        SetupFlutters();
         world.Sparks.Setup(vehicle);
         world.AddChild(world.Grass);
         world.Grass.Setup(world, vehicle);

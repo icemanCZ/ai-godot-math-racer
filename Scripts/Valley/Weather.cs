@@ -166,6 +166,9 @@ public partial class Weather : Node3D
     /// <summary>How hard the wind blows now, from 0 in calm weather to 1.5 in a storm.</summary>
     internal float WindStrength => wind;
 
+    /// <summary>The wind now, its direction scaled by <see cref="WindStrength"/>.</summary>
+    internal Vector2 Wind => windDirection * wind;
+
     internal void Tick(float dt)
     {
         clock = Mathf.PosMod(clock + dt, DayLength);

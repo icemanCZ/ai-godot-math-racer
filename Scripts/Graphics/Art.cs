@@ -4,6 +4,16 @@ using MathRacer.Ui;
 
 namespace MathRacer.Graphics;
 
+/// <summary>The kinds of surface <see cref="Art.Facade"/> draws; the numbers are the shader's <c>style</c>.</summary>
+public enum FacadeStyle
+{
+    Plaster,
+    Bricks,
+    Boards,
+    Siding,
+    Shingles,
+}
+
 public static class Art
 {
     private static readonly Dictionary<string, StandardMaterial3D> Materials = new();
@@ -123,6 +133,147 @@ public static class Art
             Materials[color] = m;
         }
         return m;
+    }
+
+    private static readonly Dictionary<string, ShaderMaterial> Surfaces = new();
+
+    /// <summary>
+    /// The surface of a building's box in <paramref name="color"/> (<c>Facade.gdshader</c>): plaster with now and then
+    /// a patch of bare brick, bare brick, upright boards, overlapping boards or rounded shingles for a roof panel.
+    /// </summary>
+    public static ShaderMaterial Facade(string color, FacadeStyle style = FacadeStyle.Plaster) =>
+        Surface($"facade:{color}:{style}", "res://Shaders/Facade.gdshader", material =>
+        {
+            material.SetShaderParameter("wall_color", new Color(color));
+            material.SetShaderParameter("style", (int)style);
+        });
+
+    /// <summary>A box of <see cref="Block"/> covered with <see cref="Facade"/>.</summary>
+    public static MeshInstance3D Wall(Node3D parent, Vector3 pos, Vector3 scale, string color, FacadeStyle style)
+    {
+        var wall = Block(parent, pos, scale, color);
+        wall.MaterialOverride = Facade(color, style);
+        return wall;
+    }
+
+    /// <summary>
+    /// Rounded fish-scale tiles in <paramref name="color"/> for a gabled roof with its ridge along z; the gable ends take
+    /// the colour <paramref name="gable"/> of the walls.
+    /// </summary>
+    public static ShaderMaterial RoofTiles(string color, string gable) =>
+        Surface($"roof:{color}:{gable}", "res://Shaders/RoofTiles.gdshader", material =>
+        {
+            material.SetShaderParameter("tile_color", new Color(color));
+            material.SetShaderParameter("gable_color", new Color(gable));
+        });
+
+    /// <summary>
+    /// Gives every solid mesh under <paramref name="root"/> a soft dark outline <paramref name="thickness"/> metres wide
+    /// (<c>Outline.gdshader</c>, drawn as the mesh's overlay), the look of a drawn picture. See-through parts, such as
+    /// glows and halos, are left without one.
+    /// </summary>
+    public static void Outline(Node root, float thickness = .025f, float minSize = 0)
+    {
+        var material = Surface($"outline:{thickness}", "res://Shaders/Outline.gdshader", outline =>
+            outline.SetShaderParameter("thickness", thickness)
+        );
+        if (root is MeshInstance3D self)
+            OutlineMesh(self, material, minSize);
+        foreach (var node in root.FindChildren("*", "MeshInstance3D", true, false))
+            OutlineMesh((MeshInstance3D)node, material, minSize);
+    }
+
+    private static StandardMaterial3D? smokeMaterial;
+
+    /// <summary>
+    /// A thin curl of soft white smoke rising from a chimney at <paramref name="position"/>: round puffs that swell and
+    /// fade as they drift up. It is a child of <paramref name="parent"/>, so it shows and hides with it.
+    /// </summary>
+    public static CpuParticles3D ChimneySmoke(Node3D parent, Vector3 position)
+    {
+        smokeMaterial ??= new StandardMaterial3D
+        {
+            Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+            VertexColorUseAsAlbedo = true,
+            Roughness = 1,
+            CullMode = BaseMaterial3D.CullModeEnum.Back,
+        };
+        var fade = new Gradient();
+        fade.SetColor(0, new Color(1, 1, 1, 0));
+        fade.SetColor(1, new Color(.93f, .93f, .95f, 0));
+        fade.AddPoint(.04f, new Color(1, 1, 1, .75f));
+        fade.AddPoint(.6f, new Color(.97f, .97f, .98f, .45f));
+        var swell = new Curve();
+        swell.AddPoint(new Vector2(0, .65f));
+        swell.AddPoint(new Vector2(1, 1));
+        var smoke = new CpuParticles3D
+        {
+            Name = "ChimneySmoke",
+            Position = position,
+            Amount = 9,
+            Lifetime = 4.5f,
+            Preprocess = 4.5f,
+            Mesh = new SphereMesh
+            {
+                Radius = .28f,
+                Height = .56f,
+                RadialSegments = 8,
+                Rings = 4,
+            },
+            MaterialOverride = smokeMaterial,
+            Direction = Vector3.Up,
+            Spread = 12,
+            InitialVelocityMin = .35f,
+            InitialVelocityMax = .6f,
+            Gravity = new Vector3(.12f, .05f, .04f),
+            ScaleAmountMin = .8f,
+            ScaleAmountMax = 1.4f,
+            ScaleAmountCurve = swell,
+            ColorRamp = fade,
+            LocalCoords = false,
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+        };
+        parent.AddChild(smoke);
+        return smoke;
+    }
+
+    /// <summary>Takes the outline of <see cref="Outline"/> off every mesh under <paramref name="root"/>.</summary>
+    public static void ClearOutline(Node root)
+    {
+        foreach (var node in root.FindChildren("*", "MeshInstance3D", true, false))
+            ((MeshInstance3D)node).MaterialOverlay = null;
+    }
+
+    /// <summary>
+    /// Outlines one mesh, unless it is see-through or shines by itself, or is smaller than <paramref name="minSize"/>
+    /// metres every way (knobs and flowers, whose outlines would only clutter a building).
+    /// </summary>
+    private static void OutlineMesh(MeshInstance3D mesh, ShaderMaterial material, float minSize)
+    {
+        if (mesh.Mesh == null)
+            return;
+        if (mesh.MaterialOverride is BaseMaterial3D { Transparency: not BaseMaterial3D.TransparencyEnum.Disabled })
+            return;
+        if (mesh.MaterialOverride is BaseMaterial3D { ShadingMode: BaseMaterial3D.ShadingModeEnum.Unshaded })
+            return;
+        if (minSize > 0)
+        {
+            var size = mesh.Mesh.GetAabb().Size * mesh.GlobalTransform.Basis.Scale;
+            if (Mathf.Max(size.X, Mathf.Max(size.Y, size.Z)) < minSize)
+                return;
+        }
+        mesh.MaterialOverlay = material;
+    }
+
+    private static ShaderMaterial Surface(string key, string shader, System.Action<ShaderMaterial> setup)
+    {
+        if (!Surfaces.TryGetValue(key, out var material))
+        {
+            material = new ShaderMaterial { Shader = GD.Load<Shader>(shader) };
+            setup(material);
+            Surfaces[key] = material;
+        }
+        return material;
     }
 
     private static readonly Color WindowGlow = new Color("ffd77a").SrgbToLinear();

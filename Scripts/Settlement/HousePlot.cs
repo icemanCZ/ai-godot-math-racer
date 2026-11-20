@@ -250,11 +250,18 @@ public sealed partial class HousePlot : Node3D
         float y = bottom + height / 2;
         float back = CenterZ - Depth / 2 + Thickness / 2,
             frontZ = CenterZ + Depth / 2 - Thickness / 2;
-        Art.Block(stage, new(0, y, back), new(Width, height, Thickness), color);
+        var bricks = Art.Facade(color, FacadeStyle.Bricks);
+        Art.Block(stage, new(0, y, back), new(Width, height, Thickness), color).MaterialOverride = bricks;
         foreach (int side in new[] { -1, 1 })
         {
-            Art.Block(stage, new(side * (Width / 2 - Thickness / 2), y, CenterZ), new(Thickness, height, Depth), color);
-            Art.Block(stage, new(side * 1.825f, y, frontZ), new(2.35f, height, Thickness), color);
+            Art.Block(
+                stage,
+                new(side * (Width / 2 - Thickness / 2), y, CenterZ),
+                new(Thickness, height, Depth),
+                color
+            ).MaterialOverride = bricks;
+            Art.Block(stage, new(side * 1.825f, y, frontZ), new(2.35f, height, Thickness), color).MaterialOverride =
+                bricks;
         }
     }
 
@@ -270,7 +277,8 @@ public sealed partial class HousePlot : Node3D
     {
         Walls(stage, Height / 2, Height / 2, "d4856a");
         float frontZ = CenterZ + Depth / 2;
-        Art.Block(stage, new(0, 2.3f, frontZ - Thickness / 2), new(1.3f, .6f, Thickness), "d4856a");
+        Art.Block(stage, new(0, 2.3f, frontZ - Thickness / 2), new(1.3f, .6f, Thickness), "d4856a").MaterialOverride =
+            Art.Facade("d4856a", FacadeStyle.Bricks);
         foreach (float x in new[] { -1.825f, 1.825f })
             Art.Block(stage, new(x, 1.7f, frontZ + .01f), new(1.2f, 1, .06f), "35444c");
         foreach (int side in new[] { -1, 1 })
@@ -323,11 +331,10 @@ public sealed partial class HousePlot : Node3D
             st.AddVertex(v[i]);
         st.GenerateNormals();
         var roof = Art.Mesh(stage, st.Commit(), Vector3.Zero, Vector3.One, Looks[Index].Roof);
-        var material = (StandardMaterial3D)Art.Mat(Looks[Index].Roof).Duplicate();
-        material.CullMode = BaseMaterial3D.CullModeEnum.Disabled;
-        roof.MaterialOverride = material;
+        roof.MaterialOverride = Art.RoofTiles(Looks[Index].Roof, "e8c9a4");
         Art.Block(stage, new(1.7f, Height + 1.5f, CenterZ - 1.3f), new(.7f, 1.7f, .7f), "b35d4b");
         Art.Block(stage, new(1.7f, Height + 2.4f, CenterZ - 1.3f), new(.9f, .18f, .9f), "8c4a3d");
+        Art.ChimneySmoke(stage, new(1.7f, Height + 2.65f, CenterZ - 1.3f));
     }
 
     /// <summary>Stage 6: door, windows with shutters, flower boxes, a doorstep and a mailbox: the house is ready to live in.</summary>

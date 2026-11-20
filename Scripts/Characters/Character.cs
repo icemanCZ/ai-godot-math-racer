@@ -59,6 +59,15 @@ public partial class Character : Node3D
 
     public override void _Ready()
     {
+        // Hats, aprons and other dress are put on right after the character is made, so the outline waits for them. The
+        // first village of a valley is freed before then.
+        Callable
+            .From(() =>
+            {
+                if (IsInstanceValid(this))
+                    Art.Outline(this);
+            })
+            .CallDeferred();
         if (Role.Icon != "")
             roleIcon = Art.RoleTaskIcon(taskMarker, Role.Icon);
         Guide(taskMarker.Visible);

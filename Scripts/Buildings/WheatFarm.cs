@@ -220,7 +220,7 @@ public partial class WheatFarm : Node3D
         const float width = 6.4f,
             depth = 4.8f,
             height = 3.4f;
-        Art.Block(this, new(x, y + height / 2, z), new(width, height, depth), "b8473b");
+        Art.Wall(this, new(x, y + height / 2, z), new(width, height, depth), "b8473b", FacadeStyle.Boards);
         // White trim around the doors and corners.
         Art.Block(this, new(x, y + 1.35f, z - depth / 2 - .02f), new(2.8f, 2.7f, .1f), "f3e9d2");
         Art.Block(this, new(x, y + 1.35f, z - depth / 2 - .06f), new(2.4f, 2.4f, .08f), "8c3329");
@@ -234,11 +234,12 @@ public partial class WheatFarm : Node3D
         float length = half / Mathf.Cos(angle) + .35f;
         foreach (int side in new[] { -1, 1 })
         {
-            var panel = Art.Block(
+            var panel = Art.Wall(
                 this,
                 new(x + side * half / 2, y + height + half / 2 * Mathf.Tan(angle) + .1f, z),
                 new(length, .18f, depth + .6f),
-                "7b4a38"
+                "7b4a38",
+                FacadeStyle.Shingles
             );
             panel.RotationDegrees = new Vector3(0, 0, -side * Mathf.RadToDeg(angle));
         }

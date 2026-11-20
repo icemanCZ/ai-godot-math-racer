@@ -146,7 +146,7 @@ public partial class Village
                 ToyBuilding = building;
             else
                 MuseumBuilding = building;
-            Art.Block(building, new(0, 1.8f, 0), new(7, 3.6f, 5.5f), toys ? "f1be72" : "b4b1df");
+            Art.Wall(building, new(0, 1.8f, 0), new(7, 3.6f, 5.5f), toys ? "f1be72" : "b4b1df", FacadeStyle.Plaster);
             Obstacles.Box(building, new(0, 1.8f, 0), new(7, 3.6f, 5.5f));
             Art.Block(building, new(0, 3.85f, 0), new(8, .45f, 6.5f), toys ? "e97e83" : "80bacb");
             Art.Block(building, new(-1.5f, 1.3f, 2.8f), new(1.5f, 2.6f, .15f), "fff0d3");

@@ -173,6 +173,25 @@ public partial class Grass : Node3D
         return true;
     }
 
+    /// <summary>
+    /// How tall a blade grows beside a road, from 0 on the verge's packed gravel (<see cref="Verges"/>) to 1 a little
+    /// beyond its rim. Only the look changes: <see cref="CanGrow"/>, which placement asks too, is left as it was.
+    /// </summary>
+    private float VergeGrowth(Vector3 p)
+    {
+        float distance = world.Routes.EdgeDistance(p);
+        if (world.Tracks is { } tracks)
+        {
+            // The mouth of a field path opens out wider than the path, which the grass already keeps off.
+            if (distance < 4.5f && tracks.MouthDistance(p, distance) < .1f)
+                return 0;
+            distance = Mathf.Min(distance, tracks.RoadDistance(p));
+        }
+        if (distance > Verges.Width + .4f)
+            return 1;
+        return distance < .35f ? 0 : Mathf.Lerp(.35f, 1, Mathf.SmoothStep(.35f, Verges.Width + .4f, distance));
+    }
+
     private void AddTile(Vector2I key, int lod)
     {
         var rng = new RandomNumberGenerator
@@ -206,10 +225,14 @@ public partial class Grass : Node3D
             var p = world.Ground.At(px, pz, -.025f);
             if (!CanGrow(p, animals))
                 continue;
+            // The verge's packed gravel stays bare and the grass grows taller away from it.
+            float verge = VergeGrowth(p);
+            if (verge <= 0)
+                continue;
             transforms.Add(
                 new Transform3D(
                     new Basis(Vector3.Up, yaw).ScaledLocal(
-                        new Vector3(width * (1 + lod * .55f), height, 1 + lod * .55f)
+                        new Vector3(width * (1 + lod * .55f), height * verge, 1 + lod * .55f)
                     ),
                     p - origin
                 )

@@ -286,6 +286,54 @@ public partial class VisualCapture : Node
             camera.Position = focus + new Vector3(48, 58, 62);
             camera.LookAt(focus);
         }
+        else if (view == "flutters")
+        {
+            // Butterflies round the car and leaves blowing past on a windy day, seen from beside the car.
+            camera.SetProcess(false);
+            ((Game)GetParent()).Weather.Begin(WeatherKind.Wind, instant: true);
+            camera.Position = car.Position + new Vector3(4, 2.2f, 6);
+            camera.LookAt(car.Position + new Vector3(-3, 1.2f, -6));
+            await ToSignal(GetTree().CreateTimer(4), SceneTreeTimer.SignalName.Timeout);
+        }
+        else if (view == "house-close")
+        {
+            // The first cottage from a front corner, a little above the eaves: its walls and roof tiles.
+            camera.SetProcess(false);
+            var house = world.Village.Houses[0];
+            var basis = house.GlobalTransform.Basis;
+            camera.Position = house.GlobalPosition + basis * new Vector3(7.5f, 7.5f, 10.5f);
+            camera.LookAt(house.GlobalPosition + basis * new Vector3(0, 3.6f, 0));
+        }
+        else if (view == "walkway")
+        {
+            // The walkway of the first house down to its street, from beside the fence.
+            camera.SetProcess(false);
+            var house = world.Village.Houses[0];
+            var basis = house.GlobalTransform.Basis;
+            var focus = house.GlobalPosition + basis * new Vector3(0, 0, 5.5f);
+            camera.Position = focus + basis * new Vector3(4.5f, 3.2f, 5.5f);
+            camera.LookAt(focus);
+        }
+        else if (view is "junction-close" or "road-edge")
+        {
+            // A junction seen from a few metres up, or the verge of a straight road beside the car, at eye level.
+            camera.SetProcess(false);
+            if (view == "junction-close")
+            {
+                var junction = WorldLayout.Plan.VillageJunction;
+                var focus = world.Ground.At(junction.X, junction.Z);
+                camera.Position = focus + new Vector3(9, 8, 13);
+                camera.LookAt(focus);
+            }
+            else
+            {
+                var (center, forward) = world.Routes.SampleMain(60);
+                var side = forward.Cross(Vector3.Up).Normalized();
+                var edge = world.Ground.At(center.X + side.X * 3.6f, center.Z + side.Z * 3.6f);
+                camera.Position = edge + side * 2.2f - forward * 4.5f + Vector3.Up * 1.6f;
+                camera.LookAt(edge + forward * 3);
+            }
+        }
         else if (view == "world")
         {
             camera.SetProcess(false);
@@ -575,6 +623,18 @@ public partial class VisualCapture : Node
             var witch = world.Witch;
             camera.Position = witch.Position + witch.Basis * new Vector3(0, 2.6f, 9);
             camera.LookAt(witch.Position + witch.Basis * new Vector3(0, 1.1f, 1.2f));
+        }
+        else if (view == "path-mouth" && world.Industry.Length > 0)
+        {
+            // Where the field path to the sawmill leaves its road: the verge's gravel gives way to the path.
+            camera.SetProcess(false);
+            var site = world.Industry[0].Site;
+            var along = site.Position - site.Road;
+            along.Y = 0;
+            along = along.Normalized();
+            var mouth = world.Ground.At(site.Road.X, site.Road.Z) + along * 3;
+            camera.Position = mouth + along * 9 + along.Cross(Vector3.Up) * 5 + Vector3.Up * 6;
+            camera.LookAt(mouth - along * 2);
         }
         else if (view == "log-yard" && world.LogYard is { } yard)
         {

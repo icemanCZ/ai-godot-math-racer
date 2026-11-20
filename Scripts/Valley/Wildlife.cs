@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Godot;
 using MathRacer.App;
+using MathRacer.Graphics;
 using MathRacer.Vehicles;
 
 namespace MathRacer.Valley;
@@ -75,11 +76,47 @@ public partial class Wildlife : Node3D
         return true;
     }
 
+    /// <summary>Wild animals nearer the car than this have the characters' soft outline.</summary>
+    private const float OutlineDistance = 45;
+
+    private readonly HashSet<WildAnimal> outlined = new();
+    private float outlineCheck;
+
+    /// <summary>
+    /// Outlines the animals near the car and takes the outline off those that are left behind: there are hundreds of
+    /// them, and the outline is drawn as a second pass of every part.
+    /// </summary>
+    private void UpdateOutlines()
+    {
+        foreach (var animal in animals)
+        {
+            bool near = Flat(animal.Position - car.Position).Length() < OutlineDistance;
+            if (near == outlined.Contains(animal))
+                continue;
+            if (near)
+            {
+                Art.Outline(animal, .02f);
+                outlined.Add(animal);
+            }
+            else
+            {
+                Art.ClearOutline(animal);
+                outlined.Remove(animal);
+            }
+        }
+    }
+
     public override void _PhysicsProcess(double delta)
     {
         if (!car.Active)
             return;
         float dt = (float)delta;
+        outlineCheck -= dt;
+        if (outlineCheck <= 0)
+        {
+            outlineCheck = .5f;
+            UpdateOutlines();
+        }
         foreach (var animal in animals)
         {
             float distance = Flat(animal.Position - car.Position).Length();

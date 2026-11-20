@@ -15,7 +15,7 @@ public partial class Village
         {
             var detail = DetailRoot(Houses[i]);
             BuildingTrim(detail, 7, 6, 4.2f);
-            CottageRoof(detail, i);
+            CottageRoof(detail);
             DoorDetails(detail, 0, 3.16f, 2.5f);
             foreach (float x in new[] { -2.15f, 2.15f })
                 WindowDetails(detail, new(x, 2.5f, 3.34f), 1.12f, 1.12f);
@@ -156,27 +156,13 @@ public partial class Village
         }
     }
 
-    private static void CottageRoof(Node3D parent, int house)
+    /// <summary>The terracotta of each cottage's roof tiles (<see cref="Art.RoofTiles"/>), drawn by the roof's shader.</summary>
+    private static readonly string[] RoofColors = { "d85f4b", "c97555", "bb5c50", "d88459" };
+
+    private static void CottageRoof(Node3D parent)
     {
-        string[] colors = { "d85f4b", "c97555", "bb5c50", "d88459" };
-        // Raised courses and staggered joints describe individual terracotta tiles.
         foreach (int side in new[] { -1, 1 })
         {
-            for (int row = 0; row < 7; row++)
-            {
-                float x = side * (.28f + row * .56f);
-                float y = 6.7f - Mathf.Abs(x) * .675f + .065f;
-                var course = Art.Block(parent, new(x, y, 0), new(.12f, .065f, 7.22f), colors[house]);
-                course.Rotation = new(0, 0, -side * Mathf.Atan(.675f));
-                for (int tile = 0; tile < 10; tile++)
-                {
-                    float z = -3.3f + tile * .72f + row % 2 * .22f;
-                    if (z > 3.5f)
-                        continue;
-                    var joint = Art.Block(parent, new(x, y + .007f, z), new(.62f, .035f, .028f), colors[house]);
-                    joint.Rotation = new(0, 0, -side * Mathf.Atan(.675f));
-                }
-            }
             foreach (float z in new[] { -3.64f, 3.64f })
                 Art.Beam(parent, new(0, 6.75f, z), new(side * 4.04f, 4.02f, z), .18f, "fff1d2");
             Art.Block(parent, new(side * 3.9f, 4.02f, 0), new(.22f, .16f, 7.4f), "a87b61");

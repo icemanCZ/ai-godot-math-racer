@@ -118,8 +118,48 @@ public partial class World : Node3D
         CreateFireflies();
         Village.CreateLamps();
         Village.Lamps.Surface = DriveSurface;
+        // The verges are drawn last, on the final ground, and leave out every field way.
+        Routes.BuildVerges(Ground, Tracks);
+        Tracks?.BuildVerges(Ground, Routes);
+        var wayside = new Wayside { Name = "Wayside" };
+        AddChild(wayside);
+        wayside.Generate(this);
+        OutlineScenery();
         Ground.BuildMeshes();
         Roads.ReleaseFieldCache();
+    }
+
+    /// <summary>
+    /// Gives the buildings, fences, lanterns, rides, animals of the zoo, the train, the boat and the hidden friends the
+    /// soft outline of the characters (<see cref="Art.Outline"/>), leaving out parts smaller than a hand. The ground,
+    /// the roads, the water, the plants (which have an outline of their own that sways with them), the wild animals
+    /// (outlined only near the car), the sky and the characters (which outline themselves) are left as they are.
+    /// </summary>
+    private void OutlineScenery()
+    {
+        foreach (var child in GetChildren())
+        {
+            if (
+                child
+                is Terrain
+                    or Roads
+                    or Vegetation
+                    or Valley.Grass
+                    or Valley.Wildlife
+                    or Valley.Atmosphere
+                    or River
+                    or Valley.Tracks
+                    or Wayside
+                    or FireflyField
+                    or Character
+            )
+                continue;
+            // The hidden friends and the pets are small all over, so every part of them is outlined.
+            if (child is HiddenFriends or CollectorPet)
+                Art.Outline(child, .015f);
+            else
+                Art.Outline(child, .025f, .3f);
+        }
     }
 
     private void RegisterActors()

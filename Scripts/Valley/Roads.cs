@@ -9,6 +9,9 @@ public partial class Roads : Node3D
     public const float MainWidth = 7;
     private const float BucketSize = 12;
     private const float MeshStep = .75f;
+
+    /// <summary>The road surface lies this high over the ground.</summary>
+    private const float RoadLift = .13f;
     private const int NavigationAnchorStep = 12;
 
     /// <summary><see cref="Middle"/> and <see cref="HalfLength"/> bound the distance to the segment from below.</summary>
@@ -21,7 +24,8 @@ public partial class Roads : Node3D
         float HalfLength
     );
 
-    private readonly record struct FieldPoint(Vector2 Position, float Distance, Vector2 Uv, float Marks);
+    /// <summary><see cref="Deck"/> is negative inside the opening the bridge's wooden deck fills.</summary>
+    private readonly record struct FieldPoint(Vector2 Position, float Distance, Vector2 Uv, float Marks, float Deck);
 
     private readonly Dictionary<Vector2I, List<Segment>> segments = new();
     private readonly List<Segment> allSegments = new();
@@ -133,40 +137,54 @@ public partial class Roads : Node3D
         BuildSurface(terrain);
     }
 
-    private bool[] roadCells = System.Array.Empty<bool>();
-    private int roadCellsX,
-        roadCellsZ,
-        roadCellColumns,
-        roadCellRows;
+    /// <summary>The mesh cells that can hold road (or, for the verge, road and verge); see <see cref="MarkCells"/>.</summary>
+    private sealed class CellMask
+    {
+        public bool[] Cells = System.Array.Empty<bool>();
+        public int X,
+            Z,
+            Columns,
+            Rows;
+
+        public bool Has(int x, int z)
+        {
+            int column = x - X,
+                row = z - Z;
+            return column >= 0 && column < Columns && row >= 0 && row < Rows && Cells[row * Columns + column];
+        }
+    }
+
+    private CellMask roadCells = new();
 
     /// <summary>
-    /// Marks every mesh cell that can contain road: a corner of such a cell lies within a segment's width of the
-    /// segment, or within the junction radius of a junction. Any other cell has no corner inside the road, so it
-    /// produces no triangles and its corners need not be sampled.
+    /// Marks every mesh cell that can contain road, widened by <paramref name="extra"/>: a corner of such a cell lies
+    /// within a segment's width (plus the extra) of the segment, or within the junction radius of a junction. Any other
+    /// cell has no corner inside, so it produces no triangles and its corners need not be sampled.
     /// </summary>
-    private void MarkCellsNearRoads()
+    private CellMask MarkCells(float extra)
     {
         const float junctionRadius = 7;
         const float slack = .05f;
+        var mask = new CellMask();
         var low = new Vector2(float.MaxValue, float.MaxValue);
         var high = new Vector2(float.MinValue, float.MinValue);
         foreach (var segment in allSegments)
         {
-            low = low.Min(segment.A.Min(segment.B) - Vector2.One * (segment.Width + slack));
-            high = high.Max(segment.A.Max(segment.B) + Vector2.One * (segment.Width + slack));
+            low = low.Min(segment.A.Min(segment.B) - Vector2.One * (segment.Width + extra + slack));
+            high = high.Max(segment.A.Max(segment.B) + Vector2.One * (segment.Width + extra + slack));
         }
         foreach (var junction in junctions)
         {
-            low = low.Min(junction - Vector2.One * (junctionRadius + slack));
-            high = high.Max(junction + Vector2.One * (junctionRadius + slack));
+            low = low.Min(junction - Vector2.One * (junctionRadius + extra + slack));
+            high = high.Max(junction + Vector2.One * (junctionRadius + extra + slack));
         }
         if (low.X > high.X)
-            return;
-        roadCellsX = Mathf.FloorToInt(low.X / MeshStep) - 1;
-        roadCellsZ = Mathf.FloorToInt(low.Y / MeshStep) - 1;
-        roadCellColumns = Mathf.CeilToInt(high.X / MeshStep) - roadCellsX + 2;
-        roadCellRows = Mathf.CeilToInt(high.Y / MeshStep) - roadCellsZ + 2;
-        roadCells = new bool[roadCellColumns * roadCellRows];
+            return mask;
+        mask.X = Mathf.FloorToInt(low.X / MeshStep) - 1;
+        mask.Z = Mathf.FloorToInt(low.Y / MeshStep) - 1;
+        mask.Columns = Mathf.CeilToInt(high.X / MeshStep) - mask.X + 2;
+        mask.Rows = Mathf.CeilToInt(high.Y / MeshStep) - mask.Z + 2;
+        mask.Cells = new bool[mask.Columns * mask.Rows];
         void Mark(Vector2 from, Vector2 to, float reach)
         {
             // A corner inside the reach belongs to the cell on either side of it, hence one cell more on each side.
@@ -178,23 +196,13 @@ public partial class Roads : Node3D
                 lastZ = Mathf.CeilToInt(max.Y / MeshStep);
             for (int z = firstZ; z <= lastZ; z++)
             for (int x = firstX; x <= lastX; x++)
-                roadCells[(z - roadCellsZ) * roadCellColumns + x - roadCellsX] = true;
+                mask.Cells[(z - mask.Z) * mask.Columns + x - mask.X] = true;
         }
         foreach (var segment in allSegments)
-            Mark(segment.A, segment.B, segment.Width);
+            Mark(segment.A, segment.B, segment.Width + extra);
         foreach (var junction in junctions)
-            Mark(junction, junction, junctionRadius);
-    }
-
-    private bool MayHoldRoad(int x, int z)
-    {
-        int column = x - roadCellsX,
-            row = z - roadCellsZ;
-        return column >= 0
-            && column < roadCellColumns
-            && row >= 0
-            && row < roadCellRows
-            && roadCells[row * roadCellColumns + column];
+            Mark(junction, junction, junctionRadius + extra);
+        return mask;
     }
 
     private static WorldPlan? cachedFieldPlan;
@@ -263,7 +271,7 @@ public partial class Roads : Node3D
             System.MathF.Abs(pz - River.BridgeZ) - 3.7f
         );
         best = System.Math.Max(best, -deck);
-        return new FieldPoint(point, best, uv, marks);
+        return new FieldPoint(point, best, uv, marks, deck);
     }
 
     private void BuildSurface(Terrain terrain)
@@ -278,15 +286,7 @@ public partial class Roads : Node3D
             cachedField = new Dictionary<Vector2I, FieldPoint>();
             cachedFieldPlan = plan;
         }
-        var cache = cachedField;
-        FieldPoint Sample(int x, int z)
-        {
-            var key = new Vector2I(x, z);
-            if (!cache.TryGetValue(key, out var point))
-                cache[key] = point = SampleField(new Vector2(x * MeshStep, z * MeshStep));
-            return point;
-        }
-        MarkCellsNearRoads();
+        roadCells = MarkCells(0);
         const int cellsPerBucket = 16;
         foreach (
             var chunk in segments.Keys.GroupBy(key => new Vector2I(
@@ -302,7 +302,7 @@ public partial class Roads : Node3D
                 for (int z = bucket.Y * cellsPerBucket; z < (bucket.Y + 1) * cellsPerBucket; z++)
                 for (int x = bucket.X * cellsPerBucket; x < (bucket.X + 1) * cellsPerBucket; x++)
                 {
-                    if (!MayHoldRoad(x, z))
+                    if (!roadCells.Has(x, z))
                         continue;
                     var a = Sample(x, z);
                     var b = Sample(x + 1, z);
@@ -331,7 +331,8 @@ public partial class Roads : Node3D
                                 p.Position.Lerp(q.Position, t),
                                 0,
                                 p.Uv.Lerp(q.Uv, t),
-                                Mathf.Lerp(p.Marks, q.Marks, t)
+                                Mathf.Lerp(p.Marks, q.Marks, t),
+                                Mathf.Lerp(p.Deck, q.Deck, t)
                             )
                         );
                     }
@@ -348,8 +349,9 @@ public partial class Roads : Node3D
                     for (int vertex = 0; vertex < 3; vertex++)
                     {
                         var point = points[vertex];
-                        triangle[vertex] = terrain.At(point.Position.X, point.Position.Y, .13f);
-                        surface.SetColor(new Color(point.Marks, 0, 0));
+                        triangle[vertex] = terrain.At(point.Position.X, point.Position.Y, RoadLift);
+                        // Blue tells the shader how near the edge is, where the verge's gravel begins.
+                        surface.SetColor(new Color(point.Marks, 0, Verges.Depth(point.Distance)));
                         surface.SetUV(point.Uv);
                         surface.AddVertex(triangle[vertex]);
                     }
@@ -387,6 +389,129 @@ public partial class Roads : Node3D
                 }
             );
         }
+    }
+
+    /// <summary>The field at a corner of the mesh grid, sampled once while the valley is generated.</summary>
+    private FieldPoint Sample(int x, int z)
+    {
+        if (cachedField == null)
+            return SampleField(new Vector2(x * MeshStep, z * MeshStep));
+        var key = new Vector2I(x, z);
+        if (!cachedField.TryGetValue(key, out var point))
+            cachedField[key] = point = SampleField(new Vector2(x * MeshStep, z * MeshStep));
+        return point;
+    }
+
+    /// <summary>
+    /// The signed distance to the edge of the roads at a corner of the mesh grid (negative on a road), which the field
+    /// ways of <see cref="Tracks"/> share, so their verges stop where a road begins.
+    /// </summary>
+    internal float FieldDistance(int x, int z) => Sample(x, z).Distance;
+
+    /// <summary>
+    /// The signed distance from <paramref name="p"/> to the edge of the roads: negative on a road, positive beside it.
+    /// The grass asks it to leave the verge's gravel bare.
+    /// </summary>
+    internal float EdgeDistance(Vector3 p) => SampleField(new Vector2(p.X, p.Z)).Distance;
+
+    /// <summary>
+    /// Builds the gravel verge (<see cref="Verges"/>) along every road, once the ground beside the roads is final and
+    /// the field ways are known. The verge leaves out the bridge's deck and fades out where a field way begins.
+    /// </summary>
+    internal void BuildVerges(Terrain terrain, Tracks? tracks)
+    {
+        if (tracks != null)
+            foreach (var child in GetChildren())
+                if (child is MeshInstance3D road)
+                    FadeEdgeAtWays(road, tracks);
+        var mask = MarkCells(Verges.Width);
+        var material = Verges.CreateMaterial();
+        var container = new Node3D { Name = "Verges" };
+        AddChild(container);
+        // Chunks of 48 cells (36 m) keep each mesh small enough to be culled away when it is out of sight.
+        const int chunkCells = 48;
+        var surfaces = new Dictionary<Vector2I, (SurfaceTool Surface, int Count)>();
+        Verges.Corner Corner(int x, int z)
+        {
+            var point = Sample(x, z);
+            if (tracks == null || point.Distance > Verges.Width + 1)
+                return new Verges.Corner(point.Position, point.Distance, point.Deck);
+            float way = tracks.OpenedDistance(point.Position, point.Distance);
+            return new Verges.Corner(
+                point.Position,
+                point.Distance,
+                Mathf.Min(point.Deck, way + Verges.FadeReach),
+                Verges.FadeNear(way)
+            );
+        }
+        for (int row = 0; row < mask.Rows; row++)
+        for (int column = 0; column < mask.Columns; column++)
+        {
+            if (!mask.Cells[row * mask.Columns + column])
+                continue;
+            int x = mask.X + column,
+                z = mask.Z + row;
+            var a = Corner(x, z);
+            var b = Corner(x + 1, z);
+            var c = Corner(x, z + 1);
+            var d = Corner(x + 1, z + 1);
+            if (!Verges.Touches(a, b, c) && !Verges.Touches(b, d, c))
+                continue;
+            var key = new Vector2I(Mathf.FloorToInt(x / (float)chunkCells), Mathf.FloorToInt(z / (float)chunkCells));
+            if (!surfaces.TryGetValue(key, out var entry))
+            {
+                entry = (new SurfaceTool(), 0);
+                entry.Surface.Begin(Mesh.PrimitiveType.Triangles);
+            }
+            entry.Count += Verges.Emit(entry.Surface, terrain, RoadLift, a, b, c);
+            entry.Count += Verges.Emit(entry.Surface, terrain, RoadLift, b, d, c);
+            surfaces[key] = entry;
+        }
+        foreach (var (surface, count) in surfaces.Values)
+        {
+            if (count == 0)
+                continue;
+            surface.GenerateNormals();
+            container.AddChild(
+                new MeshInstance3D
+                {
+                    Mesh = surface.Commit(),
+                    MaterialOverride = material,
+                    CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+                }
+            );
+        }
+    }
+
+    /// <summary>
+    /// Tells the road shader that the mouth of a field way is no edge, so the gravel of the road's last metre does not
+    /// run across it. Only the vertex colours change; the triangles stay as they are.
+    /// </summary>
+    private static void FadeEdgeAtWays(MeshInstance3D road, Tracks tracks)
+    {
+        if (road.Mesh is not ArrayMesh mesh || mesh.GetSurfaceCount() != 1)
+            return;
+        var arrays = mesh.SurfaceGetArrays(0);
+        var vertices = arrays[(int)Mesh.ArrayType.Vertex].AsVector3Array();
+        var colors = arrays[(int)Mesh.ArrayType.Color].AsColorArray();
+        bool changed = false;
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            if (colors[i].B >= 1)
+                continue;
+            var flat = new Vector2(vertices[i].X, vertices[i].Z);
+            float way = tracks.OpenedDistance(flat, -colors[i].B * Verges.EdgeDepth);
+            if (way > 1.2f)
+                continue;
+            colors[i].B = Mathf.Max(colors[i].B, 1 - Verges.FadeNear(way));
+            changed = true;
+        }
+        if (!changed)
+            return;
+        arrays[(int)Mesh.ArrayType.Color] = colors;
+        var rebuilt = new ArrayMesh();
+        rebuilt.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
+        road.Mesh = rebuilt;
     }
 
     private static IEnumerable<Vector2I> Buckets(Vector2 min, Vector2 max)

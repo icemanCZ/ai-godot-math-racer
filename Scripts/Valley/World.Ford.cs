@@ -633,7 +633,7 @@ public partial class World
                 Tracks.Pad(build.Position, 6, Tracks.Kind.Path);
             }
         AddChild(Tracks);
-        Tracks.Build(Ground);
+        Tracks.Build(Ground, Routes);
     }
 
     /// <summary>Three stacks of logs lie behind the loading spot, their rows stepped like pyramids.</summary>

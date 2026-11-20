@@ -63,6 +63,7 @@ public static class VehicleModel
         }
         appearance.SetupStripes(model);
         appearance.SetupAccessories(model);
+        Art.Outline(model, .03f);
         if (onlyModel != null)
             appearance.ApplyModel(onlyModel);
     }

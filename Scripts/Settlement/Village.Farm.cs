@@ -72,11 +72,17 @@ public partial class Village
         plots.Add(farmPlot);
         // The enclosure has its own reserved plot so trees and grass leave it clear.
         plots.Add(new(farmPlot.Basis, farmPlot * new Vector3(12, 0, 0)));
-        Art.Block(FarmBuilding, new(0, 2, 0), new(8, 4, 6), "ce674e");
+        Art.Wall(FarmBuilding, new(0, 2, 0), new(8, 4, 6), "ce674e", FacadeStyle.Boards);
         Obstacles.Box(FarmBuilding, new(0, 2, 0), new(8, 4, 6));
         foreach (int side in new[] { -1, 1 })
         {
-            var roof = Art.Block(FarmBuilding, new(side * 2.1f, 5, 0), new(5.1f, .3f, 7.2f), "725742");
+            var roof = Art.Wall(
+                FarmBuilding,
+                new(side * 2.1f, 5, 0),
+                new(5.1f, .3f, 7.2f),
+                "725742",
+                FacadeStyle.Shingles
+            );
             roof.RotationDegrees = new(0, 0, side * -28);
             Art.Block(FarmBuilding, new(side * 1.1f, 1.5f, 3.08f), new(2, 3, .16f), "f2ddb0");
             Art.Beam(FarmBuilding, new(side * 2, .1f, 3.2f), new(side * .2f, 2.9f, 3.2f), .13f, "a77a59");

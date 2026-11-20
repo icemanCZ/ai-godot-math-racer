@@ -213,6 +213,19 @@ public partial class Vegetation : Node3D
         };
         var foliageShader = GD.Load<Shader>("res://Shaders/Foliage.gdshader");
         var foliageMaterials = new Dictionary<(string Color, bool Tree, bool Leaves), ShaderMaterial>();
+        // Trees and bushes get a soft outline that sways with them; small leaves, bark marks and pads do not.
+        var outlineShader = GD.Load<Shader>("res://Shaders/FoliageOutline.gdshader");
+        var outlines = new Dictionary<bool, ShaderMaterial>();
+        ShaderMaterial Outline(bool tree)
+        {
+            if (!outlines.TryGetValue(tree, out var outline))
+            {
+                outline = new ShaderMaterial { Shader = outlineShader };
+                outline.SetShaderParameter("tree_motion", tree);
+                outlines[tree] = outline;
+            }
+            return outline;
+        }
         foreach (var pair in batches)
         {
             var mm = new MultiMesh
@@ -244,11 +257,13 @@ public partial class Vegetation : Node3D
                 }
                 material = foliage;
             }
+            bool small = pair.Key.Shape is "detail" or "sprig" or "pad";
             AddChild(
                 new MultiMeshInstance3D
                 {
                     Multimesh = mm,
                     MaterialOverride = material,
+                    MaterialOverlay = (pair.Key.Tree || leaves) && !small ? Outline(pair.Key.Tree) : null,
                     // Small leaves and bark marks only matter near the camera.
                     VisibilityRangeEnd = pair.Key.Shape is "detail" or "sprig" or "pad" ? 85 : 0,
                     VisibilityRangeEndMargin = pair.Key.Shape is "detail" or "sprig" or "pad" ? 10 : 0,

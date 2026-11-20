@@ -9,8 +9,8 @@ namespace MathRacer.Valley;
 /// </summary>
 public partial class Atmosphere : Node3D
 {
-    private static readonly Color ClearHorizon = new Color("8cbfed").SrgbToLinear();
-    private static readonly Color ClearSky = new Color("397fb9").SrgbToLinear();
+    private static readonly Color ClearHorizon = new Color("bcdcef").SrgbToLinear();
+    private static readonly Color ClearSky = new Color("4b8fcc").SrgbToLinear();
     private static readonly Color CloudyHorizon = new Color("a0aebf").SrgbToLinear();
     private static readonly Color CloudySky = new Color("576984").SrgbToLinear();
     private static readonly Color ClearFog = new Color("a7c9df").SrgbToLinear();
@@ -18,7 +18,7 @@ public partial class Atmosphere : Node3D
     private static readonly Color CloudTint = new("8995a8");
     private static readonly Color DayGround = new Color("739fa3").SrgbToLinear();
     private static readonly Color DayAmbient = new("edf5ff");
-    private static readonly Color DaySun = new("fff5e5");
+    private static readonly Color DaySun = new("ffefd6");
     private static readonly Color EveningHorizon = new Color("f4a77e").SrgbToLinear();
     private static readonly Color EveningSky = new Color("6a5f9e").SrgbToLinear();
     private static readonly Color EveningFog = new Color("d9a08c").SrgbToLinear();
@@ -43,7 +43,8 @@ public partial class Atmosphere : Node3D
     private ProceduralSkyMaterial sky = null!;
     private Godot.Environment environment = null!;
     private DirectionalLight3D sun = null!;
-    private StandardMaterial3D cloudMaterial = null!;
+    private ShaderMaterial cloudMaterial = null!;
+    private Node3D clouds = null!;
     private Node3D nightSky = null!;
     private StandardMaterial3D starMaterial = null!;
     private StandardMaterial3D moonMaterial = null!;
@@ -68,10 +69,10 @@ public partial class Atmosphere : Node3D
         sun.LightEnergy = (.6f - cover * .41f + flash * .53f) * (1 - evening * .15f) * (1 - night * .8f);
         sun.LightColor = DaySun.Lerp(EveningSun, evening).Lerp(NightSun, night);
         sun.RotationDegrees = DaySunAngle.Lerp(EveningSunAngle, evening).Lerp(NightSunAngle, night);
-        cloudMaterial.AlbedoColor = Colors
-            .White.Lerp(CloudTint, cover)
-            .Lerp(EveningCloud, evening)
-            .Lerp(NightCloud, night);
+        cloudMaterial.SetShaderParameter(
+            "tint",
+            Colors.White.Lerp(CloudTint, cover).Lerp(EveningCloud, evening).Lerp(NightCloud, night)
+        );
 
         // The moon stands where the sun's light comes from, and the stars fade in as the sky darkens; clouds of rain or a
         // storm hide most of them.
@@ -85,6 +86,7 @@ public partial class Atmosphere : Node3D
     /// <summary>The stars and the moon travel with the camera, so they never come closer.</summary>
     public override void _Process(double delta)
     {
+        clouds.RotateY((float)delta * .004f);
         if (nightSky.Visible && GetViewport().GetCamera3D() is { } camera)
             nightSky.GlobalPosition = camera.GlobalPosition;
         TickCollection((float)delta);
@@ -311,6 +313,14 @@ public partial class Atmosphere : Node3D
             FogEnabled = true,
             FogLightColor = ClearFog,
             FogDensity = .00055f,
+            // A soft glow round the brightest things (the sky, lit windows, lamps) and a touch more colour.
+            GlowEnabled = true,
+            GlowIntensity = .45f,
+            GlowBloom = .04f,
+            GlowHdrThreshold = .85f,
+            GlowBlendMode = Godot.Environment.GlowBlendModeEnum.Softlight,
+            AdjustmentEnabled = true,
+            AdjustmentSaturation = 1.08f,
         };
         AddChild(new WorldEnvironment { Environment = environment });
         sun = new DirectionalLight3D
@@ -320,15 +330,19 @@ public partial class Atmosphere : Node3D
             LightEnergy = .6f,
             ShadowEnabled = true,
             DirectionalShadowMaxDistance = 100,
+            // Soft, lighter shadows with blurred edges suit a picture book better than hard black ones.
+            ShadowBlur = 1.8f,
+            ShadowOpacity = .72f,
         };
         AddChild(sun);
         CreateNightSky();
 
-        cloudMaterial = new StandardMaterial3D
-        {
-            AlbedoColor = new Color("ffffff"),
-            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-        };
+        cloudMaterial = new ShaderMaterial { Shader = GD.Load<Shader>("res://Shaders/Cloud.gdshader") };
+        // The clouds drift slowly round the valley (see _Process).
+        clouds = new Node3D { Name = "Clouds" };
+        AddChild(clouds);
+        // Extra small puffs make each cloud fluffier; they have a generator of their own, so the clouds stay put.
+        var fluff = new RandomNumberGenerator { Seed = (ulong)Settings.Seed + 82 };
         var puff = new SphereMesh
         {
             Radius = 1,
@@ -351,11 +365,23 @@ public partial class Atmosphere : Node3D
                 Rotation = new Vector3(0, angle, 0),
                 Scale = Vector3.One * random.RandfRange(2.5f, 4f),
             };
-            AddChild(cloud);
+            clouds.AddChild(cloud);
             Puff(new Vector3(0, 0, 0), new Vector3(9, 1.8f, 3.4f));
             Puff(new Vector3(-4, 1.2f, 0), new Vector3(3.8f, 2.8f, 3.2f));
             Puff(new Vector3(.5f, 2.2f, 0), new Vector3(4.1f, 3.5f, 3.5f));
             Puff(new Vector3(4.8f, .8f, 0), new Vector3(3.2f, 2.5f, 2.8f));
+            for (int extra = 0; extra < 5; extra++)
+            {
+                float size = fluff.RandfRange(1.6f, 2.6f);
+                Puff(
+                    new Vector3(
+                        fluff.RandfRange(-5.5f, 5.5f),
+                        fluff.RandfRange(.6f, 2.6f),
+                        fluff.RandfRange(-1.2f, 1.2f)
+                    ),
+                    new Vector3(size * 1.15f, size, size)
+                );
+            }
             void Puff(Vector3 position, Vector3 scale)
             {
                 cloud.AddChild(

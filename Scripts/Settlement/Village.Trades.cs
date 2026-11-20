@@ -27,7 +27,7 @@ public partial class Village
             Shops.Add(shop);
             plot = shop.Transform;
             plots.Add(plot);
-            Art.Block(shop, new(0, 1.9f, 0), new(8, 3.8f, 6), color);
+            Art.Wall(shop, new(0, 1.9f, 0), new(8, 3.8f, 6), color, FacadeStyle.Plaster);
             Obstacles.Box(shop, new(0, 1.9f, 0), new(8, 3.8f, 6));
             Art.Block(shop, new(0, 4, 0), new(8.8f, .5f, 7), "c87e69");
             Art.Block(shop, new(-2.3f, 1.3f, 3.05f), new(1.5f, 2.6f, .15f), "fff0d3");
