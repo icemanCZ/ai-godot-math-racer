@@ -99,6 +99,49 @@ public partial class GarageChecks : Node
         );
     }
 
+    /// <summary>
+    /// The steam engine smokes hard while it gathers speed, less while it holds it, not at all when it rolls without
+    /// the pedal and only a little while it stands.
+    /// </summary>
+    private void CheckTrainSmoke()
+    {
+        float gathering = Vehicle.EngineEffort(1, false, 3, Settings.MaxSpeed);
+        float holding = Vehicle.EngineEffort(1, false, Settings.MaxSpeed, Settings.MaxSpeed);
+        float reversing = Vehicle.EngineEffort(-1, false, 4, -Settings.ReverseSpeed);
+        Check(
+            gathering == 1
+                && holding is > 0 and < 1
+                && reversing == 1
+                && Vehicle.EngineEffort(0, false, 10, 0) == 0
+                && Vehicle.EngineEffort(1, true, 10, 0) == 0,
+            "the engine works hard while it gathers speed, a little while it holds it and not without the pedal"
+        );
+        float Smoke(float effort, float speed)
+        {
+            var holder = new Node3D();
+            AddChild(holder);
+            var smoke = new TrainSmoke();
+            holder.AddChild(smoke);
+            float before = smoke.Blown;
+            for (int i = 0; i < 180; i++)
+                smoke.Step(1 / 60f, effort, new Vector3(0, 0, -speed));
+            float blown = smoke.Blown - before;
+            holder.Free();
+            return blown;
+        }
+        float hard = Smoke(gathering, 6),
+            steady = Smoke(holding, Settings.MaxSpeed),
+            coasting = Smoke(0, 10),
+            standing = Smoke(0, 0);
+        Check(
+            hard > steady * 2 && steady > standing * 2 && standing > 0 && coasting == 0,
+            $"the chimney smokes most while gathering speed ({hard:0.00}), less while holding it ({steady:0.00}), "
+                + $"a little standing ({standing:0.00}) and not at all coasting ({coasting:0.00})"
+        );
+        var train = car.FindChild("ChimneySmoke", true, false) as TrainSmoke;
+        Check(train != null && !train.IsVisibleInTree(), "the train's chimney smoke only shows with the train");
+    }
+
     public override async void _Ready()
     {
         try
@@ -124,6 +167,7 @@ public partial class GarageChecks : Node
                 "every standard item not owned shows its price; the special sticker has none"
             );
             CheckModels();
+            CheckTrainSmoke();
             var defaults = game.CaptureProgress();
             void Press(string name) =>
                 ((Button)game.FindChild(name, true, false)).EmitSignal(Button.SignalName.Pressed);

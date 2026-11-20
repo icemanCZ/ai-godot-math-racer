@@ -163,7 +163,7 @@ internal static class VehicleToys
     {
         const string Iron = "3b3b44",
             Dark = "293e50";
-        // The frame, a boiler with brass bands, a smoke box with a smiling face and a chimney with puffs of steam.
+        // The frame, a boiler with brass bands, a smoke box with a smiling face and a chimney that smokes.
         k.Block(new(0, .62f, .05f), new(1.55f, .22f, 3.05f), Iron);
         foreach (float side in new[] { -1f, 1f })
             k.Trim(k.Block(new(side * .8f, .62f, 0), new(.06f, .2f, 3f), "fff0ce"));
@@ -183,8 +183,7 @@ internal static class VehicleToys
         k.Trim(k.Ball(new(0, 1.9f, -.55f), new(.27f, .22f, .27f), "fff0ce"));
         k.Trim(k.Post(new(0, 1.92f, -1.42f), .1f, .1f, .08f, "fff0ce"));
         k.Glow(k.Ball(new(0, 2.0f, -1.42f), new(.14f, .14f, .14f), "fff3c4"), "ffe6a1");
-        foreach (var (y, z, size) in new[] { (2.5f, -1.15f, .12f), (2.7f, -1.1f, .16f), (2.9f, -1.0f, .2f) })
-            k.Ball(new(0, y, z), new(size, size, size), "f4f1ea");
+        k.Root.AddChild(new TrainSmoke { Name = "ChimneySmoke", Position = new(0, 2.38f, -1.15f) });
 
         // The cab: walls, windows on each side and behind, and a round roof that carries the stripes.
         k.Body(k.Block(new(0, 1.35f, .8f), new(1.62f, 1.3f, 1.1f), "f54257"));

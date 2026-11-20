@@ -62,6 +62,29 @@ public partial class VisualCapture : Node
                 world.Plants.Trampling.Touch(world.Ground.At(at.X, at.Z), forward, .92f, 1.55f, forward * 7);
             }
         }
+        else if (view is "smoke-pulling" or "smoke-holding" or "smoke-coasting")
+        {
+            // The steam engine seen from the side while it pulls away, holds its speed or rolls without the pedal.
+            await ToSignal(GetTree().CreateTimer(1.5), SceneTreeTimer.SignalName.Timeout);
+            car.Appearance.ApplyModel("train");
+            car.Reset();
+            camera.Snap();
+            Input.ActionPress("accelerate");
+            await ToSignal(
+                GetTree().CreateTimer(view == "smoke-pulling" ? 1.1 : 3.4),
+                SceneTreeTimer.SignalName.Timeout
+            );
+            if (view == "smoke-coasting")
+            {
+                Input.ActionRelease("accelerate");
+                await ToSignal(GetTree().CreateTimer(1.2), SceneTreeTimer.SignalName.Timeout);
+            }
+            camera.SetProcess(false);
+            var forward = -car.Transform.Basis.Z;
+            var focus = car.Position + Vector3.Up * 1.6f + forward * (car.Speed * .1f - 2.5f);
+            camera.Position = focus + forward.Cross(Vector3.Up) * -9 + Vector3.Up * 4.5f + forward * 3;
+            camera.LookAt(focus);
+        }
         else if (view == "constellation")
         {
             // The view from the tower at night: the line of sight is lifted and a picture of stars hangs ahead.
@@ -728,6 +751,7 @@ public partial class VisualCapture : Node
                     : view == "tree-impact" ? .5
                     : view == "trampling" ? .45
                     : view == "trampling-down" ? 2.5
+                    : view.StartsWith("smoke-") ? .02
                     : view == "delivery-reward" || view == "house-celebration" ? 1.2
                     : 3
                 ),
