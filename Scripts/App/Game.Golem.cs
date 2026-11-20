@@ -52,31 +52,29 @@ public partial class Game
     {
         if (!GolemActive || State != GameState.Exploring)
             return;
+        float column = 5 + TrailerTrailShift;
         var target = CompanionTarget(
             GolemWanderIndex,
             golem.Position,
-            vehicle.Position + vehicle.Transform.Basis.Z * (5 + TrailerTrailShift),
+            CompanionTrailSpot(GolemWanderIndex, 0, column, out _),
+            column,
             delta
         );
         target.Y = CompanionSurface(target);
-        var offset = target - golem.Position;
-        offset.Y = 0;
-        if (offset.LengthSquared() > 80 * 80)
+        if (FlatDistanceSquared(target, golem.Position) > 80 * 80)
         {
             companionWanders[GolemWanderIndex] = default;
             golem.Position = target;
             return;
         }
-        float speed = Mathf.Clamp(offset.Length() * 2.8f, 0, companionStopTime >= .65f ? 5 : 35);
-        if (offset.LengthSquared() > .25f)
-        {
-            var step = offset.Normalized() * Mathf.Min(offset.Length(), speed * delta);
-            golem.Position += step;
-            golem.Rotation = new(0, Mathf.Atan2(-step.X, -step.Z), 0);
+        var position = StepCompanion(GolemWanderIndex, golem.Position, target, delta, 5, 35, 2.8f);
+        golem.Position = new(position.X, CompanionSurface(position), position.Z);
+        // The golem's model faces -Z, so it turns half a turn further than the pets.
+        golem.Rotation = new(0, CompanionYaw(GolemWanderIndex, golem.Position, golem.Rotation.Y, Mathf.Pi, delta), 0);
+        float speed = companionWanders[GolemWanderIndex].Velocity.Length();
+        if (speed > .3f)
             golemPhase += delta * (5 + speed * .7f);
-        }
-        golem.Position = new(golem.Position.X, CompanionSurface(golem.Position), golem.Position.Z);
-        float swing = offset.LengthSquared() > .25f ? Mathf.Sin(golemPhase) * .65f : 0;
+        float swing = speed > .3f ? Mathf.Sin(golemPhase) * .65f * Mathf.Min(speed / 2, 1) : 0;
         golem.GetNode<Node3D>("LeftLeg").Rotation = new(swing, 0, 0);
         golem.GetNode<Node3D>("RightLeg").Rotation = new(-swing, 0, 0);
     }

@@ -98,6 +98,8 @@ public partial class Game : Node3D
         world.Generate();
         AddChild(vehicle);
         vehicle.Setup(world.Ground, world.Routes, world.Ford);
+        // A car that is put somewhere new leaves no way behind it for the companions to follow.
+        vehicle.PoseReset += companionPath.Clear;
         RunDiagnosticsWithVehicle(ref diagnosticOnly);
         if (diagnosticOnly)
             return;

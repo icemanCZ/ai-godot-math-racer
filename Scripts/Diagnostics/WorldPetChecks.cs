@@ -302,6 +302,26 @@ internal sealed partial class WorldPetChecks(Game game, World world, Vehicle car
                     && active.Select(p => p.Position).Distinct().Count() == active.Count,
                 "the earned pets follow the car and keep apart"
             );
+            // Every pet strolls around the parked car, also those at the back of a long trail, far behind the car.
+            var last = active.Select(p => p.Position).ToArray();
+            var moved = new bool[active.Count];
+            var rested = new bool[active.Count];
+            for (int frame = 0; frame < 240; frame++)
+            {
+                game._Process(.05);
+                for (int i = 0; i < active.Count; i++)
+                {
+                    float step = active[i].Position.DistanceTo(last[i]);
+                    moved[i] |= step > .05f;
+                    rested[i] |= step < .001f;
+                    last[i] = active[i].Position;
+                }
+            }
+            var idle = active.Where((_, i) => !moved[i] || !rested[i]).Select(p => p.Kind).ToList();
+            Check(
+                idle.Count == 0 && active.All(p => p.Position.DistanceTo(car.Position) < 20),
+                $"every earned pet strolls and rests around the parked car (not: {string.Join(", ", idle)})"
+            );
 
             if (glass)
                 GlassOrder(RoundTrip);

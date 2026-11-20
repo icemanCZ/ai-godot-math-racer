@@ -48,6 +48,7 @@ internal static class UnitChecks
             CollectionTitles();
             FlatMathMatchesGodot();
             FlatRandomMatchesGodot();
+            CompanionPathFollowsTheWay();
         }
         catch (Exception error)
         {
@@ -58,6 +59,63 @@ internal static class UnitChecks
         if (failed == 0)
             GD.Print("UNIT_CHECKS_PASSED");
         return failed == 0 ? 0 : 1;
+    }
+
+    /// <summary>
+    /// The companions walk along the way the car drove, not in a fixed place behind it: right after a sharp turn a pet
+    /// far back is still on the old straight, a car that reverses takes its way back, and a car that has not driven
+    /// leaves a straight way out of its rear.
+    /// </summary>
+    private static void CompanionPathFollowsTheWay()
+    {
+        var path = new CompanionPath();
+        var empty = path.Sample(Vector3.Zero, Vector3.Back, 6, out var straight);
+        Check(
+            empty.IsEqualApprox(new Vector3(0, 0, 6)) && straight.IsEqualApprox(Vector3.Forward),
+            "CompanionPath: with no way yet a pet walks straight behind the car"
+        );
+
+        // Northwards (-Z) for 30 m, then a quarter circle of radius 6 to the east (+X).
+        var car = Vector3.Zero;
+        for (float z = 30; z >= 0; z -= .25f)
+            path.Record(car = new Vector3(0, 0, z), Vector3.Back);
+        var center = new Vector3(6, 0, 0);
+        for (float angle = 0; angle <= Mathf.Pi / 2 + .001f; angle += .02f)
+        {
+            car = center + new Vector3(-Mathf.Cos(angle), 0, -Mathf.Sin(angle)) * 6;
+            path.Record(car, new Vector3(-Mathf.Sin(angle), 0, Mathf.Cos(angle)));
+        }
+        var back = Vector3.Left;
+        float arc = Mathf.Pi * 3;
+        var far = path.Sample(car, back, arc + 10, out var farForward);
+        Check(
+            Mathf.Abs(far.X) < .05f && Mathf.Abs(far.Z - 10) < .3f && farForward.Dot(Vector3.Forward) > .99f,
+            $"CompanionPath: a pet far back is still on the straight before the turn ({far}, {farForward})"
+        );
+        var near = path.Sample(car, back, 2, out var nearForward);
+        Check(
+            near.X > 3 && near.Z < -5 && nearForward.Dot(Vector3.Right) > .9f,
+            $"CompanionPath: a pet close behind has already come round the bend ({near}, {nearForward})"
+        );
+
+        // A car that drives 20 m north and backs up 3 m takes back the way it reversed over, so the way still leaves
+        // its rear instead of running through the car to where it was.
+        path.Clear();
+        for (float z = 0; z >= -20; z -= .25f)
+            path.Record(new Vector3(0, 0, z), Vector3.Back);
+        for (float z = -19.8f; z <= -17; z += .2f)
+            path.Record(new Vector3(0, 0, z), Vector3.Back);
+        var backed = new Vector3(0, 0, -17);
+        var behind = path.Sample(backed, Vector3.Back, 1, out _);
+        Check(
+            Mathf.Abs(behind.Z - (-16)) < .05f,
+            $"CompanionPath: after reversing the way still goes out of the car's rear ({behind})"
+        );
+
+        var jump = backed + new Vector3(100, 0, 0);
+        path.Record(jump, Vector3.Back);
+        var jumped = path.Sample(jump, Vector3.Back, 5, out _);
+        Check(jumped.IsEqualApprox(jump + Vector3.Back * 5), "CompanionPath: a jump of the car forgets the old way");
     }
 
     /// <summary>
