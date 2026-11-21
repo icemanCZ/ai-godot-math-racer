@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Godot;
@@ -30,7 +31,7 @@ public partial class Game
 
         if (speaker == null)
         {
-            DisplayServer.TtsSpeak(text, czechVoices[0], rate: .9f, interrupt: interrupt);
+            Say(new Utterance(text, czechVoices[0], 1, .9f), interrupt);
             return;
         }
 
@@ -40,7 +41,70 @@ public partial class Game
         int variation = speakerIndex / czechVoices.Length;
         float pitch = AnimalSpeechPitches[variation % AnimalSpeechPitches.Length];
         float rate = AnimalSpeechRates[variation / AnimalSpeechPitches.Length % AnimalSpeechRates.Length];
-        DisplayServer.TtsSpeak(text, voice, pitch: pitch, rate: rate, interrupt: interrupt);
+        Say(new Utterance(text, voice, pitch, rate), interrupt);
+    }
+
+    // Godot 4.7's Windows voice (OneCore) closes its player from the "finished" event on another thread, and a stop
+    // closes it on the main thread; when both happen at once the two threads wait for each other and the game hangs
+    // for good. So a sentence is cut off only while it is still far from its end; otherwise the new one waits for it.
+    // This narrows the window a great deal but cannot close it: the true length of a sentence is not known.
+
+    /// <summary>A sentence to be read, with the voice and how it is read.</summary>
+    private readonly record struct Utterance(string Text, string Voice, float Pitch, float Rate);
+
+    /// <summary>Characters per second of a fast reading: a length worked out from it is never longer than the real one.</summary>
+    private const double FastCharactersPerSecond = 20;
+
+    /// <summary>How long before the shortest likely end of a sentence it is no longer cut off.</summary>
+    private const double CutMargin = .8;
+
+    /// <summary>A sentence handed over a moment ago may not be reported as speaking yet.</summary>
+    private const double HandOverTime = .3;
+
+    private readonly List<Utterance> waitingSpeech = new();
+    private double speechStarted = double.NegativeInfinity;
+    private double speechShortestLength;
+
+    private static double Now => Time.GetTicksMsec() / 1000.0;
+
+    private bool Speaking => DisplayServer.TtsIsSpeaking() || Now - speechStarted < HandOverTime;
+
+    /// <summary>Whether the sentence being read is surely far enough from its end to be stopped.</summary>
+    private bool SafeToCut => Now - speechStarted < speechShortestLength - CutMargin;
+
+    private void Say(Utterance utterance, bool interrupt)
+    {
+        if (interrupt)
+            waitingSpeech.Clear();
+        if (!Speaking)
+            Begin(utterance, cut: false);
+        else if (interrupt && SafeToCut)
+            Begin(utterance, cut: true);
+        else
+            waitingSpeech.Add(utterance);
+    }
+
+    private void Begin(Utterance utterance, bool cut)
+    {
+        DisplayServer.TtsSpeak(
+            utterance.Text,
+            utterance.Voice,
+            pitch: utterance.Pitch,
+            rate: utterance.Rate,
+            interrupt: cut
+        );
+        speechStarted = Now;
+        speechShortestLength = utterance.Text.Length / (FastCharactersPerSecond * utterance.Rate);
+    }
+
+    /// <summary>Reads the next waiting sentence once the one before has finished.</summary>
+    private void TickSpeech()
+    {
+        if (waitingSpeech.Count == 0 || Speaking)
+            return;
+        var next = waitingSpeech[0];
+        waitingSpeech.RemoveAt(0);
+        Begin(next, cut: false);
     }
 
     /// <summary>
@@ -64,10 +128,15 @@ public partial class Game
             _ => Texts.VyresPriklad,
         };
 
+    /// <summary>Stops the reading; a sentence close to its end is left to finish, which is safer than stopping it.</summary>
     private void StopSpeech()
     {
-        if (czechVoices is { Length: > 0 })
+        waitingSpeech.Clear();
+        if (czechVoices is { Length: > 0 } && Speaking && SafeToCut)
+        {
             DisplayServer.TtsStop();
+            speechStarted = double.NegativeInfinity;
+        }
     }
 
     private static string QuizInstruction(Character actor, IChallenge question)

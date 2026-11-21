@@ -17,6 +17,7 @@ public partial class Game
     /// </summary>
     private void RegisterSystems()
     {
+        Register("speech", _ => TickSpeech());
         Register("companion stop", delta => TickCompanionStop((float)delta));
         Register("golem", delta => TickGolem((float)delta));
         Register("collector pets", delta => TickCollectorPets((float)delta));
