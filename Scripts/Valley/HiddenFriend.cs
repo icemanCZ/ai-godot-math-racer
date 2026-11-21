@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Godot;
 using MathRacer.App;
 using MathRacer.Graphics;
+using MathRacer.Ui;
 
 namespace MathRacer.Valley;
 
@@ -32,6 +33,7 @@ internal sealed partial class HiddenFriend : Node3D
     private readonly Label3D hint;
     private readonly float seed;
     private Node3D? beacon;
+    private TaskMarker? radar;
     private float pingTime;
     private float phase;
     private float popTime;
@@ -72,17 +74,31 @@ internal sealed partial class HiddenFriend : Node3D
         hint.Visible = false;
     }
 
-    /// <summary>Lights an orange beam over the friend for a while, as the lookout tower does.</summary>
+    /// <summary>
+    /// Lights an orange beam over the friend for a while, as the lookout tower does, with a big orange question mark
+    /// that keeps its size however far it is and shows through the trees, so the friend can be seen across the valley.
+    /// </summary>
     internal void Ping(float seconds)
     {
         if (Found)
             return;
         beacon ??= Art.Beacon(this, "ffa94d");
         beacon.Visible = true;
+        if (radar == null)
+        {
+            radar = Art.TaskMarker(this, new(0, 3.4f, 0), "?");
+            radar.Name = "Radar";
+            radar.Modulate = new Color("ffa94d");
+            radar.NoDepthTest = true;
+        }
+        radar.Visible = true;
         pingTime = seconds;
     }
 
     internal bool Pinged => pingTime > 0;
+
+    /// <summary>The question mark of <see cref="Ping"/> is up, for the checks.</summary>
+    internal bool RadarShown => radar is { Visible: true };
     internal bool HintShown => hint.Visible && !Found;
 
     /// <summary>The friend is found: it says "pšt!", hops and fades; a restored game skips the show.</summary>
@@ -91,9 +107,7 @@ internal sealed partial class HiddenFriend : Node3D
         if (Found)
             return;
         Found = true;
-        pingTime = 0;
-        if (beacon != null)
-            beacon.Visible = false;
+        HidePing();
         if (!show)
         {
             Visible = false;
@@ -118,8 +132,16 @@ internal sealed partial class HiddenFriend : Node3D
         hint.Visible = false;
         body.Position = Vector3.Zero;
         body.Scale = Vector3.One;
+        HidePing();
+    }
+
+    private void HidePing()
+    {
+        pingTime = 0;
         if (beacon != null)
             beacon.Visible = false;
+        if (radar != null)
+            radar.Visible = false;
     }
 
     internal void Animate(float delta, bool running, Vector3 car)
@@ -136,9 +158,11 @@ internal sealed partial class HiddenFriend : Node3D
         if (pingTime > 0 && running)
         {
             pingTime -= delta;
-            if (pingTime <= 0 && beacon != null)
-                beacon.Visible = false;
+            if (pingTime <= 0)
+                HidePing();
         }
+        if (radar is { Visible: true })
+            radar.Scale = Vector3.One * (1 + .12f * Mathf.Sin(pingTime * 6));
         bool near = distance < HintDistance;
         hint.Visible = near;
         if (!near)

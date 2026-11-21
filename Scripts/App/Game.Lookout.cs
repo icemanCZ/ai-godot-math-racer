@@ -6,8 +6,9 @@ namespace MathRacer.App;
 
 /// <summary>
 /// The finished lookout tower: the stargazer lets the player climb up for a look round the valley. The camera
-/// turns once on the platform while the coins and the friends who wait for a quiz are lit by tall beams. After
-/// that the stargazer needs a while before the next look.
+/// turns once on the platform while the coins and the friends who wait for a quiz are lit by tall beams. On a starry
+/// night the view is lifted to a picture of stars; by day the hidden friends who still hide are lit. After that the
+/// stargazer needs a while before the next look.
 /// </summary>
 public partial class Game
 {
@@ -45,12 +46,11 @@ public partial class Game
         float facing = Mathf.Atan2(tower.Site.Inward.X, tower.Site.Inward.Z);
         // On a starry night the stargazer lifts the view to the sky and, halfway round, shows a picture made of stars.
         bool starry = Weather.StarsOut;
-        followCamera.ShowPanorama(platform, LookoutSeconds, facing, starry ? .5f : -.16f);
+        followCamera.ShowPanorama(platform, LookoutSeconds, facing, starry ? .5f : -.16f, Lookout.RoofLayer);
         WorldCoins.Flash(RadarSeconds);
         foreach (var animal in world.Animals)
             if (animal.RewardAvailable)
                 animal.Ping(RadarSeconds);
-        world.Hidden.Ping(RadarSeconds);
         tower.Builder.Celebrate();
         if (starry)
         {
@@ -60,6 +60,8 @@ public partial class Game
         }
         else
         {
+            // By day the stargazer shows the friends who still hide: each gets a beam and a big question mark.
+            world.Hidden.Ping(RadarSeconds);
             int remaining = HiddenFriends.Total - world.Hidden.FoundCount;
             Speak(remaining > 0 ? Texts.PodivejSeKdoSeSchovava(remaining) : Texts.PodivejSeCoVsechnoJeV, tower.Builder);
         }

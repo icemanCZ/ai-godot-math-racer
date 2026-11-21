@@ -133,6 +133,10 @@ public partial class HiddenChecks : Node
             );
             hidden.Ping(5);
             Check(friends.All(f => f.Pinged), "the lookout lights every friend who is still hiding");
+            Check(
+                friends.All(f => f.RadarShown),
+                "every friend who is still hiding shows a question mark that can be seen from the tower"
+            );
             car.SetPose(friends[0].Position, 0);
             Frames(3);
             Check(
@@ -148,6 +152,7 @@ public partial class HiddenChecks : Node
             Frames(20);
             Check(!friends[0].Visible, "the friend who was found is gone after the hop");
             Check(!friends[0].Pinged, "a friend who was found has no beam");
+            Check(!friends[0].RadarShown, "a friend who was found has no question mark from the tower");
             RoundTrip("one friend found");
             Check(
                 hidden.FoundCount == 1 && friends[0].Found && !friends[0].Visible,

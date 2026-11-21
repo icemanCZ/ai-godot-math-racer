@@ -366,14 +366,25 @@ public partial class BuildChecks : Node
                 Has("StartLookout") && !((Button)game.FindChild("StartLookout", true, false)).Disabled,
                 "the stargazer offers a look"
             );
+            var camera = (FollowCamera)game.GetViewport().GetCamera3D();
             game.BeginLookout();
             Check(
                 game.State == GameState.Exploring && game.LookingAround && !car.Active && game.WorldCoins.Flashing,
                 "the look begins: the car waits and the coins are lit"
             );
             Check(
+                (camera.CullMask & Lookout.RoofLayer) == 0,
+                "the camera on the platform leaves out the roof, which would cover the sky"
+            );
+            Check(
                 world.Animals.Where(a => a.RewardAvailable).All(a => a.Pinged),
                 "friends who wait for a quiz are lit too"
+            );
+            Check(
+                game.Weather.StarsOut
+                    ? world.Hidden.Friends.All(f => !f.RadarShown)
+                    : world.Hidden.Friends.Where(f => !f.Found).All(f => f.Pinged && f.RadarShown),
+                "by day the look shows the hidden friends, at night it leaves the sky to the stars"
             );
             game.OpenBuilder(tower.Builder);
             Check(((Button)game.FindChild("StartLookout", true, false)).Disabled, "the stargazer rests after a look");
@@ -383,6 +394,9 @@ public partial class BuildChecks : Node
                 !game.LookingAround && car.Active && !game.WorldCoins.Flashing,
                 "the look ends and the car can drive again"
             );
+            // The checks step the game by hand, so the camera finishes its turn by hand too.
+            camera._Process(Game.LookoutSeconds);
+            Check((camera.CullMask & Lookout.RoofLayer) != 0, "the roof is drawn again once the look is over");
 
             // ---- Damaged saves ----
             Rejected(

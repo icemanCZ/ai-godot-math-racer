@@ -109,10 +109,20 @@ public partial class Lookout : SitedProject
         foreach (float sx in new[] { -2.4f, 2.4f })
         foreach (float sz in new[] { -2.4f, 2.4f })
             Art.Cylinder(Stages[8], new(sx, topY + 1.9f, z + sz), .09f, .09f, 3.4f, "8a6a4a");
-        // 9 capstone: the pointed stone roof with a flag.
-        Art.Cylinder(Stages[9], new(0, topY + 5.2f, z), 3.7f, .08f, 2.8f, "9d9c95");
-        Art.Ball(Stages[9], new(0, topY + 6.7f, z), new(.28f, .28f, .28f), "dcd9c8");
-        Art.Cylinder(Stages[9], new(0, topY + 7.5f, z), .04f, .04f, 1.6f, "a77a59");
-        Art.Block(Stages[9], new(.5f, topY + 7.9f, z), new(1, .55f, .04f), "e2563b");
+        // 9 capstone: the pointed stone roof with a flag. It is on a layer of its own, which the camera leaves out while it
+        // stands on the platform: seen from under it the roof would cover half of the sky.
+        foreach (
+            var part in new[]
+            {
+                Art.Cylinder(Stages[9], new(0, topY + 5.2f, z), 3.7f, .08f, 2.8f, "9d9c95"),
+                Art.Ball(Stages[9], new(0, topY + 6.7f, z), new(.28f, .28f, .28f), "dcd9c8"),
+                Art.Cylinder(Stages[9], new(0, topY + 7.5f, z), .04f, .04f, 1.6f, "a77a59"),
+                Art.Block(Stages[9], new(.5f, topY + 7.9f, z), new(1, .55f, .04f), "e2563b"),
+            }
+        )
+            part.Layers = RoofLayer;
     }
+
+    /// <summary>The render layer of the roof, which the camera on the platform does not draw.</summary>
+    internal const uint RoofLayer = 1 << 2;
 }

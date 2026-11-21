@@ -376,6 +376,16 @@ public partial class Game
                 OpenWorks(works.Worker);
             }
         }
+        if (view is "lookout-day" or "lookout-night" && world.Projects.Length > BuildPlans.Tower)
+        {
+            // The finished tower with the car beside the stargazer; the capture starts the look itself.
+            var tower = world.Projects[BuildPlans.Tower];
+            tower.SetStage(BuildPlans.Trips);
+            var builder = tower.Builder.Position;
+            vehicle.SetPose(world.Ground.At(builder.X + 2, builder.Z, .15f), 0);
+            if (view == "lookout-night")
+                Weather.Begin(WeatherKind.Night, instant: true);
+        }
         if (ParseBuildView(view) is var (viewProject, viewStage) && viewProject < world.Projects.Length)
         {
             var project = world.Projects[viewProject];

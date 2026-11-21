@@ -95,6 +95,19 @@ public partial class VisualCapture : Node
             camera.LookAt(eye + new Vector3(0, .5f, 1) * 60);
             world.Atmosphere.ShowConstellation(Constellation.All[0], 0, 8);
         }
+        else if (view is "lookout-day" or "lookout-night")
+        {
+            // The look from the finished tower, while the camera turns: by day the hidden friends are lit, at night
+            // the picture of stars hangs ahead halfway round.
+            await ToSignal(GetTree().CreateTimer(1.5), SceneTreeTimer.SignalName.Timeout);
+            var game = (Game)GetParent();
+            game.OpenBuilder(world.Projects[BuildPlans.Tower].Builder);
+            game.BeginLookout();
+            await ToSignal(
+                GetTree().CreateTimer(view == "lookout-night" ? Game.LookoutSeconds / 2 - 3 : 0),
+                SceneTreeTimer.SignalName.Timeout
+            );
+        }
         else if (view == "square")
         {
             camera.SetProcess(false);
