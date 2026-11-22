@@ -97,13 +97,16 @@ public partial class Game
         var trip = TripOf(resident);
         bool ready = works.Stock >= Works.PerTrip;
         // While a supply trip for the missing goods is under way the trailer is shown instead of a second button.
-        bool fetching = Haul is { Works: { } supply } && supply == works;
+        bool bread = works == world.Bakery;
+        bool fetching = Haul is { Works: { } supply } && supply == works || bread && BreadSupplyUnderWay;
+        // Bread needs flour from the mill, which grinds only once it is finished.
+        bool fetchable = !works.Full && (!bread || BreadSupply() != null);
         ui.HouseMaterialOffer(
             resident,
             load,
             trip ?? (fetching ? Haul : null),
             trip == null && ready,
-            trip == null && !ready && !fetching && !works.Full ? works : null
+            trip == null && !ready && !fetching && fetchable ? works : null
         );
         return true;
     }
@@ -124,11 +127,22 @@ public partial class Game
                         : Texts.HouseNeeds(wanted)
                     )
                 : glass ? Texts.HouseNeedsGlassesButNone
-                : bread ? Texts.HouseNeedsBreadButNone
+                : bread ? BreadMissingText()
                 : Texts.HouseNeedsButNone(wanted, works.Spec.Name.ToLower()),
             resident
         );
     }
+
+    /// <summary>What a resident says who wants bread that the bakery has not baked: what the chain lacks.</summary>
+    private string BreadMissingText() =>
+        world.FlourMill == null
+            ? Texts.HouseNeedsBreadButNone
+            : BreadSupply() switch
+            {
+                FlourMill => Texts.HouseNeedsBreadButNoWheat,
+                null when !world.FlourMill.Grinding => Texts.HouseNeedsBreadButNoMill,
+                _ => Texts.HouseNeedsBreadButNoFlour,
+            };
 
     /// <summary>The resident's trip: take goods from the works' stock on the trailer and tip them out in front of the house.</summary>
     internal void BeginHouseTrip() => BeginHouseTrip(false);

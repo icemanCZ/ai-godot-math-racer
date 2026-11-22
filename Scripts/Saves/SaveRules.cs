@@ -44,6 +44,7 @@ internal static class SaveRules
         ("hauled loads", HasInvalidHauls),
         ("glassworks and glazed houses", HasInvalidGlass),
         ("bakery and houses given bread", HasInvalidBread),
+        ("flour at the mill", HasInvalidFlour),
         ("small friends found", HasInvalidHidden),
         ("wheel trail", HasInvalidTrail),
         ("trailer trip", HasInvalidTrip),
@@ -229,6 +230,8 @@ internal static class SaveRules
                 GameState.RailwayStatus => !World.IsStationHelper(data.Nearby),
                 GameState.ZooStatus => !World.IsZooKeeper(data.Nearby),
                 GameState.HouseMaterialOffer => !resident,
+                // The baker of the village shop, whose bakery has run out of bread for his order.
+                GameState.TradeStatus => data.Nearby != World.FirstTraderId,
                 _ => true,
             },
             _ => true,
@@ -240,10 +243,14 @@ internal static class SaveRules
         || data.Village.TradeCounts.Length != 3
         || data.Village.TradeCounts.Any(c => c < 0 || c > 1000000)
         || (data.Task.Sender >= World.FirstTraderId && data.Task.Sender < World.WitchId && data.Task.Collection)
-        // A shop shows its status while another task is under way: an expedition or a trailer trip.
+        // A shop shows its status while another task is under way: an expedition or a trailer trip. The baker shows his
+        // too when his bakery has run out of bread, so that the player can be sent for flour or wheat.
         || (
             data.State == GameState.TradeStatus
-            && (data.Nearby < World.FirstTraderId || (data.Task.Sender < 0 && data.Task.Trip == null))
+            && (
+                data.Nearby < World.FirstTraderId
+                || (data.Task.Sender < 0 && data.Task.Trip == null && data.Nearby != World.FirstTraderId)
+            )
         )
         || (
             data.Nearby >= World.FirstTraderId
@@ -492,6 +499,14 @@ internal static class SaveRules
                 var cargo = WorksCatalog.All[trip.Index].Input;
                 // A sand pit without a worker is loaded on the glassworks' behalf, so its worker asks the question.
                 var askers = World.AskerIds(cargo, 0);
+                if (trip.Index == WorksCatalog.BreadIndex)
+                {
+                    // The bakery took the farmer's wheat itself before the mill ground flour for it, and still does in a
+                    // valley without the mill: the question may be the miller's about flour or the farmer's about wheat.
+                    if (data.Quiz.Challenge is LoadChallenge { Cargo: HaulLoad.Wheat })
+                        cargo = HaulLoad.Wheat;
+                    askers = askers.Concat(World.AskerIds(HaulLoad.Wheat, 0)).ToArray();
+                }
                 return (
                     cargo,
                     trip.Index == WorksCatalog.GlassIndex ? askers.Append(World.GlassworksId).ToArray() : askers,
@@ -521,6 +536,8 @@ internal static class SaveRules
                 var cargo = ZooPlans.CargoOf(data.Zoo.Stage);
                 return (cargo, World.AskerIds(cargo, 0), trip.Loaded);
             }
+            case TripKinds.Mill when trip.Index == 0:
+                return (HaulLoad.Wheat, World.AskerIds(HaulLoad.Wheat, 0), trip.Loaded);
             case TripKinds.House when SavedTask(data, trip.Index) is { } kind && Village.MaterialOf(kind) is { } goods:
                 return (goods, World.AskerIds(goods, 0), trip.Loaded);
             case TripKinds.House when IsGlassOrder(data, trip.Index):
@@ -563,6 +580,14 @@ internal static class SaveRules
             .Any(house =>
                 data.Village.Baked[house] && (!data.Village.Glazed[house] || data.Village.HouseLevels[house] < 10)
             );
+
+    /// <summary>The finished mill keeps up to a yard of flour; one that is not finished grinds none.</summary>
+    private static bool HasInvalidFlour(SaveData data) =>
+        data.Buildings.FlourStock is < 0 or > FlourMill.Capacity
+        || (data.Buildings.FlourStock > 0 && !MillFinished(data));
+
+    private static bool MillFinished(SaveData data) =>
+        data.Buildings.Stages is { Length: BuildPlans.Count } stages && stages[BuildPlans.Mill] >= BuildPlans.Trips;
 
     /// <summary>The trail on the wheels is the plain one or a stamp that was bought.</summary>
     private static bool HasInvalidTrail(SaveData data) =>
@@ -629,6 +654,8 @@ internal static class SaveRules
             TripKinds.Playground => trip.Index != 0 || data.Playground.Stage >= PlaygroundPlans.Trips,
             TripKinds.Railway => trip.Index != 0 || data.Railway.Stage >= RailwayPlans.Trips,
             TripKinds.Zoo => trip.Index != 0 || data.Zoo.Stage >= ZooPlans.Trips,
+            // Wheat goes to the mill once it is finished, until its flour fills the yard.
+            TripKinds.Mill => trip.Index != 0 || !MillFinished(data) || data.Buildings.FlourStock >= FlourMill.Capacity,
             _ => true,
         };
     }

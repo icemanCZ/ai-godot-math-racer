@@ -26,11 +26,14 @@ public enum HaulLoad
     /// <summary>Glasses made from sand at the glassworks, hauled from its yard to a resident's house.</summary>
     Glass = 10,
 
-    /// <summary>Wheat from the farmer's field, hauled to the bakery.</summary>
+    /// <summary>Wheat from the farmer's field, hauled to the finished mill (in saves from before the mill, to the bakery).</summary>
     Wheat = 11,
 
     /// <summary>Loaves of bread baked at the bakery, hauled from its yard to a resident's house.</summary>
     Bread = 12,
+
+    /// <summary>Flour ground at the finished mill from the wheat, hauled from the mill to the bakery.</summary>
+    Flour = 13,
 }
 
 internal static class HaulLoads

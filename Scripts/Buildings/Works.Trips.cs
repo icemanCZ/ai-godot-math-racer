@@ -14,7 +14,7 @@ public partial class Works : ITripTarget
     Character ITripTarget.Contractor => Worker;
     int ITripTarget.NextStep => 0;
 
-    HaulLoad ITripTarget.LoadFor(int step) => Spec.Input;
+    HaulLoad ITripTarget.LoadFor(int step) => Input;
 
     Vector3 ITripTarget.DropFor(int step) => Site.Position;
 

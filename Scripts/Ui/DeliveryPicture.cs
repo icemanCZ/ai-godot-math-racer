@@ -210,6 +210,11 @@ public partial class DeliveryPicture : Control
                                 new Color("cfeaf4")
                             );
                             break;
+                        case "flour":
+                            Oval(p, new(10, 11), new("d8d0c0"));
+                            Oval(p + new Vector2(0, 1), new(8, 9), new("f6f2ea"));
+                            Oval(p + new Vector2(0, -10), new(4, 3), new("d8d0c0"));
+                            break;
                         case "wheat":
                             DrawLine(p + new Vector2(0, 11), p + new Vector2(0, -8), new Color("c9b45a"), 2.5f, true);
                             Oval(p + new Vector2(0, -7), new(5, 9), new("f2c64a"));
@@ -340,6 +345,23 @@ public partial class DeliveryPicture : Control
                 );
                 DrawLine(new(x - 12, 50), new(x - 10, 72), new Color("ffffff"), 3);
             }
+        }
+        else if (Icon == "flour")
+        {
+            // A full sack of white flour tied at the neck, a golden ear of wheat painted on it, a little heap spilt beside.
+            Oval(new(90, 94), new(46, 40), ink);
+            Oval(new(90, 94), new(42, 36), new("f4efe4"));
+            Oval(new(90, 50), new(16, 10), ink);
+            Oval(new(90, 50), new(13, 8), new("e6dfcf"));
+            DrawLine(new(74, 60), new(106, 60), new Color("b8895f"), 6, true);
+            DrawLine(new(90, 116), new(90, 84), new Color("c9b45a"), 3, true);
+            for (int i = 0; i < 3; i++)
+            {
+                Oval(new(84, 104 - i * 9), new(4, 6), new("e0b23a"));
+                Oval(new(96, 104 - i * 9), new(4, 6), new("e0b23a"));
+            }
+            Oval(new(90, 78), new(4, 6), new("f2c64a"));
+            Oval(new(146, 126), new(20, 7), new("fbf8f2"));
         }
         else if (Icon == "wheat")
         {

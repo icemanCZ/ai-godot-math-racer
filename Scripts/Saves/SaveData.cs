@@ -264,6 +264,12 @@ public sealed class BuildingsSave
     /// <summary>Loaves stored at the bakery, 0–12. A save from before the bakery has none.</summary>
     public int BreadStock { get; set; }
 
+    /// <summary>
+    /// Sacks of flour standing at the finished mill, 0–12, ground from the farmer's wheat for the bakery. A save from
+    /// before the mill ground flour has none.
+    /// </summary>
+    public int FlourStock { get; set; }
+
     public bool TrailerOwned { get; set; }
     public bool TrailerAttached { get; set; }
     public string TrailerPaint { get; set; } = "red";
@@ -278,10 +284,13 @@ public sealed class HaulsSave
     public int[] Raw { get; set; } = new int[4];
     public int[] Works { get; set; } = new int[4];
 
-    /// <summary>Loads of wheat tipped out at the bakery. A save from before the bakery has none.</summary>
+    /// <summary>
+    /// Loads of wheat tipped out at the mill (at the bakery in a save from before the mill ground flour, and in a valley
+    /// without the mill). A save from before the bakery has none.
+    /// </summary>
     public int Wheat { get; set; }
 
-    /// <summary>Loads of wheat the bakery has taken in. A save from before the bakery has none.</summary>
+    /// <summary>Loads of flour (or, before the mill, of wheat) the bakery has taken in. A save from before the bakery has none.</summary>
     public int Baked { get; set; }
 }
 

@@ -17,7 +17,7 @@ public enum Product
     /// <summary>The glassworks, which stands apart from the original three: it makes glasses from sand.</summary>
     Glass = 3,
 
-    /// <summary>The bakery, the fifth works: it bakes bread from the wheat of the farmer's field.</summary>
+    /// <summary>The bakery, the fifth works: it bakes bread from the flour that the mill grinds from the farmer's wheat.</summary>
     Bread = 4,
 }
 
@@ -113,12 +113,12 @@ internal static class WorksCatalog
         ),
         new(
             Product.Bread,
-            HaulLoad.Wheat,
+            HaulLoad.Flour,
             "Pekárna",
             "PEKÁRNA",
             "Chléb",
             "Králíček pekař Rohlík",
-            "Přivez mi obilí od sedláka, upeču z něj voňavý chléb.",
+            "Přivez mi mouku ze mlýna, upeču z ní voňavý chléb.",
             0,
             "f3e0c0",
             "fffaf0"
@@ -157,13 +157,13 @@ internal static class SourceCatalog
     public static int IndexOf(HaulLoad load) => Array.FindIndex(All, spec => spec.Load == load);
 
     /// <summary>
-    /// The farmer at the wheat field, who loads the trailer for the bakery. He is not in <see cref="All"/>, whose order and
+    /// The farmer at the wheat field, who loads the trailer for the mill. He is not in <see cref="All"/>, whose order and
     /// length give the IDs of the other workers: he has an ID of his own (<c>ActorIds.FieldFarmer</c>).
     /// </summary>
     public static readonly SourceSpec Field = new(
         HaulLoad.Wheat,
         "Králíček sedlák Klásek",
-        "Naložím ti obilí pro pekárnu.",
+        "Naložím ti obilí pro mlýn. Mlynář z něj semele mouku.",
         0,
         "e9d8b4",
         "d9b84a"
@@ -251,6 +251,13 @@ public partial class Works : Node3D
 
     internal WorksSite Site { get; }
     internal WorksSpec Spec => WorksCatalog.All[Site.Index];
+
+    /// <summary>
+    /// What is hauled to this works: its <see cref="WorksSpec.Input"/>, except at the bakery of a valley without the mill,
+    /// which takes the farmer's wheat itself because nobody grinds it into flour.
+    /// </summary>
+    internal HaulLoad Input { get; set; }
+
     internal Character Worker { get; set; } = null!;
     public int Stock { get; private set; }
     public bool Full => Stock >= Capacity;
@@ -264,6 +271,7 @@ public partial class Works : Node3D
     {
         Site = site;
         this.ground = ground;
+        Input = Spec.Input;
         Name = Spec.Product + "Works";
         Position = site.Position;
         float yaw = Mathf.Atan2(site.Inward.X, site.Inward.Z);
@@ -697,7 +705,7 @@ public partial class Works : Node3D
     private void BuildRawPile()
     {
         float y = Pad(RawX, RawZ, 5.4f, 4.6f, "7a6a52");
-        switch (Spec.Input)
+        switch (Input)
         {
             case HaulLoad.Logs:
                 for (int row = 0; row < 3; row++)
@@ -717,16 +725,27 @@ public partial class Works : Node3D
                 Art.Ball(this, new(RawX + 1.2f, y + .4f, RawZ - .8f), new(1.7f, 1, 1.5f), "9c7150");
                 break;
             case HaulLoad.Wheat:
+            case HaulLoad.Flour:
+            {
+                // Sacks tied at the neck: of wheat with a little spilt grain, or of white flour with a dusting of it.
+                bool flour = Input == HaulLoad.Flour;
                 for (int i = 0; i < 5; i++)
                 {
                     float px = RawX + (i % 3 - 1) * 1.25f + (i / 3) * .6f - .3f;
                     float lift = i / 3 * .75f;
                     float pz = RawZ + (i / 3 - .5f) * .3f + (i % 2) * .2f;
-                    Art.Ball(this, new(px, y + .45f + lift, pz), new(.62f, .5f, .5f), i % 2 == 0 ? "e8dcc0" : "dccfae");
-                    Art.Ball(this, new(px, y + .92f + lift, pz), new(.22f, .15f, .2f), "c9b78e");
+                    string sack = flour ? (i % 2 == 0 ? "f6f2ea" : "ece6da") : (i % 2 == 0 ? "e8dcc0" : "dccfae");
+                    Art.Ball(this, new(px, y + .45f + lift, pz), new(.62f, .5f, .5f), sack);
+                    Art.Ball(this, new(px, y + .92f + lift, pz), new(.22f, .15f, .2f), flour ? "d8d0c0" : "c9b78e");
                 }
-                Art.Ball(this, new(RawX - 1.6f, y + .25f, RawZ + 1.4f), new(.9f, .3f, .8f), "f2c64a");
+                Art.Ball(
+                    this,
+                    new(RawX - 1.6f, y + .25f, RawZ + 1.4f),
+                    new(.9f, .3f, .8f),
+                    flour ? "fbf8f2" : "f2c64a"
+                );
                 break;
+            }
             case HaulLoad.Sand:
                 Art.Ball(this, new(RawX, y + .55f, RawZ), new(3.4f, 1.5f, 2.9f), "e3c98a");
                 Art.Ball(this, new(RawX - 1, y + .35f, RawZ + 1), new(2f, 1, 1.8f), "d6b873");

@@ -390,6 +390,9 @@ public partial class Game
         {
             var project = world.Projects[viewProject];
             project.SetStage(viewStage);
+            // The finished mill shows its sacks of flour, ground for the bakery.
+            if (project.Complete && project is Mill)
+                world.FlourMill?.SetStock(8);
             var drop = project.DropFor(0);
             vehicle.SetPose(world.Ground.At(drop.X, drop.Z, .15f), 0);
         }

@@ -13,8 +13,9 @@ using MathRacer.Vehicles;
 namespace MathRacer.Diagnostics;
 
 /// <summary>
-/// The fifth chain: the wheat field with its farmer behind the village, the wheat hauled to the bakery, the bread
-/// that the bakery bakes and the order for bread that follows the housewarming of a house.
+/// The fifth chain: the wheat field with its farmer behind the village, the wheat hauled to the finished mill, the
+/// flour that the miller loads for the bakery, the bread that the bakery bakes, the baker's orders for his customers that
+/// take that bread and the order for bread that follows the housewarming of a house.
 /// </summary>
 public partial class BakeryChecks : Node
 {
@@ -98,8 +99,22 @@ public partial class BakeryChecks : Node
                     && world.ActorId(bakery.Worker) == World.BakeryId
                     && world.ActorAt(World.BakeryId) == bakery.Worker
                     && bakery.Spec.Product == Product.Bread
-                    && bakery.Spec.Input == HaulLoad.Wheat,
-                "the baker has an ID of his own and bakes bread from wheat"
+                    && bakery.Spec.Input == HaulLoad.Flour
+                    && bakery.Input == HaulLoad.Flour,
+                "the baker has an ID of his own and bakes bread from flour"
+            );
+            var mill = (Mill)world.Projects[BuildPlans.Mill];
+            var flour = world.FlourMill!;
+            var miller = mill.Builder;
+            Check(
+                flour != null && flour.Mill == mill && flour.Miller == miller && !flour.Grinding && flour.Stock == 0,
+                "the mill grinds for the bakery, but not before it is finished"
+            );
+            Check(
+                world.SourceFor(HaulLoad.Flour).Position == mill.Site.Position
+                    && world.PickupActor(HaulLoad.Flour) == miller
+                    && World.AskerIds(HaulLoad.Flour, 0).SequenceEqual(new[] { World.BuilderId(BuildPlans.Mill) }),
+                "flour is loaded at the mill's ring by the miller"
             );
             Check(
                 world.WorksFor(Product.Bread) == bakery
@@ -144,21 +159,37 @@ public partial class BakeryChecks : Node
                 .ToList();
             Check(trunks.Count == 0, "no tree stands on the farm");
 
-            // ---- Hauling wheat to the bakery ----
+            // ---- Before the mill is finished nobody grinds the wheat ----
             var trailer = game.Trailer;
             Check(bakery.Stock == 0 && bakery.ShownUnits == 0, "the bakery starts with an empty yard");
-            void Supply(int expected)
+            car.SetPose(world.Ground.At(farmer.Position.X + 2, farmer.Position.Z, .15f), 0);
+            game.OpenSource(farmer);
+            Check(
+                game.State == GameState.SourceStatus && !Has("StartSupplyTrip") && Has("MillChain"),
+                "while the mill is being built the farmer shows the chain but sends no wheat"
+            );
+            game.BeginSupplyTrip();
+            Check(game.Haul == null, "no wheat trip starts before the mill is finished");
+            game.FinishInteraction();
+            var unfinished = game.CaptureProgress();
+            unfinished.Buildings.Stages[BuildPlans.Mill] = BuildPlans.Trips;
+            game.RestoreProgress(unfinished);
+            Check(flour.Grinding && mill.Complete, "the finished mill grinds");
+            RoundTrip("the finished mill");
+
+            // ---- Hauling wheat to the mill ----
+            void Wheat(int expected)
             {
                 car.SetPose(world.Ground.At(farmer.Position.X + 2, farmer.Position.Z, .15f), 0);
                 game.OpenSource(farmer);
                 Check(
-                    game.State == GameState.SourceStatus && Has("StartSupplyTrip"),
-                    "the farmer offers the next load"
+                    game.State == GameState.SourceStatus && Has("StartSupplyTrip") && Has("FlourStock"),
+                    "the farmer offers the next load for the mill"
                 );
                 game.BeginSupplyTrip();
                 var trip = game.Haul;
                 Check(trip is { Loaded: false } && trip.Load == HaulLoad.Wheat, "the trailer is sent for wheat");
-                Check(trip!.Target.Index == WorksCatalog.BreadIndex, "the wheat is meant for the bakery");
+                Check(trip!.Target == flour && trip.Contractor == miller, "the wheat is meant for the mill");
                 Check(trip.Asker == farmer, "the farmer asks the loading question");
                 Check(
                     game.State == GameState.Challenge && game.CurrentChallenge != null,
@@ -173,6 +204,54 @@ public partial class BakeryChecks : Node
                     "the trailer is loaded with wheat"
                 );
                 RoundTrip("full trailer of wheat");
+                var ring = mill.Site.Position;
+                car.SetPose(world.Ground.At(ring.X, ring.Z, .15f), 0);
+                Frames(1);
+                Frames(40);
+                Check(
+                    flour.Stock == expected && mill.ShownSacks == expected && game.Haul == null,
+                    $"the mill shows {expected} sacks of flour"
+                );
+                Check(bakery.Stock == 0, "the wheat does not go to the bakery");
+                RoundTrip($"after wheat delivery {expected}");
+            }
+            for (int load = 1; load <= FlourMill.Capacity / FlourMill.PerLoad; load++)
+                Wheat(load * FlourMill.PerLoad);
+            Check(flour.Full && world.Tally.Wheat == 6, "six loads of wheat fill the mill and are counted");
+            car.SetPose(world.Ground.At(farmer.Position.X + 2, farmer.Position.Z, .15f), 0);
+            game.OpenSource(farmer);
+            Check(!Has("StartSupplyTrip"), "a full mill asks for no more wheat");
+            game.FinishInteraction();
+
+            // ---- Hauling flour to the bakery ----
+            void Flour(int expected)
+            {
+                int sacks = flour.Stock;
+                car.SetPose(world.Ground.At(miller.Position.X + 2, miller.Position.Z, .15f), 0);
+                game.OpenBuilder(miller);
+                Check(
+                    game.State == GameState.BuildStatus && Has("StartSupplyTrip") && Has("FlourStock"),
+                    "the miller offers flour for the bakery"
+                );
+                game.BeginSupplyTrip();
+                var trip = game.Haul;
+                Check(
+                    trip is { Loaded: false } && trip.Load == HaulLoad.Flour && trip.Works == bakery,
+                    "the trailer is sent with flour for the bakery"
+                );
+                Check(
+                    trip!.Asker == miller && game.State == GameState.Challenge,
+                    "the miller asks the loading question"
+                );
+                if (game.CurrentChallenge is LoadChallenge load)
+                    Check(load.Cargo == HaulLoad.Flour, "the loading question shows flour");
+                RoundTrip("loading flour");
+                ChallengeChecks.Solve(game);
+                Check(
+                    game.Haul is { Loaded: true } && trailer.Load == HaulLoad.Flour && flour.Stock == sacks - 1,
+                    "one sack of flour is taken from the mill and loaded"
+                );
+                RoundTrip("full trailer of flour");
                 var ring = bakery.Site.Position;
                 car.SetPose(world.Ground.At(ring.X, ring.Z, .15f), 0);
                 Frames(1);
@@ -181,17 +260,17 @@ public partial class BakeryChecks : Node
                     bakery.Stock == expected && bakery.ShownUnits == expected && game.Haul == null,
                     $"the bakery shows {expected} loaves"
                 );
-                RoundTrip($"after wheat delivery {expected}");
+                RoundTrip($"after flour delivery {expected}");
             }
             for (int load = 1; load <= Works.Capacity / Works.PerLoad; load++)
-                Supply(load * Works.PerLoad);
+                Flour(load * Works.PerLoad);
             Check(
-                bakery.Full && world.Tally.Wheat == 6 && world.Tally.Baked == 6,
-                "six loads of wheat fill the bakery and are counted"
+                bakery.Full && world.Tally.Baked == 6 && flour.Stock == FlourMill.Capacity - 6,
+                "six sacks of flour fill the bakery and are counted"
             );
-            car.SetPose(world.Ground.At(farmer.Position.X + 2, farmer.Position.Z, .15f), 0);
-            game.OpenSource(farmer);
-            Check(!Has("StartSupplyTrip"), "a full bakery asks for no more wheat");
+            car.SetPose(world.Ground.At(miller.Position.X + 2, miller.Position.Z, .15f), 0);
+            game.OpenBuilder(miller);
+            Check(game.State == GameState.BuildStatus && !Has("StartSupplyTrip"), "a full bakery takes no more flour");
             game.FinishInteraction();
 
             // ---- The pets ----
@@ -213,9 +292,42 @@ public partial class BakeryChecks : Node
             // ---- Bread for the houses ----
             BreadOrder(RoundTrip, Rejected);
 
+            // ---- The baker's customers ----
+            BakerOrders(RoundTrip);
+
+            // ---- A save from before the mill: the farmer's question about wheat for the bakery ----
+            LegacyWheatTrip(path);
+
             // ---- Damaged saves ----
             Rejected(data => data.Buildings.BreadStock = Works.Capacity + 1, "more bread than the yard holds");
             Rejected(data => data.Buildings.BreadStock = -1, "negative bread");
+            Rejected(data => data.Buildings.FlourStock = FlourMill.Capacity + 1, "more flour than the mill holds");
+            Rejected(data => data.Buildings.FlourStock = -1, "negative flour");
+            Rejected(
+                data =>
+                {
+                    data.Buildings.Stages[BuildPlans.Mill] = 9;
+                    data.Buildings.FlourStock = 2;
+                },
+                "flour at a mill that is not finished"
+            );
+            Rejected(
+                data =>
+                {
+                    data.Buildings.Stages[BuildPlans.Mill] = 9;
+                    data.Buildings.FlourStock = 0;
+                    data.Task = new TaskSave { Trip = new SavedTrip { Kind = TripKinds.Mill } };
+                },
+                "wheat for a mill that is not finished"
+            );
+            Rejected(
+                data =>
+                {
+                    data.Buildings.FlourStock = FlourMill.Capacity;
+                    data.Task = new TaskSave { Trip = new SavedTrip { Kind = TripKinds.Mill } };
+                },
+                "wheat for a mill full of flour"
+            );
             Rejected(
                 data =>
                 {
@@ -245,6 +357,135 @@ public partial class BakeryChecks : Node
             GD.PushError(error.ToString());
             GetTree().Quit(1);
         }
+    }
+
+    /// <summary>
+    /// The baker of the village shop sells the bakery's bread once the mill grinds flour for it: an order takes its loaves
+    /// from the bakery, and without enough bread he sends the player for flour, or for wheat when the mill has none.
+    /// </summary>
+    private void BakerOrders(Action<string> roundTrip)
+    {
+        var bakery = world.Bakery!;
+        var flour = world.FlourMill!;
+        var baker = world.Village.Traders[0];
+        var data = game.CaptureProgress();
+        data.Task = new TaskSave();
+        data.Quiz = new QuizSave { Types = data.Quiz.Types, ThreeTermMath = data.Quiz.ThreeTermMath };
+        data.State = GameState.Exploring;
+        data.Nearby = -1;
+        data.Buildings.BreadStock = 0;
+        data.Buildings.FlourStock = 3;
+        game.RestoreProgress(data);
+
+        // No bread: the baker sends the player to the mill for flour.
+        car.SetPose(baker.Position + Vector3.Right * 2, 0);
+        game.OpenChallenge(baker);
+        Check(
+            game.State == GameState.TradeStatus && game.CurrentChallenge == null && Has("StartMissingSupply"),
+            "without bread the baker asks for none of his quiz but shows what is missing"
+        );
+        roundTrip("the baker without bread");
+        game.BeginMissingSupply();
+        Check(game.State == GameState.Challenge && game.CurrentChallenge != null, "a quiz comes before the trip");
+        roundTrip("the baker's quiz before the trip for flour");
+        ChallengeChecks.Solve(game);
+        Check(
+            game.Haul is { Loaded: false, Load: HaulLoad.Flour } trip && trip.Works == bakery && game.Delivery == null,
+            "the baker sends the trailer to the mill for flour"
+        );
+        roundTrip("the baker's trip for flour");
+        game.FinishInteraction();
+
+        // No bread and no flour: the baker sends the player to the field for wheat.
+        data = game.CaptureProgress();
+        data.Task = new TaskSave();
+        data.State = GameState.Exploring;
+        data.Nearby = -1;
+        data.Buildings.FlourStock = 0;
+        game.RestoreProgress(data);
+        game.OpenChallenge(baker);
+        Check(game.State == GameState.TradeStatus && Has("StartMissingSupply"), "the baker shows the missing flour");
+        game.BeginMissingSupply();
+        ChallengeChecks.Solve(game);
+        Check(
+            game.Haul is { Loaded: false, Load: HaulLoad.Wheat } wheat && wheat.Target == flour,
+            "without flour the baker sends the trailer to the field for wheat for the mill"
+        );
+        game.FinishInteraction();
+
+        // With bread the order takes the loaves from the bakery and brings the customer the bread.
+        data = game.CaptureProgress();
+        data.Task = new TaskSave();
+        data.State = GameState.Exploring;
+        data.Nearby = -1;
+        data.Buildings.BreadStock = Works.Capacity;
+        game.RestoreProgress(data);
+        int amount = Expedition.OrderAmount(world, baker);
+        game.OpenChallenge(baker);
+        Check(game.State == GameState.Challenge && game.CurrentChallenge != null, "with bread the baker asks his quiz");
+        ChallengeChecks.Solve(game);
+        Check(
+            game.Delivery is { Collection: false } order
+                && order.Sender == baker
+                && order.Amount == amount
+                && order.Cargo == "bread"
+                && bakery.Stock == Works.Capacity - amount
+                && bakery.ShownUnits == bakery.Stock,
+            $"the order takes its {amount} loaves from the bakery"
+        );
+        roundTrip("the baker's order with the bakery's bread");
+        Check(bakery.Stock == Works.Capacity - amount, "a restored order does not take the loaves again");
+        var customer = game.Delivery!.Recipient;
+        int coins = game.Coins;
+        car.SetPose(customer.Position + Vector3.Right * 2, 0);
+        game.BeginDeliveryQuestion();
+        Check(
+            game.State == GameState.Reward && game.Coins == coins + Game.TradeCoins + Game.BakerBonus,
+            "the customer gets the bread and the baker pays more for the mill's flour"
+        );
+        game.FinishInteraction();
+        Check(game.Delivery == null && bakery.Stock == Works.Capacity - amount, "the order is done");
+    }
+
+    /// <summary>
+    /// A save from before the mill ground flour: the trailer was sent to the field for wheat for the bakery and the farmer
+    /// asks the loading question. It still loads, the trailer is loaded and the bakery bakes from the load.
+    /// </summary>
+    private void LegacyWheatTrip(string path)
+    {
+        var bakery = world.Bakery!;
+        var farmer = world.FieldFarmer!;
+        var data = game.CaptureProgress();
+        data.Buildings.BreadStock = 0;
+        data.Buildings.FlourStock = 0;
+        data.Task = new TaskSave
+        {
+            Trip = new SavedTrip { Kind = TripKinds.Supply, Index = WorksCatalog.BreadIndex },
+        };
+        data.State = GameState.Challenge;
+        data.Nearby = World.FieldFarmerId;
+        data.Quiz = new QuizSave
+        {
+            Types = data.Quiz.Types,
+            ThreeTermMath = data.Quiz.ThreeTermMath,
+            Challenge = LoadChallenge.Create(new Random(5), HaulLoad.Wheat),
+        };
+        Check(SaveStore.Write(data, path), "save written: the farmer's question from before the mill");
+        var loaded = SaveStore.Read(path);
+        Check(loaded != null, "a save with the farmer's question about wheat for the bakery still loads");
+        game.RestoreProgress(loaded!);
+        Check(
+            game.State == GameState.Challenge && game.Haul is { Loaded: false } trip && trip.Works == bakery,
+            "the question about wheat for the bakery is open again"
+        );
+        ChallengeChecks.Solve(game);
+        Check(game.Haul is { Loaded: true }, "the farmer loads the trailer as he did before the mill");
+        var ring = bakery.Site.Position;
+        car.SetPose(world.Ground.At(ring.X, ring.Z, .15f), 0);
+        Frames(1);
+        Frames(40);
+        Check(game.Haul == null && bakery.Stock == Works.PerLoad, "the bakery bakes from the old load");
+        Check(!farmer.IsQueuedForDeletion(), "the farmer is still at the field");
     }
 
     /// <summary>A finished house with glasses asks for bread once: the order is saved so that it is not asked again.</summary>
@@ -307,5 +548,35 @@ public partial class BakeryChecks : Node
         game.OpenChallenge(owner);
         Check(game.State == GameState.HouseReward, "a house that has its bread only offers thanks");
         game.FinishInteraction();
+
+        // A house that wants bread from an empty bakery sends the player to the mill for flour.
+        data = game.CaptureProgress();
+        data.Village.Baked = new bool[4];
+        data.Task = new TaskSave();
+        data.State = GameState.Exploring;
+        data.Nearby = -1;
+        data.Buildings.BreadStock = 0;
+        data.Buildings.FlourStock = 2;
+        game.RestoreProgress(data);
+        car.SetPose(owner.Position + Vector3.Right * 2, 0);
+        game.OpenChallenge(owner);
+        Check(
+            game.State == GameState.HouseMaterialOffer && Has("StartMissingSupply") && !Has("StartHouseTrip"),
+            "a house that wants bread from an empty bakery shows what is missing"
+        );
+        game.BeginMissingSupply();
+        ChallengeChecks.Solve(game);
+        Check(
+            game.Haul is { Load: HaulLoad.Flour } fetch && fetch.Works == works,
+            "the resident sends the trailer to the mill for flour"
+        );
+        roundTrip("the resident's trip for flour");
+        game.FinishInteraction();
+        data = game.CaptureProgress();
+        data.Task = new TaskSave();
+        data.State = GameState.Exploring;
+        data.Nearby = -1;
+        data.Buildings.BreadStock = Works.Capacity;
+        game.RestoreProgress(data);
     }
 }

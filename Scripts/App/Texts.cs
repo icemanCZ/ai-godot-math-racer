@@ -455,12 +455,51 @@ internal static class Texts
 
     public const string HouseNeedsBread = "Chystám snídani pro celou rodinu! Přivezeš mi voňavý chléb z pekárny?";
 
+    /// <summary>Kept for a valley without the mill, whose bakery still takes the farmer's wheat itself.</summary>
     public const string HouseNeedsBreadButNone =
         "Chystám snídani, ale v pekárně ještě žádný chléb nemají. Pošlu tě na pole pro obilí!";
 
+    public const string HouseNeedsBreadButNoFlour =
+        "Chystám snídani, ale v pekárně ještě žádný chléb nemají. Pošlu tě do mlýna pro mouku!";
+
+    public const string HouseNeedsBreadButNoWheat =
+        "Chystám snídani, ale v pekárně nemají chléb a ve mlýně mouku. Pošlu tě na pole pro obilí!";
+
+    public const string HouseNeedsBreadButNoMill =
+        "Chystám snídani, ale v pekárně nemají mouku na chléb. Nejdřív pomoz mlynáři dostavět mlýn!";
+
     public const string JedSVozikemProChlebDo = "Jeď s vozíkem pro čerstvý chléb do pekárny.";
 
+    /// <summary>For a valley without the mill, whose bakery still takes the farmer's wheat itself.</summary>
     public const string JedSVozikemProObiliNa = "Jeď s vozíkem na pole pro obilí. Pak ho odvezeš do pekárny.";
+
+    public const string JedSVozikemProObiliDoMlyna = "Jeď s vozíkem na pole pro obilí. Pak ho odvezeš do mlýna.";
+
+    public const string JedSVozikemProMoukuDoMlyna = "Jeď s vozíkem do mlýna pro mouku. Pak ji odvezeš do pekárny.";
+
+    public const string Mouka = "Mouka";
+
+    public const string MlynJesteNemele =
+        "Mlýn se ještě staví, a tak nemá kdo semlít obilí. Pomoz mlynáři mlýn dostavět!";
+
+    public const string MlynJePlnyMouky = "Mlýn je plný mouky. Odvez ji nejdřív do pekárny.";
+
+    public const string SemeluZObiliMouku = "Děkuju! Semelu z obilí mouku. Odvez ji pak do pekárny.";
+
+    public const string MlynJePlnyDekuju = "Mlýn je plný mouky. Děkuju!";
+
+    public const string NalozimTiMoukuProPekarnu = "Naložím ti mouku pro pekárnu.";
+
+    public const string NemamMoukuPrivezObili = "Nemám žádnou mouku. Přivez mi obilí od sedláka a já ho semelu.";
+
+    public const string PekarnaMaPlnoChleba = "Pekárna má plno chleba. Mouku odvezeme, až ho trochu ubude.";
+
+    public const string FrantisekNoBreadFlour =
+        "V pekárně došel chléb! Pošlu tě do mlýna pro mouku, ať pekař upeče nový.";
+
+    public const string FrantisekNoBreadWheat = "V pekárně došel chléb a ve mlýně mouka! Pošlu tě na pole pro obilí.";
+
+    public const string FrantisekNoBreadWait = "V pekárně došel chléb. Až dovezeš svůj náklad, přijeď zas.";
 
     public static string BreadParty(int coins) => $"Snídaně u domečku!  +{coins}  ·  Chléb";
 

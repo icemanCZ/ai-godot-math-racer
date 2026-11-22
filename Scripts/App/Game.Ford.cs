@@ -49,6 +49,12 @@ public partial class Game
             return;
         ClearChallenge();
         EnterInteraction(GameState.BuildStatus, builder);
+        // The finished mill grinds the farmer's wheat: its miller now loads flour for the bakery.
+        if (project.Complete && MillOfMiller(builder) is { } mill)
+        {
+            OpenMiller(builder, mill);
+            return;
+        }
         ShowBuilder();
         if (Haul != null || project.Complete)
             return;
@@ -64,6 +70,11 @@ public partial class Game
     {
         if (ProjectOf(nearby) is not { } project)
             return;
+        if (project.Complete && MillOfMiller(nearby) is { } mill)
+        {
+            ShowMiller(mill);
+            return;
+        }
         var trip = Haul != null && Haul.Project == project ? Haul : null;
         bool free = Haul == null && !project.Complete;
         bool ready = StepReady(project);
@@ -106,7 +117,12 @@ public partial class Game
     private void UpdateHaulGuides()
     {
         foreach (var project in world.Projects)
-            project.Builder.Guide(Haul == null && !project.Complete);
+            project.Builder.Guide(
+                Haul == null && (!project.Complete || MillOfMiller(project.Builder) is { } mill && FlourReady(mill))
+            );
+        // The farmer guides the player once the finished mill has room for his wheat.
+        if (world.FieldFarmer is { } farmer && world.FlourMill is { } grinder)
+            farmer.Guide(Haul == null && grinder.Grinding && !grinder.Full);
         foreach (var plot in world.Village.BuildPlots)
             plot.Resident.Guide(Haul == null && !plot.Complete);
         if (world.Playground is { } yard)
@@ -168,7 +184,12 @@ public partial class Game
             return;
         }
         // Goods come out of the works' stock the moment they are loaded; what stood there was made, so it is counted first.
-        if (GoodsWorks(trip.Load) is { } works && !TakeCounted(works))
+        // Flour comes out of the mill's sacks, except for the wheat that a save from before the mill had the farmer load.
+        bool legacyWheat = trip.Load == HaulLoad.Flour && nearby != null && nearby == world.FieldFarmer;
+        if (
+            GoodsWorks(trip.Load) is { } works && !TakeCounted(works)
+            || trip.Load == HaulLoad.Flour && !legacyWheat && world.FlourMill?.Take(FlourMill.PerTrip) != true
+        )
         {
             EndHaul();
             CloseInteraction();
@@ -280,6 +301,7 @@ public partial class Game
             works.SetStock(data.Buildings.WorksStock[works.Site.Index]);
         world.Glassworks?.SetStock(data.Buildings.GlassStock);
         world.Bakery?.SetStock(data.Buildings.BreadStock);
+        world.FlourMill?.SetStock(data.Buildings.FlourStock);
         world.Village.RestorePlots(data.Buildings.PlotStages!);
         world.Playground?.SetStage(data.Playground.Stage);
         world.Railway?.SetStage(data.Railway.Stage);
@@ -312,6 +334,7 @@ public partial class Game
             TripKinds.Playground when saved.Index == 0 && world.Playground is { Complete: false } yard => yard,
             TripKinds.Railway when saved.Index == 0 && world.Railway is { Complete: false } railway => railway,
             TripKinds.Zoo when saved.Index == 0 && world.Zoo is { Complete: false } zoo => zoo,
+            TripKinds.Mill when saved.Index == 0 && world.FlourMill is { Grinding: true, Full: false } mill => mill,
             TripKinds.House
                 when saved.Index >= 0
                     && saved.Index < world.Village.Residents.Count
@@ -349,7 +372,9 @@ public partial class Game
                 HaulLoad.Gravel => Texts.JedSVozikemProSterkDo,
                 HaulLoad.Glass => Texts.JedSVozikemProSklenickyDo,
                 HaulLoad.Bread => Texts.JedSVozikemProChlebDo,
+                HaulLoad.Wheat when trip.Target is FlourMill => Texts.JedSVozikemProObiliDoMlyna,
                 HaulLoad.Wheat => Texts.JedSVozikemProObiliNa,
+                HaulLoad.Flour => Texts.JedSVozikemProMoukuDoMlyna,
                 HaulLoad.Fabric => Texts.JedSVozikemProLatkuK,
                 HaulLoad.Capstone => Texts.JedSVozikemProKamenKe,
                 HaulLoad.Flag => Texts.JedSVozikemProVlajeckuK,

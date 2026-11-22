@@ -20,8 +20,11 @@ internal static class TripKinds
     public const string Railway = "railway";
     public const string Zoo = "zoo";
 
+    /// <summary>Wheat from the farmer's field to the finished mill, which grinds it into flour for the bakery.</summary>
+    public const string Mill = "mill";
+
     public static bool IsKnown(string? kind) =>
-        kind is Build or Supply or House or Plot or Playground or Railway or Zoo;
+        kind is Build or Supply or House or Plot or Playground or Railway or Zoo or Mill;
 }
 
 /// <summary>

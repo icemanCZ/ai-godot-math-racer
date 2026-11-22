@@ -81,6 +81,12 @@ public partial class Expedition : Node3D
             _ => Array.IndexOf(world.Animals, sender),
         };
 
+    /// <summary>How many pieces a delivery with this trip number carries: one to three.</summary>
+    private static int DeliveryAmount(int trip) => (trip / 3 + trip) % 3 + 1;
+
+    /// <summary>How many pieces the next order of a trader carries, known before it sets off (the baker takes the loaves).</summary>
+    internal static int OrderAmount(World world, Character trader) => DeliveryAmount(TripNumber(world, trader));
+
     public Expedition(World world, Vehicle car, Character sender, bool collection, bool[]? restoredPickups = null)
     {
         this.world = world;
@@ -101,7 +107,7 @@ public partial class Expedition : Node3D
             Golem ? 6
             : SpecialCollection ? 1
             : Collection ? 3
-            : (trip / 3 + trip) % 3 + 1;
+            : DeliveryAmount(trip);
         Collected = Collection ? 0 : Amount;
         PickupPositions = Collection
             ? candidates

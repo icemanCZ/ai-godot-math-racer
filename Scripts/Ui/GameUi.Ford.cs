@@ -29,6 +29,7 @@ public partial class GameUi
             HaulLoad.Glass => "glass",
             HaulLoad.Wheat => "wheat",
             HaulLoad.Bread => "bread",
+            HaulLoad.Flour => "flour",
             _ => "sand",
         };
 

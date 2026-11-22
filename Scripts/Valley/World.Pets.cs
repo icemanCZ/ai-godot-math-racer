@@ -21,7 +21,7 @@ public partial class World
     /// </summary>
     internal int LoadsHauled(HaulLoad load) =>
         AllWorks
-            .Where(works => works.Spec.Input == load)
+            .Where(works => works.Input == load)
             .Select(works => (works.Stock + Works.PerLoad - 1) / Works.PerLoad)
             .Append(Tally.RawCount(load))
             .Max();

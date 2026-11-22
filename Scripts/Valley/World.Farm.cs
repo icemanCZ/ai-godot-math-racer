@@ -24,8 +24,32 @@ public partial class World
     /// <summary>The loading ring of the wheat field, where the farmer fills the trailer, or null without a farm.</summary>
     internal HaulSource? WheatField { get; private set; }
 
-    /// <summary>The farmer at the wheat field, who asks the loading question and sends the wheat to the bakery.</summary>
+    /// <summary>The farmer at the wheat field, who asks the loading question and sends the wheat to the mill.</summary>
     internal Character? FieldFarmer { get; private set; }
+
+    /// <summary>
+    /// The mill as the link between the wheat and the bakery: it grinds the wheat into flour once it is finished. Null in
+    /// a valley without the bakery or without the mill.
+    /// </summary>
+    internal FlourMill? FlourMill { get; private set; }
+
+    /// <summary>Joins the mill to the bread chain where the valley has both the mill and the bakery.</summary>
+    private void BuildFlourMill()
+    {
+        if (Bakery == null)
+            return;
+        if (Projects.Length > BuildPlans.Mill && Projects[BuildPlans.Mill] is Mill mill)
+            FlourMill = new FlourMill(mill);
+        else
+            Bakery.Input = HaulLoad.Wheat;
+    }
+
+    /// <summary>Where the miller loads the flour: the unloading ring of the mill, where the wheat is tipped out too.</summary>
+    private HaulSource MillSource()
+    {
+        var mill = FlourMill!.Mill;
+        return new HaulSource(HaulLoad.Flour, mill.Site.Position, mill.Site.Road);
+    }
 
     private FarmSite? farmSite;
     private WorksSite? bakerySite;

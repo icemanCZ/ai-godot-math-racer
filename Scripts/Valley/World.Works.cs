@@ -37,7 +37,7 @@ public partial class World
     /// <summary>The log yard beside a road, where trailer loads of logs for the sawmill are picked up.</summary>
     internal HaulSource? LogYard { get; private set; }
 
-    /// <summary>Where a load is picked up: the log yard, the quarry, the clay pit or the sand pit.</summary>
+    /// <summary>Where a load is picked up: the log yard, the quarry, the clay pit, the sand pit, the field or the mill.</summary>
     internal HaulSource SourceFor(HaulLoad load)
     {
         if (HaulLoads.IsGoods(load))
@@ -53,6 +53,8 @@ public partial class World
         }
         if (load == HaulLoad.Wheat)
             return WheatField!.Value;
+        if (load == HaulLoad.Flour)
+            return MillSource();
         return load == HaulLoad.Logs ? LogYard!.Value : HaulSources[(int)load];
     }
 
@@ -434,6 +436,8 @@ public partial class World
     {
         if (load == HaulLoad.Wheat)
             return FieldFarmer;
+        if (load == HaulLoad.Flour)
+            return FlourMill?.Miller;
         int index = SourceCatalog.IndexOf(load);
         return index < 0 ? null : SourceWorkers[index];
     }
@@ -483,6 +487,8 @@ public partial class World
             return new[] { WorksId(HaulLoads.ProductOf(load)) };
         if (load == HaulLoad.Wheat)
             return new[] { FieldFarmerId };
+        if (load == HaulLoad.Flour)
+            return new[] { BuilderId(BuildPlans.Mill) };
         int first = SourceCatalog.IndexOf(load) >= 0 ? FirstSourceId + SourceCatalog.IndexOf(load) : BuilderId(project);
         int extra = SourceCatalog.ExtraIndexOf(load);
         return extra < 0 ? new[] { first } : new[] { first, FirstExtraSourceId + extra };

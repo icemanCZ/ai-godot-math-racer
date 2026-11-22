@@ -88,6 +88,7 @@ internal static class LegacySaves
         ("Hauls", "Wheat"),
         ("Hauls", "Baked"),
         ("Buildings", "BreadStock"),
+        ("Buildings", "FlourStock"),
         ("Village", "Baked"),
         ("Hidden", "Found"),
         ("Vehicle", "Trail"),

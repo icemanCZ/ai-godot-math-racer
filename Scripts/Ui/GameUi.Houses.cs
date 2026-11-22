@@ -32,7 +32,7 @@ public partial class GameUi
             var need = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, Name = "MissingGoods" };
             need.AddThemeConstantOverride("separation", 10);
             content.AddChild(need);
-            Picture(need, LoadIcon(missing.Spec.Input))!.CustomMinimumSize = new(100, 84);
+            Picture(need, LoadIcon(missing.Input))!.CustomMinimumSize = new(100, 84);
             var arrow = Picture(need, "arrow")!;
             arrow.CustomMinimumSize = new(70, 64);
             arrow.Direction = Mathf.Pi / 2;

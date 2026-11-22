@@ -40,7 +40,7 @@ public partial class Game
         Panel(GameState.CollectionStatus, returned =>
             nearby is { } actor && Shown(() => ui.CollectionStatus(world.Village, actor, Delivery, returned))
         );
-        Panel(GameState.TradeStatus, _ => nearby is { } actor && Shown(() => ui.TradeStatus(actor, Delivery)));
+        Panel(GameState.TradeStatus, _ => nearby?.Role is TraderRole && Shown(ShowTrade));
         Panel(GameState.WeatherChoice, _ => Shown(ShowWeatherChoice));
         Panel(GameState.SorcererStatus, _ => Shown(ShowSorcerer));
         Panel(GameState.BuildStatus, _ => nearby?.Role is BuilderRole && Shown(ShowBuilder));

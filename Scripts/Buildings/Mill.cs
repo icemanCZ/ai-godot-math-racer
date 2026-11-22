@@ -1,3 +1,4 @@
+using System.Linq;
 using Godot;
 using MathRacer.Graphics;
 using MathRacer.Valley;
@@ -16,6 +17,14 @@ public partial class Mill : SitedProject
 
     /// <summary>Turns of the sails per second, set from the wind; zero until the mill is finished.</summary>
     internal float SailSpeed { get; set; } = .35f;
+
+    /// <summary>The sacks of flour beside the ring, one per unit of <see cref="FlourMill.Stock"/>.</summary>
+    private readonly Node3D?[] flourSacks = new Node3D?[FlourMill.Capacity];
+
+    private int flour;
+
+    /// <summary>The sacks of flour that stand beside the ring; always equals the stock of the <see cref="FlourMill"/>.</summary>
+    internal int ShownSacks => flourSacks.Count(sack => sack is { Visible: true });
 
     internal override Vector3 Focus => Site.Position + Site.Inward * CenterZ + Vector3.Up * 5;
 
@@ -135,6 +144,39 @@ public partial class Mill : SitedProject
             );
             cloth.Rotation = new Vector3(0, 0, angle);
         }
+        BuildFlourStock();
+    }
+
+    /// <summary>Shows one sack of flour per unit in store, beside the ring and clear of the turning sails.</summary>
+    internal void ShowFlour(int sacks)
+    {
+        flour = sacks;
+        for (int i = 0; i < flourSacks.Length; i++)
+            if (flourSacks[i] is { } sack)
+                sack.Visible = i < flour;
+    }
+
+    /// <summary>Two low pallets on the builder's other side, three rows of two sacks on each.</summary>
+    private void BuildFlourStock()
+    {
+        var stock = new Node3D { Name = "FlourSacks" };
+        AddChild(stock);
+        for (int i = 0; i < flourSacks.Length; i++)
+        {
+            int pallet = i / 6;
+            float x = 4.5f + i % 2 * .85f + pallet * 1.9f;
+            float z = 1.9f + i / 2 % 3 * .95f;
+            float y = Floor(x, z);
+            if (i % 6 == 0)
+                Art.Block(stock, new(5f + pallet * 1.9f, y + .07f, 2.85f), new(1.75f, .14f, 2.9f), "a77a59");
+            var sack = new Node3D { Name = "FlourSack" + i, Position = new(x, y + .14f, z) };
+            stock.AddChild(sack);
+            Art.Ball(sack, new(0, .3f, 0), new(.4f, .32f, .34f), i % 2 == 0 ? "f6f2ea" : "ece6da");
+            Art.Ball(sack, new(0, .6f, 0), new(.14f, .1f, .12f), "d8d0c0");
+            Art.Block(sack, new(0, .5f, 0), new(.24f, .03f, .2f), "b8895f");
+            flourSacks[i] = sack;
+        }
+        ShowFlour(flour);
     }
 
     public override void _Process(double delta)

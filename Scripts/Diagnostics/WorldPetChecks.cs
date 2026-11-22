@@ -210,9 +210,13 @@ internal sealed partial class WorldPetChecks(Game game, World world, Vehicle car
             foreach (var stocked in world.AllWorks.ToList())
             {
                 int index = stocked.Site.Index;
-                var input = stocked.Spec.Input;
+                var input = stocked.Input;
                 var madePet = Pet(WorldPetCatalog.ForWorks(index).Kind);
-                var sourcePet = world.WorldPets.FirstOrDefault(p => p.Kind == WorldPetCatalog.ForSource(input).Kind);
+                // The bakery's flour comes from the mill, which is a building and has no pet of a source.
+                var sourcePet =
+                    input == HaulLoad.Flour
+                        ? null
+                        : world.WorldPets.FirstOrDefault(p => p.Kind == WorldPetCatalog.ForSource(input).Kind);
                 game.RestoreProgress(before);
                 stocked.SetStock(Works.Capacity);
                 int loads = Works.Capacity / Works.PerLoad;
@@ -232,7 +236,8 @@ internal sealed partial class WorldPetChecks(Game game, World world, Vehicle car
                 world.Tally.AddRaw(input);
                 world.Tally.AddWorks(index);
                 Check(
-                    world.Tally.WorksCount(index) == loads + 1 && world.Tally.RawCount(input) == loads + 1,
+                    world.Tally.WorksCount(index) == loads + 1
+                        && (sourcePet == null || world.Tally.RawCount(input) == loads + 1),
                     $"{stocked.Spec.Name}: the stock is counted once, before it changes, and the new load adds to it"
                 );
                 // Everything made counts, also what left the stock: the stock stays full while the counts grow.

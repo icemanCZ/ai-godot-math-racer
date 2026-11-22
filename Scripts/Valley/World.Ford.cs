@@ -188,6 +188,7 @@ public partial class World
         AddChild(Beaver);
         Register(BeaverId, Beaver);
         BuildProjects(builds);
+        BuildFlourMill();
     }
 
     /// <summary>Looser rules for the later passes of the ford search, so every valley gets its bridge.</summary>

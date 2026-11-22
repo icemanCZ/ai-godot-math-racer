@@ -147,6 +147,7 @@ public partial class Game
                 WorksStock = world.WorksStock(),
                 GlassStock = world.Glassworks?.Stock ?? 0,
                 BreadStock = world.Bakery?.Stock ?? 0,
+                FlourStock = world.FlourMill?.Stock ?? 0,
                 TrailerOwned = TrailerOwned,
                 TrailerAttached = trailerParade,
                 TrailerPaint = trailer.PaintId,

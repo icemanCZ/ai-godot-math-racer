@@ -77,8 +77,9 @@ internal static class TrailerModel
         parts.Piles[(int)HaulLoad.Capstone] = Capstone();
         parts.Piles[(int)HaulLoad.Flag] = FlagPole();
         parts.Piles[(int)HaulLoad.Glass] = GlassCrates();
-        parts.Piles[(int)HaulLoad.Wheat] = WheatSacks();
+        parts.Piles[(int)HaulLoad.Wheat] = Sacks("Wheat", new[] { "e8dcc0", "dccfae", "efe4c8" }, "c9b78e");
         parts.Piles[(int)HaulLoad.Bread] = BreadCrates();
+        parts.Piles[(int)HaulLoad.Flour] = Sacks("Flour", new[] { "f6f2ea", "ece6da", "fbf8f2" }, "d8d0c0");
         foreach (var pile in parts.Piles)
         {
             pile.Visible = false;
@@ -87,11 +88,10 @@ internal static class TrailerModel
         return parts;
     }
 
-    /// <summary>Six sacks of wheat tied at the neck: four below and two on top.</summary>
-    private static Node3D WheatSacks()
+    /// <summary>Six sacks of wheat or of flour tied at the neck: four below and two on top.</summary>
+    private static Node3D Sacks(string name, string[] colors, string neck)
     {
-        var sacks = new Node3D { Name = "Wheat" };
-        string[] colors = { "e8dcc0", "dccfae", "efe4c8" };
+        var sacks = new Node3D { Name = name };
         for (int i = 0; i < 6; i++)
         {
             bool top = i >= 4;
@@ -99,7 +99,7 @@ internal static class TrailerModel
             float z = top ? 0 : i / 2 * .8f - .4f;
             float y = top ? .5f : 0;
             Art.Ball(sacks, new(x, y + .27f, z), new(.4f, .3f, .34f), colors[i % 3]);
-            Art.Ball(sacks, new(x, y + .56f, z), new(.14f, .1f, .12f), "c9b78e");
+            Art.Ball(sacks, new(x, y + .56f, z), new(.14f, .1f, .12f), neck);
             Art.Block(sacks, new(x, y + .47f, z), new(.24f, .03f, .2f), "b8895f");
         }
         return sacks;
