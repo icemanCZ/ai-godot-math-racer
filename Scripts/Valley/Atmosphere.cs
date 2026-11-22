@@ -101,7 +101,7 @@ public partial class Atmosphere : Node3D
         }
         // It fades in over the first quarter of the time and out over the last.
         float fade = Mathf.Clamp(
-            Mathf.Min(constellationTime, constellationTotal - constellationTime) / (constellationTotal * .25f),
+            Mathf.Min(constellationTime, constellationTotal - constellationTime) / constellationFade,
             0,
             1
         );
@@ -111,7 +111,8 @@ public partial class Atmosphere : Node3D
     private Node3D? constellation;
     private StandardMaterial3D constellationMaterial = null!;
     private float constellationTime,
-        constellationTotal;
+        constellationTotal,
+        constellationFade;
 
     /// <summary>
     /// Draws <paramref name="picture"/> in bright stars joined by thin lines, 27 degrees over the horizon in the
@@ -123,6 +124,7 @@ public partial class Atmosphere : Node3D
         constellation?.QueueFree();
         constellationMaterial = SkyMaterial(new Color("ffe9a0") with { A = 0 });
         constellationTotal = constellationTime = seconds;
+        constellationFade = seconds * .25f;
         constellation = new Node3D { Name = "Constellation" };
         nightSky.AddChild(constellation);
         var points = SkyPoints(picture, azimuth, .47f);
@@ -164,6 +166,18 @@ public partial class Atmosphere : Node3D
                 }
             );
         }
+    }
+
+    /// <summary>
+    /// Keeps the picture of stars, if one is shown, fully on the sky; once it is no longer kept it fades out as it
+    /// would at the end of its time.
+    /// </summary>
+    internal void KeepConstellation()
+    {
+        if (constellation == null || constellationTime >= constellationFade)
+            return;
+        constellationTotal += constellationFade - constellationTime;
+        constellationTime = constellationFade;
     }
 
     /// <summary>

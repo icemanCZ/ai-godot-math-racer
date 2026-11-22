@@ -386,17 +386,66 @@ public partial class BuildChecks : Node
                     : world.Hidden.Friends.Where(f => !f.Found).All(f => f.Pinged && f.RadarShown),
                 "by day the look shows the hidden friends, at night it leaves the sky to the stars"
             );
+            // Near the end of the turn the player drags the mouse: the view goes where they look, for as long as they like.
+            var mouseBefore = Input.MouseMode;
+            var unsteered = camera.PanoramaDirection;
+            camera._Process(Game.LookoutSeconds - 2);
+            Check(!camera.PanoramaSteered && camera.PanoramaDirection.X != unsteered.X, "the view turns by itself");
+            var turned = camera.PanoramaDirection;
+            camera._UnhandledInput(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = true });
+            camera._Input(new InputEventMouseMotion { Relative = new Vector2(120, -60) });
+            var steered = camera.PanoramaDirection;
+            camera._Process(.1);
+            camera._Input(new InputEventMouseButton { ButtonIndex = MouseButton.Left, Pressed = false });
+            camera._Process(1);
+            Check(
+                camera.PanoramaSteered
+                    && camera.PanoramaDirection == steered
+                    && Mathf.AngleDifference(turned.X, steered.X) < -.5f
+                    && steered.Y > turned.Y,
+                "dragging the mouse turns the view on the tower, and it stays where the player left it"
+            );
+            Check(Input.MouseMode == mouseBefore, "letting go of the button frees the mouse");
             game.OpenBuilder(tower.Builder);
             Check(((Button)game.FindChild("StartLookout", true, false)).Disabled, "the stargazer rests after a look");
             game.FinishInteraction();
-            Frames(160);
+            Frames(200);
+            camera._Process(20);
             Check(
-                !game.LookingAround && car.Active && !game.WorldCoins.Flashing,
-                "the look ends and the car can drive again"
+                game.LookingAround
+                    && !car.Active
+                    && camera.PanoramaActive
+                    && game.WorldCoins.Flashing
+                    && world.Animals.Where(a => a.RewardAvailable).All(a => a.Pinged)
+                    && (game.Weather.StarsOut || world.Hidden.Friends.Where(f => !f.Found).All(f => f.Pinged)),
+                "a look the player steers has no end of its own, and the beams stay lit"
             );
-            // The checks step the game by hand, so the camera finishes its turn by hand too.
-            camera._Process(Game.LookoutSeconds);
+            Input.ActionPress("accelerate");
+            Frames(1);
+            Input.ActionRelease("accelerate");
+            Check(
+                !game.LookingAround && car.Active && !camera.PanoramaActive,
+                "driving on ends the look and the car can drive again"
+            );
             Check((camera.CullMask & Lookout.RoofLayer) != 0, "the roof is drawn again once the look is over");
+            Frames(80);
+            Check(!game.WorldCoins.Flashing, "the beams go out a while after the look");
+
+            // A look the player leaves alone turns once round and ends by itself.
+            Frames((int)(Game.LookoutCooldown * 10) + 1);
+            car.SetPose(world.Ground.At(tower.Builder.Position.X + 2, tower.Builder.Position.Z, .15f), 0);
+            Frames(1);
+            game.OpenBuilder(tower.Builder);
+            game.BeginLookout();
+            Check(game.LookingAround && !car.Active, "after the rest the stargazer gives another look");
+            Frames((int)(Game.LookoutSeconds * 10) + 2);
+            Check(
+                !game.LookingAround
+                    && car.Active
+                    && !camera.PanoramaActive
+                    && (camera.CullMask & Lookout.RoofLayer) != 0,
+                "a look the player leaves alone ends by itself"
+            );
 
             // ---- Damaged saves ----
             Rejected(

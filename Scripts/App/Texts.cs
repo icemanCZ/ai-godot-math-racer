@@ -48,6 +48,8 @@ internal static class Texts
     public const string PodivejSeCoVsechnoJeV =
         "Podívej se, co všechno je v údolí! Zlaté sloupy ukazují mince a modré kamarády.";
 
+    public const string RozhlizejSeMysi = "Táhni myší a rozhlížej se, jak dlouho chceš. Až budeš chtít jet, rozjeď se.";
+
     public const string StopyKol = "Stopy kol";
 
     // Game.Hidden: the small friends who hide beside the roads
