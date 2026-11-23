@@ -11,9 +11,17 @@ namespace MathRacer.Valley;
 /// </summary>
 internal sealed partial class Flutters : Node3D
 {
-    private const int ButterflyCount = 12;
+    private const int ButterflyCount = 24;
     private const int LeafCount = 28;
-    private const float ButterflyRange = 26;
+
+    /// <summary>
+    /// A butterfly further from the car than this flies back in ahead of it. It is far enough that a new one is first
+    /// seen as a speck in the distance, not popping up just in front of the car.
+    /// </summary>
+    private const float ButterflyRange = 55;
+
+    /// <summary>How long a butterfly that comes back takes to grow from nothing to its full size.</summary>
+    private const float ButterflyFadeIn = 1.5f;
 
     /// <summary>Butterflies are drawn larger than life, so a child sees them from the car.</summary>
     private const float ButterflySize = 1.8f;
@@ -29,7 +37,8 @@ internal sealed partial class Flutters : Node3D
         public Vector3 Target;
         public float Phase,
             Speed,
-            Retarget;
+            Retarget,
+            Appear = 1;
     }
 
     private sealed class Leaf
@@ -46,6 +55,11 @@ internal sealed partial class Flutters : Node3D
     private float butterflyShow,
         leafShow,
         time;
+
+    /// <summary>Where the car was last frame and the way it is going, so that butterflies come back ahead of it.</summary>
+    private Vector3? lastFocus;
+
+    private Vector2 heading;
 
     private static readonly string[] WingColors = { "ffa6c9", "ffe27a", "c7a6ff", "9fd8ff", "ffb877", "b7f0a6" };
     private static readonly string[] LeafColors = { "7cc35e", "a8d05a", "f2c04e", "ee9b47", "d9734a" };
@@ -67,6 +81,12 @@ internal sealed partial class Flutters : Node3D
     internal void Tick(float dt, Vector3 focus, float calm, Vector2 wind)
     {
         time += dt;
+        if (lastFocus is { } last && dt > 0)
+        {
+            var moved = new Vector2(focus.X - last.X, focus.Z - last.Z) / dt;
+            heading = heading.Lerp(moved, Mathf.Clamp(dt * 2, 0, 1));
+        }
+        lastFocus = focus;
         butterflyShow = Mathf.MoveToward(butterflyShow, calm, dt * .5f);
         leafShow = Mathf.MoveToward(leafShow, Mathf.Clamp(wind.Length() / 1.1f, 0, 1), dt * .4f);
         Visible = butterflyShow > 0 || leafShow > 0;
@@ -86,9 +106,15 @@ internal sealed partial class Flutters : Node3D
         var flat = new Vector2(b.Root.Position.X - focus.X, b.Root.Position.Z - focus.Z);
         if (flat.Length() > ButterflyRange)
         {
-            b.Root.Position = Around(focus, 5, ButterflyRange - 4, .6f, 1.8f);
+            // The first time they are spread all round the car; later one comes back far ahead, where the car goes.
+            bool first = flat.Length() > 10000;
+            b.Root.Position = first
+                ? Around(focus, 5, ButterflyRange - 4, .6f, 1.8f)
+                : Ahead(focus, ButterflyRange * .6f, ButterflyRange - 4, .6f, 1.8f);
             b.Target = b.Root.Position;
+            b.Appear = first ? 1 : 0;
         }
+        b.Appear = Mathf.MoveToward(b.Appear, 1, dt / ButterflyFadeIn);
         b.Retarget -= dt;
         if (b.Retarget <= 0 || b.Root.Position.DistanceTo(b.Target) < .3f)
         {
@@ -114,7 +140,7 @@ internal sealed partial class Flutters : Node3D
         float flap = Mathf.Sin(time * 22 + b.Phase) * .9f + .25f;
         b.Left.Rotation = new Vector3(0, 0, flap);
         b.Right.Rotation = new Vector3(0, 0, -flap);
-        b.Root.Scale = Vector3.One * Mathf.Max(.001f, butterflyShow * ButterflySize);
+        b.Root.Scale = Vector3.One * Mathf.Max(.001f, butterflyShow * b.Appear * ButterflySize);
     }
 
     private void MoveLeaf(Leaf leaf, float dt, Vector3 focus, Vector2 wind)
@@ -151,6 +177,21 @@ internal sealed partial class Flutters : Node3D
         return new Vector3(x, ground.Height(x, z) + low + (float)random.NextDouble() * (high - low), z);
     }
 
+    /// <summary>
+    /// Like <see cref="Around"/>, but within a wide wedge in front of the car while it drives, so that the butterfly is
+    /// met rather than left behind at once. A car that stands still has no front and the point may lie anywhere round it.
+    /// </summary>
+    private Vector3 Ahead(Vector3 focus, float near, float far, float low, float high)
+    {
+        if (heading.LengthSquared() < 1)
+            return Around(focus, near, far, low, high);
+        float angle = heading.Angle() + ((float)random.NextDouble() * 2 - 1) * Mathf.DegToRad(70);
+        float distance = near + (float)random.NextDouble() * (far - near);
+        float x = focus.X + Mathf.Cos(angle) * distance,
+            z = focus.Z + Mathf.Sin(angle) * distance;
+        return new Vector3(x, ground.Height(x, z) + low + (float)random.NextDouble() * (high - low), z);
+    }
+
     private Butterfly NewButterfly(string color)
     {
         var root = new Node3D { Name = "Butterfly" };
@@ -167,7 +208,12 @@ internal sealed partial class Flutters : Node3D
             Art.Ball(wing, new(side * .1f, .006f, .03f), new(.035f, .006f, .03f), "ffffff");
         }
         foreach (var node in root.FindChildren("*", "MeshInstance3D", true, false))
-            ((MeshInstance3D)node).CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
+        {
+            var mesh = (MeshInstance3D)node;
+            mesh.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
+            // Drawn as far as butterflies fly; DistantDetails would otherwise judge them by their tiny wings.
+            mesh.VisibilityRangeEnd = ButterflyRange + 10;
+        }
         var butterfly = new Butterfly
         {
             Root = root,

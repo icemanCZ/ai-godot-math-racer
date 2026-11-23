@@ -15,8 +15,24 @@ public partial class WorldCoins : Node3D
     internal const float PickupRadius = 2.6f;
     private const float RespawnTime = 40;
     private const float MinSpacing = 14;
-    private const float RespawnDistance = 45;
+
+    /// <summary>A collected coin comes back at least this far from the car, so that it is not seen to appear.</summary>
+    private const float RespawnDistance = 120;
+
     private const float StartClearance = 20;
+
+    /// <summary>How long a coin that comes back takes to grow from nothing to its full size.</summary>
+    private const float GrowTime = 1.2f;
+
+    /// <summary>
+    /// A coin far away is a few pixels across and, turned edge on, hardly one, so it seemed to appear only close by. A
+    /// golden glint over it keeps this many pixels across on screen beyond <see cref="GlintNear"/> metres.
+    /// </summary>
+    private const float GlintPixels = 9;
+
+    private const float GlintNear = 35;
+    private const float GlintFull = 70;
+    private const float GlintFar = 320;
     private readonly Random random = new();
     private readonly List<Coin> coins = new();
     private World world = null!;
@@ -27,7 +43,9 @@ public partial class WorldCoins : Node3D
     {
         public Node3D Node = null!;
         public Node3D Spinner = null!;
+        public MeshInstance3D Glint = null!;
         public float Respawn;
+        public float Grow = 1;
         public Node3D? Beacon;
         public bool Active => Respawn <= 0;
     }
@@ -52,6 +70,7 @@ public partial class WorldCoins : Node3D
         // A soft glow keeps the gold readable in shade and against the sandy road.
         var gold = Gold("ffcf3a", .45f);
         var emboss = Gold("fff0a0", .6f);
+        var glintMesh = new QuadMesh { Size = Vector2.One, Material = GlintMaterial() };
         for (int i = 0; i < Count; i++)
         {
             var node = new Node3D { Name = "Coin" + i };
@@ -66,7 +85,21 @@ public partial class WorldCoins : Node3D
             center.MaterialOverride = emboss;
             center.RotationDegrees = new Vector3(90, 0, 0);
             center.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
-            var coin = new Coin { Node = node, Spinner = spinner };
+            var glint = new MeshInstance3D
+            {
+                Name = "Glint",
+                Mesh = glintMesh,
+                Position = Vector3.Up * 1.1f,
+                CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+                Visible = false,
+            };
+            node.AddChild(glint);
+            var coin = new Coin
+            {
+                Node = node,
+                Spinner = spinner,
+                Glint = glint,
+            };
             coins.Add(coin);
             Place(coin, start, StartClearance);
         }
@@ -99,8 +132,17 @@ public partial class WorldCoins : Node3D
             return;
         phase = (phase + delta * 2.4f) % Mathf.Tau;
         flash = Mathf.Max(0, flash - delta);
+        var camera = GetViewport().GetCamera3D();
+        // The size of a metre at one metre from the camera, in pixels: what keeps the glint the same on screen.
+        float pixelsPerMetre =
+            camera == null
+                ? 0
+                : GetViewport().GetVisibleRect().Size.Y / (2 * Mathf.Tan(Mathf.DegToRad(camera.Fov) / 2));
         foreach (var coin in coins)
         {
+            coin.Grow = Mathf.MoveToward(coin.Grow, 1, delta / GrowTime);
+            coin.Spinner.Scale = Vector3.One * Mathf.Max(.001f, coin.Grow);
+            Glint(coin, camera, pixelsPerMetre);
             if (flash > 0 && coin.Active)
             {
                 coin.Beacon ??= Art.Beacon(coin.Node, "ffe36a");
@@ -116,8 +158,49 @@ public partial class WorldCoins : Node3D
             }
             coin.Respawn -= delta;
             if (coin.Respawn <= 0)
+            {
                 Place(coin, car, RespawnDistance);
+                coin.Grow = 0;
+            }
         }
+    }
+
+    /// <summary>Shows the glint of a far coin at a steady size on screen; near the car the coin itself is seen.</summary>
+    private static void Glint(Coin coin, Camera3D? camera, float pixelsPerMetre)
+    {
+        float distance = camera == null ? 0 : camera.GlobalPosition.DistanceTo(coin.Glint.GlobalPosition);
+        float show =
+            Mathf.SmoothStep(GlintNear, GlintFull, distance)
+            * (1 - Mathf.SmoothStep(GlintFar * .8f, GlintFar, distance));
+        coin.Glint.Visible = coin.Active && pixelsPerMetre > 0 && show > 0;
+        if (coin.Glint.Visible)
+            coin.Glint.Scale = Vector3.One * (GlintPixels * distance / pixelsPerMetre * show * coin.Grow);
+    }
+
+    /// <summary>A soft round golden dot that always faces the camera and glows a little.</summary>
+    private static StandardMaterial3D GlintMaterial()
+    {
+        var gradient = new Gradient();
+        gradient.SetColor(0, new Color(1, .95f, .7f, 1));
+        gradient.SetColor(1, new Color(1, .8f, .2f, 0));
+        gradient.AddPoint(.45f, new Color(1, .85f, .3f, .85f));
+        var dot = new GradientTexture2D
+        {
+            Gradient = gradient,
+            Fill = GradientTexture2D.FillEnum.Radial,
+            FillFrom = new Vector2(.5f, .5f),
+            FillTo = new Vector2(.5f, 0),
+            Width = 64,
+            Height = 64,
+        };
+        return new StandardMaterial3D
+        {
+            AlbedoTexture = dot,
+            AlbedoColor = new Color(1.6f, 1.3f, .6f),
+            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+            Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+            BillboardMode = BaseMaterial3D.BillboardModeEnum.Enabled,
+        };
     }
 
     private static Vector2 Flat(Vector3 p) => new(p.X, p.Z);
