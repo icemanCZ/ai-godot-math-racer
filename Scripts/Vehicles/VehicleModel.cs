@@ -250,6 +250,7 @@ public static class VehicleModel
         foreach (float x in new[] { -.37f, .37f })
             Round(root, new(x, 1.198f, -1.00f), new(.012f, .006f, .18f), "d23950");
         Trim(Round(root, new(0, 1.19f, 1.18f), new(.15f, .028f, .035f), "fff0ce"));
+        CarGadgets.Add(root, "classic");
         appearance.Apply(CarLook.All[0]);
     }
 
@@ -371,6 +372,7 @@ public static class VehicleModel
         foreach (float z in new[] { -1.48f, 1.48f })
             Trim(Art.Block(root, new(0, .57f, z), new(1.73f, .13f, .18f), "fff0ce"));
         Art.Block(root, new(0, .83f, -1.51f), new(.65f, .17f, .035f), "344555");
+        CarGadgets.Add(root, id);
     }
 
     internal readonly record struct Ring(float Y, float Width, float Length, float Z, float Radius);

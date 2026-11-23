@@ -35,6 +35,9 @@ public partial class Vehicle : CharacterBody3D
     /// <summary>How hard the engine works, from 0 to 1; the steam engine's chimney smokes by it.</summary>
     internal float Effort { get; private set; }
 
+    /// <summary>How fast the car turns, in radians a second, positive to the left; the tank's turret leads by it.</summary>
+    internal float Turn { get; private set; }
+
     /// <summary>
     /// The whole <paramref name="throttle"/> while the car gathers speed towards <paramref name="target"/>, a little
     /// of it while it holds its speed, and nothing without the pedal or with the brake on.
@@ -100,6 +103,7 @@ public partial class Vehicle : CharacterBody3D
         {
             Speed = 0;
             Effort = 0;
+            Turn = 0;
             Velocity = Vector3.Zero;
             Tracks.Break();
             return;
@@ -122,13 +126,13 @@ public partial class Vehicle : CharacterBody3D
             ) * dt
         );
         Effort = EngineEffort(throttle, braking, Speed, target);
-        Heading -=
-            steer
+        Turn =
+            -steer
             * Settings.Steering
             * (braking ? 1.7f : 1)
             * Mathf.Clamp(Speed / 5, -1, 1)
-            / (1 + Mathf.Abs(Speed) * .035f)
-            * dt;
+            / (1 + Mathf.Abs(Speed) * .035f);
+        Heading += Turn * dt;
         Rotation = new Vector3(0, Heading, 0);
         var forward = -Transform.Basis.Z;
         float Surface(float x, float z) =>

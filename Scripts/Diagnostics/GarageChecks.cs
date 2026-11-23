@@ -65,6 +65,7 @@ public partial class GarageChecks : Node
                 wheels.Count >= 4 && (!body.OwnWheels || wheels.Count > 4),
                 "the four tyres turn, and a model with wheels of its own adds them: " + body.Id
             );
+            CheckGadget(holder, body.Id);
             holder.QueueFree();
         }
         var ocean = CarLook.All.First(look => look.Id == "ocean");
@@ -96,6 +97,49 @@ public partial class GarageChecks : Node
                     node.Name == "Attachment_valley-map" || node.Position.IsEqualApprox(homes[node.Name.ToString()])
                 ),
             "accessories return to their places on the car after a toy"
+        );
+    }
+
+    /// <summary>
+    /// Every model but the steam engine (which smokes) has one part that moves as it drives, and the tank's turret runs
+    /// ahead of the hull into a turn and comes back when the tank drives straight on.
+    /// </summary>
+    private static void CheckGadget(Node3D holder, string model)
+    {
+        var gadgets = holder
+            .FindChildren("Gadget", "Node3D", true, false)
+            .OfType<Gadget>()
+            .Where(gadget => gadget.IsVisibleInTree())
+            .ToArray();
+        if (model == "train")
+        {
+            Check(gadgets.Length == 0, "the steam engine has its smoke and no gadget");
+            return;
+        }
+        var parts = holder.FindChildren("*", "Node3D", true, false).OfType<Node3D>().ToArray();
+        var before = parts.Select(part => part.Transform).ToArray();
+        for (int i = 0; i < 30 && gadgets.Length == 1; i++)
+            gadgets[0].Step(1 / 60f, 10, 1, .8f);
+        Check(
+            gadgets.Length == 1 && parts.Where((part, i) => !part.Transform.IsEqualApprox(before[i])).Any(),
+            "the model has a part that moves as it drives: " + model
+        );
+        if (model != "tank")
+            return;
+        var turret = (Node3D)holder.FindChild("Turret", true, false);
+        float Turret(float turn, float seconds)
+        {
+            for (float t = 0; t < seconds; t += 1 / 60f)
+                gadgets[0].Step(1 / 60f, 10, 1, turn);
+            return turret.Rotation.Y;
+        }
+        float left = Turret(.8f, 1.5f),
+            right = Turret(-.8f, 1.5f),
+            straight = Turret(0, 3);
+        Check(
+            left > .3f && right < -.3f && Mathf.Abs(straight) < .02f,
+            $"the tank's turret runs ahead into a turn to the left ({left:0.00}) and to the right ({right:0.00}) "
+                + $"and comes back straight ({straight:0.000})"
         );
     }
 

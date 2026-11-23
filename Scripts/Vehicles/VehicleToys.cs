@@ -9,7 +9,8 @@ namespace MathRacer.Vehicles;
 /// The coachwork that is not a car: a plane with a pilot, a peaceful tank, a steam engine with a face, a rocket and a
 /// flying saucer with a little green passenger. Like the cars they are drawn in the vehicle's local space (the front is
 /// −Z, the ground is Y = 0, about 2 m wide and 3.3 m long) and take the garage paints through the body, roof and trim
-/// parts. A toy brings the wheels it needs; <see cref="CarBody.OwnWheels"/> hides the four tyres of the car.
+/// parts. A toy brings the wheels it needs; <see cref="CarBody.OwnWheels"/> hides the four tyres of the car. Each toy
+/// but the steam engine (which smokes) has a part that moves as it drives, a <see cref="Gadget"/>.
 /// </summary>
 internal static class VehicleToys
 {
@@ -42,16 +43,24 @@ internal static class VehicleToys
     {
         const string Skin = "ffd7b0",
             Dark = "344555";
-        // A chubby fuselage of two eggs, a ring of engine cowl, a round spinner and a propeller that turns with the car.
+        // A chubby fuselage of two eggs, a ring of engine cowl, a round spinner and a propeller with twisted blades.
         k.Body(k.Ball(new(0, 1.05f, -.15f), new(.64f, .62f, 1.2f), "f54257"));
         k.Body(k.Ball(new(0, 1.12f, .95f), new(.3f, .3f, .72f), "f54257"));
         k.Trim(k.Tube(new(0, 1.05f, -1.3f), .5f, .5f, .36f, "fff0ce"));
         k.Tube(new(0, 1.05f, -1.49f), .37f, .37f, .04f, Dark);
         k.Body(k.Ball(new(0, 1.05f, -1.53f), new(.24f, .24f, .3f), "f54257"));
-        var propeller = k.Spinner(new(0, 1.05f, -1.72f));
-        k.Trim(k.Ball(new(0, .42f, 0), new(.035f, .42f, .11f), "fff0ce", propeller));
-        k.Trim(k.Ball(new(0, -.42f, 0), new(.035f, .42f, .11f), "fff0ce", propeller));
+        var propeller = k.Pivot("Propeller", new(0, 1.05f, -1.72f));
+        foreach (float end in new[] { -1f, 1f })
+        {
+            var blade = k.Trim(k.Ball(new(0, end * .42f, 0), new(.11f, .42f, .035f), "fff0ce", propeller));
+            blade.Rotation = new(0, end * .35f, 0);
+        }
         k.Ball(Vector3.Zero, new(.07f, .07f, .07f), Dark, propeller);
+        // Fast, the blades melt into a pale disc, as a real propeller does to the eye.
+        var blur = k.Disc(new(0, 1.05f, -1.73f), .47f, .01f, "fff5df");
+        blur.Rotation = new(Mathf.Pi / 2, 0, 0);
+        var haze = k.Clear(blur, "fff5df", 0);
+        blur.Visible = false;
 
         // The pilot in a leather cap and yellow goggles, under a see-through canopy.
         k.Ball(new(0, 1.62f, -.05f), new(.19f, .19f, .19f), Skin);
@@ -74,7 +83,9 @@ internal static class VehicleToys
             k.Stripe(new(side * .35f, 2.027f, .05f), new(.12f, .012f, .9f));
             k.Stripe(new(side * .7f, 2.027f, .05f), new(.12f, .012f, .9f));
         }
-        k.Roof(k.Ball(new(0, 1.7f, 1.32f), new(.045f, .5f, .36f), "ff8992"));
+        k.Roof(k.Ball(new(0, 1.7f, 1.2f), new(.045f, .48f, .3f), "ff8992"));
+        var rudder = k.Pivot("Rudder", new(0, 1.68f, 1.42f));
+        k.Trim(k.Ball(new(0, 0, .12f), new(.04f, .36f, .17f), "fff0ce", rudder));
         k.Roof(k.Ball(new(0, 1.28f, 1.42f), new(.78f, .045f, .3f), "ff8992"));
 
         // Landing gear: two main wheels under the wings and a tail wheel.
@@ -86,6 +97,21 @@ internal static class VehicleToys
         k.Beam(new(0, .9f, 1.35f), new(0, .17f, 1.38f), .06f, Dark);
         k.Wheel(new(.05f, .15f, 1.38f), .15f, .1f, "263440");
         k.Wheel(new(-.05f, .15f, 1.38f), .15f, .1f, "263440");
+
+        // The engine idles while the plane stands and roars with the pedal; the rudder leans into a turn.
+        float spin = 0,
+            turn = 0;
+        k.Moves(drive =>
+        {
+            float rate = 9 + drive.Effort * 30 + Mathf.Abs(drive.Speed) * 1.6f;
+            spin = Mathf.Lerp(spin, rate, Gadget.Ease(3, drive.Dt));
+            propeller.RotateZ(Mathf.Min(spin, 44) * drive.Dt);
+            float melt = Mathf.Clamp((spin - 18) / 30, 0, 1);
+            blur.Visible = melt > 0;
+            haze.AlbedoColor = haze.AlbedoColor with { A = melt * .42f };
+            turn = Mathf.Lerp(turn, Mathf.Clamp(-drive.Turn * .6f, -.55f, .55f), Gadget.Ease(8, drive.Dt));
+            rudder.Rotation = new(0, turn, 0);
+        });
     }
 
     private static void Tank(Kit k)
@@ -121,24 +147,27 @@ internal static class VehicleToys
                 "f54257"
             )
         );
-        k.Trim(k.Post(new(0, 1.28f, .1f), .7f, .7f, .08f, "fff0ce"));
-        k.Roof(k.Post(new(0, 1.45f, .1f), .66f, .6f, .34f, "ff8992"));
-        k.Roof(k.Ball(new(0, 1.6f, .1f), new(.58f, .2f, .58f), "ff8992"));
-        k.Trim(k.Post(new(0, 1.76f, .28f), .2f, .2f, .06f, "fff0ce"));
-        k.Ball(new(0, 1.83f, .28f), new(.17f, .17f, .17f), "ffd7b0");
-        k.Ball(new(0, 1.9f, .28f), new(.19f, .11f, .19f), "5aa86f");
+        // The turret, its driver and the gun turn together on a ring, drawn round the turret's axis.
+        var turret = k.Pivot("Turret", new(0, 0, .1f));
+        k.Trim(k.Post(new(0, 1.28f, 0), .7f, .7f, .08f, "fff0ce", parent: turret));
+        k.Roof(k.Post(new(0, 1.45f, 0), .66f, .6f, .34f, "ff8992", parent: turret));
+        k.Roof(k.Ball(new(0, 1.6f, 0), new(.58f, .2f, .58f), "ff8992", turret));
+        k.Trim(k.Post(new(0, 1.76f, .18f), .2f, .2f, .06f, "fff0ce", parent: turret));
+        k.Ball(new(0, 1.83f, .18f), new(.17f, .17f, .17f), "ffd7b0", turret);
+        k.Ball(new(0, 1.9f, .18f), new(.19f, .11f, .19f), "5aa86f", turret);
         foreach (float side in new[] { -1f, 1f })
-            k.Ball(new(side * .06f, 1.85f, .12f), new(.025f, .03f, .02f), Dark);
-        k.Tube(new(0, 1.52f, -1.1f), .1f, .1f, 1.3f, Gun);
-        k.Trim(k.Tube(new(0, 1.52f, -1.72f), .15f, .15f, .16f, "fff0ce"));
-        k.Ball(new(0, 1.52f, -1.83f), new(.06f, .06f, .05f), "ffca38");
+            k.Ball(new(side * .06f, 1.85f, .02f), new(.025f, .03f, .02f), Dark, turret);
+        k.Tube(new(0, 1.52f, -1.2f), .1f, .1f, 1.3f, Gun, turret);
+        k.Trim(k.Tube(new(0, 1.52f, -1.82f), .15f, .15f, .16f, "fff0ce", turret));
+        k.Ball(new(0, 1.52f, -1.93f), new(.06f, .06f, .05f), "ffca38", turret);
         for (int i = 0; i < 6; i++)
         {
             float angle = i * Mathf.Tau / 6;
             k.Ball(
-                new(Mathf.Cos(angle) * .1f, 1.52f + Mathf.Sin(angle) * .1f, -1.83f),
+                new(Mathf.Cos(angle) * .1f, 1.52f + Mathf.Sin(angle) * .1f, -1.93f),
                 new(.055f, .055f, .04f),
-                "fff5df"
+                "fff5df",
+                turret
             );
         }
 
@@ -157,7 +186,24 @@ internal static class VehicleToys
             k.Stripe(new(x, 1.265f, -.82f), new(.13f, .012f, .4f));
             k.Stripe(new(x, 1.265f, 1.0f), new(.13f, .012f, .3f));
         }
+
+        // In a turn the turret runs ahead of the hull, so it turns faster than the tank, and swings back on a spring
+        // when the tank drives straight on; standing, the driver slowly looks round the valley.
+        float yaw = 0,
+            swing = 0;
+        k.Moves(drive =>
+        {
+            float standing = 1 - Mathf.Clamp(Mathf.Abs(drive.Speed) / 2, 0, 1);
+            float target =
+                Mathf.Clamp(drive.Turn * TurretLead, -.7f, .7f) + standing * .35f * Mathf.Sin(drive.Time * .45f);
+            swing += ((target - yaw) * 30 - swing * 6) * drive.Dt;
+            yaw += swing * drive.Dt;
+            turret.Rotation = new(0, yaw, 0);
+        });
     }
+
+    /// <summary>How many seconds of a turn the tank's turret runs ahead of the hull.</summary>
+    internal const float TurretLead = .6f;
 
     private static void Train(Kit k)
     {
@@ -236,9 +282,10 @@ internal static class VehicleToys
         k.Trim(k.Tube(new(0, 1.22f, -.9f), .74f, .74f, .1f, "fff0ce"));
         k.Body(k.Tube(new(0, 1.22f, .975f), .72f, .5f, .35f, "f54257"));
         k.Tube(new(0, 1.22f, 1.275f), .26f, .38f, .25f, Dark);
-        var flame = k.Tube(new(0, 1.22f, 1.54f), .24f, .02f, .28f, "ff9d3b");
-        k.Glow(flame, "ff9d3b", 1.4f);
-        k.Glow(k.Tube(new(0, 1.22f, 1.5f), .13f, .01f, .2f, "ffe27a"), "ffe27a", 1.6f);
+        // The flame grows from the nozzle, so it is drawn behind a node at the nozzle's mouth.
+        var exhaust = k.Pivot("Flame", new(0, 1.22f, 1.4f));
+        var flame = k.Glow(k.Tube(new(0, 0, .14f), .24f, .02f, .28f, "ff9d3b", exhaust), "ff9d3b", 1.4f);
+        var core = k.Glow(k.Tube(new(0, 0, .1f), .13f, .01f, .2f, "ffe27a", exhaust), "ffe27a", 1.6f);
         foreach (float side in new[] { -1f, 1f })
         {
             var fin = k.Roof(k.Ball(new(side * 1f, 1.3f, .72f), new(.34f, .06f, .5f), "ff8992"));
@@ -258,7 +305,22 @@ internal static class VehicleToys
             k.Stripe(new(x, 1.915f, -.4f), new(.13f, .03f, .6f));
             k.Stripe(new(x, 1.915f, .4f), new(.13f, .03f, .5f));
         }
+
+        // The flame flickers while the rocket stands and roars out long and bright with the pedal down.
+        float roar = 0;
+        k.Moves(drive =>
+        {
+            roar = Mathf.Lerp(roar, drive.Effort, Gadget.Ease(5, drive.Dt));
+            float t = drive.Time;
+            float flicker = .1f * Mathf.Sin(t * 31) + .07f * Mathf.Sin(t * 47 + 1) + .05f * Mathf.Sin(t * 73 + 2);
+            float width = 1 + roar * .2f + flicker * .4f;
+            exhaust.Scale = new(width, width, 1 + roar * .9f + flicker * (1 + roar));
+            flame.EmissionEnergyMultiplier = 1.4f + roar * 1.6f + flicker * 2;
+            core.EmissionEnergyMultiplier = 1.6f + roar * 2.4f + flicker * 2;
+        });
     }
+
+    private const int LightCount = 12;
 
     private static void Saucer(Kit k)
     {
@@ -274,6 +336,36 @@ internal static class VehicleToys
                 k.Ball(new(Mathf.Cos(angle) * 1.22f, 1.12f, Mathf.Sin(angle) * 1.22f), new(.1f, .08f, .1f), "fff0ce")
             );
         }
+        // A ring of coloured lights round the belly runs round the saucer, faster as it drives, and a bright wave
+        // chases through it while every bulb slowly changes its colour.
+        var ring = k.Pivot("Lights", Vector3.Zero);
+        var bulbs = new StandardMaterial3D[LightCount];
+        for (int i = 0; i < LightCount; i++)
+        {
+            float angle = i * Mathf.Tau / LightCount;
+            var bulb = k.Ball(
+                new(Mathf.Cos(angle) * 1.23f, 1.0f, Mathf.Sin(angle) * 1.23f),
+                new(.1f, .085f, .1f),
+                "ffffff",
+                ring
+            );
+            bulbs[i] = k.Glow(bulb, "ffffff", 1);
+            bulb.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
+        }
+        float turn = 0;
+        k.Moves(drive =>
+        {
+            turn += (.7f + Mathf.Abs(drive.Speed) * .18f) * drive.Dt;
+            ring.Rotation = new(0, turn, 0);
+            for (int i = 0; i < LightCount; i++)
+            {
+                var color = Color.FromHsv(Mathf.PosMod(i / (float)LightCount + drive.Time * .12f, 1), .7f, 1);
+                float wave = Mathf.Pow(.5f + .5f * Mathf.Sin(drive.Time * 7 - i * Mathf.Tau * 3 / LightCount), 3);
+                bulbs[i].AlbedoColor = color.SrgbToLinear();
+                bulbs[i].Emission = color.SrgbToLinear();
+                bulbs[i].EmissionEnergyMultiplier = .5f + wave * 2.5f;
+            }
+        });
         k.Ball(new(0, 1.58f, 0), new(.19f, .22f, .19f), "7fd35a");
         foreach (float side in new[] { -1f, 1f })
         {
@@ -343,18 +435,26 @@ internal static class VehicleToys
             float top,
             float height,
             string color,
-            int segments = 32
+            int segments = 32,
+            Node3D? parent = null
         )
         {
-            var mesh = Art.Cylinder(Root, position, bottom, top, height, color);
+            var mesh = Art.Cylinder(parent ?? Root, position, bottom, top, height, color);
             ((CylinderMesh)mesh.Mesh).RadialSegments = segments;
             return mesh;
         }
 
         /// <summary>A cylinder lying along the car, <paramref name="front"/> being the radius at the nose end.</summary>
-        public MeshInstance3D Tube(Vector3 position, float front, float rear, float length, string color)
+        public MeshInstance3D Tube(
+            Vector3 position,
+            float front,
+            float rear,
+            float length,
+            string color,
+            Node3D? parent = null
+        )
         {
-            var mesh = Post(position, front, rear, length, color);
+            var mesh = Post(position, front, rear, length, color, parent: parent);
             mesh.Rotation = new(Mathf.Pi / 2, 0, 0);
             return mesh;
         }
@@ -378,36 +478,41 @@ internal static class VehicleToys
         }
 
         /// <summary>See-through glass over something that must stay visible, like the pilot under the canopy.</summary>
-        public void Clear(MeshInstance3D mesh, string color, float alpha)
+        public StandardMaterial3D Clear(MeshInstance3D mesh, string color, float alpha)
         {
-            mesh.MaterialOverride = new StandardMaterial3D
+            var material = new StandardMaterial3D
             {
                 AlbedoColor = new Color(color).SrgbToLinear() with { A = alpha },
                 Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
                 Roughness = .1f,
                 Metallic = .2f,
             };
+            mesh.MaterialOverride = material;
             mesh.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
+            return material;
         }
 
         /// <summary>A part that shines a little by itself: a lamp, a window, a flame.</summary>
-        public void Glow(MeshInstance3D mesh, string color, float energy = .35f)
+        public StandardMaterial3D Glow(MeshInstance3D mesh, string color, float energy = .35f)
         {
             var material = (StandardMaterial3D)Art.Mat(color).Duplicate();
             material.EmissionEnabled = true;
             material.Emission = new Color(color).SrgbToLinear();
             material.EmissionEnergyMultiplier = energy;
             mesh.MaterialOverride = material;
+            return material;
         }
 
-        /// <summary>A node that turns with the car's wheels, round the car's X axis turned to point along the car.</summary>
-        public Node3D Spinner(Vector3 position)
+        /// <summary>A node that a part of the model turns or moves on, like the tank's turret or the plane's rudder.</summary>
+        public Node3D Pivot(string name, Vector3 position)
         {
-            var node = new Node3D { Position = position, Rotation = new(0, Mathf.Pi / 2, 0) };
+            var node = new Node3D { Name = name, Position = position };
             Root.AddChild(node);
-            wheels.Add(node);
             return node;
         }
+
+        /// <summary>Lets the model's moving parts follow the driving (<see cref="Gadget"/>).</summary>
+        public void Moves(System.Action<Drive> move) => Root.AddChild(new Gadget { Name = "Gadget", Move = move });
 
         /// <summary>A wheel that turns with the car and grows with the garage's bigger wheels.</summary>
         public Node3D Wheel(Vector3 position, float radius, float width, string tyre, int spokes = 0)
