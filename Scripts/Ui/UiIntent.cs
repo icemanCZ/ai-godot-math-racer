@@ -66,6 +66,9 @@ internal abstract record UiIntent
 
     internal sealed record ZooTrip : UiIntent;
 
+    /// <summary>The lamp maker's shop: send the trailer for glasses from the glassworks.</summary>
+    internal sealed record GlassmakerTrip : UiIntent;
+
     internal sealed record Lookout : UiIntent;
 
     // The pirate captain's treasure hunt.

@@ -3,9 +3,11 @@ using System.Linq;
 using System.Text.Json;
 using Godot;
 using MathRacer.App;
+using MathRacer.Buildings;
 using MathRacer.Characters;
 using MathRacer.Saves;
 using MathRacer.Settlement;
+using MathRacer.Tasks;
 using MathRacer.Valley;
 using MathRacer.Vehicles;
 
@@ -14,8 +16,9 @@ namespace MathRacer.Diagnostics;
 /// <summary>
 /// The glass lamp maker on the village square and his lamps: that every valley has him under the next actor ID, that he
 /// has two lamps (a candle and a lamp) that cost nothing, that a lamp goes into the bag, is put down on dry ground beside
-/// the car, can be taken up again and shines only at night, and that the bag and the standing lamps are saved,
-/// validated and absent from a save that never had them.
+/// the car, can be taken up again and shines only at night, that he takes glasses from the glassworks again and again
+/// (and sends the player for sand when there are none), and that the bag, the standing lamps and the glasses trip are
+/// saved, validated and absent from a save that never had them.
 /// </summary>
 public partial class GlassChecks : Node
 {
@@ -163,6 +166,131 @@ public partial class GlassChecks : Node
             Check(back != null, "the shop has a Back button");
             back!.EmitSignal(BaseButton.SignalName.Pressed);
             Check(game.State == GameState.Exploring, "Back leaves the shop");
+
+            // ---- Glasses for the lamp maker ----
+            void Frames(int count)
+            {
+                for (int i = 0; i < count; i++)
+                    game._Process(.1);
+            }
+            void NearMaker()
+            {
+                car.SetPose(world.Ground.At(maker.Position.X - 2, maker.Position.Z + 2, .15f), 0);
+                game.OpenGlassmaker(maker);
+            }
+            var glassworks = world.Glassworks ?? throw new InvalidOperationException("The valley has no glassworks.");
+            var trailer = game.Trailer;
+            var drop = village.GlassmakerDrop;
+            var dropLocal = village.Square.Transform.AffineInverse() * drop;
+            Check(
+                Mathf.Abs(dropLocal.X) < 9 && Mathf.Abs(dropLocal.Z) < 5,
+                "the glasses are tipped out on the village square"
+            );
+            Check(
+                drop.DistanceTo(maker.Position) < 6 && drop.DistanceTo(village.Mayor.Position) > 8,
+                "the ring for the glasses lies beside the lamp maker, away from the mayor"
+            );
+            // Benches, stalls, lanterns and the fountain are solid; the paving and the ground lie below the query.
+            var clear = new PhysicsShapeQueryParameters3D
+            {
+                Shape = new CylinderShape3D { Radius = 2, Height = 1.4f },
+                Transform = new Transform3D(Basis.Identity, drop + Vector3.Up * 1.5f),
+            };
+            var blocking = world
+                .GetWorld3D()
+                .DirectSpaceState.IntersectShape(clear)
+                .Select(hit => hit["collider"].AsGodotObject() as Node)
+                .Where(node => node != null && node != car && !trailer.IsAncestorOf(node))
+                .ToArray();
+            Check(
+                blocking.Length == 0,
+                "nothing on the square stands in the ring for the glasses: "
+                    + string.Join(", ", blocking.Select(node => node.GetPath().ToString()))
+            );
+
+            glassworks.SetStock(0);
+            NearMaker();
+            Check(
+                Has("GlassOrder") && Has("StartMissingSupply") && !Has("StartGlassmakerTrip"),
+                "without glasses in the glassworks the lamp maker shows the sand they are made from"
+            );
+            game.BeginGlassmakerTrip();
+            Check(
+                game.State == GameState.GlassmakerShop && game.Haul == null,
+                "no glasses trip starts without glasses"
+            );
+            game.BeginMissingSupply();
+            ChallengeChecks.Solve(game);
+            Check(
+                game.Haul is { Loaded: false } sand && sand.Works == glassworks && sand.Load == HaulLoad.Sand,
+                "he sends the empty trailer for sand for the glassworks"
+            );
+            var pit = world.SourceFor(HaulLoad.Sand);
+            car.SetPose(world.Ground.At(pit.Position.X, pit.Position.Z, .15f), 0);
+            Frames(1);
+            ChallengeChecks.Solve(game);
+            Check(game.Haul is { Loaded: true } && trailer.Load == HaulLoad.Sand, "the sand is loaded");
+            car.SetPose(world.Ground.At(glassworks.Site.Position.X, glassworks.Site.Position.Z, .15f), 0);
+            Frames(41);
+            Check(glassworks.Stock == Works.PerLoad && game.Haul == null, "the glassworks blows glasses from the sand");
+
+            NearMaker();
+            Check(
+                Has("StartGlassmakerTrip") && !Has("StartMissingSupply"),
+                "with glasses in the glassworks the lamp maker offers the trip"
+            );
+            game.BeginGlassmakerTrip();
+            Check(game.State == GameState.Challenge && game.Haul == null, "a quiz comes before the trip");
+            RoundTrip("the quiz before the glasses trip");
+            ChallengeChecks.Solve(game);
+            var glassTrip = game.Haul;
+            Check(
+                glassTrip is { Loaded: false, ForGlassmaker: true, Load: HaulLoad.Glass }
+                    && glassTrip.Contractor == maker
+                    && glassTrip.Asker == glassworks.Worker
+                    && trailer.Attached,
+                "the empty trailer goes to the glassworks, whose worker loads it for the lamp maker"
+            );
+            RoundTrip("the trailer on its way for the glasses");
+            Check(game.Haul is { ForGlassmaker: true, Loaded: false }, "the glasses trip is restored");
+            NearMaker();
+            Check(
+                !Has("StartGlassmakerTrip") && Has("GlassOrder"),
+                "during the trip his shop shows it instead of a second one"
+            );
+            game.FinishInteraction();
+            car.SetPose(world.Ground.At(glassworks.Site.Position.X, glassworks.Site.Position.Z, .15f), 0);
+            Frames(1);
+            Check(game.State == GameState.Challenge, "the glassworks asks the loading question");
+            ChallengeChecks.Solve(game);
+            Check(
+                game.Haul is { Loaded: true, ForGlassmaker: true }
+                    && trailer.Load == HaulLoad.Glass
+                    && glassworks.Stock == Works.PerLoad - Works.PerTrip,
+                "the glasses are taken out of the glassworks and onto the trailer"
+            );
+            RoundTrip("a trailer of glasses on its way to the square");
+            int coinsBeforeGlass = game.Coins;
+            car.SetPose(world.Ground.At(drop.X, drop.Z, .15f), 0);
+            Frames(1);
+            Check(trailer.Dumping && !car.Active, "the bed tips on the square while the car waits");
+            Frames(40);
+            Check(
+                game.Haul == null && trailer.Load == null && game.Coins == coinsBeforeGlass + Game.GlassmakerCoins,
+                "the lamp maker pays for the glasses"
+            );
+            NearMaker();
+            Check(Has("StartGlassmakerTrip"), "and takes glasses again whenever the glassworks has some");
+            game.FinishInteraction();
+
+            var savedTrip = game.CaptureProgress();
+            savedTrip.Task.Trip = new SavedTrip { Kind = TripKinds.Glassmaker, Index = 0 };
+            string tripFile = DiagnosticArtifacts.PathFor("glass-checks/glassmaker-trip.json");
+            Check(SaveStore.Write(savedTrip, tripFile) && SaveStore.Read(tripFile) != null, "a glasses trip is saved");
+            Rejected(
+                data => data.Task.Trip = new SavedTrip { Kind = TripKinds.Glassmaker, Index = 1 },
+                "a glasses trip to a second lamp maker"
+            );
 
             // ---- Putting a lamp down ----
             var meadow = FindMeadow();

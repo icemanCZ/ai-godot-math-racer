@@ -8,9 +8,10 @@ using MathRacer.Tasks;
 namespace MathRacer.App;
 
 /// <summary>
-/// The sawmill, brickworks, gravel works and glassworks. The worker at each raw-material site sends the trailer to the works
-/// and asks the loading question on the spot; every load tipped on the works' ring adds goods to the visible stock.
-/// The goods wait for the buildings.
+/// The five works (the sawmill, the brickworks, the gravel works, the glassworks and the bakery) and the mill that grinds
+/// flour for the bakery. The worker at each raw-material site sends the trailer to the works and asks the loading question
+/// on the spot; every load tipped on the works' ring adds goods to the visible stock. The goods wait for the buildings,
+/// the residents, the lamp maker and the baker.
 /// </summary>
 public partial class Game
 {
@@ -222,8 +223,9 @@ public partial class Game
     }
 
     /// <summary>
-    /// The next delivery needs goods the works has not made: the builder sends the player straight for the raw material
-    /// (logs for planks, soil for bricks, stones for gravel), so no one has to look for the right worker.
+    /// The next delivery needs goods the works has not made: whoever wants them sends the player straight for the raw
+    /// material (logs for planks, soil for bricks, stones for gravel, sand for glasses, flour or wheat for bread), so no one
+    /// has to look for the right worker.
     /// </summary>
     internal void BeginMissingSupply() => BeginMissingSupply(false);
 
@@ -312,6 +314,13 @@ public partial class Game
             }
             else
                 (works, asker) = (missing, resident);
+        }
+        else if (State == GameState.GlassmakerShop)
+        {
+            // The lamp maker, whose glassworks has no glasses for him, sends the player for sand.
+            if (nearby is not { Role: GlassmakerRole } maker || Haul != null || GlassmakerMissingGlass is not { } glass)
+                return;
+            (works, asker) = (glass, maker);
         }
         else if (State == GameState.TradeStatus)
         {

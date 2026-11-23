@@ -8,14 +8,24 @@ namespace MathRacer.Settlement;
 /// <summary>
 /// The glass lamp maker on the village square, opposite the mayor, with a worktable of his lamps. Like the mayor he is
 /// placed in the square's own frame inside the ground that the square already reserves and draws no random numbers, so
-/// nothing else in the valley moves. The lamps he hands out stand in <see cref="Lamps"/>.
+/// nothing else in the valley moves. The lamps he hands out stand in <see cref="Lamps"/>; the glasses he blows them from
+/// are tipped out at <see cref="GlassmakerDrop"/>.
 /// </summary>
 public partial class Village
 {
     /// <summary>Where the lamp maker stands on the square (x, z): the mirror of the mayor.</summary>
     private static readonly Vector2 GlassmakerSpot = new(8.6f, -.7f);
 
+    /// <summary>
+    /// Where the trailer tips out the glasses for the lamp maker (x, z): on the paving between him and the fountain, clear
+    /// of the bench, the stall and his worktable.
+    /// </summary>
+    private static readonly Vector2 GlassmakerDropSpot = new(4.6f, .4f);
+
     internal Character Glassmaker { get; private set; } = null!;
+
+    /// <summary>The ring on the square where the glasses for the lamp maker are tipped out.</summary>
+    internal Vector3 GlassmakerDrop { get; private set; }
 
     /// <summary>
     /// The lamps in the bag and on the ground; it hangs from the village, which stands at the origin, so a lamp's position
@@ -40,6 +50,8 @@ public partial class Village
         AddChild(Glassmaker);
         Glassmaker.Position = ground.At(spot.X, spot.Z);
         Glassmaker.Rotation = Square.Transform.Basis.GetEuler();
+        var drop = Square.Transform * new Vector3(GlassmakerDropSpot.X, 0, GlassmakerDropSpot.Y);
+        GlassmakerDrop = ground.At(drop.X, drop.Z);
 
         // A worktable beside him with a candle and a lamp that shine at night.
         var table = SquareProp("GlassmakerTable", 9.9f, -2.7f);

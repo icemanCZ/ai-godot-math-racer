@@ -104,6 +104,7 @@ public partial class Game
                         or Departure.Zoo
                         or Departure.House
                         or Departure.Missing
+                        or Departure.Glassmaker
                     ? quiz.DepartureState
                     : GameState.Title,
             },

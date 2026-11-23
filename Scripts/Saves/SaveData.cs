@@ -347,7 +347,7 @@ public sealed class SavedTrip
     /// <summary>One of <see cref="TripKinds"/>.</summary>
     public string Kind { get; set; } = "";
 
-    /// <summary>The project, works, house or plot, by its index among those of its kind.</summary>
+    /// <summary>The project, works, house or plot, by its index among those of its kind; 0 for a target that is alone.</summary>
     public int Index { get; set; }
 
     /// <summary>Whether the load is already on the trailer.</summary>

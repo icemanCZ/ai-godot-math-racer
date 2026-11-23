@@ -24,6 +24,9 @@ public partial class Game
         Playground,
         Railway,
         Zoo,
+
+        /// <summary>Glasses from the glassworks for the lamp maker on the square.</summary>
+        Glassmaker,
     }
 
     /// <summary>Asks the quiz that must be solved before a trip starts; the trip continues in StartDeparture.</summary>

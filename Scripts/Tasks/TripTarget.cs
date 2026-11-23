@@ -23,12 +23,15 @@ internal static class TripKinds
     /// <summary>Wheat from the farmer's field to the finished mill, which grinds it into flour for the bakery.</summary>
     public const string Mill = "mill";
 
+    /// <summary>Glasses from the glassworks to the lamp maker on the village square, who blows lamps from them.</summary>
+    public const string Glassmaker = "glassmaker";
+
     public static bool IsKnown(string? kind) =>
-        kind is Build or Supply or House or Plot or Playground or Railway or Zoo or Mill;
+        kind is Build or Supply or House or Plot or Playground or Railway or Zoo or Mill or Glassmaker;
 }
 
 /// <summary>
-/// What a trailer trip is for: a building, a works, a house or a building plot. The trip takes everything it needs
+/// What a trailer trip is for: a building, a works, a house, a building plot or the lamp maker. The trip takes everything it needs
 /// from the target (the load, where it is tipped out, who sends it), and the target decides what the finished
 /// delivery does, so a new kind of trip is a new target and nothing else.
 /// </summary>
@@ -37,7 +40,7 @@ internal interface ITripTarget
     /// <summary>One of <see cref="TripKinds"/>.</summary>
     string Kind { get; }
 
-    /// <summary>The index of the target among those of its kind: project, works, house or plot.</summary>
+    /// <summary>The index of the target among those of its kind: project, works, house or plot; 0 where there is one.</summary>
     int Index { get; }
 
     /// <summary>The character who sends the trailer and thanks the driver.</summary>
@@ -64,7 +67,10 @@ internal interface ITripTarget
     void FinishDump(Game game, HaulTrip trip);
 }
 
-/// <summary>Planks or bricks that a village resident wants for the next improvement of their house.</summary>
+/// <summary>
+/// Planks or bricks that a village resident wants for the next improvement of their house, or the glasses and then the
+/// bread that a finished house asks for.
+/// </summary>
 internal sealed class HouseTripTarget : ITripTarget
 {
     private readonly World world;
@@ -95,4 +101,32 @@ internal sealed class HouseTripTarget : ITripTarget
     public bool DropsAtContractor(int step) => true;
 
     public void FinishDump(Game game, HaulTrip trip) => game.FinishHouseDump(trip);
+}
+
+/// <summary>
+/// Glasses for the lamp maker on the village square: he blows candles and lamps from them, so he takes them again and
+/// again, and the glassworks always has someone to make glasses for.
+/// </summary>
+internal sealed class GlassmakerTripTarget : ITripTarget
+{
+    private readonly World world;
+
+    public GlassmakerTripTarget(World world) => this.world = world;
+
+    public string Kind => TripKinds.Glassmaker;
+    public int Index => 0;
+    public Character Contractor => world.Village.Glassmaker;
+    public int NextStep => 0;
+
+    public HaulLoad LoadFor(int step) => HaulLoad.Glass;
+
+    public Vector3 DropFor(int step) => world.Village.GlassmakerDrop;
+
+    public Vector3 DropRoadFor(int step) => world.Village.GlassmakerDrop;
+
+    public string CounterFor(int step) => "";
+
+    public bool DropsAtContractor(int step) => true;
+
+    public void FinishDump(Game game, HaulTrip trip) => game.FinishGlassmakerDump(trip);
 }

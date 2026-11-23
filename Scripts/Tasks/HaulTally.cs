@@ -5,15 +5,15 @@ namespace MathRacer.Tasks;
 
 /// <summary>
 /// How many loads the player has hauled so far. The pets of the raw-material sources and of the works are earned by
-/// these counts: every raw load that is tipped out (at a works or at a building) counts once for its material, and every
-/// load a works takes in counts once for that works. Holds no scene nodes.
+/// these counts: every raw load that is tipped out (at a works, at the mill or at a building) counts once for its
+/// material, and every load a works takes in counts once for that works. Holds no scene nodes.
 /// </summary>
 internal sealed class HaulTally
 {
     /// <summary>Raw materials are the first four <see cref="HaulLoad"/> values: stones, soil, sand and logs.</summary>
     public const int RawKinds = 4;
 
-    /// <summary>The sawmill, the brickworks, the gravel works and the glassworks.</summary>
+    /// <summary>The sawmill, the brickworks, the gravel works and the glassworks; the bakery is counted in <see cref="Baked"/>.</summary>
     public const int WorksKinds = 4;
 
     /// <summary>A count stops here, which is also what a save may hold.</summary>
@@ -23,8 +23,9 @@ internal sealed class HaulTally
     private readonly int[] works = new int[WorksKinds];
 
     /// <summary>
-    /// The wheat tipped out at the bakery and the loads the bakery took in. They are counted apart from the arrays above,
-    /// whose length a saved game has always had, and a save from before the bakery has zeros.
+    /// The wheat tipped out at the mill (at the bakery in a save from before the mill ground flour, and in a valley
+    /// without the mill) and the loads the bakery took in. They are counted apart from the arrays above, whose length a
+    /// saved game has always had, and a save from before the bakery has zeros.
     /// </summary>
     public int Wheat { get; private set; }
 

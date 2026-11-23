@@ -35,7 +35,7 @@ internal sealed record WorksSpec(
     string Hat
 )
 {
-    /// <summary>The works' own task-marker icon: a saw blade, a brick wall or a hopper of gravel.</summary>
+    /// <summary>The works' own task-marker icon: a saw blade, a brick wall, a hopper of gravel, a glass or a loaf.</summary>
     public string Icon =>
         Product switch
         {
@@ -135,7 +135,10 @@ internal static class WorksCatalog
             _ => "glass",
         };
 
-    /// <summary>The works that processes a raw load: logs go to the sawmill, soil to the brickworks, stones to the gravel works.</summary>
+    /// <summary>
+    /// The works whose spec takes a load: logs go to the sawmill, soil to the brickworks, stones to the gravel works, sand
+    /// to the glassworks and flour to the bakery; -1 for any other load (the wheat goes to the mill, see <c>Works.Input</c>).
+    /// </summary>
     public static int ForInput(HaulLoad load) => Array.FindIndex(All, spec => spec.Input == load);
 }
 
@@ -219,7 +222,7 @@ internal static class SourceCatalog
 internal sealed record WorksSite(int Index, Vector3 Position, Vector3 Road, Vector3 Inward, Vector3 WorkerSpot);
 
 /// <summary>
-/// The sawmill, brickworks, gravel works or glassworks. Every load tipped on its ring is turned into
+/// The sawmill, brickworks, gravel works, glassworks or bakery. Every load tipped on its ring is turned into
 /// <see cref="PerLoad"/> units of goods. The stock stands on the yard beside the ring, one stack or heap
 /// per unit, so the player can see how much is stored. Local +Z points away from the road.
 /// </summary>

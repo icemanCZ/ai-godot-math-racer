@@ -248,6 +248,16 @@ internal static class Texts
     public const string SebratLampu = "Sebrat";
     public const string PostavitLampu = "Postavit lampu";
 
+    // Game.Glassmaker: the glasses the lamp maker blows his lamps from
+    public const string SklenickyNaNoveLampy = "Skleničky ze sklárny na nové lampy";
+    public const string ZaprahnoutVozikProSklenicky = "Zapřáhnout vozík pro skleničky";
+    public const string PrivezesMiSklenickyZeSklarny = "Ze skleniček foukám svíčky a lampy. Přivezeš mi je ze sklárny?";
+    public const string SklarnaNemaSklenickyPoslusTePro = "Ve sklárně skleničky došly. Pošlu tě pro písek!";
+    public const string TedOdvezSklenickyNaNaves = "Teď odvez skleničky na náves a vysyp je do žlutého kruhu u kašny.";
+    public const string ZTvychSklenicekVyfouknuLampy = "Děkuju! Z tvých skleniček vyfouknu nové lampy.";
+
+    public static string GlassmakerPaid(int coins) => $"Skleničky pro světlaře!  +{coins}";
+
     public static string LampsBag(int carried, int max) => $"Ve vaku: {carried} / {max}";
 
     public static string LampsOut(int placed, int max) => $"Venku: {placed} / {max}";

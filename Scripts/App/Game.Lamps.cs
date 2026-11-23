@@ -7,7 +7,8 @@ namespace MathRacer.App;
 
 /// <summary>
 /// The glass lamp maker on the village square gives out candles and lamps for nothing: talking to him opens a card for
-/// each kind and a lamp that is taken goes into the bag. The talk button (E, space, A) takes a standing lamp up when
+/// each kind and a lamp that is taken goes into the bag. The glasses he blows them from are brought from the glassworks
+/// (<c>Game.Glassmaker.cs</c>). The talk button (E, space, A) takes a standing lamp up when
 /// the car is close to it and otherwise, where nothing else wants it, puts the next lamp down beside the car, wherever
 /// the ground is dry. At night every lamp shines. Saved as <c>SaveData.Lamps</c>.
 /// </summary>
@@ -30,14 +31,26 @@ public partial class Game
         ClearChallenge();
         EnterInteraction(GameState.GlassmakerShop, maker);
         ShowGlassmaker();
-        Speak(Lamps.Carried.Count == 0 && Lamps.PlacedCount == 0 ? maker.Greeting : Texts.JakeSvicticeSiVyberes, maker);
+        Speak(GlassmakerSpeech(maker), maker);
     }
 
     private void ShowGlassmaker()
     {
         if (nearby?.Role is not GlassmakerRole)
             return;
-        ui.GlassmakerShop(nearby, Lamps.Carried, Lamps.PlacedCount);
+        // The glasses: the trip under way (or the sand being fetched for them), the button that sends the trailer for
+        // them or, while the glassworks has none, the way to the sand.
+        var glassworks = world.Glassworks;
+        var fetching = Haul is { Works: { } supply } && supply == glassworks ? Haul : null;
+        ui.GlassmakerShop(
+            nearby,
+            Lamps.Carried,
+            Lamps.PlacedCount,
+            glassworks != null,
+            GlassmakerTrip ?? fetching,
+            Haul == null && GlassForGlassmaker,
+            Haul == null ? GlassmakerMissingGlass : null
+        );
     }
 
     /// <summary>Takes a lamp of this kind out of the open shop into the bag, if the bag has room.</summary>

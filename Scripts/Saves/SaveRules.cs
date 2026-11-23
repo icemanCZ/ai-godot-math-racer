@@ -221,7 +221,9 @@ internal static class SaveRules
                 || data.Quiz.DepartureState != GameState.RailwayStatus,
             Game.Departure.Zoo => !World.IsZooKeeper(data.Nearby) || data.Quiz.DepartureState != GameState.ZooStatus,
             Game.Departure.House => !resident || data.Quiz.DepartureState != GameState.HouseMaterialOffer,
-            // The works' missing goods are asked for from a builder, a newcomer or a resident.
+            Game.Departure.Glassmaker => !World.IsGlassmaker(data.Nearby)
+                || data.Quiz.DepartureState != GameState.GlassmakerShop,
+            // The works' missing goods are asked for from a builder, a newcomer, a resident or the lamp maker.
             Game.Departure.Missing => data.Quiz.DepartureState switch
             {
                 GameState.BuildStatus => !World.IsBuilder(data.Nearby),
@@ -230,6 +232,7 @@ internal static class SaveRules
                 GameState.RailwayStatus => !World.IsStationHelper(data.Nearby),
                 GameState.ZooStatus => !World.IsZooKeeper(data.Nearby),
                 GameState.HouseMaterialOffer => !resident,
+                GameState.GlassmakerShop => !World.IsGlassmaker(data.Nearby),
                 // The baker of the village shop, whose bakery has run out of bread for his order.
                 GameState.TradeStatus => data.Nearby != World.FirstTraderId,
                 _ => true,
@@ -538,6 +541,8 @@ internal static class SaveRules
             }
             case TripKinds.Mill when trip.Index == 0:
                 return (HaulLoad.Wheat, World.AskerIds(HaulLoad.Wheat, 0), trip.Loaded);
+            case TripKinds.Glassmaker when trip.Index == 0:
+                return (HaulLoad.Glass, World.AskerIds(HaulLoad.Glass, 0), trip.Loaded);
             case TripKinds.House when SavedTask(data, trip.Index) is { } kind && Village.MaterialOf(kind) is { } goods:
                 return (goods, World.AskerIds(goods, 0), trip.Loaded);
             case TripKinds.House when IsGlassOrder(data, trip.Index):
@@ -624,8 +629,8 @@ internal static class SaveRules
 
     /// <summary>
     /// A trailer trip fetches the next delivery of its target, so that target must exist and be unfinished: a
-    /// building or plot with deliveries left, a works that is not full, a house that asks for planks or bricks. It
-    /// never runs together with an expedition.
+    /// building or plot with deliveries left, a works that is not full, a house that asks for planks, bricks, glasses or
+    /// bread, the mill with room for wheat or the lamp maker. It never runs together with an expedition.
     /// </summary>
     private static bool HasInvalidTrip(SaveData data)
     {
@@ -656,6 +661,8 @@ internal static class SaveRules
             TripKinds.Zoo => trip.Index != 0 || data.Zoo.Stage >= ZooPlans.Trips,
             // Wheat goes to the mill once it is finished, until its flour fills the yard.
             TripKinds.Mill => trip.Index != 0 || !MillFinished(data) || data.Buildings.FlourStock >= FlourMill.Capacity,
+            // The lamp maker takes glasses again and again: there is only the one of him.
+            TripKinds.Glassmaker => trip.Index != 0,
             _ => true,
         };
     }

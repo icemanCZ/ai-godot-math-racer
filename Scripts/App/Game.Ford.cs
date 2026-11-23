@@ -335,6 +335,7 @@ public partial class Game
             TripKinds.Railway when saved.Index == 0 && world.Railway is { Complete: false } railway => railway,
             TripKinds.Zoo when saved.Index == 0 && world.Zoo is { Complete: false } zoo => zoo,
             TripKinds.Mill when saved.Index == 0 && world.FlourMill is { Grinding: true, Full: false } mill => mill,
+            TripKinds.Glassmaker when saved.Index == 0 && world.Glassworks != null => new GlassmakerTripTarget(world),
             TripKinds.House
                 when saved.Index >= 0
                     && saved.Index < world.Village.Residents.Count
@@ -361,6 +362,7 @@ public partial class Game
             { Loaded: true, Playground: not null } => Texts.TedOdvezNakladNaHristeA,
             { Loaded: true, Railway: not null } => Texts.TedOdvezNakladNaNadraziA,
             { Loaded: true, Zoo: not null } => Texts.TedOdvezNakladDoZooA,
+            { Loaded: true, ForGlassmaker: true } => Texts.TedOdvezSklenickyNaNaves,
             { Loaded: true } => Texts.TedOdvezNakladDoZlutehoKruhu,
             _ => trip.Load switch
             {

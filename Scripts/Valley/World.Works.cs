@@ -66,7 +66,10 @@ public partial class World
     /// <summary>Where the glassworks stands, once planned. Its footprint and the way to it are cleared of plants.</summary>
     private WorksSite? glassSite;
 
-    /// <summary>The works that makes a product: one of the three of <see cref="Industry"/> or the glassworks; null if absent.</summary>
+    /// <summary>
+    /// The works that makes a product: one of the three of <see cref="Industry"/>, the glassworks or the bakery; null if
+    /// absent.
+    /// </summary>
     internal Works? WorksFor(Product product) =>
         product == Product.Glass ? Glassworks
         : product == Product.Bread ? Bakery
@@ -82,7 +85,7 @@ public partial class World
         : product == Product.Bread ? BakeryId
         : FirstWorksId + (int)product;
 
-    /// <summary>The three works and the glassworks, where the valley has them.</summary>
+    /// <summary>The three works, the glassworks and the bakery, where the valley has them.</summary>
     internal IEnumerable<Works> AllWorks =>
         Industry
             .Concat(Glassworks == null ? Array.Empty<Works>() : new[] { Glassworks })

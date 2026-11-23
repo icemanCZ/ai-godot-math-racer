@@ -11,10 +11,10 @@ using MathRacer.Vehicles;
 namespace MathRacer.Tasks;
 
 /// <summary>
-/// One trailer trip: drive to a source, answer the loading question, then tip the load out at the drop
-/// point. The contractor (the beaver, a works' worker, a resident or a newcomer) asks the question and thanks the
-/// driver. What the trip is for, and what the finished delivery does, comes from its <see cref="Target"/>. Road
-/// arrows and the target ring belong to this node.
+/// One trailer trip: drive to a source, answer the loading question, then tip the load out at the drop point. The
+/// contractor (a builder, a works' worker, a resident, a newcomer or the lamp maker) sends the trip and thanks the
+/// driver; whoever loads the cargo asks the question (<see cref="Asker"/>). What the trip is for, and what the finished
+/// delivery does, comes from its <see cref="Target"/>. Road arrows and the target ring belong to this node.
 /// </summary>
 public sealed partial class HaulTrip : Node3D
 {
@@ -58,6 +58,7 @@ public sealed partial class HaulTrip : Node3D
     internal Zoo? Zoo => Target as Zoo;
     internal Works? Works => Target as Works;
     internal int House => Target is HouseTripTarget house ? house.House : -1;
+    internal bool ForGlassmaker => Target is GlassmakerTripTarget;
 
     /// <summary>The delivery of a building goes to the far bank of the river.</summary>
     internal bool FarBank => Project is { } project && project.Steps[Step].FarBank;
