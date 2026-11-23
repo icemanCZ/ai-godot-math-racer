@@ -84,4 +84,7 @@ internal static class ActorIds
 
     /// <summary>The pirate captain on the village square, who sends the player to dig up a treasure. Every valley has her.</summary>
     public const int Treasurer = ZooKeeper + 1;
+
+    /// <summary>The hunter at his pen at the edge of the village, who sends the player out with a net.</summary>
+    public const int Hunter = Treasurer + 1;
 }

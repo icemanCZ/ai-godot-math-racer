@@ -73,6 +73,7 @@ public partial class DrivingEvents : Node3D
                         or StationRole
                         or ZooRole
                         or TreasureRole
+                        or HunterRole
                     )
             )
             .ToArray();

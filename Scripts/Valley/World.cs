@@ -88,6 +88,7 @@ public partial class World : Node3D
         PlaceAnimalsBesideRoads();
         SpecialPickupSpots = CreateSpecialPickupSpots();
         PlanFord(river);
+        PlanHunter();
         AddChild(Plants);
         // The actors stand still while the plants are placed, so their positions are read once.
         var witch = Witch.Position;
@@ -104,7 +105,13 @@ public partial class World : Node3D
                 || p.DistanceSquaredTo(sorcerer) < WorldTuning.SorcererTreeClearing * WorldTuning.SorcererTreeClearing
                 || IsPickupApproachReserved(p)
                 || IsHaulReserved(p),
-            p => InGlassworksZone(p) || InFarmZone(p) || InBakeryZone(p) || InPlaygroundZone(p) || InZooZone(p)
+            p =>
+                InGlassworksZone(p)
+                || InFarmZone(p)
+                || InBakeryZone(p)
+                || InPlaygroundZone(p)
+                || InZooZone(p)
+                || InHunterZone(p)
         );
         CreateHiddenFriends();
         CreateWorldPets();
@@ -114,6 +121,7 @@ public partial class World : Node3D
         Register(TreasurerId, Village.Treasurer);
         BuildRailway();
         BuildZoo();
+        BuildHunter();
         CreateTreasure();
         CreateFireflies();
         Village.CreateLamps();
@@ -151,6 +159,7 @@ public partial class World : Node3D
                     or Valley.Tracks
                     or Wayside
                     or FireflyField
+                    or HuntField
                     or Character
             )
                 continue;

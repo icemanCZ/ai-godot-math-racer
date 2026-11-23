@@ -90,6 +90,12 @@ public partial class Game
             case UiIntent.StartTreasureHunt:
                 BeginTreasureHunt();
                 break;
+            case UiIntent.StartHunt:
+                BeginHunt();
+                break;
+            case UiIntent.HutTrip:
+                BeginHutTrip();
+                break;
             case UiIntent.StartFireflyHunt:
                 BeginFireflyHunt();
                 break;

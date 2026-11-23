@@ -67,6 +67,7 @@ public partial class ContentChecks : Node
             Need(world.ExtraSourceWorkers.All(worker => worker != null), "the workers of the second sites");
             Need(world.Projects.Length == BuildPlans.Count, "the bridge, the mill, the tower and the jetty");
             Need(world.Projects.All(project => project?.Builder != null), "a builder for every building");
+            Need(world.Hunter != null && world.Pen != null, "the hunter and his pen");
             Need(
                 world.Duck != null && world.WorldPets.Count == WorldPetsExpected,
                 $"the pets of the world ({world.WorldPets.Count} of {WorldPetsExpected})"
@@ -89,8 +90,8 @@ public partial class ContentChecks : Node
 
     /// <summary>
     /// The duck, five raw materials (wheat too), every works, the bridge, the mill, the tower, the ducklings, a pet per
-    /// hidden kind, the little stationmaster of the railway and the baby panda of the zoo.
+    /// hidden kind, the little stationmaster of the railway, the baby panda of the zoo and the hunter's fawn.
     /// </summary>
     private static readonly int WorldPetsExpected =
-        1 + 5 + WorksCatalog.Total + 3 + WorldPetCatalog.DucklingDeliveries.Length + HiddenFriends.KindCount + 2;
+        1 + 5 + WorksCatalog.Total + 3 + WorldPetCatalog.DucklingDeliveries.Length + HiddenFriends.KindCount + 3;
 }

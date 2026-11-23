@@ -27,6 +27,7 @@ public partial class Game
             [Departure.House] = BeginHouseTrip,
             [Departure.Missing] = BeginMissingSupply,
             [Departure.Glassmaker] = BeginGlassmakerTrip,
+            [Departure.Hunter] = BeginHutTrip,
         };
 
     /// <summary>Starts the trailer trip of a target after its quiz, the speaker being its contractor.</summary>

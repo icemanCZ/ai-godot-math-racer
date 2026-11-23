@@ -54,6 +54,8 @@ internal static class WorldPetCatalog
 
     public static readonly WorldPetSpec PandaCub = new(CollectorPetKind.PandaCub, "Pandička Bambulka", "dostavěná zoo");
 
+    public static readonly WorldPetSpec Fawn = new(CollectorPetKind.Fawn, "Koloušek Puntík", "8 chycených zvířátek");
+
     public static readonly WorldPetSpec Bridge = new(CollectorPetKind.Bridge, "Mostíček", "dostavěný most");
     public static readonly WorldPetSpec Mill = new(CollectorPetKind.Mill, "Mlýnek", "dostavěný mlýn");
     public static readonly WorldPetSpec Tower = new(CollectorPetKind.Tower, "Věžička", "dostavěnou rozhlednu");
@@ -216,6 +218,9 @@ internal sealed partial class CollectorPet
                 break;
             case CollectorPetKind.PandaCub:
                 BuildPandaCub();
+                break;
+            case CollectorPetKind.Fawn:
+                BuildFawn();
                 break;
             case CollectorPetKind.Bridge:
                 BuildBridge();
@@ -540,6 +545,32 @@ internal sealed partial class CollectorPet
         Ball(new(.4f, .78f, .44f), new(.16f, .04f, .08f), "7ccf7a");
         Eyes(.13f, .86f, .31f);
         Smile(.72f, .34f, .06f);
+    }
+
+    private void BuildFawn()
+    {
+        // A little fawn: a warm brown body with white spots, long legs, a big head with large ears, a white muzzle and a
+        // short white tail.
+        Ball(new(0, .62f, -.05f), new(.44f, .38f, .66f), "c98a52");
+        foreach (
+            var (x, y, z) in new[] { (.14f, .76f, .1f), (-.12f, .78f, -.08f), (.1f, .74f, -.24f), (-.15f, .72f, .14f) }
+        )
+            Ball(new(x, y, z), new(.07f, .04f, .07f), "fff6e6");
+        foreach (int side in new[] { -1, 1 })
+        {
+            Foot(new(side * .14f, .46f, .2f), .44f, .09f, "b07443", side);
+            Foot(new(side * .14f, .46f, -.28f), .44f, .09f, "b07443", -side);
+            var ear = Ball(new(side * .2f, 1.18f, .22f), new(.1f, .24f, .06f), "c98a52");
+            ear.RotateZ(side * -.75f);
+            Ball(new(side * .2f, 1.18f, .245f), new(.05f, .16f, .02f), "f2c4b8").RotateZ(side * -.75f);
+        }
+        Ball(new(0, .9f, .24f), new(.2f, .3f, .2f), "c98a52");
+        Ball(new(0, 1.06f, .3f), new(.4f, .36f, .38f), "c98a52");
+        Ball(new(0, .98f, .48f), new(.2f, .14f, .14f), "fff6e6");
+        Ball(new(0, 1.01f, .55f), new(.07f, .05f, .04f), "34404a");
+        Ball(new(0, .7f, -.4f), new(.1f, .12f, .08f), "fff6e6");
+        Eyes(.09f, 1.11f, .47f);
+        Smile(.94f, .545f, .05f);
     }
 
     private void BuildMill()

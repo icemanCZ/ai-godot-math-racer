@@ -48,6 +48,7 @@ public enum GameState
     ZooStatus = 26,
     TreasureStatus = 27,
     FireflyStatus = 28,
+    HunterStatus = 29,
 }
 
 public partial class Game : Node3D
@@ -126,6 +127,7 @@ public partial class Game : Node3D
         Weather.Setup(world, vehicle, camera);
         SetupFlutters();
         world.Sparks.Setup(vehicle);
+        world.HuntGrounds.Setup(vehicle);
         world.AddChild(world.Grass);
         world.Grass.Setup(world, vehicle);
         SetupUi();
@@ -275,6 +277,8 @@ public partial class Game : Node3D
         }
         if (CollectHidden())
             return;
+        if (LoadCatch() || PickUpNet())
+            return;
         if (nearby == null && InteractWithPostcards())
             return;
         if (InteractWithEvent())
@@ -291,6 +295,8 @@ public partial class Game : Node3D
             BeginDeliveryQuestion();
         else if (nearby != null)
             OpenChallenge(nearby);
+        else if (NetThrowAvailable)
+            ThrowNet();
         else if (Lamps.Carried.Count > 0)
             PutDownLamp();
     }
@@ -666,6 +672,12 @@ public partial class Game : Node3D
             ui.TreasureDigHint();
         else if (HiddenNearby is { } friend)
             ui.HiddenFriendHint(Texts.HiddenTake(friend.Kind));
+        else if (CatchLoadAvailable && HuntGrounds.WrappedKind is { } caught)
+            ui.HiddenFriendHint(Texts.HuntLoad(caught));
+        else if (NetPickupAvailable)
+            ui.HiddenFriendHint(Texts.HuntPickUp);
+        else if (nearby == null && NetThrowAvailable)
+            ui.HiddenFriendHint(Texts.HuntThrow);
         else if (LampPickupAvailable && LampNearby() is { } lamp)
             ui.LampPickupHint(GlassLamps.Find(Lamps.KindAt(lamp))?.Name ?? "");
         else if (LampPickupAvailable && Lamps.Carried.Count > 0)

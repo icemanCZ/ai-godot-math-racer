@@ -66,6 +66,9 @@ public static class Art
                 "flag" => "M30 118 V14 M30 20 H104 L86 44 L104 68 H30",
                 // The glass lamp maker: a lamp with a tulip shade on a pole.
                 "lamp" => "M66 118 V56 M44 118 H88 M38 30 Q38 12 66 12 Q94 12 94 30 L82 56 H50 Z M54 30 H78",
+                // The hunter, who sends the player out to catch animals: a landing net on a pole.
+                "hunter" =>
+                    "M20 114 L70 62 M62 44 A26 26 0 1 1 114 44 A26 26 0 1 1 62 44 Z M70 28 L106 60 M70 60 L106 28 M88 18 V70 M62 44 H114",
                 // The pirate captain, who hides treasures: a chest with a round lid and a lock.
                 "treasure" =>
                     "M18 58 Q18 28 66 28 Q114 28 114 58 Z M18 58 V108 H114 V58 M18 80 H114 M56 70 H76 V92 H56 Z",

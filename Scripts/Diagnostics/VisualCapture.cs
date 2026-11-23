@@ -556,6 +556,46 @@ public partial class VisualCapture : Node
                 camera.LookAt(railway.Drop + inward * 8 + Vector3.Up * 0);
             }
         }
+        else if (Game.ParseHunterView(view) is { } && world.HunterPlace is { } hutSite)
+        {
+            // The hut in the back corner of the pen, seen from inside the gate and a little above.
+            camera.SetProcess(false);
+            camera.Position = hutSite.Local(1.5f, 3) + Vector3.Up * 7;
+            camera.LookAt(hutSite.Local(-7.8f, 17.1f) + Vector3.Up * 1.5f);
+        }
+        else if (view == "hunter-pen" && world.HunterPlace is { } penSite)
+        {
+            // The whole pen from the road side and from above: the hunter, the gate, the animals, the hut and the hay rack.
+            camera.SetProcess(false);
+            camera.Position = penSite.Local(16, -12) + Vector3.Up * 16;
+            camera.LookAt(penSite.Local(-2, 10));
+        }
+        else if (view == "hunter-close" && world.Hunter is { } hunterClose)
+        {
+            // The hunter from the front and a little above, with his hat, waistcoat and landing net.
+            camera.SetProcess(false);
+            camera.GlobalPosition = hunterClose.ToGlobal(new Vector3(1.8f, 2.4f, 4.2f));
+            camera.LookAt(hunterClose.ToGlobal(new Vector3(0, 1.7f, 0)));
+        }
+        else if (view is "hunt" or "hunt-carry")
+        {
+            // From behind the car and above: the animals ahead of it with the net bundle on the roof, or the fox on the roof
+            // on its way to the pen.
+            camera.SetProcess(false);
+            var forward = -car.GlobalBasis.Z;
+            forward.Y = 0;
+            forward = forward.Normalized();
+            camera.GlobalPosition = car.GlobalPosition - forward * 7 + Vector3.Up * (view == "hunt" ? 3.6f : 5.5f);
+            camera.LookAt(car.GlobalPosition + forward * (view == "hunt" ? 15 : 10));
+        }
+        else if (view == "hunt-net")
+        {
+            // The caught animal in its net beside the car.
+            camera.SetProcess(false);
+            var spot = world.HuntGrounds.NetSpot ?? car.GlobalPosition;
+            camera.GlobalPosition = spot + new Vector3(-3.5f, 2.6f, 4.5f);
+            camera.LookAt(spot + Vector3.Up * .5f);
+        }
         else if (Game.ParseZooView(view) is { } && world.Zoo is { } zoo)
         {
             // The whole zoo from the road side and from above; the close view looks along the path from the gate.

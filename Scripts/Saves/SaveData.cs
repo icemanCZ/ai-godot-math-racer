@@ -74,6 +74,24 @@ public sealed class SaveData
 
     /// <summary>The hour of the valley's day, so a game goes on at the same time of day. Added after version 5 began.</summary>
     public DaySave Day { get; set; } = new();
+
+    /// <summary>The hunter's pen and the hunt under way. Added after version 5 began.</summary>
+    public HuntSave Hunt { get; set; } = new();
+}
+
+/// <summary>
+/// The animals brought to the hunter's pen, by kind (<see cref="AnimalHunt.Prey"/>, saved by name), whether he has sent the
+/// player out with a net, and the animal caught and loaded on the car ("" for none). Where the net and the free animals are
+/// is not saved: after a load the net is on the car and the animals run in a new meadow.
+/// </summary>
+public sealed class HuntSave
+{
+    public string[] Penned { get; set; } = Array.Empty<string>();
+    public bool Active { get; set; }
+    public string Carrying { get; set; } = "";
+
+    /// <summary>The deliveries the hunter's hut has had, 0 to <see cref="HutPlans.Trips"/>; he sends no one hunting before.</summary>
+    public int Hut { get; set; }
 }
 
 /// <summary>

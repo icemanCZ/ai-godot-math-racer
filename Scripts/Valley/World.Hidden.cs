@@ -84,6 +84,7 @@ public partial class World
             || InBakeryZone(p)
             || InPlaygroundZone(p)
             || InZooZone(p)
+            || InHunterZone(p)
             || FlatDistance(p, Tower.Position) < 18
         )
             return false;

@@ -428,6 +428,84 @@ public partial class Game
             var parked = zoo.Drop - zoo.Site.Inward * (view is "zoo-close" or "zoo-pet" ? 22 : 6);
             vehicle.SetPose(world.Ground.At(parked.X, parked.Z, .15f), 0);
         }
+        if (view.StartsWith("hunter-") && world.Pen is { } pen && world.Hunter is { } hunter)
+        {
+            // The hut with S of its four deliveries, the finished pen full of animals, the hunter close up or his panel.
+            var site = pen.Site;
+            pen.SetStage(ParseHunterView(view) ?? (view == "hunter-panel" ? 1 : HutPlans.Trips));
+            if (view is "hunter-pen" or "hunter-close")
+            {
+                Hunt.Restore(new[] { "Rabbit", "Fox", "Deer", "Rabbit", "Deer", "Fox", "Rabbit", "Deer" }, false, "");
+                pen.SetAnimals(Hunt.Penned);
+                for (int i = 0; i < 40; i++)
+                    pen.Tick(.1f, site.Gate, true);
+            }
+            var inward = site.Inward;
+            vehicle.SetPose(
+                world.Ground.At(site.Drop.X, site.Drop.Z, .15f),
+                Mathf.Atan2(-inward.X, -inward.Z) + (view == "hunter-panel" ? Mathf.Pi : 0)
+            );
+            if (view == "hunter-panel")
+            {
+                foreach (var works in world.Industry)
+                    works.SetStock(Works.Capacity);
+                OpenHunter(hunter);
+            }
+        }
+        if (view is "hunt" or "hunt-net" or "hunt-carry" && world.Pen is { } huntPen && world.Hunter is { } huntHunter)
+        {
+            // A hunt under way: the animals ahead of the car, the net come down on one of them, or one on the car's roof.
+            huntPen.SetStage(HutPlans.Trips);
+            Hunt.Restore(new[] { "Rabbit", "Fox" }, true, view == "hunt-carry" ? "Fox" : "");
+            huntPen.SetAnimals(Hunt.Penned);
+            var ahead = new Vector3(1, 0, .3f).Normalized();
+            var side = ahead.Cross(Vector3.Up);
+            float heading = Mathf.Atan2(-ahead.X, -ahead.Z);
+            if (view == "hunt-carry")
+            {
+                HuntGrounds.Clear();
+                HuntGrounds.Carry(WildKind.Fox, false);
+                var road = huntPen.Site.Road;
+                var gate = huntPen.Site.Gate;
+                var towards = gate - road;
+                towards.Y = 0;
+                towards = towards.Normalized();
+                var from = road - towards * 6;
+                vehicle.SetPose(world.Ground.At(from.X, from.Z, .15f), Mathf.Atan2(-towards.X, -towards.Z));
+            }
+            else
+            {
+                HuntGrounds.Begin(huntHunter.Position, Hunt.Caught);
+                var target = HuntGrounds.PositionOf(0);
+                HuntGrounds.Place(0, world.Ground.At(target.X, target.Z));
+                if (view == "hunt")
+                {
+                    var second = target + side * 4 + ahead * 3;
+                    var third = target - side * 5 + ahead * 6;
+                    HuntGrounds.Place(1, world.Ground.At(second.X, second.Z));
+                    HuntGrounds.Place(2, world.Ground.At(third.X, third.Z));
+                    var from = target - ahead * 15;
+                    vehicle.SetPose(world.Ground.At(from.X, from.Z, .15f), heading);
+                }
+                else
+                {
+                    for (int i = 1; i < HuntGrounds.HerdCount; i++)
+                    {
+                        var aside = target + side * (14 + i * 4) + ahead * 10;
+                        HuntGrounds.Place(i, world.Ground.At(aside.X, aside.Z));
+                    }
+                    var from = target - ahead * 14;
+                    vehicle.SetPose(world.Ground.At(from.X, from.Z, .15f), heading);
+                    HuntGrounds.Throw();
+                    for (int i = 0; i < 10; i++)
+                        HuntGrounds.Tick(.1f, true);
+                    // The car has driven up to its catch.
+                    var caught = HuntGrounds.NetSpot ?? target;
+                    var near = caught - ahead * 6 + side * 2;
+                    vehicle.SetPose(world.Ground.At(near.X, near.Z, .15f), heading);
+                }
+            }
+        }
         if (view is "mayor" or "mayor-shop" or "mayor-town" or "mayor-house" or "mayor-close")
         {
             world.Village.RestoreDecorations(Settlement.TownDecorations.All.Select(d => d.Id));
@@ -594,6 +672,14 @@ public partial class Game
         && stage is >= 0 and <= ZooPlans.Trips
             ? stage
         : null;
+
+    /// <summary>"hunter-S" shows the hunter's hut with S of its four deliveries made.</summary>
+    internal static int? ParseHunterView(string view) =>
+        view.StartsWith("hunter-")
+        && int.TryParse(view["hunter-".Length..], out int stage)
+        && stage is >= 0 and <= HutPlans.Trips
+            ? stage
+            : null;
 
     /// <summary>"playground-S" shows the playground with S of its six deliveries made.</summary>
     internal static int? ParsePlaygroundView(string view) =>

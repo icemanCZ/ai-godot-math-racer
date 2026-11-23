@@ -105,6 +105,7 @@ public partial class Game
                         or Departure.House
                         or Departure.Missing
                         or Departure.Glassmaker
+                        or Departure.Hunter
                     ? quiz.DepartureState
                     : GameState.Title,
             },
@@ -167,6 +168,13 @@ public partial class Game
             Zoo = new ZooSave { Stage = world.Zoo?.Stage ?? 0 },
             Treasure = new TreasureSave { Found = treasure.Found, Active = treasure.Active },
             Fireflies = new FirefliesSave { Caught = fireflies.Caught },
+            Hunt = new HuntSave
+            {
+                Penned = Hunt.PennedNames(),
+                Active = Hunt.Active,
+                Carrying = Hunt.CarryingName,
+                Hut = world.Pen?.Stage ?? 0,
+            },
             Day = new DaySave { Clock = Weather.Clock },
             Decorations = new DecorationsSave { Owned = world.Village.OwnedDecorationIds },
             Lamps = new LampsSave
@@ -266,6 +274,8 @@ public partial class Game
         }
         lastCollected = Delivery?.Collected ?? -1;
         ui.DeliveryHud(Delivery);
+        // The pen is counted before the pets are, so the hunter's fawn knows whether it is owned.
+        RestoreHunt(data.Hunt.Penned, data.Hunt.Active, data.Hunt.Carrying, data.Hunt.Hut);
         RestoreBuilds(data);
         UpdateDeliveryGuides();
         interaction.BeforePause = validEncounter ? data.State : GameState.Exploring;

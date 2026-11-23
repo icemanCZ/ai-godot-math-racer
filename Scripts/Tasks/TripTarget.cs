@@ -26,8 +26,11 @@ internal static class TripKinds
     /// <summary>Glasses from the glassworks to the lamp maker on the village square, who blows lamps from them.</summary>
     public const string Glassmaker = "glassmaker";
 
+    /// <summary>Goods from the works for the hunter's hut beside his pen.</summary>
+    public const string Hunter = "hunter";
+
     public static bool IsKnown(string? kind) =>
-        kind is Build or Supply or House or Plot or Playground or Railway or Zoo or Mill or Glassmaker;
+        kind is Build or Supply or House or Plot or Playground or Railway or Zoo or Mill or Glassmaker or Hunter;
 }
 
 /// <summary>

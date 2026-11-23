@@ -4,6 +4,7 @@ using MathRacer.Buildings;
 using MathRacer.Characters;
 using MathRacer.Settlement;
 using MathRacer.Tasks;
+using MathRacer.Valley;
 
 namespace MathRacer.App;
 
@@ -291,6 +292,19 @@ public partial class Game
             )
                 return;
             (works, asker) = (missing, zoo.Helper);
+        }
+        else if (State == GameState.HunterStatus)
+        {
+            // The hunter, too, for the goods of his hut.
+            if (
+                world.Pen is not { Complete: false } pen
+                || nearby is not { Role: HunterRole }
+                || Haul != null
+                || HutStepReady(pen)
+                || GoodsWorks(HutPlans.CargoOf(pen.Stage)) is not { Full: false } missing
+            )
+                return;
+            (works, asker) = (missing, pen.Hunter);
         }
         else if (State == GameState.HouseMaterialOffer)
         {

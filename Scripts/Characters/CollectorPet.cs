@@ -50,6 +50,9 @@ internal enum CollectorPetKind
 
     // The baby panda of the zoo: owned once the zoo is finished.
     PandaCub,
+
+    // The hunter's fawn: owned once eight animals are in his pen.
+    Fawn,
 }
 
 internal sealed partial class CollectorPet : Node3D

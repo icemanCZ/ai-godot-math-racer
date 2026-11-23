@@ -347,7 +347,7 @@ public partial class BakeryChecks : Node
             );
             Rejected(data => data.Village.Baked = new bool[3], "three houses given bread");
             Rejected(data => data.Hauls.Wheat = -1, "a negative count of wheat");
-            Rejected(data => data.Nearby = World.TreasurerId + 1, "a character beyond the last actor");
+            Rejected(data => data.Nearby = World.HunterId + 1, "a character beyond the last actor");
 
             GD.Print("BAKERY_CHECKS_PASSED");
             GetTree().Quit();

@@ -306,6 +306,32 @@ internal sealed class TreasureRole : ActorRole
 }
 
 /// <summary>
+/// The hunter at his pen at the edge of the village. Talking to him opens his panel, where a hunt begins; he hands over a
+/// new net when the old one is lost, and takes the caught animal into the pen. He asks no question.
+/// </summary>
+internal sealed class HunterRole : ActorRole
+{
+    public override string Icon => "hunter";
+    public override bool UsesDeliveryGuide => false;
+
+    public override bool InvitesTalk(bool expeditionActive) => true;
+
+    public override void ShowHint(GameUi ui, Character actor) => ui.HunterHint();
+
+    public override void Open(Game game, Character actor) => game.OpenHunter(actor);
+
+    /// <summary>
+    /// The hunter asks no quiz of his own: the one before a trip for his hut starts the trip elsewhere, and the loading
+    /// questions of the hut come from the works' workers, so nothing is left to do but close the panel.
+    /// </summary>
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
+    {
+        game.FinishInteraction();
+        return true;
+    }
+}
+
+/// <summary>
 /// The worker at the sawmill, brickworks, gravel works or glassworks. They show the stock and, for building trips, load the
 /// goods and ask the loading question from afar. Raw-material trips are started by the worker at the source.
 /// </summary>

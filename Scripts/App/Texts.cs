@@ -329,6 +329,76 @@ internal static class Texts
 
     public static string FireflyPictureDone(string name) => $"Souhvězdí {name} je hotové! Podívej se na oblohu.";
 
+    // GameUi.Hunter and Game.Hunter
+    public const string HunterHint = "Lovec";
+    public const string HuntStart = "Vyrazit na lov";
+    public const string HuntThrow = "Hodit síť";
+    public const string HuntPickUp = "Sebrat síť";
+    public const string HunterGoodLuck =
+        "Tady máš síť! Zvířátka běhají daleko v přírodě, šipka ti ukáže kam. Přibliž se pomalu, ať se nesplaší, a mezerníkem hoď síť.";
+    public const string HunterStillHunting = "Lov už běží! Chyť zvířátko do sítě, nalož ho na auto a přivez mi ho.";
+    public const string HunterNewNet = "Ztratila se ti síť? Nevadí, tady máš novou!";
+    public const string HunterAnotherOne = "Ohrada se plní! Pojedeš chytit další zvířátko?";
+    public const string HunterPetEarned = "Osm zvířátek v ohradě! Koloušek Puntík teď bude jezdit s tebou.";
+    public const string HuntMissed = "Vedle! Síť leží v trávě. Dojeď si pro ni a zkus to znovu.";
+    public const string HuntNetLost = "Síť spadla do vody! Jeď za lovcem, dá ti novou.";
+    public const string HuntNetBack = "Síť je zpátky na autě. Zkus to znovu!";
+    public const string HunterHutGreeting =
+        "Ahoj, jsem lovec Hubert! Ohradu už mám, ale chybí mi chata. Pomůžeš mi ji postavit? Pak spolu vyrazíme na lov.";
+    public const string HunterHutDone = "Hurá, chata stojí a z komína se kouří! Teď můžeme vyrazit na lov.";
+    public const string HutUnfinished = "Nejdřív postavíme chatu, potom vyrazíme na lov.";
+
+    public static string HutPart(string part, int stage, int trips) => $"Chata má {part}!  {stage} / {trips}";
+
+    public static string HutDone(int coins) => $"Chata lovce je hotová!  +{coins}";
+
+    public const string HuntPetOwned = "Koloušek Puntík už je tvůj. Ohrada se ale ráda zaplní dál!";
+
+    /// <summary>The animal of the hunt, as the subject of a sentence.</summary>
+    public static string PreyName(WildKind kind) =>
+        kind switch
+        {
+            WildKind.Fox => "liška",
+            WildKind.Deer => "srnka",
+            _ => "zajíček",
+        };
+
+    /// <summary>The animal of the hunt, as the object of a sentence.</summary>
+    public static string PreyObject(WildKind kind) =>
+        kind switch
+        {
+            WildKind.Fox => "lišku",
+            WildKind.Deer => "srnku",
+            _ => "zajíčka",
+        };
+
+    private static string Capital(string text) => text.Length == 0 ? text : char.ToUpper(text[0]) + text[1..];
+
+    public static string HuntCaught(WildKind kind) =>
+        $"Hurá, {PreyName(kind)} je v síti! Dojeď k síti a stiskni mezerník.";
+
+    public static string HuntLoad(WildKind kind) => $"Naložit {PreyObject(kind)}";
+
+    public static string HuntLoaded(WildKind kind) => $"{Capital(PreyName(kind))} je na autě. Teď jeď za lovcem!";
+
+    public static string Animals(int count) =>
+        count == 1 ? "1 zvířátko"
+        : count is >= 2 and <= 4 ? $"{count} zvířátka"
+        : $"{count} zvířátek";
+
+    public static string HuntDelivered(WildKind kind, int count) =>
+        $"{Capital(PreyName(kind))} běží do ohrady!  V ohradě je {Animals(count)}.";
+
+    public static string HunterThanks(WildKind kind, int count) =>
+        $"Děkuju! {Capital(PreyName(kind))} má v ohradě nový domov. Teď tu mám {Animals(count)}. Až budeš chtít lovit dál, přijeď za mnou.";
+
+    public static string HuntPenned(int count) => $"Zvířátka v ohradě: {count}";
+
+    public static string HuntUntilPet(int left) =>
+        left == 1 ? "Ještě jedno zvířátko a dostaneš mazlíčka!"
+        : left <= 4 ? $"Do mazlíčka zbývají {Animals(left)}."
+        : $"Do mazlíčka zbývá {Animals(left)}.";
+
     // GameUi.Postcards
     public const string PohledniceZKouzelnehoUdoli = "Pohlednice z Kouzelného údolí";
 

@@ -643,6 +643,89 @@ public partial class DeliveryPicture : Control
                     new Color("ffe27a")
                 );
         }
+        else if (Icon == "net")
+        {
+            // The hunter's net: a round hoop of rope with a grid of knots inside and a short handle.
+            var rope = new Color("d8c49a");
+            var wood = new Color("8a6440");
+            DrawLine(new(58, 104), new(26, 140), wood, 10, true);
+            DrawCircle(new(98, 66), 50, new Color(rope, .3f), true, -1, true);
+            for (int i = -2; i <= 2; i++)
+            {
+                float offset = i * 19;
+                float half = Mathf.Sqrt(50 * 50 - offset * offset);
+                DrawLine(new(98 + offset, 66 - half), new(98 + offset, 66 + half), rope, 4, true);
+                DrawLine(new(98 - half, 66 + offset), new(98 + half, 66 + offset), rope, 4, true);
+            }
+            DrawArc(new(98, 66), 50, 0, Mathf.Tau, 48, wood, 8, true);
+        }
+        else if (Icon is "wild-rabbit" or "wild-fox" or "wild-deer")
+        {
+            // A face of an animal of the hunt: long ears for the hare, pointed ones with dark tips for the fox and wide ones
+            // for the roe deer, each with its own fur, muzzle and nose.
+            bool fox = Icon == "wild-fox",
+                deer = Icon == "wild-deer";
+            var fur = new Color(
+                fox ? "d58c4b"
+                : deer ? "b68b60"
+                : "c4af94"
+            );
+            var light = new Color(fox ? "fff5e6" : "efdfc2");
+            var inner = new Color("eab4ad");
+            foreach (int sign in new[] { -1, 1 })
+            {
+                if (fox)
+                {
+                    DrawColoredPolygon(
+                        new Vector2[] { new(90 + sign * 18, 52), new(90 + sign * 54, 50), new(90 + sign * 50, 8) },
+                        fur
+                    );
+                    DrawColoredPolygon(
+                        new Vector2[] { new(90 + sign * 46, 22), new(90 + sign * 50, 8), new(90 + sign * 40, 14) },
+                        ink
+                    );
+                }
+                else if (deer)
+                {
+                    Oval(new(90 + sign * 62, 46), new(28, 13), fur);
+                    Oval(new(90 + sign * 62, 46), new(18, 7), inner);
+                }
+                else
+                {
+                    Oval(new(90 + sign * 22, 30), new(13, 32), fur);
+                    Oval(new(90 + sign * 22, 30), new(6, 23), inner);
+                }
+            }
+            if (fox)
+                DrawColoredPolygon(
+                    new Vector2[] { new(34, 62), new(146, 62), new(130, 104), new(90, 138), new(50, 104) },
+                    fur
+                );
+            else
+                Oval(new(90, deer ? 84 : 90), new(deer ? 42 : 48, deer ? 50 : 42), fur);
+            if (fox)
+                foreach (int sign in new[] { -1, 1 })
+                    DrawColoredPolygon(new Vector2[] { new(90, 96), new(90 + sign * 50, 98), new(90, 138) }, light);
+            else
+                Oval(new(90, deer ? 116 : 112), new(deer ? 24 : 26, deer ? 19 : 17), light);
+            foreach (int sign in new[] { -1, 1 })
+            {
+                Oval(new(90 + sign * 20, deer ? 76 : 82), new(10, 12), Colors.White);
+                Oval(new(90 + sign * 20, deer ? 78 : 84), new(5, 7), ink);
+            }
+            Oval(
+                new(
+                    90,
+                    fox ? 126
+                        : deer ? 110
+                        : 104
+                ),
+                new(deer ? 10 : 8, 6),
+                fox || deer ? ink : new Color("d97f86")
+            );
+            if (!fox && !deer)
+                DrawRect(new Rect2(86, 114, 8, 8), Colors.White);
+        }
         else if (Icon == "lantern")
         {
             // A little lantern with a handle, a warm glass and a bright flame inside.

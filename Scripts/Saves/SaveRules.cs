@@ -36,6 +36,7 @@ internal static class SaveRules
         ("zoo", HasInvalidZooState),
         ("treasure hunt", HasInvalidTreasure),
         ("firefly hunt", HasInvalidFireflies),
+        ("hunter's pen and hunt", HasInvalidHunt),
         ("time of day", HasInvalidDay),
         ("decorations and the mayor's shop", HasInvalidDecorations),
         ("glass lamps and the lamp maker's shop", HasInvalidLamps),
@@ -73,6 +74,7 @@ internal static class SaveRules
         || data.Zoo is null
         || data.Treasure is null
         || data.Fireflies is null
+        || data.Hunt is null
         || data.Day is null;
 
     /// <summary>Throws when the save is not one the game can restore.</summary>
@@ -144,7 +146,7 @@ internal static class SaveRules
         || data.Task.Picked == null
         || data.Quiz.Rejected == null
         || data.Nearby < -1
-        || data.Nearby > Math.Max(Game.BanditActorId, World.TreasurerId)
+        || data.Nearby > Math.Max(Game.BanditActorId, World.HunterId)
         || data.Task.Sender < -1
         || data.Task.Sender > World.SorcererId
         || data.Task.Sender == World.WitchId
@@ -223,6 +225,7 @@ internal static class SaveRules
             Game.Departure.House => !resident || data.Quiz.DepartureState != GameState.HouseMaterialOffer,
             Game.Departure.Glassmaker => !World.IsGlassmaker(data.Nearby)
                 || data.Quiz.DepartureState != GameState.GlassmakerShop,
+            Game.Departure.Hunter => !World.IsHunter(data.Nearby) || data.Quiz.DepartureState != GameState.HunterStatus,
             // The works' missing goods are asked for from a builder, a newcomer, a resident or the lamp maker.
             Game.Departure.Missing => data.Quiz.DepartureState switch
             {
@@ -233,6 +236,7 @@ internal static class SaveRules
                 GameState.ZooStatus => !World.IsZooKeeper(data.Nearby),
                 GameState.HouseMaterialOffer => !resident,
                 GameState.GlassmakerShop => !World.IsGlassmaker(data.Nearby),
+                GameState.HunterStatus => !World.IsHunter(data.Nearby),
                 // The baker of the village shop, whose bakery has run out of bread for his order.
                 GameState.TradeStatus => data.Nearby != World.FirstTraderId,
                 _ => true,
@@ -440,6 +444,32 @@ internal static class SaveRules
         || data.Fireflies.Caught > FireflyHunt.Limit
         || (data.State == GameState.FireflyStatus && data.Nearby != World.WitchId);
 
+    /// <summary>
+    /// Only animals of the hunt are in the pen, within the limit; an animal on the car needs a hunt under way; the hunter's
+    /// panel is open only beside him, and he asks no question.
+    /// </summary>
+    private static bool HasInvalidHunt(SaveData data) =>
+        data.Hunt.Penned == null
+        || data.Hunt.Carrying == null
+        || data.Hunt.Penned.Length > AnimalHunt.Limit
+        || data.Hunt.Penned.Any(name => AnimalHunt.KindOf(name) == null)
+        || (data.Hunt.Carrying != "" && (AnimalHunt.KindOf(data.Hunt.Carrying) == null || !data.Hunt.Active))
+        || data.Hunt.Hut is < 0 or > HutPlans.Trips
+        // The hunter sends no one hunting before his hut stands.
+        || ((data.Hunt.Active || data.Hunt.Penned.Length > 0) && data.Hunt.Hut < HutPlans.Trips)
+        || (data.State == GameState.HunterStatus && !World.IsHunter(data.Nearby))
+        // His only quiz is the one before a trailer trip for the hut.
+        || (
+            World.IsHunter(data.Nearby)
+            && (
+                data.Quiz.Handover
+                || (
+                    data.State == GameState.Challenge
+                    && (Game.Departure)data.Quiz.Departure is not (Game.Departure.Hunter or Game.Departure.Missing)
+                )
+            )
+        );
+
     /// <summary>The clock of the day is a number of seconds within one day.</summary>
     private static bool HasInvalidDay(SaveData data) =>
         !float.IsFinite(data.Day.Clock) || data.Day.Clock < 0 || data.Day.Clock >= Weather.DayLength;
@@ -537,6 +567,11 @@ internal static class SaveRules
             case TripKinds.Zoo when trip.Index == 0 && data.Zoo.Stage is >= 0 and < ZooPlans.Trips:
             {
                 var cargo = ZooPlans.CargoOf(data.Zoo.Stage);
+                return (cargo, World.AskerIds(cargo, 0), trip.Loaded);
+            }
+            case TripKinds.Hunter when trip.Index == 0 && data.Hunt.Hut is >= 0 and < HutPlans.Trips:
+            {
+                var cargo = HutPlans.CargoOf(data.Hunt.Hut);
                 return (cargo, World.AskerIds(cargo, 0), trip.Loaded);
             }
             case TripKinds.Mill when trip.Index == 0:
@@ -659,6 +694,7 @@ internal static class SaveRules
             TripKinds.Playground => trip.Index != 0 || data.Playground.Stage >= PlaygroundPlans.Trips,
             TripKinds.Railway => trip.Index != 0 || data.Railway.Stage >= RailwayPlans.Trips,
             TripKinds.Zoo => trip.Index != 0 || data.Zoo.Stage >= ZooPlans.Trips,
+            TripKinds.Hunter => trip.Index != 0 || data.Hunt.Hut >= HutPlans.Trips,
             // Wheat goes to the mill once it is finished, until its flour fills the yard.
             TripKinds.Mill => trip.Index != 0 || !MillFinished(data) || data.Buildings.FlourStock >= FlourMill.Capacity,
             // The lamp maker takes glasses again and again: there is only the one of him.
@@ -683,6 +719,7 @@ internal static class SaveRules
             : World.IsPlaygroundHelper(data.Nearby) ? GameState.PlaygroundStatus
             : World.IsStationHelper(data.Nearby) ? GameState.RailwayStatus
             : World.IsZooKeeper(data.Nearby) ? GameState.ZooStatus
+            : World.IsHunter(data.Nearby) ? GameState.HunterStatus
             : null;
         if (panel == null)
         {
@@ -695,6 +732,7 @@ internal static class SaveRules
                         or GameState.PlaygroundStatus
                         or GameState.RailwayStatus
                         or GameState.ZooStatus
+                        or GameState.HunterStatus
                 || data.Quiz.Challenge is LoadChallenge;
         }
         if (data.State is not (GameState.Exploring or GameState.Challenge) && data.State != panel)

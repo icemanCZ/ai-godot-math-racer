@@ -100,6 +100,15 @@ internal static class CharacterCatalog
             "b98b5f"
         );
 
+    /// <summary>The hunter at his pen at the edge of the village (<see cref="World.HunterId"/>).</summary>
+    public static CharacterSpec Hunter { get; } =
+        new(
+            "Jezevec lovec Hubert",
+            "Dobrý den, lovče! Mám velkou ohradu, ale je skoro prázdná. Zvířátka běhají daleko v přírodě. Dám ti síť: zastav kousek od zvířátka a mezerníkem ji hoď. Chycené zvířátko nalož a přivez mi ho!",
+            2,
+            "8f8a84"
+        );
+
     /// <summary>The pirate captain on the village square, who hides treasures for the player to dig up (<see cref="World.TreasurerId"/>).</summary>
     public static CharacterSpec Treasurer { get; } =
         new(

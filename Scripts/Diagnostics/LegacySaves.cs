@@ -100,6 +100,10 @@ internal static class LegacySaves
         ("Lamps", "Placed"),
         ("Treasure", "Found"),
         ("Treasure", "Active"),
+        ("Hunt", "Penned"),
+        ("Hunt", "Active"),
+        ("Hunt", "Carrying"),
+        ("Hunt", "Hut"),
         ("Fireflies", "Caught"),
         ("Day", "Clock"),
     };

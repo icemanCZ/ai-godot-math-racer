@@ -27,6 +27,9 @@ public partial class Game
 
         /// <summary>Glasses from the glassworks for the lamp maker on the square.</summary>
         Glassmaker,
+
+        /// <summary>Goods from the works for the hunter's hut.</summary>
+        Hunter,
     }
 
     /// <summary>Asks the quiz that must be solved before a trip starts; the trip continues in StartDeparture.</summary>
