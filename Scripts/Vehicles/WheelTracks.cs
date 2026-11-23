@@ -1,3 +1,5 @@
+using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using Godot;
 using MathRacer.Garage;
@@ -14,6 +16,13 @@ public partial class WheelTracks : MeshInstance3D
     // even at full speed instead of abruptly deleting still-visible tracks.
     private const int Capacity = 4096;
 
+    private const int VerticesPerSegment = 6;
+
+    /// <summary>The birth time of a slot that holds no segment yet: the shader has long faded it out.</summary>
+    private const float NeverBorn = -1000;
+
+    private static readonly StringName TrackTime = "track_time";
+
     private readonly record struct Segment(
         Vector3 A,
         Vector3 B,
@@ -26,9 +35,18 @@ public partial class WheelTracks : MeshInstance3D
 
     private readonly Queue<Segment> segments = new();
 
-    // Rebuilt whenever a segment is added, which is most frames while driving: the vertices go to the engine in one
-    // call, where an ImmediateMesh took four calls for each of up to 24 576 vertices.
+    // A ring of Capacity segments made once: a new segment overwrites the oldest slot and only its six vertices go to
+    // the engine. Rebuilding the whole ribbon for every new segment made most of the game's garbage while driving. An
+    // old segment needs no removing, the shader fades it out by its birth time (UV2) when its lifetime is over.
     private readonly ArrayMesh ribbon = new();
+    private byte[] vertexBytes = [];
+    private byte[] attributeBytes = [];
+    private int vertexStride;
+    private int attributeStride;
+    private int positionOffset;
+    private int uvOffset;
+    private int birthOffset;
+    private int nextSlot;
     private readonly ShaderMaterial material = new() { Shader = GD.Load<Shader>("res://Shaders/WheelTracks.gdshader") };
     private readonly Vector3[] previous = new Vector3[2];
     private readonly Vector3[] previousSide = new Vector3[2];
@@ -43,16 +61,22 @@ public partial class WheelTracks : MeshInstance3D
     internal int HiddenSamples(Terrain terrain, Roads roads)
     {
         int hidden = 0;
-        var faces = ribbon.GetFaces();
-        for (int i = 0; i + 2 < faces.Length; i += 3)
-        for (int u = 0; u <= 8; u++)
-        for (int v = 0; v <= 8 - u; v++)
-        {
-            var p = faces[i] + (faces[i + 1] - faces[i]) * (u / 8f) + (faces[i + 2] - faces[i]) * (v / 8f);
-            if (p.Y < roads.SurfaceHeight(p, terrain.Height(p.X, p.Z)))
-                hidden++;
-        }
+        foreach (var s in segments)
+            hidden += Hidden(s.A, s.B, s.C) + Hidden(s.B, s.D, s.C);
         return hidden;
+
+        int Hidden(Vector3 a, Vector3 b, Vector3 c)
+        {
+            int count = 0;
+            for (int u = 0; u <= 8; u++)
+            for (int v = 0; v <= 8 - u; v++)
+            {
+                var p = a + (b - a) * (u / 8f) + (c - a) * (v / 8f);
+                if (p.Y < roads.SurfaceHeight(p, terrain.Height(p.X, p.Z)))
+                    count++;
+            }
+            return count;
+        }
     }
 
     public override void _Ready()
@@ -62,6 +86,9 @@ public partial class WheelTracks : MeshInstance3D
         Mesh = ribbon;
         MaterialOverride = material;
         CastShadow = ShadowCastingSetting.Off;
+        // The ring's vertices are written later, so the mesh's own box says nothing about where the tracks are.
+        CustomAabb = new Aabb(new Vector3(-1e5f, -1e4f, -1e5f), new Vector3(2e5f, 2e4f, 2e5f));
+        CreateRibbon();
     }
 
     internal void Break() => connected = false;
@@ -78,7 +105,7 @@ public partial class WheelTracks : MeshInstance3D
     internal void Update(float dt, Vehicle car, Terrain terrain, Roads roads)
     {
         time += dt;
-        material.SetShaderParameter("track_time", time);
+        material.SetShaderParameter(TrackTime, time);
         // A trail of flowers, hearts or stars from the garage takes the place of the tyre marks.
         stamps ??= AddStamps();
         string trail = car.Appearance.CurrentTrailId;
@@ -89,16 +116,12 @@ public partial class WheelTracks : MeshInstance3D
             if (segments.Count > 0)
             {
                 segments.Clear();
-                Rebuild();
+                CreateRibbon();
             }
             return;
         }
-        bool dirty = false;
         while (segments.Count > 0 && time - segments.Peek().Born > Lifetime)
-        {
             segments.Dequeue();
-            dirty = true;
-        }
 
         // Actual displacement prevents marks when the accelerator is held against a wall.
         if (!car.IsOnFloor())
@@ -131,11 +154,18 @@ public partial class WheelTracks : MeshInstance3D
                         // its corners. Keep both triangle interiors above that surface too.
                         float lift = Mathf.Max(Clearance(a, b, c), Clearance(b, d, c));
                         var offset = Vector3.Up * lift;
-                        segments.Enqueue(
-                            new Segment(a + offset, b + offset, c + offset, d + offset, along[i], length, time)
+                        var segment = new Segment(
+                            a + offset,
+                            b + offset,
+                            c + offset,
+                            d + offset,
+                            along[i],
+                            length,
+                            time
                         );
+                        segments.Enqueue(segment);
+                        Write(segment);
                         along[i] += length;
-                        dirty = true;
                     }
                     previous[i] = point;
                     previousSide[i] = side;
@@ -143,13 +173,9 @@ public partial class WheelTracks : MeshInstance3D
                 connected = true;
             }
         }
+        // The slot of the oldest segment has just been written over.
         while (segments.Count > Capacity)
-        {
             segments.Dequeue();
-            dirty = true;
-        }
-        if (dirty)
-            Rebuild();
 
         // The river's height profile is not a global sea level: low grassland
         // remains dry even when it is lower than water elsewhere on the map.
@@ -181,40 +207,55 @@ public partial class WheelTracks : MeshInstance3D
 
     private static float FlatDistance(Vector3 a, Vector3 b) => new Vector2(a.X - b.X, a.Z - b.Z).Length();
 
-    private void Rebuild()
+    /// <summary>Makes the ring with every slot empty; the strides say where each vertex's values lie in the buffers.</summary>
+    private void CreateRibbon()
     {
         ribbon.ClearSurfaces();
-        if (segments.Count == 0)
-            return;
-        int count = segments.Count * 6;
-        var vertices = new Vector3[count];
-        var normals = new Vector3[count];
-        var uvs = new Vector2[count];
+        int count = Capacity * VerticesPerSegment;
         var births = new Vector2[count];
-        int next = 0;
-        foreach (var s in segments)
-        {
-            Vertex(s.A, 0, s.Along);
-            Vertex(s.B, 1, s.Along);
-            Vertex(s.C, 0, s.Along + s.Length);
-            Vertex(s.B, 1, s.Along);
-            Vertex(s.D, 1, s.Along + s.Length);
-            Vertex(s.C, 0, s.Along + s.Length);
-            void Vertex(Vector3 p, float across, float distance)
-            {
-                vertices[next] = p;
-                normals[next] = Vector3.Up;
-                uvs[next] = new Vector2(across, distance);
-                births[next] = new Vector2(s.Born, 0);
-                next++;
-            }
-        }
+        Array.Fill(births, new Vector2(NeverBorn, 0));
         var arrays = new Godot.Collections.Array();
         arrays.Resize((int)Mesh.ArrayType.Max);
-        arrays[(int)Mesh.ArrayType.Vertex] = vertices;
-        arrays[(int)Mesh.ArrayType.Normal] = normals;
-        arrays[(int)Mesh.ArrayType.TexUV] = uvs;
+        arrays[(int)Mesh.ArrayType.Vertex] = new Vector3[count];
+        arrays[(int)Mesh.ArrayType.TexUV] = new Vector2[count];
         arrays[(int)Mesh.ArrayType.TexUV2] = births;
         ribbon.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
+        var format = (RenderingServer.ArrayFormat)ribbon.SurfaceGetFormat(0);
+        vertexStride = (int)RenderingServer.MeshSurfaceGetFormatVertexStride(format, count);
+        attributeStride = (int)RenderingServer.MeshSurfaceGetFormatAttributeStride(format, count);
+        positionOffset = (int)RenderingServer.MeshSurfaceGetFormatOffset(format, count, (int)Mesh.ArrayType.Vertex);
+        uvOffset = (int)RenderingServer.MeshSurfaceGetFormatOffset(format, count, (int)Mesh.ArrayType.TexUV);
+        birthOffset = (int)RenderingServer.MeshSurfaceGetFormatOffset(format, count, (int)Mesh.ArrayType.TexUV2);
+        vertexBytes = new byte[vertexStride * VerticesPerSegment];
+        attributeBytes = new byte[attributeStride * VerticesPerSegment];
+        nextSlot = 0;
+    }
+
+    /// <summary>Writes a new segment over the oldest slot of the ring.</summary>
+    private void Write(in Segment s)
+    {
+        Put(0, s.A, 0, s.Along, s.Born);
+        Put(1, s.B, 1, s.Along, s.Born);
+        Put(2, s.C, 0, s.Along + s.Length, s.Born);
+        Put(3, s.B, 1, s.Along, s.Born);
+        Put(4, s.D, 1, s.Along + s.Length, s.Born);
+        Put(5, s.C, 0, s.Along + s.Length, s.Born);
+        var rid = ribbon.GetRid();
+        RenderingServer.MeshSurfaceUpdateVertexRegion(rid, 0, nextSlot * vertexBytes.Length, vertexBytes);
+        RenderingServer.MeshSurfaceUpdateAttributeRegion(rid, 0, nextSlot * attributeBytes.Length, attributeBytes);
+        nextSlot = (nextSlot + 1) % Capacity;
+    }
+
+    private void Put(int vertex, Vector3 p, float across, float distance, float born)
+    {
+        var position = vertexBytes.AsSpan(vertex * vertexStride + positionOffset);
+        BinaryPrimitives.WriteSingleLittleEndian(position, p.X);
+        BinaryPrimitives.WriteSingleLittleEndian(position[4..], p.Y);
+        BinaryPrimitives.WriteSingleLittleEndian(position[8..], p.Z);
+        var attributes = attributeBytes.AsSpan(vertex * attributeStride);
+        BinaryPrimitives.WriteSingleLittleEndian(attributes[uvOffset..], across);
+        BinaryPrimitives.WriteSingleLittleEndian(attributes[(uvOffset + 4)..], distance);
+        BinaryPrimitives.WriteSingleLittleEndian(attributes[birthOffset..], born);
+        BinaryPrimitives.WriteSingleLittleEndian(attributes[(birthOffset + 4)..], 0);
     }
 }

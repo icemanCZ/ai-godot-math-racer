@@ -154,6 +154,12 @@ public partial class Game : Node3D
 
         // The sky, the weather and the ground are far by design or too big to leave out.
         DistantDetails.Watch(world, node => node is Atmosphere or Valley.Weather or Terrain or Roads or River);
+        // The village's buildings are thousands of parts that never change on their own; characters and animals move theirs.
+        StaticMeshes.Merge(
+            world.Village,
+            node => node is Character or WildAnimal or CollectorPet,
+            DistantDetails.RangeNow
+        );
         AttachDiagnostics(camera);
         GD.Print(
             $"WORLD_READY seed={Settings.Seed} animals={world.Animals.Length} road_samples={world.Routes.Samples.Count}"
@@ -604,10 +610,11 @@ public partial class Game : Node3D
 
     public override void _Process(double delta)
     {
+        var player = vehicle.Position;
         foreach (var animal in world.InteractionActors)
         {
             animal.AnimationPaused = State is GameState.Paused or GameState.Title;
-            animal.GreetPlayer(vehicle.Position, State == GameState.Exploring);
+            animal.GreetPlayer(player, State == GameState.Exploring);
         }
         if (State == GameState.Exploring)
             UpdateExploring(delta);

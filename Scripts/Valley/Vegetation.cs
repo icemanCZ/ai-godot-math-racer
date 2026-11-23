@@ -240,10 +240,20 @@ public partial class Vegetation : Node3D
         }
     }
 
+    /// <summary>
+    /// The shapes, foliage colours and outlines of the batches, made by the first <see cref="BuildBatches"/> and shared by
+    /// every later one: each block of plants beyond the old valley is built on its own while the car drives, and making
+    /// them anew for every block took a few milliseconds of the frame and kept a copy of each for every block.
+    /// </summary>
+    private Dictionary<string, Mesh>? batchMeshes;
+    private Dictionary<string, Mesh>? farBatchMeshes;
+    private readonly Dictionary<(string Color, bool Tree, bool Leaves), ShaderMaterial> foliageMaterials = new();
+    private readonly Dictionary<bool, ShaderMaterial> foliageOutlines = new();
+
     /// <summary>Draws the parts placed since the last call, each batch as a near and (for most) a far MultiMesh.</summary>
     private void BuildBatches()
     {
-        var meshes = new Dictionary<string, Mesh>
+        var meshes = batchMeshes ??= new Dictionary<string, Mesh>
         {
             ["leaf"] = new SphereMesh
             {
@@ -272,7 +282,7 @@ public partial class Vegetation : Node3D
             ["cone"] = ConiferMesh(),
         };
         // The simpler shapes of the far blocks (see FarDistance); the cone has none.
-        var farMeshes = new Dictionary<string, Mesh>
+        var farMeshes = farBatchMeshes ??= new Dictionary<string, Mesh>
         {
             ["leaf"] = new SphereMesh
             {
@@ -291,17 +301,14 @@ public partial class Vegetation : Node3D
             },
         };
         var foliageShader = GD.Load<Shader>("res://Shaders/Foliage.gdshader");
-        var foliageMaterials = new Dictionary<(string Color, bool Tree, bool Leaves), ShaderMaterial>();
         // Trees and bushes get a soft outline that sways with them; small leaves, bark marks and pads do not.
-        var outlineShader = GD.Load<Shader>("res://Shaders/FoliageOutline.gdshader");
-        var outlines = new Dictionary<bool, ShaderMaterial>();
         ShaderMaterial Outline(bool tree)
         {
-            if (!outlines.TryGetValue(tree, out var outline))
+            if (!foliageOutlines.TryGetValue(tree, out var outline))
             {
-                outline = new ShaderMaterial { Shader = outlineShader };
+                outline = new ShaderMaterial { Shader = GD.Load<Shader>("res://Shaders/FoliageOutline.gdshader") };
                 outline.SetShaderParameter("tree_motion", tree);
-                outlines[tree] = outline;
+                foliageOutlines[tree] = outline;
             }
             return outline;
         }
@@ -521,7 +528,9 @@ public partial class Vegetation : Node3D
         }
         surface.Index();
         surface.GenerateNormals();
-        return surface.Commit();
+        var mesh = surface.Commit();
+        surface.Dispose();
+        return mesh;
     }
 
     /// <summary>The area that was cleared after the plants were placed, or null.</summary>

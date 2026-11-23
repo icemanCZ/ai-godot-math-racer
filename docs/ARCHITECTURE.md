@@ -15,7 +15,7 @@ parts in the folder of the class, with one exception: `Diagnostics/Game.Diagnost
 | --- | --- |
 | `App` | `Game` and every `Game.*.cs`, `Texts`, `Interaction`, `GameControls`, `Settings`, `LaunchOptions`, `GameState` |
 | `Ui` | `GameUi` and every `GameUi.*.cs`, `UiIntent`, `DeliveryPicture`, `TaskMarker` |
-| `Graphics` | `Art` (procedural meshes and icons), `Obstacles` (collision helpers), `Celebration`, `DistantDetails` (visibility ranges of small meshes) |
+| `Graphics` | `Art` (procedural meshes and icons), `Obstacles` (collision helpers), `Celebration`, `DistantDetails` (visibility ranges of small meshes, no shadow below half a metre), `StaticMeshes` (merges the village's plain parts per parent and look) |
 | `Quizzes` | `IChallenge` and the generators of the four kinds of question (`Mathematics`, `Letters`), `QuizType`, `QuizSession` |
 | `Saves` | `SaveData` and its sections, `SaveDataV4`, `SaveRules`, `SaveMigrations`, `SaveStore`, `PostcardProgress` |
 | `Valley` | `World` and every `World.*.cs`, the terrain, roads, river, vegetation, grass, weather, wildlife |
@@ -96,8 +96,11 @@ tiles built as the car drives draw thousands each).
 
 What the GPU and the processor spend per frame is measured with `./benchmark.ps1`. The valley is bound by geometry and
 draw calls, not by pixels, so the distance limits matter most: the far blocks of `Vegetation` are drawn with simpler
-shapes (`FarDistance`), small single meshes get a visibility range from their size (`DistantDetails`), and new grass
-tiles are built within a time slice of each frame so that driving does not stutter.
+shapes (`FarDistance`), small single meshes get a visibility range from their size and none under half a metre casts a shadow
+(`DistantDetails`), the sun's shadow has two splits, the village's plain parts are merged into one mesh per parent and
+look once the valley stands (`StaticMeshes`; characters and animals keep theirs), and new grass tiles are built within a
+time slice of each frame so that driving does not stutter. The tyre tracks are a ring of segments of which only the new
+one goes to the engine; far wild animals sleep until the car could reach them; far characters stop waving and bobbing.
 
 ## Questions and activities
 

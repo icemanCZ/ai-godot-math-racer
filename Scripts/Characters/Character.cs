@@ -13,13 +13,14 @@ public partial class Character : Node3D
 
     public void GreetPlayer(Vector3 player, bool active)
     {
-        var markerDistance = Position - player;
+        var position = Position;
+        var markerDistance = position - player;
         markerDistance.Y = 0;
         markerDistanceBlend = Mathf.SmoothStep(8, 32, markerDistance.Length());
-        IsWaving = active && Position.DistanceSquaredTo(player) < 24 * 24;
+        IsWaving = active && position.DistanceSquaredTo(player) < 24 * 24;
         if (IsWaving)
         {
-            var direction = player - Position;
+            var direction = player - position;
             if (direction.LengthSquared() > .1f)
                 Rotation = new(0, Mathf.Atan2(direction.X, direction.Z), 0);
         }
@@ -248,31 +249,57 @@ public partial class Character : Node3D
         Art.Block(model, new(0, 2.57f, .61f), new(.21f, .15f, .065f), "ffd376");
     }
 
+    /// <summary>
+    /// Farther from the camera than this, the waving arm and the bobbing are a pixel or two and are not moved: there are
+    /// some seventy characters in the valley, and each move is a call into the engine.
+    /// </summary>
+    private const float StillDistance = 150;
+
+    private float stillCheck;
+    private bool still;
+    private float shownMarkerSize = -1;
+
     public override void _Process(double delta)
     {
         if (AnimationPaused)
             return;
-        time += (float)delta;
-        if (pingTime > 0 && (pingTime -= (float)delta) <= 0 && beacon != null)
+        float dt = (float)delta;
+        time += dt;
+        if (pingTime > 0 && (pingTime -= dt) <= 0 && beacon != null)
             beacon.Visible = false;
-        wavingArm.Rotation = Running
-            ? new(Mathf.Sin(time * 17) * .7f, 0, -.35f)
-            : new(0, 0, (IsWaving || celebration > 0) ? .95f + Mathf.Sin(time * 9) * .48f : -.35f);
-        markerBlend = Mathf.Lerp(markerBlend, markerDistanceBlend, 1 - Mathf.Exp(-(float)delta * 8));
+        bool celebrating = celebration > 0;
+        if (celebrating)
+            celebration = Mathf.Max(0, celebration - dt);
+        if ((stillCheck -= dt) <= 0)
+        {
+            stillCheck = .5f;
+            still =
+                GetViewport()?.GetCamera3D() is { } camera
+                && camera.GlobalPosition.DistanceSquaredTo(GlobalPosition) > StillDistance * StillDistance;
+        }
+        markerBlend = Mathf.Lerp(markerBlend, markerDistanceBlend, 1 - Mathf.Exp(-dt * 8));
         float markerSize = Mathf.Lerp(.5f, 1, markerBlend);
-        taskMarker.PixelSize = .0011f * markerSize;
-        if (roleIcon != null)
-            roleIcon.PixelSize = .00055f * markerSize;
+        if (markerSize != shownMarkerSize)
+        {
+            shownMarkerSize = markerSize;
+            taskMarker.PixelSize = .0011f * markerSize;
+            if (roleIcon != null)
+                roleIcon.PixelSize = .00055f * markerSize;
+        }
+        // The marker is seen from afar and keeps bobbing; this is a field of its own, not a call into the engine.
         taskMarker.AnchorPosition =
             Vector3.Up
             * (Mathf.Lerp(4.7f, 7.5f, markerBlend) + Mathf.Sin(time * 2.4f) * Mathf.Lerp(.15f, .6f, markerBlend));
-        model.Position = Vector3.Up * Mathf.Sin(time * 1.8f) * .045f;
+        if (still)
+            return;
+        wavingArm.Rotation = Running
+            ? new(Mathf.Sin(time * 17) * .7f, 0, -.35f)
+            : new(0, 0, (IsWaving || celebrating) ? .95f + Mathf.Sin(time * 9) * .48f : -.35f);
+        var bob = Vector3.Up * Mathf.Sin(time * 1.8f) * .045f;
         if (Running)
-            model.Position += Vector3.Up * Mathf.Abs(Mathf.Sin(time * 12)) * .24f;
-        if (celebration > 0)
-        {
-            celebration = Mathf.Max(0, celebration - (float)delta);
-            model.Position += Vector3.Up * Mathf.Abs(Mathf.Sin(celebration * 7)) * .65f;
-        }
+            bob += Vector3.Up * Mathf.Abs(Mathf.Sin(time * 12)) * .24f;
+        if (celebrating)
+            bob += Vector3.Up * Mathf.Abs(Mathf.Sin(celebration * 7)) * .65f;
+        model.Position = bob;
     }
 }

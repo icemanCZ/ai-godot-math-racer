@@ -5,6 +5,8 @@
     <Nullable>enable</Nullable>
     <!-- The valley is planned in C# at startup and in every check; unoptimised code made that slower. -->
     <Optimize>true</Optimize>
+    <!-- Methods with loops are compiled optimised at once; the startup planning runs most of its loops only once. -->
+    <TieredCompilationQuickJitForLoops>false</TieredCompilationQuickJitForLoops>
   </PropertyGroup>
   <!-- Release exports ship without the headless checks and capture views. -->
   <ItemGroup Condition="'$(Configuration)' == 'ExportRelease'">

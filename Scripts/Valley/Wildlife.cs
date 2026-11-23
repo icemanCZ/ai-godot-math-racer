@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Godot;
 using MathRacer.App;
@@ -124,19 +125,49 @@ public partial class Wildlife : Node3D
     /// <summary>Where an animal may stand or run.</summary>
     internal bool Safe(Vector3 p, WildKind kind)
     {
-        if (
-            !ValleyBounds.Contains(p.X, p.Z, 12)
-            || world.Village.IsReserved(p)
-            || world.Plants.NearTrunk(p, kind == WildKind.Deer ? 1.5f : .9f)
-            || River.Distance(p.X, p.Z) < River.HalfWidth(p.Z) + 3
-            || OutOfTheValley(p)
-        )
+        if (!Open(p, kind))
             return false;
         foreach (var friend in world.Animals)
             if (friend.Position.DistanceSquaredTo(p) < 16)
                 return false;
         return true;
     }
+
+    /// <summary>
+    /// The roadside friends' places, read from the engine once for a whole tick of steps instead of once for every
+    /// probe of every animal.
+    /// </summary>
+    private Vector3[] friends = [];
+
+    private void ReadFriends()
+    {
+        var animals = world.Animals;
+        if (friends.Length != animals.Length)
+            friends = new Vector3[animals.Length];
+        for (int i = 0; i < animals.Length; i++)
+            friends[i] = animals[i].Position;
+    }
+
+    /// <summary><see cref="Safe"/> with the friends' places read at the start of the tick.</summary>
+    private bool SafeAmongFriends(Vector3 p, WildKind kind)
+    {
+        if (!Open(p, kind))
+            return false;
+        foreach (var friend in friends)
+            if (friend.DistanceSquaredTo(p) < 16)
+                return false;
+        return true;
+    }
+
+    /// <summary>Whether nothing but the roadside friends keeps an animal from a point.</summary>
+    private bool Open(Vector3 p, WildKind kind) =>
+        !(
+            !ValleyBounds.Contains(p.X, p.Z, 12)
+            || world.Village.IsReserved(p)
+            || world.Plants.NearTrunk(p, kind == WildKind.Deer ? 1.5f : .9f)
+            || River.Distance(p.X, p.Z) < River.HalfWidth(p.Z) + 3
+            || OutOfTheValley(p)
+        );
 
     /// <summary>Whether a point is in the border river, the sea or on the beach, where no animal goes.</summary>
     private static bool OutOfTheValley(Vector3 p)
@@ -157,11 +188,11 @@ public partial class Wildlife : Node3D
     /// Outlines the animals near the car and takes the outline off those that are left behind: there are hundreds of
     /// them, and the outline is drawn as a second pass of every part.
     /// </summary>
-    private void UpdateOutlines()
+    private void UpdateOutlines(Vector3 carPosition)
     {
         foreach (var animal in animals)
         {
-            bool near = Flat(animal.Position - car.Position).Length() < OutlineDistance;
+            bool near = Flat(animal.Position - carPosition).Length() < OutlineDistance;
             if (near == outlined.Contains(animal))
                 continue;
             if (near)
@@ -177,28 +208,70 @@ public partial class Wildlife : Node3D
         }
     }
 
+    /// <summary>Animals farther from the car than this sleep and are hidden.</summary>
+    private const float WakeDistance = 145;
+
+    /// <summary>
+    /// Faster than the car ever closes in on an animal (its top speed is <see cref="Settings.MaxSpeed"/>); a car that
+    /// moves farther in a tick has jumped (a new game, a trip home) and wakes every animal to be looked at again.
+    /// </summary>
+    private const float FastestApproach = 40;
+
+    private static readonly float[] ProbeAngles = [0f, .55f, -.55f, 1.1f, -1.1f, 1.65f, -1.65f, Mathf.Pi];
+
+    /// <summary>How long each sleeping animal need not be looked at, as the car cannot reach it sooner.</summary>
+    private float[] asleep = [];
+    private bool[] shown = [];
+    private Vector3? lastCarPosition;
+
     public override void _PhysicsProcess(double delta)
     {
         if (!car.Active)
             return;
         float dt = (float)delta;
+        var carPosition = car.Position;
+        var carVelocity = car.Velocity;
         outlineCheck -= dt;
         if (outlineCheck <= 0)
         {
             outlineCheck = .5f;
-            UpdateOutlines();
+            UpdateOutlines(carPosition);
         }
-        foreach (var animal in animals)
+        if (asleep.Length != animals.Count)
         {
-            float distance = Flat(animal.Position - car.Position).Length();
-            // Sleep distant fauna, and hide it: its parts are not drawn beyond 140 m anyway, and there are some twenty
-            // thousand of them for the renderer to look through every frame.
-            bool near = distance <= 145;
-            if (animal.Visible != near)
-                animal.Visible = near;
-            if (!near)
+            asleep = new float[animals.Count];
+            shown = new bool[animals.Count];
+            for (int i = 0; i < animals.Count; i++)
+                shown[i] = animals[i].Visible;
+        }
+        if (lastCarPosition is { } last && Flat(carPosition - last).Length() > FastestApproach * dt)
+            Array.Clear(asleep);
+        lastCarPosition = carPosition;
+        ReadFriends();
+        for (int i = 0; i < animals.Count; i++)
+        {
+            if (asleep[i] > 0)
+            {
+                asleep[i] -= dt;
                 continue;
-            Step(animal, dt, car.Position, car.Velocity);
+            }
+            var animal = animals[i];
+            float distance = Flat(animal.Position - carPosition).Length();
+            // Sleep distant fauna, and hide it: its parts are not drawn beyond 140 m anyway, and there are some twenty
+            // thousand of them for the renderer to look through every frame. A sleeping animal does not move, so it is
+            // not looked at again until the car could have come near.
+            bool near = distance <= WakeDistance;
+            if (shown[i] != near)
+            {
+                animal.Visible = near;
+                shown[i] = near;
+            }
+            if (!near)
+            {
+                asleep[i] = (distance - WakeDistance) / FastestApproach;
+                continue;
+            }
+            Move(animal, dt, carPosition, carVelocity);
         }
     }
 
@@ -206,10 +279,18 @@ public partial class Wildlife : Node3D
 
     internal void Step(WildAnimal animal, float dt, Vector3 threat, Vector3 threatVelocity)
     {
-        var away = Flat(animal.Position - threat);
+        ReadFriends();
+        Move(animal, dt, threat, threatVelocity);
+    }
+
+    /// <summary>One step of an animal, with the friends' places of this tick already read.</summary>
+    private void Move(WildAnimal animal, float dt, Vector3 threat, Vector3 threatVelocity)
+    {
+        var position = animal.Position;
+        var away = Flat(position - threat);
         var motion = Flat(threatVelocity);
         // Look ahead along actual velocity, including reversing and sliding.
-        var predicted = Flat(animal.Position - threat - motion * .65f);
+        var predicted = Flat(position - threat - motion * .65f);
         float alert = animal.Kind == WildKind.Butterfly ? 10 : 17;
         bool danger = away.Length() < alert || predicted.Length() < alert;
         animal.Fear = danger ? 2.5f : Mathf.Max(0, animal.Fear - dt);
@@ -224,7 +305,7 @@ public partial class Wildlife : Node3D
         }
         else
         {
-            var home = Flat(animal.Home - animal.Position);
+            var home = Flat(animal.Home - position);
             direction =
                 home.Length() > 16
                     ? home.Normalized()
@@ -238,12 +319,12 @@ public partial class Wildlife : Node3D
             speed = 0;
         bool moved = false;
         // Probe a short corridor so runners steer around trunks, buildings and water.
-        foreach (float angle in new[] { 0f, .55f, -.55f, 1.1f, -1.1f, 1.65f, -1.65f, Mathf.Pi })
+        foreach (float angle in ProbeAngles)
         {
             var heading = direction.Rotated(Vector3.Up, angle);
-            var next = animal.Position + heading * speed * dt;
+            var next = position + heading * speed * dt;
             var probe = next + heading * (animal.Kind == WildKind.Deer ? 1.6f : .8f);
-            if (!Safe(next, animal.Kind) || !Safe(probe, animal.Kind))
+            if (!SafeAmongFriends(next, animal.Kind) || !SafeAmongFriends(probe, animal.Kind))
                 continue;
             if (fleeing && Flat(next - threat).LengthSquared() < away.LengthSquared())
                 continue;

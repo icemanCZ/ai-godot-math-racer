@@ -43,9 +43,19 @@ public partial class Terrain : Node3D
     /// <summary>Graded pieces leave the ground this close to a road alone.</summary>
     private const float RoadMargin = 7;
 
-    private float RawHeight(float x, float z)
+    /// <summary>
+    /// The natural landscape at each point of the height grid, before roads, the village and the grading: it depends on
+    /// none of them, and the terrain is generated three times while the world is planned (<see cref="Generate"/>), so
+    /// the noise is worked out once for the plan it was made from.
+    /// </summary>
+    private float[,]? landscape;
+    private WorldPlan? landscapePlan;
+
+    private float RawHeight(float x, float z) =>
+        RawHeight(x, z, WorldLayout.Plan.Borders.Shape(x, z, WorldLayout.Plan.NaturalHeight(x, z)));
+
+    private float RawHeight(float x, float z, float landscape)
     {
-        float landscape = WorldLayout.Plan.Borders.Shape(x, z, WorldLayout.Plan.NaturalHeight(x, z));
         float height = roadbed.Apply(x, z, landscape);
         if (outlandRoadbed != null)
             height = outlandRoadbed.Apply(x, z, height);
@@ -193,12 +203,26 @@ public partial class Terrain : Node3D
     public void Generate()
     {
         int count = Mathf.RoundToInt(WorldTuning.CoreRadius * 2 / Settings.TerrainStep);
+        var plan = WorldLayout.Plan;
+        if (landscape == null || landscapePlan != plan || landscape.GetLength(0) != count + 1)
+        {
+            landscape = new float[count + 1, count + 1];
+            landscapePlan = plan;
+            for (int z = 0; z <= count; z++)
+            for (int x = 0; x <= count; x++)
+            {
+                float px = x * Settings.TerrainStep - WorldTuning.CoreRadius,
+                    pz = z * Settings.TerrainStep - WorldTuning.CoreRadius;
+                landscape[x, z] = plan.Borders.Shape(px, pz, plan.NaturalHeight(px, pz));
+            }
+        }
         heights = new float[count + 1, count + 1];
         for (int z = 0; z <= count; z++)
         for (int x = 0; x <= count; x++)
             heights[x, z] = RawHeight(
                 x * Settings.TerrainStep - WorldTuning.CoreRadius,
-                z * Settings.TerrainStep - WorldTuning.CoreRadius
+                z * Settings.TerrainStep - WorldTuning.CoreRadius,
+                landscape[x, z]
             );
         // The land round the core is worked out again from the final core, once, by BuildMeshes.
         outland = null;
@@ -224,19 +248,55 @@ public partial class Terrain : Node3D
             child.Free();
         }
         int count = heights.GetLength(0) - 1;
-        // Neighbouring triangles share their corners, so the colour of each grid point is worked out once.
+        // Neighbouring triangles share their corners, so the place, colour and normal of each grid point are worked
+        // out once, for the whole core: the normals then match across the edges of the chunks too.
+        var points = new Vector3[count + 1, count + 1];
         var colors = new Color[count + 1, count + 1];
         for (int z = 0; z <= count; z++)
         for (int x = 0; x <= count; x++)
+        {
+            float px = -WorldTuning.CoreRadius + x * Settings.TerrainStep,
+                pz = -WorldTuning.CoreRadius + z * Settings.TerrainStep;
+            points[x, z] = At(px, pz);
             colors[x, z] = VertexColor(
                 x * Settings.TerrainStep - WorldTuning.CoreRadius,
                 z * Settings.TerrainStep - WorldTuning.CoreRadius
             );
+        }
+        var normals = GridNormals(points);
         const int chunk = 32;
         for (int cz = 0; cz < count; cz += chunk)
         for (int cx = 0; cx < count; cx += chunk)
-            GenerateChunk(colors, cx, cz, Mathf.Min(cx + chunk, count), Mathf.Min(cz + chunk, count));
+            GenerateChunk(points, normals, colors, cx, cz, Mathf.Min(cx + chunk, count), Mathf.Min(cz + chunk, count));
         BuildOutland();
+    }
+
+    /// <summary>
+    /// The normal of each grid point: the mean of the faces of its triangles (a cell is the triangles a-b-c and b-d-c),
+    /// as smooth shading of the same triangles gives.
+    /// </summary>
+    private static Vector3[,] GridNormals(Vector3[,] points)
+    {
+        int count = points.GetLength(0) - 1;
+        var normals = new Vector3[count + 1, count + 1];
+        for (int z = 0; z < count; z++)
+        for (int x = 0; x < count; x++)
+        {
+            Vector3 a = points[x, z],
+                b = points[x + 1, z],
+                c = points[x, z + 1],
+                d = points[x + 1, z + 1];
+            var first = (a - c).Cross(a - b).Normalized();
+            var second = (b - c).Cross(b - d).Normalized();
+            normals[x, z] += first;
+            normals[x + 1, z] += first + second;
+            normals[x, z + 1] += first + second;
+            normals[x + 1, z + 1] += second;
+        }
+        for (int z = 0; z <= count; z++)
+        for (int x = 0; x <= count; x++)
+            normals[x, z] = normals[x, z].Normalized();
+        return normals;
     }
 
     private Color VertexColor(float x, float z)
@@ -247,42 +307,78 @@ public partial class Terrain : Node3D
         return grass.Lerp(ShoreSand, shore).SrgbToLinear();
     }
 
-    private void GenerateChunk(Color[,] colors, int startX, int startZ, int endX, int endZ)
+    /// <summary>
+    /// One chunk of the core as an indexed mesh, handed to the engine in one call: a SurfaceTool took two calls for each
+    /// of more than a million corners and kept hundreds of megabytes of engine memory until the collector freed it.
+    /// </summary>
+    private void GenerateChunk(
+        Vector3[,] points,
+        Vector3[,] normals,
+        Color[,] colors,
+        int startX,
+        int startZ,
+        int endX,
+        int endZ
+    )
     {
-        var surface = new SurfaceTool();
-        surface.Begin(Mesh.PrimitiveType.Triangles);
+        int width = endX - startX + 1,
+            depth = endZ - startZ + 1;
+        var vertices = new Vector3[width * depth];
+        var vertexNormals = new Vector3[width * depth];
+        var vertexColors = new Color[width * depth];
+        for (int z = startZ; z <= endZ; z++)
+        for (int x = startX; x <= endX; x++)
+        {
+            int at = (z - startZ) * width + (x - startX);
+            vertices[at] = points[x, z];
+            vertexNormals[at] = normals[x, z];
+            vertexColors[at] = colors[x, z];
+        }
+        var indices = new int[(endX - startX) * (endZ - startZ) * 6];
+        // The collider keeps the corners worked out cell by cell, as it always had them.
+        var faces = new Vector3[indices.Length];
         const float step = Settings.TerrainStep;
+        int next = 0;
         for (int z = startZ; z < endZ; z++)
         for (int x = startX; x < endX; x++)
         {
+            int a = (z - startZ) * width + (x - startX),
+                b = a + 1,
+                c = a + width,
+                d = c + 1;
             float px = -WorldTuning.CoreRadius + x * step,
                 pz = -WorldTuning.CoreRadius + z * step;
-            Vector3 a = At(px, pz),
-                b = At(px + step, pz),
-                c = At(px, pz + step),
-                d = At(px + step, pz + step);
-            Color ca = colors[x, z],
-                cb = colors[x + 1, z],
-                cc = colors[x, z + 1],
-                cd = colors[x + 1, z + 1];
-            Add(a, ca);
-            Add(b, cb);
-            Add(c, cc);
-            Add(b, cb);
-            Add(d, cd);
-            Add(c, cc);
+            Vector3 pa = At(px, pz),
+                pb = At(px + step, pz),
+                pc = At(px, pz + step),
+                pd = At(px + step, pz + step);
+            faces[next] = pa;
+            indices[next++] = a;
+            faces[next] = pb;
+            indices[next++] = b;
+            faces[next] = pc;
+            indices[next++] = c;
+            faces[next] = pb;
+            indices[next++] = b;
+            faces[next] = pd;
+            indices[next++] = d;
+            faces[next] = pc;
+            indices[next++] = c;
         }
-        void Add(Vector3 p, Color color)
-        {
-            surface.SetColor(color);
-            surface.AddVertex(p);
-        }
-        surface.GenerateNormals();
-        var mesh = surface.Commit();
+        var arrays = new Godot.Collections.Array();
+        arrays.Resize((int)Mesh.ArrayType.Max);
+        arrays[(int)Mesh.ArrayType.Vertex] = vertices;
+        arrays[(int)Mesh.ArrayType.Normal] = vertexNormals;
+        arrays[(int)Mesh.ArrayType.Color] = vertexColors;
+        arrays[(int)Mesh.ArrayType.Index] = indices;
+        var mesh = new ArrayMesh();
+        mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
         var visual = new MeshInstance3D { Mesh = mesh, MaterialOverride = meadowMaterial };
         AddChild(visual);
         var body = new StaticBody3D();
         AddChild(body);
-        body.AddChild(new CollisionShape3D { Shape = mesh.CreateTrimeshShape() });
+        var shape = new ConcavePolygonShape3D();
+        shape.SetFaces(faces);
+        body.AddChild(new CollisionShape3D { Shape = shape });
     }
 }

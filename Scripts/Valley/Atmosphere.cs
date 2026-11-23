@@ -344,6 +344,8 @@ public partial class Atmosphere : Node3D
             LightEnergy = .6f,
             ShadowEnabled = true,
             DirectionalShadowMaxDistance = 100,
+            // Two splits instead of four: the shadow pass drew the valley four times, and the near split is fine enough.
+            DirectionalShadowMode = DirectionalLight3D.ShadowMode.Parallel2Splits,
             // Soft, lighter shadows with blurred edges suit a picture book better than hard black ones.
             ShadowBlur = 1.8f,
             ShadowOpacity = .72f,

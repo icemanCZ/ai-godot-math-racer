@@ -28,6 +28,9 @@ internal sealed class DistantDetails
     /// <summary>A part that would stay longer than this crosses the valley anyway and keeps no range.</summary>
     private const float LongestRange = 450;
 
+    /// <summary>A part smaller than this (metres) casts no shadow.</summary>
+    private const float SmallestShadow = .5f;
+
     /// <summary>How long a frame may spend giving ranges; a new valley has thousands of parts to go through.</summary>
     private const double MillisecondsPerFrame = 1.5;
 
@@ -80,6 +83,9 @@ internal sealed class DistantDetails
             Range(mesh);
     }
 
+    /// <summary>Gives one part its range and shadow at once, before <see cref="StaticMeshes"/> merges it.</summary>
+    internal void RangeNow(MeshInstance3D mesh) => Range(mesh);
+
     private void Range(MeshInstance3D mesh)
     {
         if (!GodotObject.IsInstanceValid(mesh) || !mesh.IsInsideTree() || mesh.VisibilityRangeEnd > 0 || !Plain(mesh))
@@ -92,7 +98,11 @@ internal sealed class DistantDetails
             if (node is Node3D parent)
                 scale *= Mathf.Max(1, Largest(parent.Basis.Scale));
         }
-        float range = Mathf.Max(MinimumRange, Largest(mesh.GetAabb().Size) * scale * RangePerMetre);
+        float size = Largest(mesh.GetAabb().Size) * scale;
+        // A part this small casts a shadow of a few pixels, yet each one was another draw call in every shadow split.
+        if (size < SmallestShadow)
+            mesh.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
+        float range = Mathf.Max(MinimumRange, size * RangePerMetre);
         if (range > LongestRange)
             return;
         mesh.VisibilityRangeEnd = range;
