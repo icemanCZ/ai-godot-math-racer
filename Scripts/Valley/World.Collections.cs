@@ -50,7 +50,7 @@ public partial class World
                     {
                         var q = center + forward.Normalized() * lateral;
                         if (
-                            new Vector2(q.X, q.Z).Length() > Settings.PlayableRadius - 10
+                            new Vector2(q.X, q.Z).Length() > WorldTuning.CorePlayableRadius - 10
                             || Village.IsReserved(q)
                             || River.Distance(q.X, q.Z) < River.HalfWidth(q.Z) + 8
                             || River.OnBridge(q.X, q.Z)

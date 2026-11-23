@@ -22,7 +22,8 @@ param(
     [double]$Scale = 1,
     [ValidateSet('opengl3', 'opengl3_angle')]
     [string]$Driver = 'opengl3',
-    # Parts of the picture to turn off, to see what they cost: shadows, msaa, glow, fog, grass, plants, details, village, wildlife.
+    # Parts of the picture to turn off, to see what they cost: shadows, msaa, glow, fog, grass, plants, details, village, wildlife,
+    # forest, sea, outland (the borders and the ground beyond the old valley), outland-plants (the plants beyond it).
     [string[]]$Off = @(),
     [switch]$Build
 )

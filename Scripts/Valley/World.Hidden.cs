@@ -70,7 +70,7 @@ public partial class World
     private bool IsHiddenSpotFree(Vector3 p, List<(Vector3 Position, float Yaw)> others, float spacing)
     {
         if (
-            new Vector2(p.X, p.Z).Length() > Settings.PlayableRadius - 14
+            new Vector2(p.X, p.Z).Length() > WorldTuning.CorePlayableRadius - 14
             || Village.IsNearVillage(p)
             || Village.IsReserved(p)
             || Routes.Distance(p) < 5.2f

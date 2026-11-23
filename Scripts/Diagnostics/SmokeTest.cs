@@ -29,6 +29,7 @@ public partial class SmokeTest : Node
         frame++;
         if (frame == 5)
         {
+            Check(!world.FarParts.Done, "the far meshes are still being built a slice a frame once the game runs");
             car.Reset();
             Input.ActionPress("accelerate");
         }
@@ -157,7 +158,7 @@ public partial class SmokeTest : Node
                 "three animal kinds with three fur colors each"
             );
             Check(
-                Settings.PlayableRadius * Settings.PlayableRadius / (166 * 166f) > 9.99f,
+                WorldTuning.CorePlayableRadius * WorldTuning.CorePlayableRadius / (166 * 166f) > 9.99f,
                 "world playable area increased tenfold"
             );
             Check(world.Ground.Height(-350, -250) > 10, "outer hills have elevation");
@@ -190,6 +191,12 @@ public partial class SmokeTest : Node
         }
         if (frame == 1725)
         {
+            int outlandGround = world.Ground.GetChildren().OfType<MeshInstance3D>().Count();
+            int verges = world.Routes.GetNodeOrNull<Node3D>("Verges")?.GetChildCount() ?? 0;
+            Check(
+                world.FarParts.Done && outlandGround > 900 && verges > 20,
+                $"the ground, with the land beyond the old valley ({outlandGround} meshes), and the verges ({verges}) are built while the game runs"
+            );
             Check(
                 car.Tracks.OldestAge >= 18 && car.Tracks.OldestAge <= 25.1f,
                 "sustained driving retains tracks through their gradual fade"

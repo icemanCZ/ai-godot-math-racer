@@ -37,7 +37,7 @@ public partial class World
     }
 
     internal bool IsFireflySpotFree(Vector3 p) =>
-        new Vector2(p.X, p.Z).Length() <= Settings.PlayableRadius - 14
+        ValleyBounds.Contains(p.X, p.Z, 14)
         && !Village.IsNearVillage(p)
         && !Village.IsReserved(p)
         && River.Distance(p.X, p.Z) >= River.HalfWidth(p.Z) + 6

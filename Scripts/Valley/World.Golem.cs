@@ -31,7 +31,7 @@ public partial class World
                 visitor.Y = Ground.Height(visitor.X, visitor.Z);
                 building.Y = Ground.Height(building.X, building.Z);
                 if (
-                    new Vector2(building.X, building.Z).Length() > Settings.PlayableRadius - 22
+                    new Vector2(building.X, building.Z).Length() > WorldTuning.CorePlayableRadius - 22
                     || Village.IsNearVillage(building)
                     || Village.IsReserved(building)
                     || FlatDistance(building, Witch.Position) < 35

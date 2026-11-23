@@ -8,6 +8,19 @@ namespace MathRacer.Valley;
 /// </summary>
 internal static class WorldTuning
 {
+    // The valley as it was before it grew: its terrain grid covers the square of ±CoreRadius, and what its generation
+    // places stands inside the circle of CorePlayableRadius. Everything there comes from the same code and the same
+    // random numbers as before, which the world fingerprints hold, so these two never change and the generation of the
+    // core never asks ValleyBounds, which is where the valley ends while it is played.
+    public const float CoreRadius = 555f;
+    public const float CorePlayableRadius = 525f;
+
+    // The land round the core: its terrain is a grid as fine as the core's up to ±OutlandRadius, and coarse scenery
+    // beyond it up to ±SceneryRadius, which nobody drives on. OutlandRadius lies a whole number of terrain chunks
+    // (32 cells of 2.5 m) beyond the core, and both edges on the coarse 10 m grid, so that the grids meet without gaps.
+    public const float OutlandRadius = 1275f;
+    public const float SceneryRadius = 1675f;
+
     // Benches along the main road, at these distances from its start, to the side.
     public static readonly float[] BenchDistances = { 115f, 180f };
     public const float BenchOffset = 9f;

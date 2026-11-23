@@ -58,8 +58,8 @@ public static class RoadPassabilityChecks
         GD.Print($"ROAD_PASSABILITY_PASSED seed={Settings.Seed} samples={samples} max_grade={maxGrade:F3}");
         float maxBank = 0;
         for (
-            float z = -Settings.WorldRadius + Settings.TerrainStep;
-            z < Settings.WorldRadius - Settings.TerrainStep;
+            float z = -WorldTuning.CoreRadius + Settings.TerrainStep;
+            z < WorldTuning.CoreRadius - Settings.TerrainStep;
             z += 5
         )
             foreach (int side in new[] { -1, 1 })

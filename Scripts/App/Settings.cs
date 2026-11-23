@@ -21,9 +21,7 @@ public static class Settings
 
     // --- Tuning constants.
 
-    public const float WorldRadius = 555f;
     public const float TerrainStep = 2.5f;
-    public const float PlayableRadius = 525f;
     public const float MaxSpeed = 15f;
     public const float ReverseSpeed = 6f;
     public const float Acceleration = 7f;

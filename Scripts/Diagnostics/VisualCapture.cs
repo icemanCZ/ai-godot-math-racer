@@ -388,6 +388,48 @@ public partial class VisualCapture : Node
                 camera.LookAt(edge + forward * 3);
             }
         }
+        else if (view.StartsWith("outland-"))
+        {
+            // The roads beyond the old valley: a bridge of the ring, where a join leaves an old road, a stretch of ring.
+            camera.SetProcess(false);
+            var routes = world.OutlandRoutePoints;
+            var bridge = WorldLayout.Plan.Outland.Bridges[0];
+            var deck = new Vector3(bridge.CenterX, bridge.Top, bridge.Z);
+            var (from, to) = view switch
+            {
+                "outland-bridge" => (deck + new Vector3(-26, 9, 22), deck),
+                "outland-join" when routes.Length > 1 => (
+                    world.Ground.At(routes[1][0].X, routes[1][0].Z)
+                        + new Vector3(0, 25, 0)
+                        - (routes[1][1] - routes[1][0]).Normalized() * 30,
+                    world.Ground.At(routes[1][1].X, routes[1][1].Z)
+                ),
+                _ => (
+                    world.Ground.At(routes[0][2].X, routes[0][2].Z) + new Vector3(0, 60, 0),
+                    world.Ground.At(routes[0][4].X, routes[0][4].Z)
+                ),
+            };
+            camera.Position = from;
+            camera.LookAt(to);
+        }
+        else if (view.StartsWith("border-"))
+        {
+            // The natural borders of the valley (docs/MAP_EXPANSION_PLAN.md), seen from inside its edge.
+            camera.SetProcess(false);
+            float side = WorldLayout.Plan.Side;
+            Vector3 Above(float x, float z, float height) => world.Ground.At(x, z) + Vector3.Up * height;
+            var (from, to) = view switch
+            {
+                "border-mountains" => (Above(side * -150, -900, 30), new Vector3(side * -150, 110, -1450)),
+                "border-sea" => (Above(side * -250, 1030, 22), new Vector3(side * -100, -10, 1400)),
+                "border-river" => (Above(side * 1060, 150, 22), new Vector3(side * 1250, -5, -150)),
+                "border-forest" => (Above(side * -1060, -100, 18), new Vector3(side * -1400, 10, 100)),
+                "border-corner" => (Above(side * 1000, 1000, 40), new Vector3(side * 1250, -10, 1250)),
+                _ => (new Vector3(0, 1500, 2300), new Vector3(0, 0, -150)),
+            };
+            camera.Position = from;
+            camera.LookAt(to);
+        }
         else if (view == "world")
         {
             camera.SetProcess(false);

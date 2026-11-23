@@ -53,6 +53,45 @@ internal static class WorldFingerprint
         return lines;
     }
 
+    /// <summary>
+    /// The land between the old valley and the borders (<c>docs/MAP_EXPANSION_PLAN.md</c>, phase 4): the ring and its
+    /// bridges, the roads beyond the old valley, the ground there, its plants and its animals. It is generated after
+    /// everything in the first two files and has a file of its own, kept the same way.
+    /// </summary>
+    internal static string OutlandFileFor(int seed) => Path.Combine(Folder, $"seed-{seed}.outland.txt");
+
+    internal static List<string> OutlandLines(World world)
+    {
+        var layout = WorldLayout.Plan.Outland;
+        var lines = new List<string> { $"seed {Settings.Seed}", $"ring radius {F(layout.RingRadius)}" };
+        foreach (var bridge in layout.Bridges)
+            lines.Add(
+                $"bridge {F(bridge.CenterX)} {F(bridge.Z)} half length {F(bridge.HalfLength)} top {F(bridge.Top)}"
+            );
+        var points = world.OutlandRoutePoints;
+        lines.Add($"outland roads {points.Length} joins {world.OutlandJoinCount}");
+        foreach (var route in points)
+            lines.Add($"outland route {route.Length} from {P(route[0])} to {P(route[^1])}");
+        var samples = world.OutlandRoutes.Samples;
+        lines.Add($"outland road samples {samples.Count} hash {Hash(samples.Select(P))}");
+        // Every 25 m beyond the grid of the first file, out to the edge of the valley.
+        var heights = new List<string>();
+        for (int x = -1125; x <= 1125; x += 25)
+        for (int z = -1125; z <= 1125; z += 25)
+            if (Math.Max(Math.Abs(x), Math.Abs(z)) > 500)
+                heights.Add(F(world.Ground.Height(x, z)));
+        lines.Add($"outland heights {heights.Count} hash {Hash(heights)}");
+        var plants = world.Plants;
+        lines.Add(
+            $"outland vegetation trees {plants.OutlandTreeCount} bushes {plants.OutlandBushCount} hash {Hash(plants.OutlandTreePositions.Select(P))}"
+        );
+        var animals = world.Wildlife.Animals.Skip(world.Wildlife.Animals.Count - world.Wildlife.OutlandCount);
+        lines.Add(
+            $"outland animals {world.Wildlife.OutlandCount} hash {Hash(animals.Select(a => $"{a.Kind} {P(a.Home)}"))}"
+        );
+        return lines;
+    }
+
     internal static List<string> Lines(World world)
     {
         var lines = new List<string> { $"seed {Settings.Seed}" };
@@ -122,6 +161,14 @@ public partial class WorldFingerprintWriter : Node
                 File.WriteAllLines(glassworks, WorldFingerprint.GlassworksLines(world));
                 GD.Print($"WROTE: {glassworks}");
             }
+            string outland = WorldFingerprint.OutlandFileFor(Settings.Seed);
+            if (File.Exists(outland))
+                GD.Print($"KEPT: {outland} already exists and stays as it is");
+            else
+            {
+                File.WriteAllLines(outland, WorldFingerprint.OutlandLines(world));
+                GD.Print($"WROTE: {outland}");
+            }
             GetTree().Quit();
         }
         catch (Exception error)
@@ -154,8 +201,18 @@ public partial class WorldFingerprintChecks : Node
                 throw new InvalidOperationException(
                     $"No glassworks fingerprint for seed {Settings.Seed}: {glassworksPath}"
                 );
-            var expected = File.ReadAllLines(path).Concat(File.ReadAllLines(glassworksPath)).ToArray();
-            var actual = WorldFingerprint.Lines(world).Concat(WorldFingerprint.GlassworksLines(world)).ToList();
+            string outlandPath = WorldFingerprint.OutlandFileFor(Settings.Seed);
+            if (!File.Exists(outlandPath))
+                throw new InvalidOperationException($"No outland fingerprint for seed {Settings.Seed}: {outlandPath}");
+            var expected = File.ReadAllLines(path)
+                .Concat(File.ReadAllLines(glassworksPath))
+                .Concat(File.ReadAllLines(outlandPath))
+                .ToArray();
+            var actual = WorldFingerprint
+                .Lines(world)
+                .Concat(WorldFingerprint.GlassworksLines(world))
+                .Concat(WorldFingerprint.OutlandLines(world))
+                .ToList();
             var different = new List<string>();
             for (int i = 0; i < Math.Max(expected.Length, actual.Count); i++)
             {
@@ -249,6 +306,7 @@ public partial class ContractChecks : Node
             CheckPanels();
             CheckDiagnosticSuites();
             CheckNamespaces();
+            CheckValleyBounds();
             GD.Print("CONTRACT_CHECKS_PASSED");
             GetTree().Quit();
         }
@@ -450,6 +508,45 @@ public partial class ContractChecks : Node
         Check(
             clashes.Count == 0,
             "no namespace has the name of a type" + (clashes.Count == 0 ? "" : ": " + string.Join(", ", clashes))
+        );
+    }
+
+    /// <summary>
+    /// Where the valley ends while it is played (<see cref="ValleyBounds"/>) is asked only by the code that limits play:
+    /// the car, the grass, the lamps, the fireflies, the wild animals and the hunt, and the checks. The generation of the
+    /// old valley keeps to <see cref="WorldTuning.CorePlayableRadius"/>, or a valley that grows would move what saved
+    /// games already have. A new use elsewhere is a decision to be made on purpose, and to be added here.
+    /// </summary>
+    private static void CheckValleyBounds()
+    {
+        string[] allowed =
+        {
+            "Saves/SaveRules.cs",
+            "Settlement/LampField.cs",
+            "Valley/Grass.cs",
+            "Valley/HuntField.cs",
+            "Valley/ValleyBorders.cs",
+            "Valley/Vegetation.Outland.cs",
+            "Valley/Wayside.cs",
+            "Valley/Wildlife.cs",
+            "Valley/World.Fireflies.cs",
+            "Valley/World.Hunter.cs",
+            "Valley/World.Outland.cs",
+            "Vehicles/Vehicle.cs",
+        };
+        string scripts = ProjectSettings.GlobalizePath("res://Scripts");
+        var users = Directory
+            .GetFiles(scripts, "*.cs", SearchOption.AllDirectories)
+            .Select(file => Path.GetRelativePath(scripts, file).Replace('\\', '/'))
+            .Where(relative => !relative.StartsWith("Diagnostics/"))
+            .Where(relative => File.ReadAllText(Path.Combine(scripts, relative)).Contains("ValleyBounds."))
+            .Order()
+            .ToList();
+        var unexpected = users.Except(allowed).ToList();
+        Check(
+            unexpected.Count == 0,
+            "only the code that limits play asks where the valley ends"
+                + (unexpected.Count == 0 ? "" : ": " + string.Join(", ", unexpected))
         );
     }
 

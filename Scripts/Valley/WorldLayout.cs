@@ -51,6 +51,12 @@ public sealed class WorldPlan
     public float ForestPhase { get; }
     public Vector3[][] Routes { get; }
     public Vector3 VillageJunction { get; }
+
+    /// <summary>The mountains, the sea, the border river and the forest round the valley.</summary>
+    public ValleyBorders Borders { get; }
+
+    /// <summary>The ring road round the old valley and its bridges over the river.</summary>
+    public OutlandLayout Outland { get; }
     private readonly FastNoiseLite landscapeNoise;
     private readonly RiverCourse riverCourse;
 
@@ -157,5 +163,8 @@ public sealed class WorldPlan
         foreach (var route in Routes)
             for (int i = 0; i < route.Length; i++)
                 route[i] = new Vector3(route[i].X * Side, 0, route[i].Z);
+        // Last, with random numbers of its own, so that nothing above changes.
+        Borders = new ValleyBorders(seed, Side);
+        Outland = new OutlandLayout(seed, this);
     }
 }

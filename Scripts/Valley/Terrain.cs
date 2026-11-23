@@ -45,8 +45,10 @@ public partial class Terrain : Node3D
 
     private float RawHeight(float x, float z)
     {
-        float landscape = WorldLayout.Plan.NaturalHeight(x, z);
+        float landscape = WorldLayout.Plan.Borders.Shape(x, z, WorldLayout.Plan.NaturalHeight(x, z));
         float height = roadbed.Apply(x, z, landscape);
+        if (outlandRoadbed != null)
+            height = outlandRoadbed.Apply(x, z, height);
         if (villageArea is Rect2 area)
         {
             float dx = Mathf.Max(area.Position.X - x, Mathf.Max(0, x - area.End.X));
@@ -159,14 +161,14 @@ public partial class Terrain : Node3D
     public float Height(float x, float z)
     {
         const float step = Settings.TerrainStep;
-        float gx = (x + Settings.WorldRadius) / step,
-            gz = (z + Settings.WorldRadius) / step;
+        float gx = (x + WorldTuning.CoreRadius) / step,
+            gz = (z + WorldTuning.CoreRadius) / step;
         float ix = System.MathF.Floor(gx),
             iz = System.MathF.Floor(gz),
             u = gx - ix,
             v = gz - iz;
-        float px = ix * step - Settings.WorldRadius,
-            pz = iz * step - Settings.WorldRadius;
+        float px = ix * step - WorldTuning.CoreRadius,
+            pz = iz * step - WorldTuning.CoreRadius;
         float Sample(int xIndex, int zIndex) =>
             heights != null
             && xIndex >= 0
@@ -174,7 +176,7 @@ public partial class Terrain : Node3D
             && xIndex < heights.GetLength(0)
             && zIndex < heights.GetLength(1)
                 ? heights[xIndex, zIndex]
-                : RawHeight(xIndex * step - Settings.WorldRadius, zIndex * step - Settings.WorldRadius);
+                : OutlandHeight(xIndex, zIndex);
         float a = Sample((int)ix, (int)iz),
             b = Sample((int)ix + 1, (int)iz),
             c = Sample((int)ix, (int)iz + 1),
@@ -190,14 +192,17 @@ public partial class Terrain : Node3D
     /// </summary>
     public void Generate()
     {
-        int count = Mathf.RoundToInt(Settings.WorldRadius * 2 / Settings.TerrainStep);
+        int count = Mathf.RoundToInt(WorldTuning.CoreRadius * 2 / Settings.TerrainStep);
         heights = new float[count + 1, count + 1];
         for (int z = 0; z <= count; z++)
         for (int x = 0; x <= count; x++)
             heights[x, z] = RawHeight(
-                x * Settings.TerrainStep - Settings.WorldRadius,
-                z * Settings.TerrainStep - Settings.WorldRadius
+                x * Settings.TerrainStep - WorldTuning.CoreRadius,
+                z * Settings.TerrainStep - WorldTuning.CoreRadius
             );
+        // The land round the core is worked out again from the final core, once, by BuildMeshes.
+        outland = null;
+        outlandRoadbed = null;
         meshesStale = true;
     }
 
@@ -224,13 +229,14 @@ public partial class Terrain : Node3D
         for (int z = 0; z <= count; z++)
         for (int x = 0; x <= count; x++)
             colors[x, z] = VertexColor(
-                x * Settings.TerrainStep - Settings.WorldRadius,
-                z * Settings.TerrainStep - Settings.WorldRadius
+                x * Settings.TerrainStep - WorldTuning.CoreRadius,
+                z * Settings.TerrainStep - WorldTuning.CoreRadius
             );
         const int chunk = 32;
         for (int cz = 0; cz < count; cz += chunk)
         for (int cx = 0; cx < count; cx += chunk)
             GenerateChunk(colors, cx, cz, Mathf.Min(cx + chunk, count), Mathf.Min(cz + chunk, count));
+        BuildOutland();
     }
 
     private Color VertexColor(float x, float z)
@@ -249,8 +255,8 @@ public partial class Terrain : Node3D
         for (int z = startZ; z < endZ; z++)
         for (int x = startX; x < endX; x++)
         {
-            float px = -Settings.WorldRadius + x * step,
-                pz = -Settings.WorldRadius + z * step;
+            float px = -WorldTuning.CoreRadius + x * step,
+                pz = -WorldTuning.CoreRadius + z * step;
             Vector3 a = At(px, pz),
                 b = At(px + step, pz),
                 c = At(px, pz + step),

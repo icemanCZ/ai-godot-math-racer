@@ -133,6 +133,7 @@ public partial class Vehicle : CharacterBody3D
         var forward = -Transform.Basis.Z;
         float Surface(float x, float z) =>
             River.OnBridge(x, z) ? Mathf.Max(terrain.Height(x, z), River.BridgeSurfaceHeight(x))
+            : WorldLayout.Plan.Outland.BridgeAt(x, z) is { } deck ? Mathf.Max(terrain.Height(x, z), deck.Top)
             : ford != null ? ford.Surface(x, z, terrain.Height(x, z))
             : terrain.Height(x, z);
         float Slope(Vector3 direction) =>
@@ -176,6 +177,16 @@ public partial class Vehicle : CharacterBody3D
             Speed = 0;
             Velocity = Vector3.Zero;
         }
+        // The valley ends at its natural borders: the car stops at the edge as it does at the water and can turn back.
+        bool atEdge =
+            !ValleyBounds.Contains(Position.X, Position.Z)
+            && ValleyBounds.Contains(previousPosition.X, previousPosition.Z);
+        if (atEdge)
+        {
+            Position = previousPosition;
+            Speed = 0;
+            Velocity = Vector3.Zero;
+        }
         // MoveAndSlide removes blocked velocity; also shed the arcade speed so
         // the car cannot store full throttle against a wall and launch away.
         float impact = 0;
@@ -193,14 +204,19 @@ public partial class Vehicle : CharacterBody3D
         if (impact > 0)
             Speed *= Mathf.Sqrt(Mathf.Max(0, 1 - impact * impact));
         stuckTime =
-            !blockedByWater && Mathf.Abs(throttle) > .5f && !braking && Position.DistanceTo(lastPosition) < .005f
+            !blockedByWater
+            && !atEdge
+            && Mathf.Abs(throttle) > .5f
+            && !braking
+            && Position.DistanceTo(lastPosition) < .005f
                 ? stuckTime + dt
                 : 0;
         lastPosition = Position;
         if (stuckTime > 5)
             Reset();
+        // A car that is far beyond the edge was put there, not driven: it goes back to the start.
         if (
-            new Vector2(Position.X, Position.Z).Length() > Settings.PlayableRadius
+            !ValleyBounds.Contains(Position.X, Position.Z, -30)
             || Position.Y < terrain.Height(Position.X, Position.Z) - 25
         )
             Reset();

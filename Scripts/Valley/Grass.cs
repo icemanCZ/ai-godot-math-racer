@@ -95,10 +95,7 @@ public partial class Grass : Node3D
         for (int x = -18; x <= 18; x++)
         {
             var key = cell + new Vector2I(x, z);
-            if (
-                Distance(key) < 282
-                && new Vector2(key.X * TileSize + 8, key.Y * TileSize + 8).Length() < Settings.PlayableRadius + 12
-            )
+            if (Distance(key) < 282 && ValleyBounds.Contains(key.X * TileSize + 8, key.Y * TileSize + 8, -12))
                 wanted.Add(key);
         }
         var wantedSet = new HashSet<Vector2I>(wanted);
@@ -153,11 +150,14 @@ public partial class Grass : Node3D
                 return false;
         }
         if (
-            FlatMath.Length(p.X, p.Z) > Settings.PlayableRadius - 3
+            !ValleyBounds.Contains(p.X, p.Z, 3)
+            || WorldLayout.Plan.Borders.IsSand(p.X, p.Z)
             || River.Distance(p.X, p.Z) < River.HalfWidth(p.Z) + 3
             || River.OnBridge(p.X, p.Z)
+            || WorldLayout.Plan.Outland.BridgeAt(p.X, p.Z, 1) != null
             || world.Village.IsReserved(p)
             || world.Routes.SurfaceHeight(p, p.Y) > p.Y + .05f
+            || world.OutlandRoutes.SurfaceHeight(p, p.Y) > p.Y + .03f
             || world.Tracks?.Contains(p) == true
             || world.Ford?.Covers(p) == true
             || world.Plants.NearTrunk(p, .65f)
@@ -180,6 +180,9 @@ public partial class Grass : Node3D
     private float VergeGrowth(Vector3 p)
     {
         float distance = world.Routes.EdgeDistance(p);
+        // Beyond the old valley only its own roads are near.
+        if (Mathf.Max(Mathf.Abs(p.X), Mathf.Abs(p.Z)) > WorldTuning.CorePlayableRadius)
+            distance = Mathf.Min(distance, world.OutlandRoutes.EdgeDistance(p));
         if (world.Tracks is { } tracks)
         {
             // The mouth of a field path opens out wider than the path, which the grass already keeps off.

@@ -10,13 +10,16 @@ namespace MathRacer.Valley;
 
 public partial class Vegetation : Node3D
 {
-    private readonly RandomNumberGenerator rng = new() { Seed = (ulong)Settings.Seed };
+    // The plants beyond the old valley get generators of their own (GenerateOutland), once the old valley's are done.
+    private RandomNumberGenerator rng = new() { Seed = (ulong)Settings.Seed };
 
     // Art detail uses a separate random stream so tree placement stays identical.
-    private readonly RandomNumberGenerator detailRng = new() { Seed = (ulong)Settings.Seed + 901 };
+    private RandomNumberGenerator detailRng = new() { Seed = (ulong)Settings.Seed + 901 };
 
-    // Chunked batches let the renderer cull distant groves instead of drawing the whole valley.
-    private readonly record struct BatchKey(string Shape, string Color, int X, int Z, bool Tree);
+    // Chunked batches let the renderer cull distant groves instead of drawing the whole valley. The plants beyond the old
+    // valley are batched apart from those in it, even in the same block.
+    /// <param name="Group">Zero in the old valley; beyond it the block build the batch belongs to (Vegetation.Outland).</param>
+    private readonly record struct BatchKey(string Shape, string Color, int X, int Z, bool Tree, int Group = 0);
 
     private readonly Dictionary<BatchKey, List<(Transform3D Transform, Color Wind)>> batches = new();
 
@@ -29,6 +32,8 @@ public partial class Vegetation : Node3D
     /// </summary>
     private const float FarDistance = 130;
     private readonly Dictionary<Vector2I, List<Vector3>> treePositions = new();
+
+    /// <summary>The trees of the old valley, as they were generated; every saved valley was made with them.</summary>
     internal IEnumerable<Vector3> TreePositions => treePositions.Values.SelectMany(trees => trees);
     private Terrain ground = null!;
     private readonly (Vector2 Center, int Type)[] GroveRegions = CreateGroveRegions();
@@ -54,7 +59,8 @@ public partial class Vegetation : Node3D
             color,
             Mathf.FloorToInt(p.X / 64),
             Mathf.FloorToInt(p.Z / 64),
-            buildingTree != null
+            buildingTree != null,
+            outlandPass ? outlandBuildGroup : 0
         );
         if (!batches.TryGetValue(key, out var batch))
             batches[key] = batch = new();
@@ -69,10 +75,23 @@ public partial class Vegetation : Node3D
         Color wind = default;
         if (buildingTree is { } tree)
         {
-            tree.Parts.Add(new TreePart(key, batch.Count, transform));
+            AddToRun(tree, key, batch.Count);
             wind = new Color(tree.Foot.X, tree.Foot.Y, tree.Foot.Z, tree.Size);
         }
         batch.Add((transform, wind));
+    }
+
+    /// <summary>Notes that instance <paramref name="index"/> of a batch belongs to the tree being planted.</summary>
+    private static void AddToRun(TreeVisual tree, BatchKey key, int index)
+    {
+        var runs = tree.Runs;
+        for (int i = runs.Count - 1; i >= 0; i--)
+            if (runs[i].Batch == key && runs[i].First + runs[i].Count == index)
+            {
+                runs[i] = runs[i] with { Count = runs[i].Count + 1 };
+                return;
+            }
+        runs.Add(new TreeRun(key, index, 1));
     }
 
     public void Generate(
@@ -119,7 +138,7 @@ public partial class Vegetation : Node3D
         {
             float x = rng.RandfRange(-510, 510),
                 z = rng.RandfRange(-510, 510);
-            if (FlatMath.Length(x, z) > Settings.PlayableRadius - 8)
+            if (FlatMath.Length(x, z) > WorldTuning.CorePlayableRadius - 8)
                 continue;
             var p = terrain.At(x, z);
             if (
@@ -171,7 +190,7 @@ public partial class Vegetation : Node3D
                 Bush(p, rng.RandfRange(.6f, 1.1f), i % 3);
         }
         bool Safe(Vector3 p, float roadClearance) =>
-            FlatMath.Length(p.X, p.Z) < Settings.PlayableRadius - 8
+            FlatMath.Length(p.X, p.Z) < WorldTuning.CorePlayableRadius - 8
             && !Reserved(p)
             && River.Distance(p.X, p.Z) > River.HalfWidth(p.Z) + 8
             && roads.Distance(p) > roadClearance;
@@ -180,35 +199,7 @@ public partial class Vegetation : Node3D
             var p = terrain.At(rng.RandfRange(-510, 510), rng.RandfRange(-510, 510));
             if (Reserved(p) || River.Distance(p.X, p.Z) < River.HalfWidth(p.Z) + 6 || roads.Distance(p) < 4.2f)
                 continue;
-            string color = new[] { "ff60ab", "ffd240", "fff5de", "ae78ed" }[i % 4];
-            Trampling.Begin(p, .16f, Trampling.Kind.Flower);
-            Leaf(p + Vector3.Up * .18f, new Vector3(.035f, .2f, .035f), "238e73");
-            heads = true;
-            for (int petal = 0; petal < 4; petal++)
-                Leaf(
-                    p
-                        + new Vector3(
-                            Mathf.Sin(petal * Mathf.Pi / 2) * .13f,
-                            .36f,
-                            Mathf.Cos(petal * Mathf.Pi / 2) * .13f
-                        ),
-                    new Vector3(.13f, .06f, .13f),
-                    color
-                );
-            Leaf(p + Vector3.Up * .38f, new Vector3(.075f, .065f, .075f), "ffd240");
-            heads = false;
-            Trampling.End();
-            if (i % 15 == 0)
-            {
-                var size = new Vector3(1.15f, .75f, .95f);
-                Leaf(p, size, "adaebf");
-                Obstacles.Rock(this, p, size);
-            }
-            if (i % 21 == 0)
-            {
-                Leaf(p + Vector3.Up * .2f, new Vector3(.1f, .25f, .1f), "fff5de");
-                Leaf(p + Vector3.Up * .45f, new Vector3(.32f, .15f, .32f), "f54257");
-            }
+            Flower(p, i);
         }
         GenerateNatureDetails(terrain, roads, Reserved);
         if (cleared != null)
@@ -216,6 +207,42 @@ public partial class Vegetation : Node3D
             ClearArea(cleared);
             Trampling.Forget(cleared);
         }
+        BuildBatches();
+        GD.Print($"VEGETATION_READY trees={TreeCount} bushes={BushCount}");
+    }
+
+    /// <summary>A flower, the <paramref name="i"/>th of its pass; every 15th has a rock and every 21st a toadstool.</summary>
+    private void Flower(Vector3 p, int i)
+    {
+        string color = new[] { "ff60ab", "ffd240", "fff5de", "ae78ed" }[i % 4];
+        Trampling.Begin(p, .16f, Trampling.Kind.Flower);
+        Leaf(p + Vector3.Up * .18f, new Vector3(.035f, .2f, .035f), "238e73");
+        heads = true;
+        for (int petal = 0; petal < 4; petal++)
+            Leaf(
+                p + new Vector3(Mathf.Sin(petal * Mathf.Pi / 2) * .13f, .36f, Mathf.Cos(petal * Mathf.Pi / 2) * .13f),
+                new Vector3(.13f, .06f, .13f),
+                color
+            );
+        Leaf(p + Vector3.Up * .38f, new Vector3(.075f, .065f, .075f), "ffd240");
+        heads = false;
+        Trampling.End();
+        if (i % 15 == 0)
+        {
+            var size = new Vector3(1.15f, .75f, .95f);
+            Leaf(p, size, "adaebf");
+            Obstacles.Rock(this, p, size);
+        }
+        if (i % 21 == 0)
+        {
+            Leaf(p + Vector3.Up * .2f, new Vector3(.1f, .25f, .1f), "fff5de");
+            Leaf(p + Vector3.Up * .45f, new Vector3(.32f, .15f, .32f), "f54257");
+        }
+    }
+
+    /// <summary>Draws the parts placed since the last call, each batch as a near and (for most) a far MultiMesh.</summary>
+    private void BuildBatches()
+    {
         var meshes = new Dictionary<string, Mesh>
         {
             ["leaf"] = new SphereMesh
@@ -287,12 +314,9 @@ public partial class Vegetation : Node3D
                 Mesh = meshes[pair.Key.Shape],
                 InstanceCount = pair.Value.Count,
             };
-            for (int i = 0; i < pair.Value.Count; i++)
-            {
-                mm.SetInstanceTransform(i, pair.Value[i].Transform);
-                if (pair.Key.Tree)
-                    mm.SetInstanceCustomData(i, pair.Value[i].Wind);
-            }
+            // The instances are handed over in one buffer: one call per instance was most of the time the plants took.
+            var buffer = InstanceBuffer(pair.Value, pair.Key.Tree);
+            mm.Buffer = buffer;
             renderedBatches[pair.Key] = mm;
             if (trampledBatches.TryGetValue(pair.Key, out int trampled))
                 Trampling.Bind(trampled, mm);
@@ -332,7 +356,10 @@ public partial class Vegetation : Node3D
                     ? GeometryInstance3D.ShadowCastingSetting.Off
                     : GeometryInstance3D.ShadowCastingSetting.On,
             };
-            AddChild(near);
+            var parent = outlandPass ? OutlandPlants : this;
+            parent.AddChild(near);
+            if (outlandPass)
+                outlandNear.Add(near);
             if (small || tiny)
                 continue;
             // The same plants once more for the far blocks: simpler shapes and no outline, which has thinned out to
@@ -345,24 +372,56 @@ public partial class Vegetation : Node3D
                 Mesh = farMeshes.GetValueOrDefault(pair.Key.Shape, mm.Mesh),
                 InstanceCount = mm.InstanceCount,
             };
-            // A headless run keeps no instance data and draws nothing, so its far copy stays empty.
-            var buffer = mm.Buffer;
-            if (buffer.Length > 0)
-                far.Buffer = buffer;
+            far.Buffer = buffer;
             farBatches[pair.Key] = far;
-            AddChild(
-                new MultiMeshInstance3D
-                {
-                    Multimesh = far,
-                    MaterialOverride = material,
-                    VisibilityRangeBegin = FarDistance,
-                    CastShadow = GeometryInstance3D.ShadowCastingSetting.On,
-                }
-            );
+            var distant = new MultiMeshInstance3D
+            {
+                Multimesh = far,
+                MaterialOverride = material,
+                VisibilityRangeBegin = FarDistance,
+                // Beyond the old valley the simpler shapes give way to one shape a tree further out (BuildDistantTrees).
+                VisibilityRangeEnd = outlandPass ? OutlandDetailRange : 0,
+                CastShadow = GeometryInstance3D.ShadowCastingSetting.On,
+            };
+            parent.AddChild(distant);
         }
         batches.Clear();
         trampledBatches.Clear();
-        GD.Print($"VEGETATION_READY trees={TreeCount} bushes={BushCount}");
+    }
+
+    /// <summary>
+    /// The instances of a batch as a MultiMesh buffer: each transform as three rows of the basis with the origin, then
+    /// the wind of its tree when it has one.
+    /// </summary>
+    private static float[] InstanceBuffer(List<(Transform3D Transform, Color Wind)> parts, bool wind)
+    {
+        int stride = wind ? 16 : 12;
+        var buffer = new float[parts.Count * stride];
+        for (int i = 0; i < parts.Count; i++)
+        {
+            var (transform, color) = parts[i];
+            var basis = transform.Basis;
+            int at = i * stride;
+            buffer[at] = basis.X.X;
+            buffer[at + 1] = basis.Y.X;
+            buffer[at + 2] = basis.Z.X;
+            buffer[at + 3] = transform.Origin.X;
+            buffer[at + 4] = basis.X.Y;
+            buffer[at + 5] = basis.Y.Y;
+            buffer[at + 6] = basis.Z.Y;
+            buffer[at + 7] = transform.Origin.Y;
+            buffer[at + 8] = basis.X.Z;
+            buffer[at + 9] = basis.Y.Z;
+            buffer[at + 10] = basis.Z.Z;
+            buffer[at + 11] = transform.Origin.Z;
+            if (!wind)
+                continue;
+            buffer[at + 12] = color.R;
+            buffer[at + 13] = color.G;
+            buffer[at + 14] = color.B;
+            buffer[at + 15] = color.A;
+        }
+        return buffer;
     }
 
     private static (Vector2 Center, int Type)[] CreateGroveRegions()
@@ -395,14 +454,21 @@ public partial class Vegetation : Node3D
 
     private int TreeTypeAt(Vector3 p)
     {
+        if (outlandPass)
+            return OutlandTreeTypeAt(p);
         // All placement passes use the same continuous species map, including roadside trees.
         // Willows form a riverbank ribbon; other species form coherent adjoining groves.
         if (River.Distance(p.X, p.Z) < River.HalfWidth(p.Z) + 28)
             return 5;
-        var point = new Vector2(p.X, p.Z);
+        return NearestType(GroveRegions, new Vector2(p.X, p.Z));
+    }
+
+    /// <summary>The kind of tree of the region nearest to <paramref name="point"/>, its borders gently warped.</summary>
+    private static int NearestType((Vector2 Center, int Type)[] regions, Vector2 point)
+    {
         float best = float.MaxValue;
         int type = 0;
-        foreach (var region in GroveRegions)
+        foreach (var region in regions)
         {
             // Distort region boundaries gently, leaving each grove center anchored.
             var delta = point - region.Center;
@@ -489,13 +555,18 @@ public partial class Vegetation : Node3D
             if (!inside(isTree ? tree!.Foot : body.Position))
                 continue;
             if (isTree)
-                foreach (var part in tree!.Parts)
-                    batches[part.Batch][part.Index] = Hidden(batches[part.Batch][part.Index]);
+                foreach (var run in tree!.Runs)
+                {
+                    var batch = batches[run.Batch];
+                    for (int index = run.First; index < run.First + run.Count; index++)
+                        batch[index] = Hidden(batch[index]);
+                }
             treeVisuals.Remove(body.GetInstanceId());
             body.QueueFree();
         }
     }
 
+    /// <summary>Whether a tree of the old valley or of the land round it stands within <paramref name="clearance"/>.</summary>
     internal bool NearTrunk(Vector3 p, float clearance)
     {
         // The grass asks for every blade, so this is written in floats (see FlatMath).
@@ -503,7 +574,9 @@ public partial class Vegetation : Node3D
             cellZ = (int)System.MathF.Floor(p.Z / 5);
         for (int x = -1; x <= 1; x++)
         for (int z = -1; z <= 1; z++)
-            if (treePositions.TryGetValue(new Vector2I(cellX + x, cellZ + z), out var nearby))
+        {
+            var cell = new Vector2I(cellX + x, cellZ + z);
+            if (treePositions.TryGetValue(cell, out var nearby))
                 foreach (var other in nearby)
                 {
                     float dx = other.X - p.X,
@@ -511,31 +584,54 @@ public partial class Vegetation : Node3D
                     if (dx * dx + dz * dz < clearance * clearance && clearedArea?.Invoke(other) != true)
                         return true;
                 }
+            if (outlandTreePositions.TryGetValue(cell, out var outlying))
+                foreach (var other in outlying)
+                {
+                    float dx = other.X - p.X,
+                        dz = other.Z - p.Z;
+                    if (dx * dx + dz * dz < clearance * clearance)
+                        return true;
+                }
+        }
         return false;
     }
 
     private bool PlantTree(Vector3 p, float s, int type)
     {
         var cell = new Vector2I(Mathf.FloorToInt(p.X / 5), Mathf.FloorToInt(p.Z / 5));
+        var trees = outlandPass ? outlandTreePositions : treePositions;
         for (int x = -1; x <= 1; x++)
         for (int z = -1; z <= 1; z++)
-            if (treePositions.TryGetValue(cell + new Vector2I(x, z), out var nearby))
+            if (trees.TryGetValue(cell + new Vector2I(x, z), out var nearby))
                 foreach (var other in nearby)
                     if (new Vector2(other.X - p.X, other.Z - p.Z).Length() < 3.6f)
                         return false;
-        if (!treePositions.TryGetValue(cell, out var positions))
-            treePositions[cell] = positions = new();
+        if (!trees.TryGetValue(cell, out var positions))
+            trees[cell] = positions = new();
         positions.Add(p);
-        TreeCount++;
-        buildingTree = new TreeVisual(p, s);
-        Tree(p, s, type);
-        buildingTree = null;
-        if (TreeCount % 4 == 0)
-            ForestFloor(p, s);
+        int planted = outlandPass ? ++OutlandTreeCount : ++TreeCount;
+        if (outlandPlanning)
+        {
+            // Beyond the old valley the tree is built once the car comes near (Vegetation.Outland).
+            outlandTrees.Add((p, s, type));
+            PlanOutland(new OutlandPlant(p, s, OutlandKind.Tree, type, planted));
+            return true;
+        }
+        BuildTree(p, s, type, planted);
         return true;
     }
 
-    private void ForestFloor(Vector3 tree, float s)
+    /// <summary>A tree with its trunk, the <paramref name="planted"/>th of its land; every fourth gets a forest floor.</summary>
+    private void BuildTree(Vector3 p, float s, int type, int planted)
+    {
+        buildingTree = new TreeVisual(p, s);
+        Tree(p, s, type);
+        buildingTree = null;
+        if (planted % 4 == 0)
+            ForestFloor(p, s, planted);
+    }
+
+    private void ForestFloor(Vector3 tree, float s, int planted)
     {
         // Sample the terrain again so the tiny plants sit on hills instead of floating.
         float turn = detailRng.RandfRange(0, Mathf.Tau);
@@ -563,7 +659,7 @@ public partial class Vegetation : Node3D
                 }
             }
         }
-        if (TreeCount % 12 != 0)
+        if (planted % 12 != 0)
             return;
         for (int mushroom = 0; mushroom < 2; mushroom++)
         {
@@ -788,7 +884,9 @@ public partial class Vegetation : Node3D
 
     private void Bush(Vector3 p, float s, int type)
     {
-        BushCount++;
+        // Beyond the old valley a bush is counted where it is planned (Vegetation.Outland).
+        if (!outlandPass)
+            BushCount++;
         Trampling.Begin(p, 1.05f * s, Trampling.Kind.Bush);
         float turn = rng.RandfRange(0, Mathf.Tau);
         for (int n = 0; n < 5; n++)

@@ -35,7 +35,7 @@ public partial class Wildlife : Node3D
                 }
                 else
                     p = world.Ground.At(rng.RandfRange(-480, 480), rng.RandfRange(-480, 480));
-                if (!Safe(p, kind) || world.Routes.Distance(p) < 4.5f)
+                if (!SafeToPlace(p, kind) || world.Routes.Distance(p) < 4.5f)
                     continue;
                 bool crowded = false;
                 foreach (var other in animals)
@@ -46,34 +46,105 @@ public partial class Wildlife : Node3D
                     }
                 if (crowded)
                     continue;
-                var animal = new WildAnimal(kind, rng.RandfRange(0, Mathf.Tau));
-                AddChild(animal);
-                animal.Position = p;
-                animal.Home = p;
-                animal.Direction = new Vector3(Mathf.Sin(animal.Phase), 0, Mathf.Cos(animal.Phase));
-                animal.Animate(0, false);
-                animals.Add(animal);
+                Add(kind, p, rng.RandfRange(0, Mathf.Tau));
                 if (kind == WildKind.Deer && PreviewSpot == Vector3.Zero)
                     PreviewSpot = p;
                 break;
             }
         }
-        GD.Print($"WILDLIFE_READY count={animals.Count} species=5");
+        GenerateOutland();
+        GD.Print($"WILDLIFE_READY count={animals.Count} outland={OutlandCount} species=5");
     }
 
+    private void Add(WildKind kind, Vector3 p, float phase)
+    {
+        var animal = new WildAnimal(kind, phase);
+        AddChild(animal);
+        animal.Position = p;
+        animal.Home = p;
+        animal.Direction = new Vector3(Mathf.Sin(animal.Phase), 0, Mathf.Cos(animal.Phase));
+        animal.Animate(0, false);
+        animals.Add(animal);
+    }
+
+    /// <summary>How many of the animals live beyond the old valley; they come after those in it.</summary>
+    internal int OutlandCount { get; private set; }
+
+    /// <summary>
+    /// The animals of the land round the old valley, as many for its area as in the old valley, from a random generator
+    /// of their own after the old valley's animals: most of them near its roads, the rest anywhere.
+    /// </summary>
+    private void GenerateOutland()
+    {
+        var random = new RandomNumberGenerator { Seed = (ulong)Settings.Seed + 3128 };
+        var samples = world.OutlandRoutes.Samples;
+        float half = ValleyBounds.HalfSize;
+        int count = Mathf.RoundToInt(240 * (Mathf.Pow(half / 480, 2) - 1));
+        // The animals already placed, by cells of 3 m, so that none is put next to another.
+        var cells = new HashSet<Vector2I>();
+        static Vector2I Cell(Vector3 p) => new(Mathf.FloorToInt(p.X / 3), Mathf.FloorToInt(p.Z / 3));
+        for (int i = 0; i < count; i++)
+        {
+            var kind = (WildKind)(i % 5);
+            for (int attempt = 0; attempt < 60; attempt++)
+            {
+                Vector3 p;
+                if (i % 4 != 3 && samples.Count > 0)
+                {
+                    var sample = samples[random.RandiRange(0, samples.Count - 1)];
+                    float angle = random.RandfRange(0, Mathf.Tau),
+                        radius = random.RandfRange(5, 22);
+                    p = world.Ground.At(sample.X + Mathf.Cos(angle) * radius, sample.Z + Mathf.Sin(angle) * radius);
+                }
+                else
+                    p = world.Ground.At(random.RandfRange(-half, half), random.RandfRange(-half, half));
+                if (
+                    new Vector2(p.X, p.Z).Length() <= WorldTuning.CorePlayableRadius
+                    || !Safe(p, kind)
+                    || world.OutlandRoutes.Distance(p) < 4.5f
+                    || world.Routes.Distance(p) < 4.5f
+                    || cells.Contains(Cell(p))
+                )
+                    continue;
+                cells.Add(Cell(p));
+                Add(kind, p, random.RandfRange(0, Mathf.Tau));
+                OutlandCount++;
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Where an animal may be put when the valley is made: only inside the old valley, so that the animals there keep
+    /// their places however far the valley reaches (<see cref="WorldTuning.CorePlayableRadius"/>).
+    /// </summary>
+    private bool SafeToPlace(Vector3 p, WildKind kind) =>
+        new Vector2(p.X, p.Z).LengthSquared() <= Mathf.Pow(WorldTuning.CorePlayableRadius - 12, 2) && Safe(p, kind);
+
+    /// <summary>Where an animal may stand or run.</summary>
     internal bool Safe(Vector3 p, WildKind kind)
     {
         if (
-            new Vector2(p.X, p.Z).LengthSquared() > Mathf.Pow(Settings.PlayableRadius - 12, 2)
+            !ValleyBounds.Contains(p.X, p.Z, 12)
             || world.Village.IsReserved(p)
             || world.Plants.NearTrunk(p, kind == WildKind.Deer ? 1.5f : .9f)
             || River.Distance(p.X, p.Z) < River.HalfWidth(p.Z) + 3
+            || OutOfTheValley(p)
         )
             return false;
         foreach (var friend in world.Animals)
             if (friend.Position.DistanceSquaredTo(p) < 16)
                 return false;
         return true;
+    }
+
+    /// <summary>Whether a point is in the border river, the sea or on the beach, where no animal goes.</summary>
+    private static bool OutOfTheValley(Vector3 p)
+    {
+        var borders = WorldLayout.Plan.Borders;
+        return borders.BorderRiverDistance(p.X, p.Z) < ValleyBorders.BorderRiverHalfWidth + 3
+            || borders.IsSand(p.X, p.Z)
+            || p.Y < ValleyBorders.SeaLevel + 1;
     }
 
     /// <summary>Wild animals nearer the car than this have the characters' soft outline.</summary>
@@ -120,8 +191,12 @@ public partial class Wildlife : Node3D
         foreach (var animal in animals)
         {
             float distance = Flat(animal.Position - car.Position).Length();
-            // Sleep distant fauna; rendering also culls its small shared meshes.
-            if (distance > 145)
+            // Sleep distant fauna, and hide it: its parts are not drawn beyond 140 m anyway, and there are some twenty
+            // thousand of them for the renderer to look through every frame.
+            bool near = distance <= 145;
+            if (animal.Visible != near)
+                animal.Visible = near;
+            if (!near)
                 continue;
             Step(animal, dt, car.Position, car.Velocity);
         }

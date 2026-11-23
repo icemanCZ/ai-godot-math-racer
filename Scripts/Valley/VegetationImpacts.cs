@@ -7,13 +7,23 @@ namespace MathRacer.Valley;
 
 public partial class Vegetation
 {
-    private readonly record struct TreePart(BatchKey Batch, int Index, Transform3D Rest);
+    /// <summary>
+    /// Instances of a tree in one batch: a tree is planted whole before the next plant, so its parts in a batch follow
+    /// one another.
+    /// </summary>
+    private readonly record struct TreeRun(BatchKey Batch, int First, int Count);
 
     private sealed class TreeVisual(Vector3 foot, float size)
     {
         internal readonly Vector3 Foot = foot;
         internal readonly float Size = size;
-        internal readonly List<TreePart> Parts = new();
+
+        /// <summary>
+        /// Where its parts are; their resting places are read back from the batches only while it shakes (<see
+        /// cref="Rest"/>), since keeping them for some twenty thousand trees took a quarter of a gigabyte.
+        /// </summary>
+        internal readonly List<TreeRun> Runs = new();
+        internal Transform3D[]? Rest;
         internal readonly List<(Vector3 Center, Vector3 Size, string Color)> Crowns = new();
         internal Vector3 Axis;
         internal float Age,
@@ -47,16 +57,22 @@ public partial class Vegetation
             return false;
         bool rendered = DisplayServer.GetName() != "headless";
         foreach (var tree in System.Linq.Enumerable.Take(treeVisuals.Values, 24))
-        foreach (var part in tree.Parts)
+        foreach (var run in tree.Runs)
         {
-            var batch = renderedBatches[part.Batch];
+            var batch = renderedBatches[run.Batch];
             if (!batch.UseCustomData)
                 return false;
             if (!rendered)
                 continue;
-            var wind = batch.GetInstanceCustomData(part.Index);
-            if (new Vector3(wind.R, wind.G, wind.B).DistanceTo(tree.Foot) > .5f || Mathf.Abs(wind.A - tree.Size) > .01f)
-                return false;
+            for (int index = run.First; index < run.First + run.Count; index++)
+            {
+                var wind = batch.GetInstanceCustomData(index);
+                if (
+                    new Vector3(wind.R, wind.G, wind.B).DistanceTo(tree.Foot) > .5f
+                    || Mathf.Abs(wind.A - tree.Size) > .01f
+                )
+                    return false;
+            }
         }
         return true;
     }
@@ -69,6 +85,7 @@ public partial class Vegetation
         tree.Axis = Vector3.Up.Cross(-normal).Normalized();
         tree.Age = 0;
         tree.Strength = Mathf.Lerp(.025f, .085f, Mathf.Clamp(speed / 14, 0, 1));
+        tree.Rest = RestOf(tree);
         shakingTrees.Add(tree);
         // Bound particles even if a player strikes several neighboring trunks in succession.
         int count = impactRng.RandiRange(5, 9);
@@ -93,6 +110,28 @@ public partial class Vegetation
         }
     }
 
+    /// <summary>A headless run keeps no instance data, so there a tree shakes without its parts being moved.</summary>
+    private static readonly bool PartsDrawn = DisplayServer.GetName() != "headless";
+
+    /// <summary>The parts of a tree where they rest, read from its batches when it begins to shake.</summary>
+    private Transform3D[]? RestOf(TreeVisual tree)
+    {
+        if (!PartsDrawn)
+            return null;
+        int count = 0;
+        foreach (var run in tree.Runs)
+            count += run.Count;
+        var rest = new Transform3D[count];
+        int at = 0;
+        foreach (var run in tree.Runs)
+        {
+            var batch = renderedBatches[run.Batch];
+            for (int index = run.First; index < run.First + run.Count; index++)
+                rest[at++] = batch.GetInstanceTransform(index);
+        }
+        return rest;
+    }
+
     public override void _PhysicsProcess(double delta)
     {
         if (GetParent()?.GetParent() is Game game && game.State != GameState.Exploring)
@@ -109,19 +148,31 @@ public partial class Vegetation
             bool finished = tree.Age >= 1.6f;
             float angle = finished ? 0 : Mathf.Sin(tree.Age * 19) * Mathf.Exp(-tree.Age * 2.8f) * tree.Strength;
             var rotation = new Basis(tree.Axis, angle);
-            foreach (var part in tree.Parts)
+            if (tree.Rest is { } rest)
             {
-                var transform = finished
-                    ? part.Rest
-                    : new Transform3D(
-                        rotation * part.Rest.Basis,
-                        tree.Foot + rotation * (part.Rest.Origin - tree.Foot)
-                    );
-                renderedBatches[part.Batch].SetInstanceTransform(part.Index, transform);
-                farBatches.GetValueOrDefault(part.Batch)?.SetInstanceTransform(part.Index, transform);
+                int at = 0;
+                foreach (var run in tree.Runs)
+                {
+                    var near = renderedBatches[run.Batch];
+                    var far = farBatches.GetValueOrDefault(run.Batch);
+                    for (int index = run.First; index < run.First + run.Count; index++, at++)
+                    {
+                        var transform = finished
+                            ? rest[at]
+                            : new Transform3D(
+                                rotation * rest[at].Basis,
+                                tree.Foot + rotation * (rest[at].Origin - tree.Foot)
+                            );
+                        near.SetInstanceTransform(index, transform);
+                        far?.SetInstanceTransform(index, transform);
+                    }
+                }
             }
             if (finished)
+            {
+                tree.Rest = null;
                 shakingTrees.RemoveAt(i);
+            }
         }
         for (int i = fallingLeaves.Count - 1; i >= 0; i--)
         {

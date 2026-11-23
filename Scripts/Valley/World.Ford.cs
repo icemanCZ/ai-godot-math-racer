@@ -111,12 +111,16 @@ public partial class World
     {
         if (River.OnBridge(x, z))
             return Mathf.Max(below, River.BridgeSurfaceHeight(x));
+        if (WorldLayout.Plan.Outland.BridgeAt(x, z) is { } bridge)
+            return Mathf.Max(below, bridge.Top);
         return Ford?.Surface(x, z, below) ?? below;
     }
 
     /// <summary>Whether a point lies on a crossing where the river does not stop the car.</summary>
     internal bool OnCrossing(float x, float z) =>
-        River.OnBridge(x, z) || (Ford is { Passable: true } ford && ford.Contains(x, z));
+        River.OnBridge(x, z)
+        || WorldLayout.Plan.Outland.BridgeAt(x, z) != null
+        || (Ford is { Passable: true } ford && ford.Contains(x, z));
 
     /// <summary>
     /// Plans the ford after every existing actor and pickup has its place, so earlier valleys keep their
@@ -215,7 +219,7 @@ public partial class World
         var friends = InteractionActors.ToArray();
         FordSite? best = null;
         float bestScore = float.PositiveInfinity;
-        for (float z = -Settings.PlayableRadius + 40; z <= Settings.PlayableRadius - 40; z += 4)
+        for (float z = -WorldTuning.CorePlayableRadius + 40; z <= WorldTuning.CorePlayableRadius - 40; z += 4)
         {
             if (Mathf.Abs(z - River.BridgeZ) < MinBridgeGap)
                 continue;
@@ -394,7 +398,7 @@ public partial class World
 
     // Every test below is a pure predicate, so the cheap ones come first and the answer stays the same.
     private bool FreeHaulSpot(Vector3 spot, Character[] friends, float roadClearance, VillageBand? band = null) =>
-        FlatMath.Length(spot.X, spot.Z) < Settings.PlayableRadius - 15
+        FlatMath.Length(spot.X, spot.Z) < WorldTuning.CorePlayableRadius - 15
         && !River.OnBridge(spot.X, spot.Z)
         && Mathf.Abs(spot.Z - River.BridgeZ) > 14
         && !CloserThan(TowerSpot, spot.X, spot.Z, 24)
@@ -435,7 +439,7 @@ public partial class World
                 );
                 bool water = River.Distance(q.X, q.Z) < River.HalfWidth(q.Z) + 6;
                 if (
-                    FlatMath.Length(q.X, q.Z) > Settings.PlayableRadius - 10
+                    FlatMath.Length(q.X, q.Z) > WorldTuning.CorePlayableRadius - 10
                     || River.OnBridge(q.X, q.Z)
                     || (water && !toWater)
                     || CloserThan(tower, q.X, q.Z, 14)

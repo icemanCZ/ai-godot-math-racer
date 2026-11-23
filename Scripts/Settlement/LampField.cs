@@ -75,7 +75,7 @@ public partial class LampField : Node3D
     /// <summary>Whether a lamp can stand here: on land (a bridge is land), inside the valley and clear of another lamp.</summary>
     internal bool CanStandAt(float x, float z)
     {
-        if (new Vector2(x, z).Length() > Settings.PlayableRadius - 6)
+        if (!ValleyBounds.Contains(x, z, 6))
             return false;
         if (River.Distance(x, z) < River.HalfWidth(z) + .5f && !River.OnBridge(x, z))
             return false;

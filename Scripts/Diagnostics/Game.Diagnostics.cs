@@ -100,6 +100,9 @@ public partial class Game
                 Start();
             AddChild(suite.Create(this, world, vehicle));
         }
+        // A benchmark or a picture shows the valley as it is once the meshes built after it stand.
+        if (args.Contains("--benchmark") || args.Contains("--capture"))
+            world.FarParts.Finish();
         if (args.Contains("--benchmark"))
         {
             Start();

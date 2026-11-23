@@ -231,7 +231,7 @@ public partial class Game
         photoCamera = new Camera3D
         {
             Fov = 57,
-            Far = 1200,
+            Far = 3000,
             CullMask = followCamera.CullMask & ~Art.SignLayer,
         };
         AddChild(photoCamera);

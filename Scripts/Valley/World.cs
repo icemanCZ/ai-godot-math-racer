@@ -44,6 +44,11 @@ public partial class World : Node3D
     public Roads Routes { get; private set; } = new();
     public Village Village { get; private set; } = new();
     public Vegetation Plants { get; } = new();
+
+    /// <summary>The meshes that are built after the valley, a slice at a time.</summary>
+    internal DeferredBuild FarParts { get; } = new();
+    internal BorderWater BorderWater { get; } = new() { Name = "BorderWater" };
+    internal BorderForest BorderTrees { get; } = new() { Name = "BorderForest" };
     public Grass Grass { get; } = new();
     public Wildlife Wildlife { get; } = new();
     internal Atmosphere Atmosphere { get; } = new();
@@ -126,15 +131,30 @@ public partial class World : Node3D
         CreateFireflies();
         Village.CreateLamps();
         Village.Lamps.Surface = DriveSurface;
-        // The verges are drawn last, on the final ground, and leave out every field way.
-        Routes.BuildVerges(Ground, Tracks);
-        Tracks?.BuildVerges(Ground, Routes);
+        // The verges are drawn on the final ground and leave out every field way. They and the ground beyond the old
+        // valley only draw something, so they are built after the valley, a slice at a time (FarParts).
+        var ways = Tracks;
+        FarParts.Add("verges", Routes.BuildVerges(Ground, ways));
+        FarParts.Add("way verges", () => ways?.BuildVerges(Ground, Routes));
         var wayside = new Wayside { Name = "Wayside" };
         AddChild(wayside);
         wayside.Generate(this);
+        // The roads beyond the old valley are laid when everything of it stands, and graded into the outland next.
+        PlanOutlandRoads();
         OutlineScenery();
         Ground.BuildMeshes();
-        Roads.ReleaseFieldCache();
+        FarParts.Add("outland ground", Ground.BuildOutlandLand());
+        BuildOutlandRoads();
+        Plants.GenerateOutland(Ground, Routes, OutlandRoutes, OutlandBlocked);
+        var outlandWayside = new Wayside { Name = "OutlandWayside" };
+        AddChild(outlandWayside);
+        outlandWayside.GenerateOutland(this);
+        // The borders round the valley stand on the final ground and change nothing in it.
+        AddChild(BorderWater);
+        BorderWater.Generate(Ground);
+        AddChild(BorderTrees);
+        BorderTrees.Generate(Ground);
+        FarParts.Afterwards(Roads.ReleaseFieldCache);
     }
 
     /// <summary>
@@ -266,7 +286,7 @@ public partial class World : Node3D
                     var position = Ground.At(verge.X, verge.Z);
                     if (
                         new Vector2(position.X, position.Z).Length()
-                            > Settings.PlayableRadius - WorldTuning.FriendBorderMargin
+                            > WorldTuning.CorePlayableRadius - WorldTuning.FriendBorderMargin
                         || Village.IsNearVillage(position)
                         || Village.IsReserved(position)
                         || Routes.Distance(position) < WorldTuning.FriendRoadClearance

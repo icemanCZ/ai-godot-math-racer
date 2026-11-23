@@ -31,13 +31,21 @@ internal sealed partial class Wayside : Node3D
 
     internal int Count { get; private set; }
 
-    public void Generate(World world)
+    public void Generate(World world) => Generate(world, world.Routes, SeedOffset, false);
+
+    /// <summary>
+    /// The little things beside the roads beyond the old valley, from a random generator of their own, so that nothing
+    /// beside the old roads moves.
+    /// </summary>
+    public void GenerateOutland(World world) => Generate(world, world.OutlandRoutes, SeedOffset + 1, true);
+
+    private void Generate(World world, Roads roads, int seedOffset, bool outland)
     {
-        var random = new RandomNumberGenerator { Seed = (ulong)(Settings.Seed + SeedOffset) };
+        var random = new RandomNumberGenerator { Seed = (ulong)(Settings.Seed + seedOffset) };
         var meshes = new[] { Dandelion(), Clock(), Toadstool(), Pebbles() };
         var heads = new Mesh?[] { DandelionHead(), ClockHead(), null, null };
         var placed = new Dictionary<(Kind, Vector2I), List<Transform3D>>();
-        var samples = world.Routes.Samples;
+        var samples = roads.Samples;
         var spots = new List<Vector3>();
         foreach (var animal in world.Animals)
             spots.Add(animal.Position);
@@ -59,11 +67,11 @@ internal sealed partial class Wayside : Node3D
             var p = samples[i] + forward * random.RandfRange(-.7f, .7f) + side * 3;
             // Step out to the wanted distance from the road's edge, whatever the road's width there.
             for (int step = 0; step < 3; step++)
-                p += side * (target - world.Routes.EdgeDistance(p));
+                p += side * (target - roads.EdgeDistance(p));
             float pick = random.Randf();
             float yaw = random.RandfRange(0, Mathf.Tau);
             float size = random.RandfRange(1.35f, 1.95f);
-            if (!Fits(world, p, spots))
+            if (!(outland ? FitsOutland(world, p) : Fits(world, p, spots)))
                 continue;
             var kind = Kind.Pebbles;
             float sum = 0;
@@ -155,7 +163,7 @@ internal sealed partial class Wayside : Node3D
     private static bool Fits(World world, Vector3 p, List<Vector3> spots)
     {
         if (
-            FlatMath.Length(p.X, p.Z) > Settings.PlayableRadius - 4
+            FlatMath.Length(p.X, p.Z) > WorldTuning.CorePlayableRadius - 4
             || world.Routes.EdgeDistance(p) < Verges.Width - .5f
             || River.Distance(p.X, p.Z) < River.HalfWidth(p.Z) + 3
             || River.OnBridge(p.X, p.Z)
@@ -172,6 +180,21 @@ internal sealed partial class Wayside : Node3D
             if (FlatMath.Length(p.X - spot.X, p.Z - spot.Z) < 2.5f)
                 return false;
         return true;
+    }
+
+    /// <summary>Beyond the old valley: off its roads and bridges, out of the water, off the beach and clear of the trees.</summary>
+    private static bool FitsOutland(World world, Vector3 p)
+    {
+        var borders = WorldLayout.Plan.Borders;
+        return FlatMath.Length(p.X, p.Z) > WorldTuning.CorePlayableRadius
+            && ValleyBounds.Contains(p.X, p.Z, 4)
+            && world.OutlandRoutes.EdgeDistance(p) >= Verges.Width - .5f
+            && River.Distance(p.X, p.Z) >= River.HalfWidth(p.Z) + 3
+            && WorldLayout.Plan.Outland.BridgeAt(p.X, p.Z, 4) == null
+            && borders.BorderRiverDistance(p.X, p.Z) >= ValleyBorders.BorderRiverHalfWidth + 3
+            && !borders.IsSand(p.X, p.Z)
+            && p.Y > ValleyBorders.SeaLevel + 1
+            && !world.Plants.NearTrunk(p, .8f);
     }
 
     // ---- The little things, each merged into one mesh with a surface per colour ----

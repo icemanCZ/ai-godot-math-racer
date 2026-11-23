@@ -533,7 +533,7 @@ internal sealed partial class HuntField : Node3D
         bool water =
             !world.OnCrossing(flightTo.X, flightTo.Z)
             && River.Distance(flightTo.X, flightTo.Z) < River.HalfWidth(flightTo.Z) + .6f;
-        if (water || FlatMath.Length(flightTo.X, flightTo.Z) > Settings.PlayableRadius)
+        if (water || !ValleyBounds.Contains(flightTo.X, flightTo.Z))
         {
             SetNet(NetState.Lost);
             net.Visible = false;

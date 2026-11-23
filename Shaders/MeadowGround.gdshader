@@ -27,4 +27,9 @@ void fragment() {
     // Subtle mottling joins the meadow blades and stays quiet on distant hills.
     ALBEDO = COLOR.rgb * (0.97 + patch * 0.065 + grain * close_detail * 0.035);
     ROUGHNESS = 1.0;
+    // The skirts under the edges of the coarse outland are seen from behind through the seams; lit like the ground
+    // above them instead of from below, they do not show as dark lines.
+    if (!FRONT_FACING) {
+        NORMAL = -NORMAL;
+    }
 }

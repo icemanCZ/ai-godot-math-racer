@@ -11,8 +11,9 @@ dotnet build "$PSScriptRoot/MathRacer.csproj"
 Assert-ExitCode 'Sestavení C#'
 & $godot --headless --path $PSScriptRoot --editor --import --quit
 Assert-ExitCode 'Import'
-& $godot --headless --path $PSScriptRoot --quit-after 5
-Assert-ExitCode 'Načtení projektu'
+# The project, its C# assembly and the main scene load (Get-GameTestCases, through --list-checks). It quits before
+# the world is generated, so run.ps1 does not build the valley twice, and the player's save is neither read nor written.
+Get-GameTestCases $godot | Out-Null
 if ($Test) { Invoke-GameTests $godot $TestJobs }
 if ($Export) {
     New-Item -ItemType Directory -Force "$PSScriptRoot/exports" | Out-Null

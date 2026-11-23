@@ -321,7 +321,7 @@ public partial class GlassChecks : Node
                 .Select(i => i * 20f)
                 .First(z => !River.OnBridge(River.CenterX(z), z));
             Check(!lamps.CanStandAt(River.CenterX(riverZ), riverZ), "no lamp stands in the river");
-            Check(!lamps.CanStandAt(Settings.PlayableRadius, 0), "no lamp stands outside the valley");
+            Check(!lamps.CanStandAt(ValleyBounds.HalfSize, 0), "no lamp stands outside the valley");
 
             // ---- Taking a lamp up ----
             int placed = lamps.PlacedCount,
@@ -499,11 +499,7 @@ public partial class GlassChecks : Node
             float x = village.X + Mathf.Cos(angle) * ring,
                 z = village.Z + Mathf.Sin(angle) * ring;
             bool dry = River.Distance(x, z) > River.HalfWidth(z) + 12 && !River.OnBridge(x, z);
-            if (
-                dry
-                && new Vector2(x, z).Length() < Settings.PlayableRadius - 40
-                && !world.Village.IsReserved(new(x, 0, z))
-            )
+            if (dry && ValleyBounds.Contains(x, z, 40) && !world.Village.IsReserved(new(x, 0, z)))
                 return new Vector2(x, z);
         }
         throw new InvalidOperationException("no dry meadow near the village");

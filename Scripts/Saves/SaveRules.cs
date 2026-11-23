@@ -499,7 +499,7 @@ internal static class SaveRules
             || !float.IsFinite(lamp.Z)
             || !float.IsFinite(lamp.Yaw)
             || Math.Abs(lamp.Yaw) > 100
-            || new System.Numerics.Vector2(lamp.X, lamp.Z).Length() > Settings.PlayableRadius
+            || !ValleyBounds.Contains(lamp.X, lamp.Z)
         )
         || (data.State == GameState.GlassmakerShop && !World.IsGlassmaker(data.Nearby));
 

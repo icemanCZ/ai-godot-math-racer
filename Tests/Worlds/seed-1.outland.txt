@@ -1,0 +1,17 @@
+seed 1
+ring radius 829.24
+bridge -134.50 -829.24 half length 12.05 top 6.80
+bridge -114.44 829.24 half length 11.92 top -6.46
+outland roads 8 joins 3
+outland route 161 from 767.26 0.00 616.47 to 767.26 0.00 616.47
+outland route 11 from 380.71 0.00 223.81 to 767.26 0.00 616.47
+outland route 9 from 404.81 0.00 -150.42 to 821.29 0.00 -305.18
+outland route 8 from -412.46 0.00 -122.02 to -815.76 0.00 -25.05
+outland route 3 from 201.10 0.00 -827.20 to 199.09 0.00 -1088.00
+outland route 3 from 189.71 0.00 826.80 to 184.11 0.00 1088.00
+outland route 3 from -816.85 0.00 -14.51 to -1088.00 0.00 -13.15
+outland route 3 from 841.14 0.00 9.91 to 1088.00 0.00 7.37
+outland road samples 5926 hash C35561DC785C5ED4
+outland heights 6600 hash 4D3D823137CC89C7
+outland vegetation trees 15718 bushes 8723 hash 6BBC52559D913114
+outland animals 1090 hash FF6FC96DEEE3FFB6

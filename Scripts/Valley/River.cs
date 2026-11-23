@@ -20,6 +20,12 @@ public partial class River : Node3D
 
     public static float BridgeHeight => Level(BridgeZ) + 1;
 
+    /// <summary>The decks of the bridges beyond the old valley lie this high over the water.</summary>
+    public const float OutlandDeckRise = .97f;
+
+    /// <summary>A road beyond the old valley comes to the river this high over the water, where its bridge begins.</summary>
+    public const float OutlandBankRise = .85f;
+
     // Keep both the bank and its raised dirt-road surface below the wooden slab.
     public static float BridgeGroundHeight => BridgeHeight - .32f;
 
@@ -29,8 +35,16 @@ public partial class River : Node3D
     public static float BridgeSurfaceHeight(float x) =>
         BridgeHeight + .01f - Mathf.Clamp((Mathf.Abs(x - CenterX(BridgeZ)) - 19) / 3, 0, 1) * .2f;
 
+    /// <summary>The highest the ground may stand at a point of the river's floodplain (<see cref="ShapeTerrain"/>).</summary>
+    public static float ValleyCeiling(float x, float z)
+    {
+        float slopeDistance = Mathf.Max(0, Distance(x, z) - HalfWidth(z) - 5);
+        return Level(z) + .85f + slopeDistance * .12f + slopeDistance * slopeDistance * .0008f;
+    }
+
     public static float ShapeTerrain(float x, float z, float natural)
     {
+        float given = natural;
         float distance = Distance(x, z),
             width = HalfWidth(z),
             level = Level(z);
@@ -53,14 +67,53 @@ public partial class River : Node3D
         if (distance > width + 5)
             shaped = Mathf.Lerp(shaped, BridgeGroundHeight, approach);
         shaped = Mathf.Lerp(shaped, Mathf.Min(shaped, BridgeGroundHeight), approach);
+        // The banks at a bridge beyond the old valley lie level with the ends of its ramps.
+        if (WorldLayout.Plan.Outland.BridgeAt(x, z, 14) is { } crossing)
+        {
+            float outlandApproach =
+                (
+                    1
+                    - Mathf.SmoothStep(
+                        crossing.HalfLength + 3,
+                        crossing.HalfLength + 14,
+                        Mathf.Abs(x - crossing.CenterX)
+                    )
+                )
+                * (
+                    1
+                    - Mathf.SmoothStep(
+                        OutlandLayout.Bridge.HalfWidth + 1,
+                        OutlandLayout.Bridge.HalfWidth + 6,
+                        Mathf.Abs(z - crossing.Z)
+                    )
+                );
+            float outlandBank = level + OutlandBankRise;
+            if (distance > width + 5)
+                shaped = Mathf.Lerp(shaped, outlandBank, outlandApproach);
+            shaped = Mathf.Lerp(shaped, Mathf.Min(shaped, outlandBank), outlandApproach);
+        }
+        // Up in the mountains the river rises: its bed closes into the slope.
+        if (z < ValleyBorders.SpringZ)
+            shaped = Mathf.Lerp(given, shaped, ValleyBorders.RiverBedWeight(z));
+        // Down by the sea the river only cuts, and raises no dykes into the water.
+        if (z > ValleyBorders.Untouched)
+            shaped = Mathf.Min(shaped, given);
         return shaped;
+    }
+
+    /// <summary>The bed of the plain channel, as <see cref="ShapeTerrain"/> cuts it, within the water's width.</summary>
+    private static float ChannelBed(float x, float z)
+    {
+        float level = Level(z);
+        return Mathf.Lerp(level - 1.2f, level + .85f, Mathf.SmoothStep(0, HalfWidth(z) + 5, Distance(x, z)));
     }
 
     public void Generate(Terrain terrain)
     {
         var surface = new SurfaceTool();
         surface.Begin(Mesh.PrimitiveType.Triangles);
-        for (float z = -Settings.WorldRadius; z < Settings.WorldRadius; z += 1)
+        // The water runs on beyond the old valley through the outland and the scenery.
+        for (float z = -WorldTuning.SceneryRadius; z < WorldTuning.SceneryRadius; z += 1)
         {
             const int strips = 20;
             for (int strip = 0; strip < strips; strip++)
@@ -82,8 +135,13 @@ public partial class River : Node3D
         }
         void Add(Vector3 point)
         {
-            // Store actual channel depth for shallow color and shoreline foam.
-            float depth = Mathf.Clamp(Level(point.Z) - terrain.Height(point.X, point.Z), 0, 3);
+            // Store actual channel depth for shallow color and shoreline foam. Beyond the core the ground is not worked
+            // out yet; there the channel has its plain profile, with no bridge, ford or road on it.
+            float ground =
+                Mathf.Abs(point.Z) <= WorldTuning.CoreRadius
+                    ? terrain.Height(point.X, point.Z)
+                    : ChannelBed(point.X, point.Z);
+            float depth = Mathf.Clamp(Level(point.Z) - ground, 0, 3);
             surface.SetColor(new Color(depth / 3, 0, 0));
             surface.AddVertex(point);
         }

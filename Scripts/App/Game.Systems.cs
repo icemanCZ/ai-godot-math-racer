@@ -37,7 +37,14 @@ public partial class Game
         Register("hunt", delta => TickHunt((float)delta));
         Register("flutters", delta => TickFlutters((float)delta));
         Register("trampling", delta => TickTrampling((float)delta));
+        // The meshes built after the valley: more of them a frame while the title or the pause is shown.
+        Register("far parts", _ => world.FarParts.Run(State is GameState.Title or GameState.Paused ? 25 : 5));
         Register("distant details", _ => DistantDetails.Tick());
+        Register("outland colliders", _ => world.Ground.StreamColliders(vehicle.GlobalPosition));
+        // Round the camera, from which the plants are drawn in full or simply: the car's, or a view of its own.
+        Register("outland plants", _ =>
+            world.Plants.StreamOutland(GetViewport().GetCamera3D()?.GlobalPosition ?? vehicle.GlobalPosition)
+        );
     }
 
     private void Register(string name, Action<double> tick) => systems.Add(new GameSystem(name, tick));

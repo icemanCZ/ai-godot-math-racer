@@ -274,7 +274,7 @@ public partial class World
             float cut = CutPasses[pass];
             (BuildSite Site, List<Terrain.GradedPiece> Grading)? best = null;
             float bestScore = float.NegativeInfinity;
-            for (float z = -Settings.PlayableRadius + 40; z <= Settings.PlayableRadius - 40; z += 4)
+            for (float z = -WorldTuning.CorePlayableRadius + 40; z <= WorldTuning.CorePlayableRadius - 40; z += 4)
             {
                 if (Mathf.Abs(z - River.BridgeZ) < 40 + pass * -6 || Mathf.Abs(z - ford.Z) < 44 + pass * -6)
                     continue;

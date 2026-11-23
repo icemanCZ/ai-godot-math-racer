@@ -39,7 +39,7 @@ public partial class World
         var center = Village.Center;
         float angle = Settings.Seed % 628 / 100f + found * 2.39996f;
         float ring = 95 + found % 4 * 45;
-        float limit = Settings.PlayableRadius - 45;
+        float limit = WorldTuning.CorePlayableRadius - 45;
         // The gap to the treasures before shrinks only in a valley that is short of room.
         float[] gaps = { 60, 40, 24 };
         for (int pass = 0; pass < 3; pass++)

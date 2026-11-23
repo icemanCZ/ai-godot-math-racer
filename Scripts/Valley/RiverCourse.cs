@@ -13,16 +13,19 @@ public sealed class RiverCourse
     private readonly float[] centers;
     private readonly float step;
 
+    /// <summary>The mean of the course of the core, round which the river bends beyond it.</summary>
+    private readonly float middle;
+
     public RiverCourse(Func<float, float, float> height, Func<float, float> preferred)
     {
-        int rows = Mathf.CeilToInt(Settings.WorldRadius * 2 / 8) + 1;
-        step = Settings.WorldRadius * 2 / (rows - 1);
+        int rows = Mathf.CeilToInt(WorldTuning.CoreRadius * 2 / 8) + 1;
+        step = WorldTuning.CoreRadius * 2 / (rows - 1);
         centers = new float[rows];
         var previous = new float[Candidates];
         var parents = new int[rows, Candidates];
         for (int row = 0; row < rows; row++)
         {
-            float z = -Settings.WorldRadius + row * step;
+            float z = -WorldTuning.CoreRadius + row * step;
             var next = new float[Candidates];
             for (int column = 0; column < Candidates; column++)
             {
@@ -66,13 +69,31 @@ public sealed class RiverCourse
             centers[i] = Mathf.Clamp(centers[i], centers[i - 1] - maxShift, centers[i - 1] + maxShift);
         for (int i = rows - 2; i >= 0; i--)
             centers[i] = Mathf.Clamp(centers[i], centers[i + 1] - maxShift, centers[i + 1] + maxShift);
+        foreach (float center in centers)
+            middle += center;
+        middle /= rows;
     }
 
     public float At(float z)
     {
+        if (z < -WorldTuning.CoreRadius)
+            return Beyond(centers[0], -WorldTuning.CoreRadius - z);
+        if (z > WorldTuning.CoreRadius)
+            return Beyond(centers[^1], z - WorldTuning.CoreRadius);
         // Plain floats (see FlatMath): the searches ask for the river thousands of times.
-        float offset = FlatMath.Clamp((z + Settings.WorldRadius) / step, 0, centers.Length - 1);
+        float offset = FlatMath.Clamp((z + WorldTuning.CoreRadius) / step, 0, centers.Length - 1);
         int index = Math.Min((int)offset, centers.Length - 2);
         return FlatMath.Lerp(centers[index], centers[index + 1], offset - index);
+    }
+
+    /// <summary>
+    /// The river beyond the old valley, <paramref name="distance"/> metres past its edge: it leaves the edge where the
+    /// course of the core ends and eases onto a slow bend round the core's middle line. The course of the core is chosen
+    /// over the core alone and stays as it was; this needs no random numbers and no search.
+    /// </summary>
+    private float Beyond(float edge, float distance)
+    {
+        float bend = middle + 10 * MathF.Sin(distance * .006f + edge * .05f);
+        return FlatMath.Lerp(edge, bend, Mathf.SmoothStep(0, 450, distance));
     }
 }

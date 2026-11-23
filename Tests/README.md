@@ -35,7 +35,13 @@ roads, terrain and trees. A saved game stores only the seed, so a change here ch
 games. The files were made by the code before the refactoring.
 
 `Worlds/seed-N.glassworks.txt` is the same kind of file for what was added to the world later: the glassworks and its worker.
-It is planned after everything else and its trees are cleared after generation (`Vegetation.ClearArea`), so that the older files stay as they are; the world-fingerprint check compares both files.
+It is planned after everything else and its trees are cleared after generation (`Vegetation.ClearArea`), so that the older files stay as they are.
+
+`Worlds/seed-N.outland.txt` holds the land between the old valley and the borders (`docs/MAP_EXPANSION_PLAN.md`, phase 4):
+the ring road and its bridges, the other roads beyond the old valley, the heights there, where the trees stand and the animals.
+The shapes of the plants are not in it: they are built round the camera, a block at a time.
+Everything in it is generated after the first two files, with random numbers and counts of its own. The world-fingerprint
+check compares all three files and fails when one of them is missing.
 
 ## Fields added to version 5 afterwards
 

@@ -85,7 +85,7 @@ public partial class Vegetation
         // This stream does not affect tree positions, solid obstacles or saved pickups.
         var random = new RandomNumberGenerator { Seed = (ulong)Settings.Seed + 1710 };
         bool Clear(Vector3 p) =>
-            new Vector2(p.X, p.Z).Length() < Settings.PlayableRadius - 10
+            new Vector2(p.X, p.Z).Length() < WorldTuning.CorePlayableRadius - 10
             && !reserved(p)
             && roads.Distance(p) > 5.2f
             && !NearTrunk(p, 1.1f)

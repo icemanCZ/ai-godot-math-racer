@@ -34,6 +34,9 @@ public partial class FrameBenchmark : Node
     private readonly Vehicle car;
     private readonly List<Stage> stages = new();
     private readonly List<Vector3> path = new();
+
+    /// <summary>The roads the car drives in turn: the old valley's, then those beyond it.</summary>
+    private Vector3[][] routes = WorldLayout.Plan.Routes;
     private Samples samples = new();
     private int stageIndex = -1,
         route,
@@ -77,6 +80,13 @@ public partial class FrameBenchmark : Node
             }));
         stages.Add(new("jizda-noc", seconds, true, () => game.Weather.Begin(WeatherKind.Night, instant: true)));
         stages.Add(new("naves-noc-postaveno", seconds * .6f, false, Park));
+        // Beyond the old valley: round the ring, then out to the borders with the mountains and the sea in view.
+        stages.Add(new("jizda-pas", seconds, true, () => DriveOutland(world.OutlandRoutePoints.Take(1))));
+        stages.Add(
+            new("jizda-k-hranicim", seconds, true, () =>
+                DriveOutland(world.OutlandRoutePoints.Skip(1 + world.OutlandJoinCount))
+            )
+        );
         StartRoute();
         Next();
     }
@@ -175,7 +185,8 @@ public partial class FrameBenchmark : Node
 
     /// <summary>
     /// Turns parts of the picture off to see what they cost, as in <c>--benchmark-off=shadows,grass</c>: shadows,
-    /// msaa, glow, fog, grass, plants (trees, bushes, flowers), details (their small parts), village, wildlife.
+    /// msaa, glow, fog, grass, plants (trees, bushes, flowers), details (their small parts), village, wildlife, forest
+    /// (the trees of the borders), sea (the sea and the border river), outland (the ground beyond the old valley).
     /// </summary>
     private void TurnOff(string[] parts)
     {
@@ -220,11 +231,33 @@ public partial class FrameBenchmark : Node
                 case "wildlife":
                     world.Wildlife.Visible = false;
                     break;
+                case "forest":
+                    world.BorderTrees.Visible = false;
+                    break;
+                case "sea":
+                    world.BorderWater.Visible = false;
+                    break;
+                case "outland":
+                    foreach (var node in world.Ground.GetChildren().OfType<MeshInstance3D>())
+                        if (node.Name.ToString().Contains("Outland"))
+                            node.Visible = false;
+                    break;
+                case "outland-plants":
+                    world.Plants.OutlandPlants.Visible = false;
+                    break;
                 default:
                     throw new ArgumentException($"Unknown part to turn off: {part}");
             }
             GD.Print($"BENCHMARK_OFF {part}");
         }
+    }
+
+    private void DriveOutland(IEnumerable<Vector3[]> roads)
+    {
+        game.Weather.Begin(WeatherKind.Clear, instant: true);
+        routes = roads.ToArray();
+        route = 0;
+        StartRoute();
     }
 
     private void Park()
@@ -344,7 +377,7 @@ public partial class FrameBenchmark : Node
 
     private void StartRoute()
     {
-        using var curve = WorldPlan.CreateCurve(WorldLayout.Plan.Routes[route % WorldLayout.Plan.Routes.Length]);
+        using var curve = WorldPlan.CreateCurve(routes[route % routes.Length]);
         float length = curve.GetBakedLength();
         path.Clear();
         for (float offset = 1; offset < length - 1; offset += 1)

@@ -55,6 +55,12 @@ public partial class Roads : Node3D
         Shader = GD.Load<Shader>("res://Shaders/RoadSurface.gdshader"),
     };
     public readonly List<Vector3> Samples = new();
+
+    /// <summary>Whether these are the roads beyond the old valley (<see cref="GenerateOutland"/>).</summary>
+    private bool outland;
+    private float lift = RoadLift;
+    private OutlandLayout.Bridge[] decks = System.Array.Empty<OutlandLayout.Bridge>();
+    private Dictionary<Vector2I, FieldPoint>? ownField;
     internal readonly List<(Vector3 Position, Vector3 Forward)> NavigationAnchors = new();
     internal readonly List<int> SampleAnchors = new();
 
@@ -69,9 +75,24 @@ public partial class Roads : Node3D
         return (center, forward);
     }
 
-    public void Generate(Terrain terrain)
+    /// <summary>
+    /// The roads of the land beyond the old valley: a network of their own, so that the old roads, which every saved
+    /// valley was made with, stay as they are. They lie a little lower than the old roads, which cover them where they
+    /// meet, and leave openings for the <paramref name="bridges"/>' decks.
+    /// </summary>
+    internal void GenerateOutland(Terrain terrain, Vector3[][] routes, IEnumerable<OutlandLayout.Bridge> bridges)
     {
-        var routes = WorldLayout.Plan.Routes;
+        outland = true;
+        lift = RoadLift - .015f;
+        decks = bridges.ToArray();
+        ownField = new Dictionary<Vector2I, FieldPoint>();
+        Generate(terrain, routes);
+    }
+
+    public void Generate(Terrain terrain) => Generate(terrain, WorldLayout.Plan.Routes);
+
+    private void Generate(Terrain terrain, Vector3[][] routes)
+    {
         junctions = routes
             .SelectMany(route => route)
             .GroupBy(point => point)
@@ -266,12 +287,29 @@ public partial class Roads : Node3D
                 marks = System.Math.Min(marks, Mathf.SmoothStep(7, 14, distance));
         }
         // A rectangular opening meets the wooden deck; ramps cover its ends.
-        float deck = System.Math.Max(
-            System.MathF.Abs(px - River.CenterX(River.BridgeZ)) - 18.9f,
-            System.MathF.Abs(pz - River.BridgeZ) - 3.7f
-        );
+        float deck = outland
+            ? OutlandDeck(px, pz)
+            : System.Math.Max(
+                System.MathF.Abs(px - River.CenterX(River.BridgeZ)) - 18.9f,
+                System.MathF.Abs(pz - River.BridgeZ) - 3.7f
+            );
         best = System.Math.Max(best, -deck);
         return new FieldPoint(point, best, uv, marks, deck);
+    }
+
+    /// <summary>The signed distance to the nearest deck of the bridges beyond the old valley (negative under one).</summary>
+    private float OutlandDeck(float px, float pz)
+    {
+        float nearest = 1000;
+        foreach (var bridge in decks)
+            nearest = System.Math.Min(
+                nearest,
+                System.Math.Max(
+                    System.MathF.Abs(px - bridge.CenterX) - (bridge.HalfLength - .1f),
+                    System.MathF.Abs(pz - bridge.Z) - (OutlandLayout.Bridge.HalfWidth - .1f)
+                )
+            );
+        return nearest;
     }
 
     private void BuildSurface(Terrain terrain)
@@ -281,7 +319,7 @@ public partial class Roads : Node3D
         // The field depends on the road plan alone, not on the terrain, so the second generation of a valley
         // (after the village is levelled) reuses every point the first one sampled.
         var plan = WorldLayout.Plan;
-        if (cachedFieldPlan != plan || cachedField == null)
+        if (!outland && (cachedFieldPlan != plan || cachedField == null))
         {
             cachedField = new Dictionary<Vector2I, FieldPoint>();
             cachedFieldPlan = plan;
@@ -349,7 +387,7 @@ public partial class Roads : Node3D
                     for (int vertex = 0; vertex < 3; vertex++)
                     {
                         var point = points[vertex];
-                        triangle[vertex] = terrain.At(point.Position.X, point.Position.Y, RoadLift);
+                        triangle[vertex] = terrain.At(point.Position.X, point.Position.Y, lift);
                         // Blue tells the shader how near the edge is, where the verge's gravel begins.
                         surface.SetColor(new Color(point.Marks, 0, Verges.Depth(point.Distance)));
                         surface.SetUV(point.Uv);
@@ -394,11 +432,12 @@ public partial class Roads : Node3D
     /// <summary>The field at a corner of the mesh grid, sampled once while the valley is generated.</summary>
     private FieldPoint Sample(int x, int z)
     {
-        if (cachedField == null)
+        var field = outland ? ownField : cachedField;
+        if (field == null)
             return SampleField(new Vector2(x * MeshStep, z * MeshStep));
         var key = new Vector2I(x, z);
-        if (!cachedField.TryGetValue(key, out var point))
-            cachedField[key] = point = SampleField(new Vector2(x * MeshStep, z * MeshStep));
+        if (!field.TryGetValue(key, out var point))
+            field[key] = point = SampleField(new Vector2(x * MeshStep, z * MeshStep));
         return point;
     }
 
@@ -416,14 +455,17 @@ public partial class Roads : Node3D
 
     /// <summary>
     /// Builds the gravel verge (<see cref="Verges"/>) along every road, once the ground beside the roads is final and
-    /// the field ways are known. The verge leaves out the bridge's deck and fades out where a field way begins.
+    /// the field ways are known. The verge leaves out the bridge's deck and fades out where a field way begins. It is
+    /// built after the valley, a slice at a time (<see cref="DeferredBuild"/>), so nothing may be read from it.
     /// </summary>
-    internal void BuildVerges(Terrain terrain, Tracks? tracks)
+    internal IEnumerable<bool> BuildVerges(Terrain terrain, Tracks? tracks)
     {
         if (tracks != null)
-            foreach (var child in GetChildren())
-                if (child is MeshInstance3D road)
-                    FadeEdgeAtWays(road, tracks);
+            foreach (var road in GetChildren().OfType<MeshInstance3D>().ToArray())
+            {
+                FadeEdgeAtWays(road, tracks);
+                yield return true;
+            }
         var mask = MarkCells(Verges.Width);
         var material = Verges.CreateMaterial();
         var container = new Node3D { Name = "Verges" };
@@ -445,27 +487,33 @@ public partial class Roads : Node3D
             );
         }
         for (int row = 0; row < mask.Rows; row++)
-        for (int column = 0; column < mask.Columns; column++)
         {
-            if (!mask.Cells[row * mask.Columns + column])
-                continue;
-            int x = mask.X + column,
-                z = mask.Z + row;
-            var a = Corner(x, z);
-            var b = Corner(x + 1, z);
-            var c = Corner(x, z + 1);
-            var d = Corner(x + 1, z + 1);
-            if (!Verges.Touches(a, b, c) && !Verges.Touches(b, d, c))
-                continue;
-            var key = new Vector2I(Mathf.FloorToInt(x / (float)chunkCells), Mathf.FloorToInt(z / (float)chunkCells));
-            if (!surfaces.TryGetValue(key, out var entry))
+            yield return true;
+            for (int column = 0; column < mask.Columns; column++)
             {
-                entry = (new SurfaceTool(), 0);
-                entry.Surface.Begin(Mesh.PrimitiveType.Triangles);
+                if (!mask.Cells[row * mask.Columns + column])
+                    continue;
+                int x = mask.X + column,
+                    z = mask.Z + row;
+                var a = Corner(x, z);
+                var b = Corner(x + 1, z);
+                var c = Corner(x, z + 1);
+                var d = Corner(x + 1, z + 1);
+                if (!Verges.Touches(a, b, c) && !Verges.Touches(b, d, c))
+                    continue;
+                var key = new Vector2I(
+                    Mathf.FloorToInt(x / (float)chunkCells),
+                    Mathf.FloorToInt(z / (float)chunkCells)
+                );
+                if (!surfaces.TryGetValue(key, out var entry))
+                {
+                    entry = (new SurfaceTool(), 0);
+                    entry.Surface.Begin(Mesh.PrimitiveType.Triangles);
+                }
+                entry.Count += Verges.Emit(entry.Surface, terrain, lift, a, b, c);
+                entry.Count += Verges.Emit(entry.Surface, terrain, lift, b, d, c);
+                surfaces[key] = entry;
             }
-            entry.Count += Verges.Emit(entry.Surface, terrain, RoadLift, a, b, c);
-            entry.Count += Verges.Emit(entry.Surface, terrain, RoadLift, b, d, c);
-            surfaces[key] = entry;
         }
         foreach (var (surface, count) in surfaces.Values)
         {
@@ -480,6 +528,7 @@ public partial class Roads : Node3D
                     CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
                 }
             );
+            yield return true;
         }
     }
 

@@ -12,8 +12,16 @@ internal static class WildlifeChecks
     {
         var wildlife = world.Wildlife;
         check(
-            wildlife.Animals.Count == 240 && wildlife.Animals.Select(a => a.Kind).Distinct().Count() == 5,
-            "240 wild animals across five species"
+            wildlife.Animals.Count - wildlife.OutlandCount == 240
+                && wildlife.Animals.Select(a => a.Kind).Distinct().Count() == 5,
+            "240 wild animals across five species in the old valley"
+        );
+        check(
+            wildlife.OutlandCount > 600
+                && wildlife
+                    .Animals.Skip(240)
+                    .All(a => new Vector2(a.Position.X, a.Position.Z).Length() > WorldTuning.CorePlayableRadius),
+            $"{wildlife.OutlandCount} more in the land round it"
         );
         check(
             wildlife.Animals.All(a => wildlife.Safe(a.Position, a.Kind)),

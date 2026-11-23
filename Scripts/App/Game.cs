@@ -97,6 +97,10 @@ public partial class Game : Node3D
 
         AddChild(world);
         world.Generate();
+        // A run without a window draws nothing, so the meshes that are built after the valley are left out; the smoke
+        // test builds them as the game does, a slice a frame.
+        if (DisplayServer.GetName() == "headless" && !LaunchOptions.Has("--smoke-test"))
+            world.FarParts.Drop();
         AddChild(vehicle);
         vehicle.Setup(world.Ground, world.Routes, world.Ford);
         // A car that is put somewhere new leaves no way behind it for the companions to follow.
@@ -117,7 +121,7 @@ public partial class Game : Node3D
             Target = vehicle,
             Ground = world.Ground,
             Fov = 62,
-            Far = 1200,
+            Far = 3000,
             Current = true,
         };
         AddChild(camera);

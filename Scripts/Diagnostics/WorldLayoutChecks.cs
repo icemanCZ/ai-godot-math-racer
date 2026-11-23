@@ -39,7 +39,7 @@ public static class WorldLayoutChecks
             for (float distance = 0; distance < curve.GetBakedLength(); distance += 2)
             {
                 var p = curve.SampleBaked(distance);
-                if (p.Length() > Settings.PlayableRadius - 10)
+                if (p.Length() > WorldTuning.CorePlayableRadius - 10)
                     throw new InvalidOperationException($"Road leaves world boundary: seed={seed}, position={p}");
                 float riverDistance = Mathf.Abs(p.X - plan.CenterX(p.Z));
                 if (riverDistance < 9 && Mathf.Abs(p.Z - plan.BridgeZ) > 3)
@@ -48,7 +48,7 @@ public static class WorldLayoutChecks
                     );
             }
         }
-        for (float z = -Settings.WorldRadius; z < Settings.WorldRadius; z += 2)
+        for (float z = -WorldTuning.CoreRadius; z < WorldTuning.CoreRadius; z += 2)
             if (Mathf.Abs(plan.CenterX(z + 2) - plan.CenterX(z)) > .441f)
                 throw new InvalidOperationException($"River bend is too sharp: seed={seed}, z={z}");
     }
@@ -72,7 +72,7 @@ public static class WorldLayoutChecks
             sides.Add(plan.Side);
             bendCounts.Add(plan.Routes[2].Length);
             ValidatePlan(plan, seed);
-            for (float z = -Settings.WorldRadius; z <= Settings.WorldRadius; z += 8)
+            for (float z = -WorldTuning.CoreRadius; z <= WorldTuning.CoreRadius; z += 8)
             {
                 float originalX =
                     plan.Side

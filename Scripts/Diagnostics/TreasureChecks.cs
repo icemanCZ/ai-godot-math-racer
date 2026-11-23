@@ -108,7 +108,7 @@ public partial class TreasureChecks : Node
             {
                 var p = spots[i];
                 Check(
-                    new Vector2(p.X, p.Z).Length() < Settings.PlayableRadius - 20
+                    new Vector2(p.X, p.Z).Length() < WorldTuning.CorePlayableRadius - 20
                         && Flat(p, village.Center) >= 70
                         && world.Routes.Distance(p) >= 5.2f
                         && !world.Plants.NearTrunk(p, 3f)

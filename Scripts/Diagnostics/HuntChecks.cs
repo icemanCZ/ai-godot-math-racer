@@ -454,7 +454,7 @@ public partial class HuntChecks : Node
                 var landing = from + away * HuntField.BlindThrow;
                 if (
                     River.Distance(landing.X, landing.Z) < River.HalfWidth(landing.Z) + 4
-                    || FlatMath.Length(landing.X, landing.Z) > Settings.PlayableRadius - 10
+                    || !ValleyBounds.Contains(landing.X, landing.Z, 10)
                     || River.Distance(from.X, from.Z) < River.HalfWidth(from.Z) + 2
                 )
                     continue;
@@ -498,7 +498,7 @@ public partial class HuntChecks : Node
                 var from = new Vector3(x + HuntField.BlindThrow + 2, 0, z);
                 if (
                     River.Distance(from.X, from.Z) < River.HalfWidth(z) + 3
-                    || FlatMath.Length(from.X, from.Z) > Settings.PlayableRadius - 20
+                    || !ValleyBounds.Contains(from.X, from.Z, 20)
                     || Enumerable.Range(0, field.HerdCount).Any(i => Flat(field.PositionOf(i), from) < 60)
                 )
                     continue;

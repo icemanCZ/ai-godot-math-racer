@@ -146,7 +146,7 @@ public partial class World
             q = Ground.At(q.X, q.Z);
             bool front = along < 0;
             if (
-                FlatMath.Length(q.X, q.Z) > Settings.PlayableRadius - 30
+                FlatMath.Length(q.X, q.Z) > WorldTuning.CorePlayableRadius - 30
                 || (!front && Mathf.Abs(q.Y - site.Gate.Y) > slope)
                 || River.Distance(q.X, q.Z) < River.HalfWidth(q.Z) + 6
                 || Routes.Distance(q) < (front ? 4.6f : 7.5f)
@@ -242,7 +242,7 @@ public partial class World
     internal bool IsMeadow(Vector3 p, float margin = 3)
     {
         if (
-            FlatMath.Length(p.X, p.Z) > Settings.PlayableRadius - 25
+            !ValleyBounds.Contains(p.X, p.Z, 25)
             || River.Distance(p.X, p.Z) < River.HalfWidth(p.Z) + margin
             || Village.IsNearVillage(p)
             || Village.IsReserved(p)

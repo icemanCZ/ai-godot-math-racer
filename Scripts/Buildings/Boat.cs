@@ -47,8 +47,12 @@ public partial class Boat : Node3D
     /// <summary>Puts the boat on the water at <paramref name="along"/> metres from the jetty, facing the way it drifts.</summary>
     private void Place(float along)
     {
-        float z = Mathf.Clamp(centerZ + along, -Settings.PlayableRadius + 20, Settings.PlayableRadius - 20);
-        float next = Mathf.Clamp(z + 1, -Settings.PlayableRadius + 20, Settings.PlayableRadius - 20);
+        float z = Mathf.Clamp(
+            centerZ + along,
+            -WorldTuning.CorePlayableRadius + 20,
+            WorldTuning.CorePlayableRadius - 20
+        );
+        float next = Mathf.Clamp(z + 1, -WorldTuning.CorePlayableRadius + 20, WorldTuning.CorePlayableRadius - 20);
         float sway = Mathf.Sin(progress * .9f) * .6f;
         Position = new Vector3(River.CenterX(z) + sway, River.Level(z) + .02f + Mathf.Sin(progress * 2.3f) * .05f, z);
         var direction = new Vector3(River.CenterX(next) - River.CenterX(z), 0, next - z);
