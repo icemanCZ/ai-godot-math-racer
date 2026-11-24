@@ -128,6 +128,9 @@ internal static class Texts
     public const string SpocitalaNaklad = "spočítala náklad";
     public const string SpocitalaKolikSeTohoJesteVejde = "spočítala, kolik se toho ještě vejde do vozíku";
     public const string NejprveVyresilaPriklad = "nejprve vyřešila příklad";
+    public const string NejprvePorovnalaCisla = "nejprve porovnala čísla";
+    public const string AjajToNeniSpravneZkusTenhle = "Ajaj, to není správně. Zkus tenhle.";
+    public const string AjajToNeniSpravneZkusToZnovu = "Ajaj, to není správně. Zkus to znovu.";
     public const string PrivezSestDilkuGolema = "přivez šest dílků golema";
     public const string PrivezTriJablka = "přivez tři jablka";
     public const string JedenKusPeciva = "jeden kus pečiva";
@@ -191,6 +194,7 @@ internal static class Texts
     public const string Pismenka = "Písmenka";
     public const string Cteni = "Čtení";
     public const string Priklady = "Příklady";
+    public const string Porovnavani = "Porovnávání";
     public const string UrovenPrikladu = "Úroveň příkladů";
     public const string N1DveCisla = "1 · Dvě čísla";
     public const string N2TriCisla = "2 · Tři čísla";
@@ -445,6 +449,12 @@ internal static class Texts
     public const string VyberObrazekPodlePrvnihoPismena = "Vyber obrázek podle prvního písmene.";
     public const string PrectiSlovoAVyberObrazek = "Přečti slovo a vyber obrázek.";
     public const string VyresPriklad = "Vyřeš příklad.";
+    public const string PorovnejCisla = "Porovnej čísla.";
+
+    // CompareChallenge: how the signs are read aloud.
+    public const string JeMensiNez = "je menší než";
+    public const string SeRovna = "se rovná";
+    public const string JeVetsiNez = "je větší než";
     public const string RozvozPopis = "Rozvoz. Odvezeš kamarádovi zboží z obrázku.";
     public const string DovozPopis = "Dovoz. Přivezeš kamarádovi, co chybí do sbírky.";
     public const string Pauza = "Pauza";

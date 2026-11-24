@@ -38,7 +38,11 @@ public partial class BanditChecks(Game game, World world, Vehicle car) : Node
                 "a moving car triggers the encounter and the next enabled quiz in the rotation"
             );
             game.SubmitAnswer(reading!.Choices.First(choice => !reading.Accepts(choice)));
-            Check(IsQuestionAt(0, 0), "wrong answer leaves the same question open");
+            Check(
+                IsQuestionAt(0, 0) && game.CurrentChallenge is ReadingChallenge other && other.Word != reading.Word,
+                "a wrong answer asks a new question of the same kind at the same stage"
+            );
+            reading = (ReadingChallenge)game.CurrentChallenge!;
             game.TogglePause();
             string path = DiagnosticArtifacts.PathFor($"bandit-checks/{Settings.Seed}/progress.json");
             Check(SaveStore.Write(game.CaptureProgress(), path), "paused encounter saves to disk");

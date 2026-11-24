@@ -11,5 +11,8 @@ public enum QuizType
     Letters = 2,
     Syllables = 4,
     Reading = 8,
-    All = Math | Letters | Syllables | Reading,
+
+    /// <summary>Comparing two numbers with &lt;, = and &gt;.</summary>
+    Compare = 16,
+    All = Math | Letters | Syllables | Reading | Compare,
 }

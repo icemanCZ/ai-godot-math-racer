@@ -73,7 +73,12 @@ public partial class PostcardChecks(Game game, World world, Vehicle car) : Node
                     "postcard has six syllable choices"
                 );
                 Press(wrongChoice);
-                Require(Find(wrongChoice).Disabled, "wrong syllable is marked and disabled");
+                Require(
+                    question.Choices.All(index => !Find($"Answer{index}").Disabled)
+                        && game.CaptureProgress().Postcards.Cards[i] is { Selection: var reset }
+                        && reset == default,
+                    "a wrong syllable starts the word again, with nothing crossed out"
+                );
                 Require(
                     game.CaptureProgress().Postcards.Cards[i] is { Stamped: false },
                     "wrong answer leaves the postcard unstamped"
@@ -92,7 +97,7 @@ public partial class PostcardChecks(Game game, World world, Vehicle car) : Node
                             ?? throw new InvalidOperationException("Partial postcard save failed validation")
                     );
                     Require(
-                        Find($"Answer{correct}").Disabled && Find(wrongChoice).Disabled,
+                        Find($"Answer{correct}").Disabled && !Find(wrongChoice).Disabled,
                         "reload keeps the marked syllables"
                     );
                 }

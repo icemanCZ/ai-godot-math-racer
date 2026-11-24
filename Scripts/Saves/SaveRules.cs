@@ -161,9 +161,11 @@ internal static class SaveRules
     private static bool HasInvalidQuizState(SaveData data) =>
         data.Quiz.Types == QuizType.None
         || (data.Quiz.Types & ~QuizType.All) != 0
+        || (data.Quiz.Offered & ~QuizType.All) != 0
         || data.Quiz.Next < 0
         || data.Quiz.Next >= Game.QuizRotationLength
         || (data.Quiz.Challenge is ReadingChallenge reading && !reading.IsValid())
+        || (data.Quiz.Challenge is CompareChallenge compare && !compare.IsValid())
         || data.Bandits.Site is < -1 or >= Game.MaxBanditSites
         || data.Bandits.Solved is < 0 or >= Game.BanditQuestionCount
         || !float.IsFinite(data.Bandits.Cooldown)
@@ -184,8 +186,9 @@ internal static class SaveRules
                 || data.Task.Sender < 0
                 || !data.Task.Arrived
                 || data.Task.DeliveryReward
-                // A handover question replaces cargo counting with a word quiz.
-                || data.Quiz.Challenge is not (LetterChallenge or SyllableChallenge or ReadingChallenge)
+                // A handover question replaces cargo counting, when arithmetic is off, with another kind of quiz.
+                || data.Quiz.Challenge
+                    is not (LetterChallenge or SyllableChallenge or ReadingChallenge or CompareChallenge)
             )
         )
         || (

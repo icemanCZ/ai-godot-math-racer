@@ -386,6 +386,17 @@ internal static class UnitChecks
             }
         }
         Check(count >= 117, $"{count} committed saves were read");
+        foreach (string folder in new[] { "v4", "v5" })
+        {
+            var old = SaveStore.Read(Path.Combine(root, folder, "exploring.json"))!;
+            Check(
+                !old.Quiz.Offered.HasFlag(QuizType.Compare) && old.Quiz.EnabledTypes().HasFlag(QuizType.Compare),
+                $"{folder}/exploring: comparing numbers, which the save did not know, is switched on when it loads"
+            );
+            old.Quiz.Offered = QuizType.All;
+            old.Quiz.Types = QuizType.Math;
+            Check(old.Quiz.EnabledTypes() == QuizType.Math, "a kind of quiz that the player switched off stays off");
+        }
     }
 
     /// <summary>One thing is wrong with an otherwise good save, and the game refuses it.</summary>
@@ -454,6 +465,7 @@ internal static class UnitChecks
         var letters = new LetterChallengeGenerator(53);
         var syllables = new SyllableChallengeGenerator(53);
         var reading = new ReadingChallengeGenerator(53);
+        var compare = new CompareChallengeGenerator(53);
         var random = new Random(7);
         var cargo = new[]
         {
@@ -471,6 +483,9 @@ internal static class UnitChecks
             Verify(letters.Next(), true, "letters");
             Verify(syllables.Next(), false, "syllables");
             Verify(reading.Next(), true, "reading");
+            var comparison = compare.Next();
+            Verify(comparison, true, "comparison");
+            Check(comparison.IsValid(), "a comparison is sound");
             var load = LoadChallenge.Create(random, cargo[i % cargo.Length]);
             Verify(load, true, "loading");
             Check(load.IsValid(), "a loading question is sound");

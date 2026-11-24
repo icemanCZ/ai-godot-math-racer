@@ -77,7 +77,9 @@ public partial class Game
     private int postcardPage = -1;
     private int pendingPhoto = -1;
     private double photoTime;
-    private int rejectedPostcardAnswers;
+
+    /// <summary>The wrong answers given on the open page; each one brings another question, where the card has one.</summary>
+    private int postcardAttempt;
     private string postcardFeedback = "";
     private Camera3D? photoCamera;
     private SubViewport? photoViewport;
@@ -173,24 +175,46 @@ public partial class Game
         return card.Selection.IsValid(question);
     }
 
+    /// <summary>
+    /// The question of a postcard. After a wrong answer on the open page a numbers or reading card asks the next
+    /// question of its own stream, and a letters card moves its pictures; the syllables stay with the card's word.
+    /// </summary>
     internal IChallenge PostcardQuestion(int index)
     {
         var card = Postcards[index];
+        int attempt = index == postcardPage ? postcardAttempt : 0;
+        var math = new ChallengeGenerator(Settings.Seed + 280 + index);
         var type = Enumerable
             .Range(0, PostcardQuizTypes.Length)
             .Select(offset => PostcardQuizTypes[(index + offset) % PostcardQuizTypes.Length])
-            .FirstOrDefault(candidate => quiz.Enabled.HasFlag(candidate), QuizType.Math);
+            .FirstOrDefault(
+                candidate => quiz.Enabled.HasFlag(candidate),
+                quiz.Enabled.HasFlag(QuizType.Math) ? QuizType.Math : QuizType.Compare
+            );
         return type switch
         {
             QuizType.Letters => new LetterChallenge(
                 card.Word[..1].ToUpperInvariant(),
-                card.Pictures.Select(icon => new PictureWord(icon, Postcards[PostcardIndex(icon)].Word)).ToArray()
+                Enumerable
+                    .Range(0, card.Pictures.Length)
+                    .Select(i => card.Pictures[(i + attempt) % card.Pictures.Length])
+                    .Select(icon => new PictureWord(icon, Postcards[PostcardIndex(icon)].Word))
+                    .ToArray()
             ),
             QuizType.Syllables => PostcardSyllables(index, Settings.Seed),
-            QuizType.Reading => new ReadingChallengeGenerator(Settings.Seed + 300 + index).Next(),
-            QuizType.Math => new ChallengeGenerator(Settings.Seed + 280 + index).Next(quiz.ThreeTermMath),
+            QuizType.Reading => Nth(new ReadingChallengeGenerator(Settings.Seed + 300 + index).Next, attempt),
+            QuizType.Compare => Nth(new CompareChallengeGenerator(Settings.Seed + 320 + index).Next, attempt),
+            QuizType.Math => Nth(() => math.Next(quiz.ThreeTermMath), attempt),
             _ => throw new InvalidOperationException("At least one quiz type must be enabled."),
         };
+
+        static IChallenge Nth(Func<IChallenge> next, int skipped)
+        {
+            var question = next();
+            for (int i = 0; i < skipped; i++)
+                question = next();
+            return question;
+        }
     }
 
     internal Vector3 PostcardStop(int index) => viewpoints[index].Stop;
@@ -300,7 +324,7 @@ public partial class Game
     private void OpenPostcardPage(int index)
     {
         postcardPage = index;
-        rejectedPostcardAnswers = 0;
+        postcardAttempt = 0;
         postcardFeedback = "";
         ShowPostcards();
         if (index < 0)
@@ -332,7 +356,6 @@ public partial class Game
             card.Name,
             progress.Stamped ? null : PostcardQuestion(postcardPage),
             progress,
-            rejectedPostcardAnswers,
             postcardFeedback,
             AnswerPostcard,
             () => OpenPostcardPage(-1)
@@ -350,6 +373,11 @@ public partial class Game
         var question = PostcardQuestion(postcardPage);
         if (!question.Choices.Contains(answer))
             return;
+        if (!question.Accepts(answer))
+        {
+            MissPostcard(card, question);
+            return;
+        }
         if (question is SyllableChallenge syllables)
         {
             var selection = card.Selection.Pick(syllables, answer);
@@ -363,9 +391,25 @@ public partial class Game
             StampPostcard(card);
             SaveProgress();
         }
-        else
-            rejectedPostcardAnswers |= 1 << answer;
         ShowPostcards();
+    }
+
+    /// <summary>A wrong answer in the album: a sad face, and the card starts again with another question if it has one.</summary>
+    private void MissPostcard(PostcardProgress card, IChallenge question)
+    {
+        postcardAttempt++;
+        if (question is SyllableChallenge)
+        {
+            postcards[postcardPage] = card with { Selection = default };
+            SaveProgress();
+        }
+        ShowPostcards();
+        ui.Miss();
+        Speak(
+            question is SyllableChallenge or LetterChallenge
+                ? Texts.AjajToNeniSpravneZkusToZnovu
+                : Texts.AjajToNeniSpravneZkusTenhle
+        );
     }
 
     private void ConfirmPostcardSyllables()

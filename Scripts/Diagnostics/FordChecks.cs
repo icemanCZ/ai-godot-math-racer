@@ -182,8 +182,12 @@ public partial class FordChecks : Node
                     Check(load.Cargo == haul.Load && load.IsValid(), "loading question matches the load");
                     game.SubmitAnswer(load.Choices.First(choice => !load.Accepts(choice)));
                     Check(
-                        game.State == GameState.Challenge && ReferenceEquals(game.CurrentChallenge, load),
-                        "a wrong count keeps the question open"
+                        game.State == GameState.Challenge
+                            && game.CurrentChallenge is LoadChallenge next
+                            && next.Cargo == load.Cargo
+                            && next.Present != load.Present
+                            && next.IsValid(),
+                        "a wrong count asks a new loading question of the same load"
                     );
                 }
                 int stockBefore = StockOf(haul.Load);

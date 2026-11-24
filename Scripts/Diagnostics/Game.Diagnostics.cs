@@ -317,7 +317,18 @@ public partial class Game
             if (view.EndsWith("reward"))
                 ChallengeChecks.Solve(this);
         }
-        if (view is "challenge" or "challenge-2" or "letters" or "syllables" or "reading" or "reward" or "accessories")
+        if (
+            view
+            is "challenge"
+                or "challenge-2"
+                or "letters"
+                or "syllables"
+                or "reading"
+                or "compare"
+                or "miss"
+                or "reward"
+                or "accessories"
+        )
         {
             if (view is "reward" or "accessories")
             {
@@ -333,9 +344,13 @@ public partial class Game
                     quiz.Enabled = QuizType.Syllables;
                 if (view == "reading")
                     quiz.Enabled = QuizType.Reading;
-                if (view == "challenge-2")
+                if (view == "compare")
+                    quiz.Enabled = QuizType.Compare;
+                if (view is "challenge-2" or "miss")
                     quiz.ThreeTermMath = true;
-                OpenChallenge(world.Animals[view is "letters" or "syllables" or "reading" ? 1 : 0]);
+                OpenChallenge(world.Animals[view is "letters" or "syllables" or "reading" or "compare" ? 1 : 0]);
+                if (view == "miss" && CurrentChallenge is { } question)
+                    SubmitAnswer(question.Choices.First(choice => !question.Accepts(choice)));
             }
         }
         if (view.StartsWith("ford-") && int.TryParse(view["ford-".Length..], out int stage) && world.Ford is { } ford)

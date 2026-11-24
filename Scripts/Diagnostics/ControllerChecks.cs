@@ -253,9 +253,14 @@ public partial class ControllerChecks : Node
             await Button(JoyButton.A);
             Check(
                 game.State == GameState.Challenge
-                    && ((Button)game.FindChild($"Answer{wrongTile}", true, false)).Disabled,
-                "A selects a syllable and preserves the task after a wrong choice"
+                    && game.CurrentChallenge is SyllableChallenge next
+                    && next.PictureId != syllable.PictureId
+                    && next.Choices.All(choice =>
+                        game.FindChild($"Answer{choice}", true, false) is Button { Disabled: false }
+                    ),
+                "A selects a syllable, and a wrong one brings a new word to put together"
             );
+            syllable = (SyllableChallenge)game.CurrentChallenge!;
             foreach (int tile in syllable.Choices.Where(syllable.Accepts))
             {
                 ((Control)game.FindChild($"Answer{tile}", true, false)).GrabFocus();

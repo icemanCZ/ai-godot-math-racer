@@ -125,6 +125,7 @@ public partial class Game
             SyllableChallenge => Texts.VyberSlabikyPodleObrazku,
             LetterChallenge => Texts.VyberObrazekPodlePrvnihoPismena,
             ReadingChallenge => Texts.PrectiSlovoAVyberObrazek,
+            CompareChallenge => Texts.PorovnejCisla,
             _ => Texts.VyresPriklad,
         };
 
@@ -148,6 +149,7 @@ public partial class Game
             ReadingChallenge => Texts.NejprvePrecetlaSlovoAVybralaObrazek,
             DeliveryChallenge => Texts.SpocitalaNaklad,
             LoadChallenge => Texts.SpocitalaKolikSeTohoJesteVejde,
+            CompareChallenge => Texts.NejprvePorovnalaCisla,
             _ => Texts.NejprveVyresilaPriklad,
         };
         return $"{actor.DisplayName} chce, abys {instruction}.";

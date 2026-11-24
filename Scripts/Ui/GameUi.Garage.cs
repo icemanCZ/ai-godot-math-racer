@@ -99,6 +99,7 @@ public partial class GameUi
                 (QuizType.Syllables, "Slabiky", "quiz-syllables"),
                 (QuizType.Reading, Texts.Cteni, "quiz-reading"),
                 (QuizType.Math, Texts.Priklady, "quiz-math"),
+                (QuizType.Compare, Texts.Porovnavani, "quiz-compare"),
             }
         )
         {

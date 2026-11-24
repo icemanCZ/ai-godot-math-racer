@@ -819,9 +819,17 @@ public partial class SaveFixtureChecks : Node
             CheckTripSaves(data);
         game.RestoreProgress(baseline);
         game.RestoreProgress(data);
+        // The game switches on the kinds of quiz the save did not know yet and writes that it knows them all.
+        var expected = JsonSerializer.Deserialize<SaveData>(JsonSerializer.Serialize(data))!;
+        expected.Quiz.Types = data.Quiz.EnabledTypes();
+        expected.Quiz.Offered = QuizType.All;
         Check(
-            JsonSerializer.Serialize(data) == JsonSerializer.Serialize(game.CaptureProgress()),
+            JsonSerializer.Serialize(expected) == JsonSerializer.Serialize(game.CaptureProgress()),
             $"{name}: restoring and capturing again gives the same save"
+        );
+        Check(
+            data.Quiz.Offered.HasFlag(QuizType.Compare) || game.CaptureProgress().Quiz.Types.HasFlag(QuizType.Compare),
+            $"{name}: comparing numbers, which the save did not know yet, is switched on"
         );
         Check(
             game.Coins == data.Economy.Coins && game.OwnedRewards.Count == data.Economy.Owned.Length,

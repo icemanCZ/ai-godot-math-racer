@@ -39,7 +39,7 @@ public partial class Game
         persistenceReady = false;
         Settings.PendingNewGameQuizzes =
             State == GameState.Title && SaveStore.Initial is { } saved
-                ? (saved.Quiz.Types, saved.Quiz.ThreeTermMath)
+                ? (saved.Quiz.EnabledTypes(), saved.Quiz.ThreeTermMath)
                 : (quiz.Enabled, quiz.ThreeTermMath);
         vehicle.Active = false;
         ui.LoadingWorld();
@@ -89,6 +89,7 @@ public partial class Game
             Quiz = new QuizSave
             {
                 Types = quiz.Enabled,
+                Offered = QuizType.All,
                 ThreeTermMath = quiz.ThreeTermMath,
                 Next = quiz.NextQuiz,
                 Handover = quiz.Handover,
@@ -229,7 +230,7 @@ public partial class Game
     {
         EndExpedition(refreshUi: false);
         CancelPostcardPhoto();
-        quiz.Enabled = data.Quiz.Types;
+        quiz.Enabled = data.Quiz.EnabledTypes();
         quiz.NextQuiz = data.Quiz.Next;
         quiz.ThreeTermMath = data.Quiz.ThreeTermMath;
         quiz.Handover = data.Quiz.Handover;
@@ -300,7 +301,7 @@ public partial class Game
     {
         Array.Copy(data.Postcards.Cards, postcards, postcards.Length);
         postcardPage = data.Postcards.Page;
-        rejectedPostcardAnswers = 0;
+        postcardAttempt = 0;
         postcardFeedback = "";
         for (int i = 0; i < postcards.Length; i++)
             viewpoints[i].Sign.Visible = postcards[i] == null;

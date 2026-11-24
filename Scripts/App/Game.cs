@@ -493,6 +493,11 @@ public partial class Game : Node3D
             || !CurrentChallenge.Choices.Contains(answer)
         )
             return;
+        if (!CurrentChallenge.Accepts(answer))
+        {
+            MissAnswer();
+            return;
+        }
         if (CurrentChallenge is SyllableChallenge syllables)
         {
             var next = quiz.Selection.Pick(syllables, answer);
@@ -503,13 +508,27 @@ public partial class Game : Node3D
             SaveProgress();
             return;
         }
-        if (!CurrentChallenge.Accepts(answer))
-        {
-            quiz.Rejected.Add(answer);
-            ShowChallenge();
-            return;
-        }
         CompleteChallenge();
+    }
+
+    /// <summary>
+    /// A wrong answer: a sad face, and a new question of the same kind in place of the old one, so the answers
+    /// cannot be tried one after another until the right one is left. A delivery keeps its question, because its
+    /// answer is the cargo really carried, but no answer is crossed out either.
+    /// </summary>
+    private void MissAnswer()
+    {
+        var next = quiz.Another(CurrentChallenge!);
+        if (next != null)
+        {
+            CurrentChallenge = next;
+            quiz.Selection = default;
+        }
+        quiz.Rejected.Clear();
+        ShowChallenge();
+        ui.Miss();
+        Speak(next != null ? Texts.AjajToNeniSpravneZkusTenhle : Texts.AjajToNeniSpravneZkusToZnovu, nearby);
+        SaveProgress();
     }
 
     internal void ConfirmSyllables()

@@ -12,6 +12,7 @@ namespace MathRacer.Quizzes;
 [JsonDerivedType(typeof(ReadingChallenge), "reading")]
 [JsonDerivedType(typeof(DeliveryChallenge), "delivery")]
 [JsonDerivedType(typeof(LoadChallenge), "load")]
+[JsonDerivedType(typeof(CompareChallenge), "compare")]
 public interface IChallenge
 {
     bool Accepts(int choice);

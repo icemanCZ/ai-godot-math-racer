@@ -801,7 +801,7 @@ public partial class VisualCapture : Node
             camera.LookAt(car.Position + direction * 5);
         }
         else if (
-            view is "house-celebration" or "challenge-2" or "syllables" or "reading"
+            view is "house-celebration" or "challenge-2" or "syllables" or "reading" or "compare" or "miss"
             || view.StartsWith("postcard-")
         ) { }
         else if (
@@ -848,6 +848,7 @@ public partial class VisualCapture : Node
                     : view == "trampling-down" ? 2.5
                     : view.StartsWith("smoke-") ? .02
                     : view == "delivery-reward" || view == "house-celebration" ? 1.2
+                    : view == "miss" ? .6
                     : 3
                 ),
             SceneTreeTimer.SignalName.Timeout

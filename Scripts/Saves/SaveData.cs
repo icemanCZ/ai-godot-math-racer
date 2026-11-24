@@ -224,6 +224,19 @@ public sealed class EconomySave
 public sealed class QuizSave
 {
     public QuizType Types { get; set; } = QuizType.All;
+
+    /// <summary>
+    /// The kinds of quiz the game knew when it wrote the save. A kind that came later is not in <see cref="Types"/>
+    /// only because the player never saw it, so it is switched on when the save is loaded (<see cref="EnabledTypes"/>);
+    /// one the player switched off stays off. A save without this field knew the first four kinds.
+    /// </summary>
+    public QuizType Offered { get; set; } = FirstTypes;
+
+    internal const QuizType FirstTypes = QuizType.Math | QuizType.Letters | QuizType.Syllables | QuizType.Reading;
+
+    /// <summary>The kinds of quiz that are on after loading: the saved ones and every kind the save did not know yet.</summary>
+    internal QuizType EnabledTypes() => Types | (QuizType.All & ~Offered);
+
     public bool ThreeTermMath { get; set; }
 
     /// <summary>Position in the rotation of the kind of quiz that comes next.</summary>

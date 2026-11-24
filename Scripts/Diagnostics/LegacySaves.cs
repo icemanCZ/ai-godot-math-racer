@@ -109,6 +109,7 @@ internal static class LegacySaves
         ("Post", "Reply"),
         ("Lighthouse", "Stage"),
         ("Fireflies", "Caught"),
+        ("Quiz", "Offered"),
         ("Day", "Clock"),
     };
 

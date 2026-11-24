@@ -217,7 +217,7 @@ public partial class GarageChecks : Node
                 ((Button)game.FindChild(name, true, false)).EmitSignal(Button.SignalName.Pressed);
             Check(
                 defaults.Quiz.Types == QuizType.All && !defaults.Quiz.ThreeTermMath,
-                "all four quiz types and level-one arithmetic are the defaults"
+                "all five quiz types and level-one arithmetic are the defaults"
             );
             Check(
                 game.FindChildren("GarageQuiz_*", "Button", true, false)
@@ -226,12 +226,13 @@ public partial class GarageChecks : Node
                         button.Text == ""
                         && button.GetChildren().OfType<DeliveryPicture>().Count() == 1
                         && !button.Disabled
-                    ) == 4,
+                    ) == 5,
                 "garage exposes an illustrated, independently selectable control for each quiz type"
             );
             Press("GarageQuiz_Reading");
             Press("GarageQuiz_Syllables");
             Press("GarageQuiz_Math");
+            Press("GarageQuiz_Compare");
             Press("GarageMathLevel2");
             Check(
                 game.CaptureProgress() is { Quiz: { Types: QuizType.Letters, ThreeTermMath: true } },
@@ -424,6 +425,7 @@ public partial class GarageChecks : Node
             Press("GarageQuiz_Math");
             Press("GarageQuiz_Letters");
             Press("GarageQuiz_Reading");
+            Press("GarageQuiz_Compare");
             Check(
                 ((Button)game.FindChild("GarageQuiz_Syllables", true, false)).Disabled,
                 "last active quiz type is locked in the garage"

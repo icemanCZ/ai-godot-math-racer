@@ -59,18 +59,20 @@ public static class ChallengeChecks
             slots.Count == 3 && operations.Count == 2,
             "1000 valid deterministic questions; both operations and all answer positions"
         );
-        var sums = new int[11];
+        var answers = new int[11];
+        var pairs = new System.Collections.Generic.HashSet<(MathOperation, MathOperation)>();
         for (int i = 0; i < 1000; i++)
         {
             var q = generator.Next(threeTerms: true);
             var other = repeat.Next(threeTerms: true);
+            int middle = MathChallenge.Apply(q.Left, q.Operation, q.Right);
             if (
-                q.Operation != MathOperation.Addition
-                || q.Left <= 0
-                || q.Right <= 0
-                || q.Third is not > 0
-                || q.Answer != q.Left + q.Right + q.Third
-                || q.Answer > 10
+                q.Left is < 1 or > 10
+                || q.Right is < 1 or > 10
+                || q.Third is not (>= 1 and <= 10)
+                || middle is < 0 or > 10
+                || q.Answer != MathChallenge.Apply(middle, q.SecondOperation, q.Third.Value)
+                || q.Answer is < 0 or > 10
                 || q.Choices.Count != 3
                 || q.Choices.Distinct().Count() != 3
                 || q.Choices.Any(v => v < 0 || v > 10)
@@ -78,12 +80,30 @@ public static class ChallengeChecks
                 || q.Expression != other.Expression
                 || !q.Choices.SequenceEqual(other.Choices)
             )
-                throw new InvalidOperationException("Invalid or nondeterministic three-term question.");
-            sums[q.Answer]++;
+                throw new InvalidOperationException("Invalid or nondeterministic three-term question: " + q.Expression);
+            answers[q.Answer]++;
+            pairs.Add((q.Operation, q.SecondOperation));
         }
         check(
-            sums.Skip(3).All(count => count is > 90 and < 160),
-            "1000 deterministic three-term additions distribute sums evenly from 3 to 10"
+            pairs.Count == 4 && answers.All(count => count > 20),
+            "1000 deterministic three-term questions add and subtract in every order, with every result from 0 to 10"
+        );
+
+        var comparisons = new CompareChallengeGenerator(53);
+        var repeatComparisons = new CompareChallengeGenerator(53);
+        var signCounts = new int[3];
+        for (int i = 0; i < 1000; i++)
+        {
+            var q = comparisons.Next();
+            var other = repeatComparisons.Next();
+            if (!q.IsValid() || q.Choices.Count(q.Accepts) != 1 || q != other)
+                throw new InvalidOperationException("Invalid or nondeterministic comparison: " + q.Expression);
+            signCounts[q.Answer]++;
+        }
+        check(
+            signCounts.All(count => count > 120)
+                && signCounts[CompareChallenge.Smaller] > signCounts[CompareChallenge.Same],
+            "1000 deterministic comparisons of numbers from 0 to 10 ask for every sign, equality less often"
         );
 
         var letters = new LetterChallengeGenerator(53);
@@ -195,6 +215,7 @@ public static class ChallengeChecks
             typeof(SyllableChallenge),
             typeof(LetterChallenge),
             typeof(ReadingChallenge),
+            typeof(CompareChallenge),
         };
         var ui = game.GetChildren().OfType<GameUi>().Single();
         string? spoken = null;
@@ -212,7 +233,7 @@ public static class ChallengeChecks
             var question = game.CurrentChallenge!;
             check(
                 question.GetType() == rotation[(visits - 1) % rotation.Length],
-                "visits rotate equally through all four quiz types"
+                "visits rotate equally through all five quiz types"
             );
             if (question is SyllableChallenge)
             {
@@ -247,6 +268,7 @@ public static class ChallengeChecks
                         {
                             SyllableChallenge => null,
                             IPictureChallenge pictures => pictures.Pictures[option].Word,
+                            ISignChallenge signs => signs.Spoken(option),
                             _ => option.ToString(),
                         }
                     ),
@@ -268,16 +290,21 @@ public static class ChallengeChecks
             Press($"Answer{wrong}");
             game.TogglePause();
             game.TogglePause();
+            var replaced = game.CurrentChallenge;
             check(
                 game.State == GameState.Challenge
-                    && ReferenceEquals(question, game.CurrentChallenge)
+                    && replaced != null
+                    && replaced.GetType() == question.GetType()
+                    && replaced.Expression != question.Expression
+                    && replaced.Choices.All(choice =>
+                        game.FindChild($"Answer{choice}", true, false) is Button { Disabled: false }
+                    )
+                    && game.FindChild("MissFace", true, false) is Control { Visible: true }
                     && !car.Active
-                    && (game.FindChild($"Answer{wrong}", true, false) as Button)?.Disabled == true
                     && game.RemainingAnimals == before - 1,
-                "wrong answer and pause preserve the visit, question and rejected choice"
+                "a wrong answer shows a sad face and a new question of the same kind, with no answer crossed out"
             );
-            int secondWrong = question.Choices.First(value => !question.Accepts(value) && value != wrong);
-            Press($"Answer{secondWrong}");
+            question = replaced!;
             var correct = question is SyllableChallenge wordQuestion
                 ? wordQuestion
                     .Syllables.Reverse()

@@ -18,6 +18,7 @@ internal sealed class QuizSession
         QuizType.Syllables,
         QuizType.Letters,
         QuizType.Reading,
+        QuizType.Compare,
     };
 
     public static int RotationLength => Rotation.Length;
@@ -26,6 +27,7 @@ internal sealed class QuizSession
     private readonly LetterChallengeGenerator letters = new(Settings.Seed + 205);
     private readonly SyllableChallengeGenerator syllables = new(Settings.Seed + 206);
     private readonly ReadingChallengeGenerator reading = new(Settings.Seed + 207);
+    private readonly CompareChallengeGenerator compare = new(Settings.Seed + 208);
     private readonly Random loadRandom = new(Settings.Seed + 2313);
 
     public QuizType Enabled { get; set; } = QuizType.All;
@@ -70,9 +72,45 @@ internal sealed class QuizSession
             QuizType.Letters => letters.Next(),
             QuizType.Syllables => syllables.Next(),
             QuizType.Reading => reading.Next(),
+            QuizType.Compare => compare.Next(),
             _ => throw new InvalidOperationException("At least one quiz type must be enabled."),
         };
     }
+
+    /// <summary>
+    /// A new question of the same kind as <paramref name="missed"/>, asked after a wrong answer so that the answers
+    /// cannot be tried one after another. It is never the same question again. A delivery has none: its answer is
+    /// the cargo really carried.
+    /// </summary>
+    public IChallenge? Another(IChallenge missed)
+    {
+        for (int attempt = 0; ; attempt++)
+        {
+            IChallenge? next = missed switch
+            {
+                MathChallenge => math.Next(ThreeTermMath),
+                LoadChallenge load => LoadChallenge.Create(loadRandom, load.Cargo),
+                LetterChallenge => letters.Next(),
+                SyllableChallenge => syllables.Next(),
+                ReadingChallenge => reading.Next(),
+                CompareChallenge => compare.Next(),
+                _ => null,
+            };
+            if (next == null || attempt == 8 || Key(next) != Key(missed))
+                return next;
+        }
+    }
+
+    /// <summary>What makes two questions of one kind the same for a child.</summary>
+    private static string Key(IChallenge question) =>
+        question switch
+        {
+            LoadChallenge load => load.Present.ToString(),
+            SyllableChallenge syllables => syllables.PictureId,
+            ReadingChallenge reading => reading.Word,
+            LetterChallenge letter => letter.Letter,
+            _ => question.Expression,
+        };
 
     /// <summary>Forgets the open question together with the wrong answers already tried and the trip that waited for it.</summary>
     public void Clear()

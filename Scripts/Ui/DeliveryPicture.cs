@@ -814,6 +814,27 @@ public partial class DeliveryPicture : Control
         {
             DrawString(ThemeDB.FallbackFont, new(22, 94), "1 + 2", fontSize: 52, modulate: Colors.White);
         }
+        else if (Icon == "quiz-compare")
+        {
+            DrawString(ThemeDB.FallbackFont, new(30, 94), "3 < 5", fontSize: 52, modulate: Colors.White);
+        }
+        else if (Icon == "sad")
+        {
+            // A sad face after a wrong answer: a yellow circle, two eyes, a frown and a tear.
+            DrawCircle(new(90, 76), 70, Colors.White);
+            DrawCircle(new(90, 79), 62, new Color("c98a16"));
+            DrawCircle(new(90, 75), 62, new Color("f8cf4c"));
+            foreach (int sign in new[] { -1, 1 })
+            {
+                Oval(new(90 + sign * 22, 60), new(7, 10), ink);
+                DrawLine(new(90 + sign * 34, 46), new(90 + sign * 12, 38), ink, 5, true);
+            }
+            DrawArc(new(90, 118), 26, Mathf.Pi * 1.2f, Mathf.Pi * 1.8f, 20, ink, 6, true);
+            DrawColoredPolygon(
+                new Vector2[] { new(108, 70), new(102, 84), new(108, 90), new(114, 84) },
+                new Color("6fb7e3")
+            );
+        }
         else if (Icon == "check")
             DrawPolyline(new Vector2[] { new(50, 76), new(77, 103), new(132, 45) }, Colors.White, 12, true);
         else if (Icon == "delivery")

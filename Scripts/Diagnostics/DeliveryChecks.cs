@@ -79,7 +79,11 @@ public partial class DeliveryChecks : Node
                 {
                     game.OpenChallenge(sender);
                     Check(
-                        game.CurrentChallenge is MathChallenge or SyllableChallenge or IPictureChallenge,
+                        game.CurrentChallenge
+                            is MathChallenge
+                                or SyllableChallenge
+                                or IPictureChallenge
+                                or CompareChallenge,
                         "original arithmetic and picture tasks remain primary"
                     );
                     ChallengeChecks.Solve(game);
@@ -262,8 +266,11 @@ public partial class DeliveryChecks : Node
                 game.TogglePause();
                 Check(
                     game.State == GameState.Challenge
-                        && ((Button)game.FindChild($"Answer{wrong}", true, false)).Disabled,
-                    "wrong answer remains disabled after pause"
+                        && game.CurrentChallenge is DeliveryChallenge { Answer: var kept }
+                        && kept == answer
+                        && !((Button)game.FindChild($"Answer{wrong}", true, false)).Disabled
+                        && game.FindChild("MissFace", true, false) is Control { Visible: true },
+                    "a wrong count shows a sad face and keeps the cargo's question, with no answer crossed out"
                 );
                 Press("LeaveChallenge");
                 await Frames();

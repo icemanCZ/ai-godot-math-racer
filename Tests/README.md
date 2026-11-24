@@ -50,6 +50,10 @@ default and is listed in `LegacySaves.AddedAfterVersion5`; the check takes it ou
 it. So far: `Hauls` (the loads hauled, which earn the pets of the sources and works), `Buildings.GlassStock` and `Village.Glazed`.
 `world-pet-checks` also loads a save made without them.
 
+`Quiz.Offered` is one of them with a duty of its own: it holds the kinds of quiz the game knew when it wrote the save, and a save
+without it knew the first four. When such a save is loaded the game switches on every kind it did not know (comparing numbers), but the
+file itself is read unchanged; `save-fixture-checks` expects the game to write that kind switched on and `Offered` with all kinds.
+
 ## Other checks that guard saves
 
 - `--contract-checks`: the numbers of `GameState`, the actor ID ranges and which role each ID has, and that

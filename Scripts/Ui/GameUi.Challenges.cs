@@ -45,6 +45,7 @@ public partial class GameUi
             return;
         }
         var pictures = question as IPictureChallenge;
+        var signs = question as ISignChallenge;
         Text(question.Expression, pictures != null ? 78 : 54);
         var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center };
         row.AddThemeConstantOverride("separation", 16);
@@ -56,6 +57,7 @@ public partial class GameUi
             bool wrong = rejected.Contains(answer);
             var button = Button(
                 pictures != null ? ""
+                    : signs != null ? signs.Label(answer)
                     : wrong ? $"× {answer}"
                     : answer.ToString(),
                 () => Send(new UiIntent.Answer(answer)),
@@ -114,7 +116,12 @@ public partial class GameUi
             if (button.Disabled)
                 continue;
             int choice = question.Choices[i];
-            string label = question is IPictureChallenge pictures ? pictures.Pictures[choice].Word : choice.ToString();
+            string label = question switch
+            {
+                IPictureChallenge pictures => pictures.Pictures[choice].Word,
+                ISignChallenge signs => signs.Spoken(choice),
+                _ => choice.ToString(),
+            };
             NarrateHighlight(button, () => label);
         }
     }

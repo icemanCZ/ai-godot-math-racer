@@ -184,8 +184,14 @@ public partial class SaveChecks : Node
             );
             game.OpenChallenge(world.Animals[1]);
             RoundTrip();
+            var missed = (SyllableChallenge)game.CurrentChallenge!;
+            game.SubmitAnswer(missed.Choices.First(choice => !missed.Accepts(choice)));
+            RoundTrip();
+            Check(
+                game.CurrentChallenge is SyllableChallenge replaced && replaced.PictureId != missed.PictureId,
+                "the new word after a wrong syllable survives reload"
+            );
             var syllables = (SyllableChallenge)game.CurrentChallenge!;
-            game.SubmitAnswer(syllables.Choices.First(choice => !syllables.Accepts(choice)));
             if (syllables.Syllables.Count > 1)
                 game.SubmitAnswer(syllables.Choices.Last(syllables.Accepts));
             RoundTrip();
@@ -207,6 +213,7 @@ public partial class SaveChecks : Node
             ((Button)game.FindChild("GarageMathLevel2", true, false)).EmitSignal(Button.SignalName.Pressed);
             ((Button)game.FindChild("GarageQuiz_Syllables", true, false)).EmitSignal(Button.SignalName.Pressed);
             ((Button)game.FindChild("GarageQuiz_Reading", true, false)).EmitSignal(Button.SignalName.Pressed);
+            ((Button)game.FindChild("GarageQuiz_Compare", true, false)).EmitSignal(Button.SignalName.Pressed);
             RoundTrip();
             Check(
                 game.CaptureProgress() is { Quiz: { Types: QuizType.Math | QuizType.Letters, ThreeTermMath: true } },

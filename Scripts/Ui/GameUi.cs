@@ -24,6 +24,8 @@ public partial class GameUi : CanvasLayer
     private HBoxContainer deliveryHud = null!;
     private DeliveryPicture? directionPicture;
     private Button talkButton = null!;
+    private DeliveryPicture missFace = null!;
+    private Tween? missTween;
     private Control root = null!;
     private PanelContainer modal = null!;
     private VBoxContainer content = null!;
@@ -126,6 +128,18 @@ public partial class GameUi : CanvasLayer
         talkButton.OffsetTop = -245;
         talkButton.OffsetBottom = -130;
         talkButton.Name = "PrimaryTask";
+        missFace = new DeliveryPicture
+        {
+            Name = "MissFace",
+            Icon = "sad",
+            Visible = false,
+        };
+        root.AddChild(missFace);
+        missFace.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.CenterTop);
+        missFace.OffsetLeft = -120;
+        missFace.OffsetRight = 120;
+        missFace.OffsetTop = 8;
+        missFace.OffsetBottom = 208;
         SetupEvents();
         SetupCoins();
         SetupLamps();
@@ -244,6 +258,27 @@ public partial class GameUi : CanvasLayer
     {
         Clear();
         Text("…", 40);
+    }
+
+    /// <summary>
+    /// A sad face above the question panel after a wrong answer: it pops up, stays a moment and fades away. It is
+    /// apart from the panel, so the new question can be shown under it at once.
+    /// </summary>
+    public void Miss()
+    {
+        missTween?.Kill();
+        missFace.Visible = true;
+        missFace.Modulate = Colors.White;
+        missFace.PivotOffset = missFace.Size / 2;
+        missFace.Scale = Vector2.One * .3f;
+        missTween = missFace.CreateTween();
+        missTween
+            .TweenProperty(missFace, "scale", Vector2.One, .3)
+            .SetTrans(Tween.TransitionType.Back)
+            .SetEase(Tween.EaseType.Out);
+        missTween.TweenInterval(1.2);
+        missTween.TweenProperty(missFace, "modulate:a", 0f, .5);
+        missTween.TweenCallback(Callable.From(() => missFace.Visible = false));
     }
 
     public void HideModal()

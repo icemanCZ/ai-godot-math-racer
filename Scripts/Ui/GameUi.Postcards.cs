@@ -56,7 +56,6 @@ public partial class GameUi
         string title,
         IChallenge? question,
         PostcardProgress progress,
-        int rejected,
         string feedback,
         Action<int> answer,
         Action album
@@ -96,13 +95,17 @@ public partial class GameUi
             foreach (int choice in question.Choices)
             {
                 var button = Button(
-                    question is IPictureChallenge ? "" : choice.ToString(),
+                    question switch
+                    {
+                        IPictureChallenge => "",
+                        ISignChallenge signs => signs.Label(choice),
+                        _ => choice.ToString(),
+                    },
                     () => answer(choice),
                     row,
                     narrate: false
                 );
                 button.Name = $"Answer{choice}";
-                button.Disabled = (rejected & (1 << choice)) != 0;
                 button.CustomMinimumSize = new(112, 76);
                 if (question is IPictureChallenge pictures)
                 {
@@ -115,11 +118,8 @@ public partial class GameUi
                     button.CustomMinimumSize = new(150, 122);
                     button.AddChild(picture);
                     picture.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
-                    if (button.Disabled)
-                        picture.Modulate = new Color(1, 1, 1, .35f);
                 }
-                if (!button.Disabled)
-                    firstChoice ??= button;
+                firstChoice ??= button;
             }
             firstChoice?.GrabFocus();
             NarrateAnswerButtons(row, question);
