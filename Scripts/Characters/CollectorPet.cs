@@ -53,6 +53,12 @@ internal enum CollectorPetKind
 
     // The hunter's fawn: owned once eight animals are in his pen.
     Fawn,
+
+    // The postman's carrier pigeon: owned once every border keeper has a stamp from the player.
+    Pigeon,
+
+    // The lighthouse keeper's gull: owned once the lighthouse is finished.
+    Gull,
 }
 
 internal sealed partial class CollectorPet : Node3D

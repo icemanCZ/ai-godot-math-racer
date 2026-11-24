@@ -403,7 +403,7 @@ public partial class PlotChecks : Node
                 "a plot panel at the farmer"
             );
             // The playground's keeper comes after the farmer at the wheat field, so the first unused ID is the one after her.
-            Rejected(data => data.Nearby = World.HunterId + 1, "a character beyond the last actor");
+            Rejected(data => data.Nearby = World.PostmanId + 1, "a character beyond the last actor");
 
             // A panel left open at a newcomer and a trip under way come back as they were.
             game.RestoreProgress(old!);

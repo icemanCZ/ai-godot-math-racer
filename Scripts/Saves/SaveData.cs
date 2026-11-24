@@ -77,6 +77,30 @@ public sealed class SaveData
 
     /// <summary>The hunter's pen and the hunt under way. Added after version 5 began.</summary>
     public HuntSave Hunt { get; set; } = new();
+
+    /// <summary>The post to the keepers of the borders. Added after version 5 began.</summary>
+    public PostSave Post { get; set; } = new();
+
+    /// <summary>The lighthouse on the shore. Added after version 5 began.</summary>
+    public LighthouseSave Lighthouse { get; set; } = new();
+}
+
+/// <summary>
+/// The letters handed to each keeper of a border (by <c>Border</c>; the stamps of the album follow from them), the keeper
+/// the letter being carried is for (−1 for none) and the house of the village the reply being carried is for (−1 for
+/// none). A save made before the post has handed over nothing and carries nothing.
+/// </summary>
+public sealed class PostSave
+{
+    public int[] Delivered { get; set; } = new int[Tasks.Post.Keepers];
+    public int Carrying { get; set; } = -1;
+    public int Reply { get; set; } = -1;
+}
+
+/// <summary>The deliveries made to the lighthouse, 0 to <see cref="Buildings.LighthousePlans.Trips"/>.</summary>
+public sealed class LighthouseSave
+{
+    public int Stage { get; set; }
 }
 
 /// <summary>

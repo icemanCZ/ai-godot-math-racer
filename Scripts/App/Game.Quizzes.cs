@@ -30,6 +30,9 @@ public partial class Game
 
         /// <summary>Goods from the works for the hunter's hut.</summary>
         Hunter,
+
+        /// <summary>Stone from the coast quarry and goods from the works for the lighthouse.</summary>
+        Lighthouse,
     }
 
     /// <summary>Asks the quiz that must be solved before a trip starts; the trip continues in StartDeparture.</summary>

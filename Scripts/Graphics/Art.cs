@@ -100,6 +100,20 @@ public static class Art
                 "wheat" =>
                     "M66 120 V34 M66 34 Q48 30 46 16 M66 34 Q84 30 86 16 M66 58 Q46 54 42 40 M66 58 Q88 54 92 40 M66 82 Q46 78 42 64 M66 82 Q88 78 92 64",
                 "glassworks" => "M38 18 H94 L86 70 Q84 90 66 94 Q48 90 46 70 Z M48 40 H84 M66 94 V112 M42 116 H90",
+                // The post and the borders: a letter with a stamp, the lighthouse with its beam, the four borders (waves,
+                // snowy peaks, a river with a boat, fir trees) and a postage stamp with a perforated edge.
+                "letter" => "M14 34 H118 V102 H14 Z M88 44 H106 V64 H88 Z M28 72 H72 M28 88 H62",
+                "lighthouse" =>
+                    "M50 120 L58 52 H74 L82 120 Z M54 96 H78 M56 74 H76 M56 52 V38 H76 V52 M54 38 L66 26 L78 38 M80 40 L122 28 M80 48 L122 60 M52 40 L10 28 M52 48 L10 60",
+                "sea" =>
+                    "M14 44 Q27 30 40 44 T66 44 T92 44 T118 44 M14 72 Q27 58 40 72 T66 72 T92 72 T118 72 M14 100 Q27 86 40 100 T66 100 T92 100 T118 100",
+                "mountains" =>
+                    "M8 112 L46 40 L84 112 M62 112 L92 56 L124 112 M34 62 L40 58 L46 66 L52 58 L58 62 M80 78 L86 72 L92 80 L98 72 L104 78",
+                "river" =>
+                    "M6 34 C40 14 62 54 126 34 M6 98 C40 78 62 118 126 98 M44 62 H88 L80 74 H52 Z M66 62 V42 L80 58",
+                "forest" =>
+                    "M38 118 V102 M14 102 L38 18 L62 102 Z M94 118 V102 M70 102 L94 30 L118 102 Z M24 72 H52 M80 76 H108",
+                "stamp" => StampPath,
                 _ =>
                     "M81 29 A15 15 0 1 1 51 29 A15 15 0 1 1 81 29 Z M44 111 V77 L31 88 L22 77 L46 53 H86 L110 77 L101 88 L88 77 V111 H73 V88 H59 V111 Z",
             };
@@ -126,6 +140,86 @@ public static class Art
         };
         parent.AddChild(marker);
         return marker;
+    }
+
+    /// <summary>The outline of a postage stamp: a frame with a hill in it and a ring of dots for the perforated edge.</summary>
+    private static readonly string StampPath = Perforated();
+
+    private static string Perforated()
+    {
+        var path = new System.Text.StringBuilder("M34 34 H98 V98 H34 Z M44 88 L60 62 L72 76 L80 66 L90 88");
+        for (int i = 0; i < 7; i++)
+            path.Append($" M{18 + i * 16} 18 h0 M{18 + i * 16} 114 h0");
+        for (int i = 1; i < 6; i++)
+            path.Append($" M18 {18 + i * 16} h0 M114 {18 + i * 16} h0");
+        return path.ToString();
+    }
+
+    private static readonly Dictionary<string, ImageTexture?> Pictures = new();
+
+    /// <summary>
+    /// A coloured picture for a <c>DeliveryPicture</c> (180 x 150, the frame it draws in) of the post and the borders:
+    /// "letter", "lighthouse", "sea", "mountains", "river", "forest" and "stamp". Null for any other name, which the
+    /// picture draws itself.
+    /// </summary>
+    public static Texture2D? Picture(string icon)
+    {
+        if (Pictures.TryGetValue(icon, out var cached))
+            return cached;
+        const string ink = "#3c5960";
+        string? body = icon switch
+        {
+            "letter" =>
+                $"<rect x='24' y='36' width='132' height='86' rx='8' fill='#fff5df' stroke='{ink}' stroke-width='6'/>"
+                    + $"<path d='M28 42 L90 86 L152 42' fill='none' stroke='{ink}' stroke-width='6' stroke-linejoin='round'/>"
+                    + "<rect x='118' y='46' width='26' height='30' fill='#e2563b' stroke='#fff5df' stroke-width='3'/>",
+            "lighthouse" => "<path d='M90 40 L172 16 L172 64 Z M90 40 L8 16 L8 64 Z' fill='#ffe27a' opacity='.55'/>"
+                + "<path d='M38 146 Q90 126 142 146 Z' fill='#9d9c95'/>"
+                + $"<path d='M70 140 L78 54 H102 L110 140 Z' fill='#f4f2ec' stroke='{ink}' stroke-width='5'/>"
+                + "<path d='M74 102 H106 L108 120 H72 Z M76 74 H104 L105 88 H75 Z' fill='#d23b2f'/>"
+                + $"<rect x='68' y='48' width='44' height='7' fill='{ink}'/>"
+                + $"<rect x='84' y='122' width='12' height='18' fill='{ink}'/>"
+                + $"<rect x='79' y='28' width='22' height='20' fill='#ffe27a' stroke='{ink}' stroke-width='4'/>"
+                + $"<path d='M76 30 Q90 8 104 30 Z' fill='#d23b2f' stroke='{ink}' stroke-width='4'/>",
+            "sea" => "<circle cx='138' cy='34' r='18' fill='#f3c23c'/>"
+                + "<rect x='10' y='60' width='160' height='80' rx='12' fill='#4fa3d1'/>"
+                + "<path d='M24 82 q10 -10 20 0 t20 0 t20 0 t20 0 t20 0 t20 0 M34 104 q10 -10 20 0 t20 0 t20 0 t20 0 t20 0"
+                + " M24 126 q10 -10 20 0 t20 0 t20 0 t20 0 t20 0 t20 0' fill='none' stroke='#e8f8fb' stroke-width='6'"
+                + " stroke-linecap='round'/>",
+            "mountains" => "<path d='M6 136 L62 36 L118 136 Z' fill='#7d8fa3'/>"
+                + "<path d='M70 136 L122 54 L174 136 Z' fill='#93a5b8'/>"
+                + "<path d='M62 36 L80 68 L70 62 L62 72 L54 62 L44 68 Z M122 54 L137 78 L129 72 L122 80 L115 72 L107 78 Z'"
+                + " fill='#ffffff'/>",
+            "river" => "<rect x='8' y='14' width='164' height='124' rx='14' fill='#9ccf7a'/>"
+                + "<path d='M60 14 C30 52 130 82 100 138' fill='none' stroke='#4fa3d1' stroke-width='34'/>"
+                + "<path d='M70 62 L102 86' stroke='#6b4a2e' stroke-width='4' stroke-linecap='round'/>"
+                + $"<path d='M62 66 H98 L92 78 H68 Z' fill='#a7653b' stroke='{ink}' stroke-width='3'/>",
+            "forest" => "<ellipse cx='90' cy='130' rx='80' ry='10' fill='#70b765'/>"
+                + "<rect x='45' y='100' width='10' height='28' fill='#7a5536'/>"
+                + "<rect x='117' y='96' width='12' height='32' fill='#7a5536'/>"
+                + "<path d='M50 22 L74 66 H26 Z M50 44 L82 104 H18 Z' fill='#3f7a45'/>"
+                + "<path d='M123 12 L150 60 H96 Z M123 38 L158 100 H88 Z' fill='#2f6a3d'/>",
+            "stamp" => "<rect x='40' y='22' width='100' height='106' fill='#fff5df' stroke='#fff5df' stroke-width='14'"
+                + " stroke-dasharray='0 14' stroke-linecap='round'/>"
+                + "<rect x='52' y='36' width='76' height='78' fill='#9ed5df'/>"
+                + "<circle cx='110' cy='56' r='9' fill='#f3c23c'/>"
+                + "<path d='M52 114 L76 76 L92 94 L106 80 L128 114 Z' fill='#70b765'/>",
+            _ => null,
+        };
+        ImageTexture? texture = null;
+        if (body != null)
+        {
+            var image = new Image();
+            image.LoadSvgFromString(
+                "<svg xmlns='http://www.w3.org/2000/svg' width='180' height='150' viewBox='0 0 180 150'>"
+                    + body
+                    + "</svg>",
+                2
+            );
+            texture = ImageTexture.CreateFromImage(image);
+        }
+        Pictures[icon] = texture;
+        return texture;
     }
 
     public static StandardMaterial3D Mat(string color)

@@ -170,6 +170,7 @@ internal sealed partial class Wayside : Node3D
             || world.Village.IsReserved(p)
             || world.Ford?.Covers(p) == true
             || world.Plants.NearTrunk(p, .8f)
+            || world.InPostOfficeZone(p)
         )
             return false;
         if (world.Tracks is { } tracks && tracks.MouthDistance(p, world.Routes.EdgeDistance(p)) < 1)
@@ -194,7 +195,8 @@ internal sealed partial class Wayside : Node3D
             && borders.BorderRiverDistance(p.X, p.Z) >= ValleyBorders.BorderRiverHalfWidth + 3
             && !borders.IsSand(p.X, p.Z)
             && p.Y > ValleyBorders.SeaLevel + 1
-            && !world.Plants.NearTrunk(p, .8f);
+            && !world.Plants.NearTrunk(p, .8f)
+            && !world.InBorderfolkZone(p);
     }
 
     // ---- The little things, each merged into one mesh with a surface per colour ----

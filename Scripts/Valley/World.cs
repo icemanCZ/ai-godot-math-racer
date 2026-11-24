@@ -34,6 +34,9 @@ public partial class World : Node3D
     internal static bool IsGlassmaker(int id) => id == GlassmakerId;
 
     internal const int TreasurerId = ActorIds.Treasurer;
+    internal const int PostmanId = ActorIds.Postman;
+
+    internal static bool IsPostman(int id) => id == PostmanId;
 
     internal static bool IsTreasurer(int id) => id == TreasurerId;
 
@@ -94,6 +97,7 @@ public partial class World : Node3D
         SpecialPickupSpots = CreateSpecialPickupSpots();
         PlanFord(river);
         PlanHunter();
+        PlanPostOffice();
         AddChild(Plants);
         // The actors stand still while the plants are placed, so their positions are read once.
         var witch = Witch.Position;
@@ -117,6 +121,7 @@ public partial class World : Node3D
                 || InPlaygroundZone(p)
                 || InZooZone(p)
                 || InHunterZone(p)
+                || InPostOfficeZone(p)
         );
         CreateHiddenFriends();
         CreateWorldPets();
@@ -127,6 +132,7 @@ public partial class World : Node3D
         BuildRailway();
         BuildZoo();
         BuildHunter();
+        BuildPostOffice();
         CreateTreasure();
         CreateFireflies();
         Village.CreateLamps();
@@ -145,10 +151,16 @@ public partial class World : Node3D
         Ground.BuildMeshes();
         FarParts.Add("outland ground", Ground.BuildOutlandLand());
         BuildOutlandRoads();
+        // The homesteads of the borders are chosen from the roads to them; the plants keep off them when they are built.
+        PlanBorderfolk();
         Plants.GenerateOutland(Ground, Routes, OutlandRoutes, OutlandBlocked);
         var outlandWayside = new Wayside { Name = "OutlandWayside" };
         AddChild(outlandWayside);
         outlandWayside.GenerateOutland(this);
+        BuildBorderfolk();
+        // The postman stood in front of the post office all along; he is registered last, so that no search that keeps
+        // clear of the characters (the treasures, the fireflies, the wayside things) moves for him.
+        Register(PostmanId, Postman);
         // The borders round the valley stand on the final ground and change nothing in it.
         AddChild(BorderWater);
         BorderWater.Generate(Ground);

@@ -42,6 +42,13 @@ public partial class Vegetation
     internal Node3D OutlandPlants { get; } = new() { Name = "OutlandPlants" };
 
     /// <summary>
+    /// The ground beyond the old valley that is built on after its plants were planned (the homesteads of the borders):
+    /// a plant whose foot lies there stays in the plan, and so in <see cref="OutlandTreePositions"/> and the counts, but
+    /// is never built, near or far.
+    /// </summary>
+    internal Func<Vector3, bool>? OutlandCleared { get; set; }
+
+    /// <summary>
     /// Whether every block of plants beyond the old valley built so far is drawn in full only near the camera, and with
     /// its simpler shapes (or not at all) further away.
     /// </summary>
@@ -266,6 +273,9 @@ public partial class Vegetation
         rng = new RandomNumberGenerator { Seed = seed };
         detailRng = new RandomNumberGenerator { Seed = seed + 1 };
         foreach (var plant in plants)
+        {
+            if (OutlandCleared?.Invoke(plant.Foot) == true)
+                continue;
             switch (plant.Kind)
             {
                 case OutlandKind.Tree:
@@ -278,6 +288,7 @@ public partial class Vegetation
                     Flower(plant.Foot, plant.Number);
                     break;
             }
+        }
         BuildBatches();
         outlandPass = false;
     }
@@ -317,7 +328,8 @@ public partial class Vegetation
                 5 => new Color(.95f, 1.08f, .84f),
                 _ => new Color(1, 1, 1),
             };
-            list.Add((new Transform3D(basis, foot - Vector3.Up * .3f), tint * shade));
+            if (OutlandCleared?.Invoke(foot) != true)
+                list.Add((new Transform3D(basis, foot - Vector3.Up * .3f), tint * shade));
         }
         var material = BorderForest.TreeMaterial();
         var meshes = new Dictionary<bool, Mesh>

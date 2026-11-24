@@ -104,6 +104,10 @@ internal static class LegacySaves
         ("Hunt", "Active"),
         ("Hunt", "Carrying"),
         ("Hunt", "Hut"),
+        ("Post", "Delivered"),
+        ("Post", "Carrying"),
+        ("Post", "Reply"),
+        ("Lighthouse", "Stage"),
         ("Fireflies", "Caught"),
         ("Day", "Clock"),
     };

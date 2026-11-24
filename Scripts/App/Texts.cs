@@ -598,4 +598,53 @@ internal static class Texts
     public static string BuyFor(int cost) => $"Koupit za {cost} penízků";
 
     public static string PriceHint(int cost) => $"Stojí {cost} penízků. Sbírej penízky ve světě a plň úkoly.";
+
+    // Signs of the post office, the lighthouse, the ferry and the coast quarry
+    public const string SignPost = "POŠTA";
+    public const string SignLighthouse = "MAJÁK";
+    public const string SignFerry = "PŘÍVOZ";
+    public const string SignQuarry = "LOM";
+
+    // GameUi.Post and Game.Post
+    public const string PostmanHint = "Pošťák";
+    public const string KeeperHint = "Strážce hranic";
+    public const string PostTake = "Vzít dopis";
+    public const string PostAnotherLetter = "Mám tu další dopis! Odvezeš ho?";
+    public const string ReplyDelivered = "Psaníčko od strážce hranic! Moc děkuju, že jsi ho přivezl.";
+
+    public static string PostStillCarrying(string name) => $"Dopis už vezeš! Je pro: {name}.";
+
+    public static string PostLetterFor(string name) => $"Tenhle dopis je pro: {name}. Sleduj šipky na silnici!";
+
+    public static string LetterFor(string name) => $"Dopis pro: {name}";
+
+    public static string PostStamps(int stamps, int all) => $"Známky v albu: {stamps} / {all}";
+
+    public static string KeeperAbout(Border border) =>
+        border switch
+        {
+            Border.Sea => "Tady končí údolí a začíná moře. Pošťák mi občas pošle psaníčko.",
+            Border.Mountains => "Až sem nahoru do hor chodí jen ovečky a pošta.",
+            Border.River => "Za řekou už je jiná země. Pramicí převážím jen poštu.",
+            _ => "V lese je ticho. Těším se na každé psaníčko z vesnice.",
+        };
+
+    public static string LetterDelivered(bool stamp, int albumCoins, string? replyTo) =>
+        (
+            albumCoins > 0 ? $"Album známek je plné!  +{albumCoins}"
+            : stamp ? "Nová známka do alba!"
+            : "Děkuju za dopis!"
+        ) + (replyTo == null ? "" : $"\nOdpověď vezeš pro: {replyTo}");
+
+    // GameUi.Lighthouse and Game.Lighthouse
+    public const string LighthouseWanted =
+        "Na mysu by se hodil maják! Přivez mi kámen z lomu u silnice a postavíme ho spolu.";
+    public const string LighthouseUnfinished = "Maják ještě není hotový. Každý náklad přidá kus.";
+    public const string LighthouseShining = "Maják svítí! V noci se podívej, jak jeho světlo obchází celé údolí.";
+    public const string LighthouseDoneSpeech = "Maják je hotový! Až se setmí, rozsvítím lucernu.";
+    public const string LighthouseStart = "Poslat vozík";
+
+    public static string LighthousePart(string part, int stage, int trips) => $"Maják má {part}!  {stage} / {trips}";
+
+    public static string LighthouseDone(int coins) => $"Maják na mysu je hotový!  +{coins}";
 }

@@ -79,6 +79,11 @@ internal abstract record UiIntent
 
     internal sealed record HutTrip : UiIntent;
 
+    // The post to the four corners of the valley and the lighthouse on the shore.
+    internal sealed record TakeLetter : UiIntent;
+
+    internal sealed record LighthouseTrip : UiIntent;
+
     // The witch's night panel: the firefly hunt, or the weather question.
     internal sealed record StartFireflyHunt : UiIntent;
 

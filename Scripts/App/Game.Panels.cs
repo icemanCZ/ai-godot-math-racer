@@ -51,6 +51,11 @@ public partial class Game
         Panel(GameState.TreasureStatus, _ => nearby?.Role is TreasureRole && Shown(ShowTreasure));
         Panel(GameState.FireflyStatus, _ => nearby?.Role is WitchRole && Shown(ShowFireflies));
         Panel(GameState.HunterStatus, _ => nearby?.Role is HunterRole && Shown(ShowHunter));
+        Panel(GameState.KeeperStatus, _ => nearby?.Role is BorderKeeperRole && Shown(ShowKeeper));
+        Panel(GameState.PostStatus, _ => nearby?.Role is PostmanRole && Shown(ShowPost));
+        Panel(GameState.LighthouseStatus, _ =>
+            nearby?.Role is BorderKeeperRole && Lighthouse != null && Shown(ShowLighthouse)
+        );
         Panel(GameState.MayorShop, _ => nearby?.Role is MayorRole && Shown(ShowMayor));
         Panel(GameState.GlassmakerShop, _ => nearby?.Role is GlassmakerRole && Shown(ShowGlassmaker));
         Panel(GameState.SourceStatus, _ => nearby?.Role is SourceRole && Shown(ShowSource));

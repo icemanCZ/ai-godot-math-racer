@@ -2,6 +2,7 @@ using System.Linq;
 using Godot;
 using MathRacer.Characters;
 using MathRacer.Garage;
+using MathRacer.Graphics;
 
 namespace MathRacer.Ui;
 
@@ -941,5 +942,7 @@ public partial class DeliveryPicture : Control
             DrawArc(new(78, 63), 32, 0, Mathf.Tau, 40, ink, 9, true);
             DrawLine(new(101, 87), new(137, 124), ink, 12, true);
         }
+        else if (Art.Picture(Icon) is { } picture)
+            DrawTextureRect(picture, new Rect2(0, 0, 180, 150), false);
     }
 }

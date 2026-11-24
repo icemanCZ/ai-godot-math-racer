@@ -29,8 +29,22 @@ internal static class TripKinds
     /// <summary>Goods from the works for the hunter's hut beside his pen.</summary>
     public const string Hunter = "hunter";
 
+    /// <summary>Stone from the coast quarry and goods from the works for the lighthouse on the shore.</summary>
+    public const string Lighthouse = "lighthouse";
+
     public static bool IsKnown(string? kind) =>
-        kind is Build or Supply or House or Plot or Playground or Railway or Zoo or Mill or Glassmaker or Hunter;
+        kind
+            is Build
+                or Supply
+                or House
+                or Plot
+                or Playground
+                or Railway
+                or Zoo
+                or Mill
+                or Glassmaker
+                or Hunter
+                or Lighthouse;
 }
 
 /// <summary>
@@ -68,6 +82,12 @@ internal interface ITripTarget
 
     /// <summary>The load has been tipped out: the target is raised, paid or improved.</summary>
     void FinishDump(Game game, HaulTrip trip);
+
+    /// <summary>
+    /// The one place where the load of a step is picked up, for a target that has a source of its own (the lighthouse's
+    /// coast quarry); null where the load comes from the sources of its material, as for every other target.
+    /// </summary>
+    HaulSource? SourceFor(int step) => null;
 }
 
 /// <summary>

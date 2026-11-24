@@ -23,7 +23,8 @@ param(
     [ValidateSet('opengl3', 'opengl3_angle')]
     [string]$Driver = 'opengl3',
     # Parts of the picture to turn off, to see what they cost: shadows, msaa, glow, fog, grass, plants, details, village, wildlife,
-    # forest, sea, outland (the borders and the ground beyond the old valley), outland-plants (the plants beyond it).
+    # forest, sea, outland (the borders and the ground beyond the old valley), outland-plants (the plants beyond it),
+    # lighthouse (the lighthouse, its beam and the boat by night).
     [string[]]$Off = @(),
     [switch]$Build
 )

@@ -186,7 +186,8 @@ public partial class FrameBenchmark : Node
     /// <summary>
     /// Turns parts of the picture off to see what they cost, as in <c>--benchmark-off=shadows,grass</c>: shadows,
     /// msaa, glow, fog, grass, plants (trees, bushes, flowers), details (their small parts), village, wildlife, forest
-    /// (the trees of the borders), sea (the sea and the border river), outland (the ground beyond the old valley).
+    /// (the trees of the borders), sea (the sea and the border river), outland (the ground beyond the old valley), lighthouse
+    /// (the tower, its beam and the boat by night).
     /// </summary>
     private void TurnOff(string[] parts)
     {
@@ -241,6 +242,14 @@ public partial class FrameBenchmark : Node
                     foreach (var node in world.Ground.GetChildren().OfType<MeshInstance3D>())
                         if (node.Name.ToString().Contains("Outland"))
                             node.Visible = false;
+                    break;
+                case "lighthouse":
+                    // The lantern's beam, its light and the boat by night, and the tower itself.
+                    game.LighthouseShown = false;
+                    if (world.Lighthouse != null)
+                        world.Lighthouse.Visible = false;
+                    if (world.NightBoat != null)
+                        world.NightBoat.Visible = false;
                     break;
                 case "outland-plants":
                     world.Plants.OutlandPlants.Visible = false;

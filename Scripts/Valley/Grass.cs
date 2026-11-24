@@ -161,6 +161,8 @@ public partial class Grass : Node3D
             || world.Tracks?.Contains(p) == true
             || world.Ford?.Covers(p) == true
             || world.Plants.NearTrunk(p, .65f)
+            || world.InBorderfolkZone(p)
+            || world.InPostOfficeZone(p)
         )
             return false;
         foreach (var animal in animals)

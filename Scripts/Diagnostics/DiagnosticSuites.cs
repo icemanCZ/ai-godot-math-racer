@@ -90,6 +90,9 @@ internal static class DiagnosticSuites
         new("glass-checks", (g, w, v) => new GlassChecks(g, w, v), Seeds: ThreeSeeds),
         new("outland-checks", (g, w, v) => new OutlandChecks(w, v), Seeds: ThreeSeeds),
         new("route-checks", (g, w, v) => new RouteChecks(g, w, v), Seeds: ThreeSeeds),
+        new("borderfolk-checks", (g, w, v) => new BorderfolkChecks(g, w, v), Seeds: ThreeSeeds),
+        new("post-checks", (g, w, v) => new PostChecks(g, w, v), Seeds: ThreeSeeds),
+        new("lighthouse-checks", (g, w, v) => new LighthouseChecks(g, w, v), Seeds: ThreeSeeds),
         new(
             "weather-checks",
             (g, w, v) => new WeatherChecks(g, w, v),

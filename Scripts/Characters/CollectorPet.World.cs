@@ -56,6 +56,14 @@ internal static class WorldPetCatalog
 
     public static readonly WorldPetSpec Fawn = new(CollectorPetKind.Fawn, "Koloušek Puntík", "8 chycených zvířátek");
 
+    public static readonly WorldPetSpec Pigeon = new(
+        CollectorPetKind.Pigeon,
+        "Holoubek Psaníčko",
+        "známka od každého strážce hranic"
+    );
+
+    public static readonly WorldPetSpec Gull = new(CollectorPetKind.Gull, "Racek Vlnka", "postavený maják");
+
     public static readonly WorldPetSpec Bridge = new(CollectorPetKind.Bridge, "Mostíček", "dostavěný most");
     public static readonly WorldPetSpec Mill = new(CollectorPetKind.Mill, "Mlýnek", "dostavěný mlýn");
     public static readonly WorldPetSpec Tower = new(CollectorPetKind.Tower, "Věžička", "dostavěnou rozhlednu");
@@ -221,6 +229,12 @@ internal sealed partial class CollectorPet
                 break;
             case CollectorPetKind.Fawn:
                 BuildFawn();
+                break;
+            case CollectorPetKind.Pigeon:
+                BuildPigeon();
+                break;
+            case CollectorPetKind.Gull:
+                BuildGull();
                 break;
             case CollectorPetKind.Bridge:
                 BuildBridge();
@@ -571,6 +585,47 @@ internal sealed partial class CollectorPet
         Ball(new(0, .7f, -.4f), new(.1f, .12f, .08f), "fff6e6");
         Eyes(.09f, 1.11f, .47f);
         Smile(.94f, .545f, .05f);
+    }
+
+    private void BuildPigeon()
+    {
+        // A grey-blue carrier pigeon with a shimmering green and purple neck, dark bars on its wings, pink feet and a tiny
+        // letter with a red stamp held in its pale beak.
+        Ball(new(0, .5f, -.04f), new(.62f, .56f, .84f), "8f9bb0");
+        Ball(new(0, .5f, -.5f), new(.36f, .12f, .38f), "6f7a8c");
+        Ball(new(0, .74f, .2f), new(.42f, .3f, .38f), "8a5f9a");
+        Ball(new(0, .82f, .2f), new(.4f, .3f, .36f), "4f9a7a");
+        Ball(new(0, .98f, .26f), new(.36f, .34f, .36f), "9aa6ba");
+        Ball(new(0, .95f, .47f), new(.1f, .07f, .14f), "e8d8c0");
+        Ball(new(0, 1.0f, .41f), new(.08f, .04f, .05f), "f4f0f6");
+        Art.Block(model, new(0, .9f, .58f), new(.26f, .16f, .02f), "fbf6ea");
+        Art.Block(model, new(.07f, .93f, .595f), new(.07f, .06f, .01f), "d9432f");
+        foreach (int side in new[] { -1, 1 })
+        {
+            Ball(new(side * .3f, .55f, -.06f), new(.16f, .32f, .6f), "7d899e").RotateZ(side * .35f);
+            foreach (float z in new[] { -.08f, -.24f })
+                Ball(new(side * .37f, .55f, z), new(.05f, .2f, .06f), "3b4250").RotateZ(side * .35f);
+            Foot(new(side * .12f, .26f, .02f), .26f, .1f, "d9606a", side);
+        }
+        Eyes(.11f, 1.02f, .4f);
+    }
+
+    private void BuildGull()
+    {
+        // A white gull with grey wings tipped in black with white spots, and a yellow beak with a red dot near its tip.
+        Ball(new(0, .52f, -.04f), new(.6f, .56f, .9f), "f7f7f4");
+        Ball(new(0, .56f, -.55f), new(.3f, .12f, .36f), "f7f7f4");
+        Ball(new(0, .98f, .22f), new(.4f, .38f, .4f), "fbfbf8");
+        Ball(new(0, .93f, .48f), new(.1f, .08f, .26f), "f2c14e");
+        Ball(new(0, .9f, .55f), Vector3.One * .05f, "d9432f");
+        foreach (int side in new[] { -1, 1 })
+        {
+            Ball(new(side * .3f, .6f, -.1f), new(.16f, .3f, .72f), "a9b3bd").RotateZ(side * .3f);
+            Ball(new(side * .28f, .62f, -.5f), new(.12f, .16f, .28f), "23252b").RotateZ(side * .3f);
+            Ball(new(side * .3f, .66f, -.56f), Vector3.One * .05f, "fbfbf8");
+            Foot(new(side * .13f, .27f, .02f), .27f, .1f, "f2a65a", side);
+        }
+        Eyes(.12f, 1.04f, .38f);
     }
 
     private void BuildMill()

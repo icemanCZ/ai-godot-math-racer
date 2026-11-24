@@ -49,6 +49,9 @@ public enum GameState
     TreasureStatus = 27,
     FireflyStatus = 28,
     HunterStatus = 29,
+    KeeperStatus = 30,
+    PostStatus = 31,
+    LighthouseStatus = 32,
 }
 
 public partial class Game : Node3D
@@ -455,6 +458,9 @@ public partial class Game : Node3D
     internal void OpenChallenge(Character animal)
     {
         if (State != GameState.Exploring)
+            return;
+        // A reply from a keeper of a border is handed over before anything else the resident has to say.
+        if (DeliverReply(animal))
             return;
         animal.Role.Open(this, animal);
     }

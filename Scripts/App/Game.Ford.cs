@@ -335,6 +335,9 @@ public partial class Game
             TripKinds.Railway when saved.Index == 0 && world.Railway is { Complete: false } railway => railway,
             TripKinds.Zoo when saved.Index == 0 && world.Zoo is { Complete: false } zoo => zoo,
             TripKinds.Hunter when saved.Index == 0 && world.Pen is { Complete: false } pen => pen,
+            TripKinds.Lighthouse
+                when saved.Index == 0 && world.Lighthouse is { Complete: false } lighthouse && LighthouseWanted =>
+                lighthouse,
             TripKinds.Mill when saved.Index == 0 && world.FlourMill is { Grinding: true, Full: false } mill => mill,
             TripKinds.Glassmaker when saved.Index == 0 && world.Glassworks != null => new GlassmakerTripTarget(world),
             TripKinds.House

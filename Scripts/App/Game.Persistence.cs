@@ -106,6 +106,7 @@ public partial class Game
                         or Departure.Missing
                         or Departure.Glassmaker
                         or Departure.Hunter
+                        or Departure.Lighthouse
                     ? quiz.DepartureState
                     : GameState.Title,
             },
@@ -167,6 +168,14 @@ public partial class Game
             Railway = new RailwaySave { Stage = world.Railway?.Stage ?? 0 },
             Zoo = new ZooSave { Stage = world.Zoo?.Stage ?? 0 },
             Treasure = new TreasureSave { Found = treasure.Found, Active = treasure.Active },
+            Post = new PostSave
+            {
+                Delivered = Post.Delivered,
+                Carrying = Post.Carrying,
+                Reply = Post.Reply,
+            },
+            // A lighthouse that stands from the start, in a valley without the works for it, has had no deliveries.
+            Lighthouse = new LighthouseSave { Stage = world.LighthouseBuildable ? Lighthouse?.Stage ?? 0 : 0 },
             Fireflies = new FirefliesSave { Caught = fireflies.Caught },
             Hunt = new HuntSave
             {
@@ -242,6 +251,7 @@ public partial class Game
         RestoreCarLook(data);
         RestoreVillage(data);
         RestoreTreasure(data.Treasure.Found, data.Treasure.Active);
+        RestorePost(data.Post.Delivered, data.Post.Carrying, data.Post.Reply);
         RestoreFireflies(data.Fireflies.Caught);
         Weather.SetClock(data.Day.Clock, instant: true);
         roadside.Restore(world.Animals, data.Roadside.Unlocked, data.Roadside.Completed);
@@ -276,6 +286,8 @@ public partial class Game
         ui.DeliveryHud(Delivery);
         // The pen is counted before the pets are, so the hunter's fawn knows whether it is owned.
         RestoreHunt(data.Hunt.Penned, data.Hunt.Active, data.Hunt.Carrying, data.Hunt.Hut);
+        // The lighthouse is raised before the trips and the pets are restored, so its trip and the gull know its stage.
+        RestoreLighthouse(data.Lighthouse.Stage);
         RestoreBuilds(data);
         UpdateDeliveryGuides();
         interaction.BeforePause = validEncounter ? data.State : GameState.Exploring;

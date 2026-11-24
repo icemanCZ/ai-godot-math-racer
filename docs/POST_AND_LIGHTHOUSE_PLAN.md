@@ -1,6 +1,7 @@
 # Implementační plán: pošta do čtyř koutů a maják na mysu
 
-První obsah pro nové území kolem jádra (`docs/MAP_EXPANSION_PLAN.md`, fáze 5). Nic z toho zatím není provedeno.
+První obsah pro nové území kolem jádra (`docs/MAP_EXPANSION_PLAN.md`, fáze 5). Fáze 0 až 4 jsou provedené,
+kromě pohlednice majáku; kde se provedení od plánu liší, říká to oddíl **Jak to dopadlo** na konci.
 
 **Pošta** rozmístí po okrajích údolí čtyři nové obyvatele a dá hráči důvod objet celé údolí. **Maják** je první stavba
 mimo jádro a v noci svítí přes celé údolí. Oba nápady na sebe navazují: k majákáři hráče poprvé přivede dopis.
@@ -209,10 +210,29 @@ Tato fáze nemá nový uložený stav. Pohlednice se ukládají podle indexu, pr
   seedech to odhalí dřív, než se to stane hráči. Pomoc by pak byla posunout usedlost blíž, na půl cesty.
 - **Plná náves.** Když se pošťák nevejde na náves, postaví se před obchod. Rozhodne o tom kontrola na 42 seedech.
 
-## Rozhodnutí, která čekají na uživatele
+## Jak to dopadlo
 
-1. Jména a zvířata strážců a pošťáka (tabulka ve fázi 1 a návrh ve fázi 2).
-2. Odměny: poštovní holub, poštovní brašna, Rackáček. Mají to být spíš mince, nebo nové věci v garáži?
-3. Má být otázka na adresu (čtení slova na obálce) hned ve fázi 2, nebo až později? Je to nový druh otázky v uložené
-   hře.
-4. Jsou tři dlouhé cesty z jádra k majáku (prkna, cihly, skleničky) v pořádku, nebo má být všechno z pobřeží?
+Rozhodnutí uživatele: jména vymyslí Claude, odměnou jsou mazlíčci (ne věci do garáže), na obálce není otázka na čtení,
+tři dlouhé cesty z jádra k majáku jsou v pořádku. Proti plánu se změnilo:
+
+- **Jména.** Strážci jsou Medvěd majákář Kryštof (moře, ID 74), Zajíc pastýř Bohouš (hory, 75), Liška převoznice
+  Vendula (řeka, 76) a Medvědice hajná Božena (les, 77). Pošťák je Zajíc pošťák Pepa (78).
+- **Pošta má vlastní budovu.** Žlutý domek s modrým pruhem, schránkou a lavicí na balíky stojí u silnice na kraji
+  vesnice, pošťák před ním (`World.PostOffice.cs`, `Buildings/PostOffice.cs`). Místo se hledá bez náhodných čísel po
+  lovcově ohradě a před rostlinami, nejblíž návsi, a celé leží do 90 m od nejbližšího domu: skrytí kamarádi, poklady,
+  světlušky i stáda drží 100 m od každého domu (`Village.TaskAnimalClearance`), takže se nic z nich nepohne. Rostliny,
+  tráva, věci u cest a divoká zvířata místo vynechají až po svém losování. Na všech třech seedech kontrol stojí pošta
+  17 m od středu návsi. Kdyby se nikde nevešla, stojí pošťák na návsi se schránkou (`Village.Postman.cs`).
+- **Stavy hry:** `KeeperStatus` = 30 (panel strážce), `PostStatus` = 31 (album u pošťáka), `LighthouseStatus` = 32.
+  Předání dopisu je běžná otázka u strážce, ne vlastní stav. `UiIntent.CloseAlbum` není potřeba, panel zavírá tlačítko
+  zpět.
+- **Odměny:** holub (`CollectorPetKind.Pigeon`) za známku od každého strážce, plné album 30 mincí, každý dopis 6 a
+  každá odpověď 4 mince. Za hotový maják 30 mincí a racek (`CollectorPetKind.Gull`). Brašna do garáže ani vyhlídka z
+  ochozu nejsou; dokončení majáku ukáže kamera.
+- **Majákář zůstává `BorderKeeperRole`.** Jakmile dostal dopis, jeho panel ukazuje stavbu. U lomu klade otázku na
+  naložení kamene on (`ITripTarget.SourceFor`), proto ji jeho role rozliší podle toho, zda auto stojí u lomu.
+- **Jízda z lomu k majáku** měří 221 až 256 m (kontrola hlídá méně než 1 200 m). Údolí bez sklárny, pily nebo cihelny má
+  maják postavený od začátku a nic se k němu nevozí.
+- **Pohlednice majáku (fáze 4, bod 3) není udělaná.** Pravidlo `HasInvalidWorldProgress` přijímá jen dva počty
+  pohlednic a hledání vyhlídky zná jen silnice jádra; nová pohlednice je proto samostatný krok.
+- Kontroly jsou sady `borderfolk-checks`, `post-checks` a `lighthouse-checks` (seedy 1, 42 a 7421).

@@ -37,6 +37,8 @@ internal static class SaveRules
         ("treasure hunt", HasInvalidTreasure),
         ("firefly hunt", HasInvalidFireflies),
         ("hunter's pen and hunt", HasInvalidHunt),
+        ("post to the keepers of the borders", HasInvalidPost),
+        ("lighthouse", HasInvalidLighthouse),
         ("time of day", HasInvalidDay),
         ("decorations and the mayor's shop", HasInvalidDecorations),
         ("glass lamps and the lamp maker's shop", HasInvalidLamps),
@@ -75,6 +77,8 @@ internal static class SaveRules
         || data.Treasure is null
         || data.Fireflies is null
         || data.Hunt is null
+        || data.Post is null
+        || data.Lighthouse is null
         || data.Day is null;
 
     /// <summary>Throws when the save is not one the game can restore.</summary>
@@ -146,7 +150,7 @@ internal static class SaveRules
         || data.Task.Picked == null
         || data.Quiz.Rejected == null
         || data.Nearby < -1
-        || data.Nearby > Math.Max(Game.BanditActorId, World.HunterId)
+        || data.Nearby > Math.Max(Game.BanditActorId, World.PostmanId)
         || data.Task.Sender < -1
         || data.Task.Sender > World.SorcererId
         || data.Task.Sender == World.WitchId
@@ -226,6 +230,8 @@ internal static class SaveRules
             Game.Departure.Glassmaker => !World.IsGlassmaker(data.Nearby)
                 || data.Quiz.DepartureState != GameState.GlassmakerShop,
             Game.Departure.Hunter => !World.IsHunter(data.Nearby) || data.Quiz.DepartureState != GameState.HunterStatus,
+            Game.Departure.Lighthouse => data.Nearby != World.FirstBorderKeeperId
+                || data.Quiz.DepartureState != GameState.LighthouseStatus,
             // The works' missing goods are asked for from a builder, a newcomer, a resident or the lamp maker.
             Game.Departure.Missing => data.Quiz.DepartureState switch
             {
@@ -237,6 +243,7 @@ internal static class SaveRules
                 GameState.HouseMaterialOffer => !resident,
                 GameState.GlassmakerShop => !World.IsGlassmaker(data.Nearby),
                 GameState.HunterStatus => !World.IsHunter(data.Nearby),
+                GameState.LighthouseStatus => data.Nearby != World.FirstBorderKeeperId,
                 // The baker of the village shop, whose bakery has run out of bread for his order.
                 GameState.TradeStatus => data.Nearby != World.FirstTraderId,
                 _ => true,
@@ -470,6 +477,42 @@ internal static class SaveRules
             )
         );
 
+    /// <summary>
+    /// The post: a count of letters for each of the four keepers, at most one letter or one reply on its way (to a keeper,
+    /// or to one of the four houses), the postman's and the keepers' panels with their own characters, and a question at a
+    /// keeper only for the letter that is carried there, or for the lighthouse's trip.
+    /// </summary>
+    private static bool HasInvalidPost(SaveData data)
+    {
+        var post = data.Post;
+        if (
+            post.Delivered is not { Length: Post.Keepers }
+            || post.Delivered.Any(count => count is < 0 or > Post.Limit)
+            || post.Carrying is < -1 or >= Post.Keepers
+            || post.Reply is < -1 or >= 4
+            || (post.Carrying >= 0 && post.Reply >= 0)
+            || (data.State == GameState.PostStatus && !World.IsPostman(data.Nearby))
+            || (data.State == GameState.KeeperStatus && !World.IsBorderKeeper(data.Nearby))
+            || (World.IsPostman(data.Nearby) && (data.State == GameState.Challenge || data.Quiz.Handover))
+            || (World.IsBorderKeeper(data.Nearby) && data.Quiz.Handover)
+        )
+            return true;
+        if (data.State != GameState.Challenge || !World.IsBorderKeeper(data.Nearby))
+            return false;
+        // The question of the letter, the one before the lighthouse's trip, or the stone's loading question.
+        bool letter = data.Quiz.Departure == 0 && post.Carrying == (int)World.BorderOf(data.Nearby);
+        bool lighthouse =
+            data.Nearby == World.FirstBorderKeeperId && (Game.Departure)data.Quiz.Departure == Game.Departure.Lighthouse
+            || AsksForLighthouse(data);
+        return !letter && !lighthouse;
+    }
+
+    /// <summary>The lighthouse has 0 to 8 deliveries, begun only after the first letter to the keeper of the sea.</summary>
+    private static bool HasInvalidLighthouse(SaveData data) =>
+        data.Lighthouse.Stage is < 0 or > LighthousePlans.Trips
+        || (data.Lighthouse.Stage > 0 && data.Post.Delivered is { Length: > 0 } delivered && delivered[0] == 0)
+        || (data.State == GameState.LighthouseStatus && data.Nearby != World.FirstBorderKeeperId);
+
     /// <summary>The clock of the day is a number of seconds within one day.</summary>
     private static bool HasInvalidDay(SaveData data) =>
         !float.IsFinite(data.Day.Clock) || data.Day.Clock < 0 || data.Day.Clock >= Weather.DayLength;
@@ -573,6 +616,18 @@ internal static class SaveRules
             {
                 var cargo = HutPlans.CargoOf(data.Hunt.Hut);
                 return (cargo, World.AskerIds(cargo, 0), trip.Loaded);
+            }
+            case TripKinds.Lighthouse when trip.Index == 0 && data.Lighthouse.Stage is >= 0 and < LighthousePlans.Trips:
+            {
+                // The stone is loaded at the coast quarry, which has no worker: the keeper of the sea asks the question.
+                var cargo = LighthousePlans.CargoOf(data.Lighthouse.Stage);
+                return (
+                    cargo,
+                    data.Lighthouse.Stage < LighthousePlans.StoneTrips
+                        ? new[] { World.FirstBorderKeeperId }
+                        : World.AskerIds(cargo, 0),
+                    trip.Loaded
+                );
             }
             case TripKinds.Mill when trip.Index == 0:
                 return (HaulLoad.Wheat, World.AskerIds(HaulLoad.Wheat, 0), trip.Loaded);
@@ -695,6 +750,10 @@ internal static class SaveRules
             TripKinds.Railway => trip.Index != 0 || data.Railway.Stage >= RailwayPlans.Trips,
             TripKinds.Zoo => trip.Index != 0 || data.Zoo.Stage >= ZooPlans.Trips,
             TripKinds.Hunter => trip.Index != 0 || data.Hunt.Hut >= HutPlans.Trips,
+            // The keeper of the sea wants the lighthouse only after the first letter.
+            TripKinds.Lighthouse => trip.Index != 0
+                || data.Lighthouse.Stage >= LighthousePlans.Trips
+                || data.Post.Delivered[0] == 0,
             // Wheat goes to the mill once it is finished, until its flour fills the yard.
             TripKinds.Mill => trip.Index != 0 || !MillFinished(data) || data.Buildings.FlourStock >= FlourMill.Capacity,
             // The lamp maker takes glasses again and again: there is only the one of him.
@@ -707,8 +766,25 @@ internal static class SaveRules
     /// Builders, works workers and source workers show a panel of their own and, during a trailer trip, ask the
     /// loading question. A question can only be open for the trip's own asker, and only before the load is aboard.
     /// </summary>
+    /// <summary>
+    /// The keeper of the sea asks the stone's loading question: a question of the loading kind, or any question while the
+    /// trailer of a lighthouse trip stands empty (an arithmetic turn becomes the loading question, the others do not).
+    /// </summary>
+    private static bool AsksForLighthouse(SaveData data) =>
+        data.Nearby == World.FirstBorderKeeperId
+        && (
+            data.Quiz.Challenge is LoadChallenge
+            || data.State == GameState.Challenge
+                && data.Quiz.Departure == 0
+                && data.Task.Trip is { Kind: TripKinds.Lighthouse, Loaded: false }
+        );
+
     private static bool HasInvalidAsker(SaveData data)
     {
+        // The keepers' panels and the question of a letter are looked after by the rules of the post; only the keeper of
+        // the sea asks a loading question, the one of the stone for the lighthouse.
+        if (World.IsBorderKeeper(data.Nearby) && !AsksForLighthouse(data))
+            return data.Quiz.Challenge is LoadChallenge;
         GameState? panel =
             World.IsBuilder(data.Nearby) ? GameState.BuildStatus
             : data.Nearby is >= World.FirstWorksId and <= World.LastWorksId or World.GlassworksId or World.BakeryId
@@ -720,6 +796,7 @@ internal static class SaveRules
             : World.IsStationHelper(data.Nearby) ? GameState.RailwayStatus
             : World.IsZooKeeper(data.Nearby) ? GameState.ZooStatus
             : World.IsHunter(data.Nearby) ? GameState.HunterStatus
+            : data.Nearby == World.FirstBorderKeeperId ? GameState.LighthouseStatus
             : null;
         if (panel == null)
         {
@@ -733,6 +810,7 @@ internal static class SaveRules
                         or GameState.RailwayStatus
                         or GameState.ZooStatus
                         or GameState.HunterStatus
+                        or GameState.LighthouseStatus
                 || data.Quiz.Challenge is LoadChallenge;
         }
         if (data.State is not (GameState.Exploring or GameState.Challenge) && data.State != panel)

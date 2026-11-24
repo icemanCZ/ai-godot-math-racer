@@ -87,4 +87,15 @@ internal static class ActorIds
 
     /// <summary>The hunter at his pen at the edge of the village, who sends the player out with a net.</summary>
     public const int Hunter = Treasurer + 1;
+
+    /// <summary>
+    /// The keepers of the four borders, at the ends of the roads to them, in the order of <c>Border</c>: the sea (the
+    /// lighthouse keeper), the mountains, the border river and the forest.
+    /// </summary>
+    public const int FirstBorderKeeper = Hunter + 1;
+
+    public const int LastBorderKeeper = FirstBorderKeeper + 3;
+
+    /// <summary>The postman on the village square, who sends letters out to the keepers of the borders.</summary>
+    public const int Postman = LastBorderKeeper + 1;
 }

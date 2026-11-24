@@ -214,7 +214,7 @@ public partial class HuntChecks : Node
                 },
                 "the zoo panel at the hunter"
             );
-            Rejected(data => data.Nearby = World.HunterId + 1, "a character beyond the hunter");
+            Rejected(data => data.Nearby = World.PostmanId + 1, "a character beyond the hunter");
             var finished = game.CaptureProgress();
             finished.Hunt.Hut = HutPlans.Trips;
             finished.Hunt.Penned = new[] { "Fox" };

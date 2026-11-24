@@ -306,6 +306,19 @@ public partial class Game
                 return;
             (works, asker) = (missing, pen.Hunter);
         }
+        else if (State == GameState.LighthouseStatus)
+        {
+            // The keeper of the sea, for the planks, the bricks and the glasses of the lighthouse.
+            if (
+                Lighthouse is not { Complete: false } lighthouse
+                || nearby is not { Role: BorderKeeperRole }
+                || Haul != null
+                || LighthouseStepReady(lighthouse)
+                || GoodsWorks(LighthousePlans.CargoOf(lighthouse.Stage)) is not { Full: false } missing
+            )
+                return;
+            (works, asker) = (missing, lighthouse.Keeper);
+        }
         else if (State == GameState.HouseMaterialOffer)
         {
             // A resident who wants goods that the works has not made does the same: the way to the raw material.

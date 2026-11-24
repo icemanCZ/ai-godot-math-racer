@@ -22,6 +22,7 @@ public sealed partial class HaulTrip : Node3D
     private readonly RouteGuide guide;
     private readonly Vector3 dropPoint;
     private readonly Vector3 dropRoad;
+    private readonly HaulSource? own;
     private Node3D? target;
 
     internal ITripTarget Target { get; }
@@ -32,8 +33,11 @@ public sealed partial class HaulTrip : Node3D
     internal HaulLoad Load { get; }
     internal Character Contractor => Target.Contractor;
 
-    /// <summary>The character who loads the cargo and asks the loading question: the source worker, else the contractor.</summary>
-    internal Character Asker => world.PickupActor(Load, Source) ?? Contractor;
+    /// <summary>
+    /// The character who loads the cargo and asks the loading question: the source worker, else the contractor, who also
+    /// asks it at a place of the target's own, which has no worker.
+    /// </summary>
+    internal Character Asker => own != null ? Contractor : world.PickupActor(Load, Source) ?? Contractor;
     internal bool Loaded { get; private set; }
 
     /// <summary>Set on reaching the current target; cleared when the car leaves it again.</summary>
@@ -57,6 +61,7 @@ public sealed partial class HaulTrip : Node3D
     internal Railway? Railway => Target as Railway;
     internal Zoo? Zoo => Target as Zoo;
     internal HunterPen? HunterHut => Target as HunterPen;
+    internal Lighthouse? Lighthouse => Target as Lighthouse;
     internal Works? Works => Target as Works;
     internal int House => Target is HouseTripTarget house ? house.House : -1;
     internal bool ForGlassmaker => Target is GlassmakerTripTarget;
@@ -74,7 +79,8 @@ public sealed partial class HaulTrip : Node3D
         Load = target.LoadFor(step);
         dropPoint = target.DropFor(step);
         dropRoad = target.DropRoadFor(step);
-        Source = world.NearestSource(Load, car.Position);
+        own = target.SourceFor(step);
+        Source = own ?? world.NearestSource(Load, car.Position);
         Loaded = loaded;
         Name = char.ToUpperInvariant(target.Kind[0]) + target.Kind[1..] + "Trip";
         guide = new RouteGuide(world, car, this, () => Destination);
@@ -111,6 +117,9 @@ public sealed partial class HaulTrip : Node3D
     private bool AnySource(Vector3 car)
     {
         float range = HaulLoads.IsSpecial(Load) ? Settings.InteractionRange : 6;
+        // A target with a place of its own (the coast quarry) is loaded there and nowhere else.
+        if (own is { } only)
+            return Near(car, only.Position, range);
         foreach (var site in world.SourceSites(Load))
         {
             if (!Near(car, site.Position, range))

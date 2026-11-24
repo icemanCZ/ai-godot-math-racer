@@ -490,3 +490,60 @@ internal sealed class ExhibitCollectorRole : CollectorRole
         bool returned = false
     ) => ui.CollectionStatus(village, owner, expedition, returned);
 }
+
+/// <summary>
+/// The keeper of a border, at the end of the road to it. Talking to them shows the stamps they have given; a letter
+/// that the player brings for them is handed over with a question, and the lighthouse keeper by the sea also builds the
+/// lighthouse. The only quizzes are that handover and, for the lighthouse, the question before a trip and the loading
+/// question at the coast quarry, which has no worker of its own.
+/// </summary>
+internal sealed class BorderKeeperRole : ActorRole
+{
+    public Valley.Border Border { get; }
+
+    public BorderKeeperRole(Valley.Border border) => Border = border;
+
+    public override string Icon =>
+        Border switch
+        {
+            Valley.Border.Sea => "sea",
+            Valley.Border.Mountains => "mountains",
+            Valley.Border.River => "river",
+            _ => "forest",
+        };
+    public override bool UsesDeliveryGuide => false;
+
+    public override bool InvitesTalk(bool expeditionActive) => true;
+
+    public override void ShowHint(GameUi ui, Character actor) => ui.KeeperHint();
+
+    public override void Open(Game game, Character actor) => game.OpenBorderKeeper(actor);
+
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
+    {
+        game.CompleteKeeperQuiz(actor);
+        return true;
+    }
+}
+
+/// <summary>
+/// The postman on the village square. Talking to him opens the stamp album and gives out the next letter for a keeper
+/// of the borders; he asks no question.
+/// </summary>
+internal sealed class PostmanRole : ActorRole
+{
+    public override string Icon => "letter";
+    public override bool UsesDeliveryGuide => false;
+
+    public override bool InvitesTalk(bool expeditionActive) => true;
+
+    public override void ShowHint(GameUi ui, Character actor) => ui.PostmanHint();
+
+    public override void Open(Game game, Character actor) => game.OpenPostman(actor);
+
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
+    {
+        game.FinishInteraction();
+        return true;
+    }
+}

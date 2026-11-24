@@ -1,0 +1,7 @@
+seed 42
+home Sea road -226.77 18.90 1088.00 inward -0.10 0.00 1.00 keeper -224.49 18.86 1091.44
+home Mountains road -216.42 29.71 -1088.00 inward 0.11 0.00 -0.99 keeper -218.64 29.73 -1091.47
+home River road 1088.00 24.14 -21.92 inward 0.99 0.00 -0.11 keeper 1090.90 24.16 -24.86
+home Forest road -1088.00 30.68 -16.83 inward -1.00 0.00 -0.07 keeper -1091.38 30.69 -14.47
+lighthouse foot -235.46 -8.33 1177.58 drop -231.49 18.80 1090.05
+coast quarry -212.18 16.15 838.36 road -225.09 15.13 839.95

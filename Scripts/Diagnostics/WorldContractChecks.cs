@@ -92,6 +92,32 @@ internal static class WorldFingerprint
         return lines;
     }
 
+    /// <summary>
+    /// What came to the land beyond the old valley after its own file was made (<c>docs/POST_AND_LIGHTHOUSE_PLAN.md</c>):
+    /// the homesteads of the borders and their keepers, the lighthouse's place and the coast quarry.
+    /// </summary>
+    internal static string CoastFileFor(int seed) => Path.Combine(Folder, $"seed-{seed}.coast.txt");
+
+    internal static List<string> CoastLines(World world)
+    {
+        var lines = new List<string> { $"seed {Settings.Seed}" };
+        foreach (var (site, keeper) in world.BorderfolkPlaces())
+            lines.Add(
+                $"home {site.Border} road {P(site.Road)} inward {P(site.Inward)} keeper {(keeper == null ? "none" : P(keeper.Position))}"
+            );
+        lines.Add(
+            world.LighthousePlace is { } light
+                ? $"lighthouse foot {P(light.Foot)} drop {P(light.Drop)}"
+                : "lighthouse none"
+        );
+        lines.Add(
+            world.QuarryPlace is { } quarry
+                ? $"coast quarry {P(quarry.Position)} road {P(quarry.Road)}"
+                : "coast quarry none"
+        );
+        return lines;
+    }
+
     internal static List<string> Lines(World world)
     {
         var lines = new List<string> { $"seed {Settings.Seed}" };
@@ -169,6 +195,14 @@ public partial class WorldFingerprintWriter : Node
                 File.WriteAllLines(outland, WorldFingerprint.OutlandLines(world));
                 GD.Print($"WROTE: {outland}");
             }
+            string coast = WorldFingerprint.CoastFileFor(Settings.Seed);
+            if (File.Exists(coast))
+                GD.Print($"KEPT: {coast} already exists and stays as it is");
+            else
+            {
+                File.WriteAllLines(coast, WorldFingerprint.CoastLines(world));
+                GD.Print($"WROTE: {coast}");
+            }
             GetTree().Quit();
         }
         catch (Exception error)
@@ -204,14 +238,19 @@ public partial class WorldFingerprintChecks : Node
             string outlandPath = WorldFingerprint.OutlandFileFor(Settings.Seed);
             if (!File.Exists(outlandPath))
                 throw new InvalidOperationException($"No outland fingerprint for seed {Settings.Seed}: {outlandPath}");
+            string coastPath = WorldFingerprint.CoastFileFor(Settings.Seed);
+            if (!File.Exists(coastPath))
+                throw new InvalidOperationException($"No coast fingerprint for seed {Settings.Seed}: {coastPath}");
             var expected = File.ReadAllLines(path)
                 .Concat(File.ReadAllLines(glassworksPath))
                 .Concat(File.ReadAllLines(outlandPath))
+                .Concat(File.ReadAllLines(coastPath))
                 .ToArray();
             var actual = WorldFingerprint
                 .Lines(world)
                 .Concat(WorldFingerprint.GlassworksLines(world))
                 .Concat(WorldFingerprint.OutlandLines(world))
+                .Concat(WorldFingerprint.CoastLines(world))
                 .ToList();
             var different = new List<string>();
             for (int i = 0; i < Math.Max(expected.Length, actual.Count); i++)
@@ -295,6 +334,9 @@ public partial class ContractChecks : Node
         ("TreasureStatus", 27),
         ("FireflyStatus", 28),
         ("HunterStatus", 29),
+        ("KeeperStatus", 30),
+        ("PostStatus", 31),
+        ("LighthouseStatus", 32),
     };
 
     public override void _Ready()
@@ -358,7 +400,10 @@ public partial class ContractChecks : Node
                 && ActorIds.Station == 70
                 && ActorIds.ZooKeeper == 71
                 && ActorIds.Treasurer == 72
-                && ActorIds.Hunter == 73,
+                && ActorIds.Hunter == 73
+                && ActorIds.FirstBorderKeeper == 74
+                && ActorIds.LastBorderKeeper == 77
+                && ActorIds.Postman == 78,
             "the actor ID ranges are the ones saved games use"
         );
 
@@ -393,6 +438,8 @@ public partial class ContractChecks : Node
                 : id == World.ZooKeeperId ? nameof(ZooRole)
                 : id == World.TreasurerId ? nameof(TreasureRole)
                 : id == World.HunterId ? nameof(HunterRole)
+                : World.IsBorderKeeper(id) ? nameof(BorderKeeperRole)
+                : id == World.PostmanId ? nameof(PostmanRole)
                 : "(no actor may have this ID)";
             Check(actor.Role.GetType().Name == expected, $"ID {id} ({actor.DisplayName}) is a {expected}");
             if (actor.Role is HouseResidentRole house)
@@ -428,6 +475,9 @@ public partial class ContractChecks : Node
         Check(seen.ContainsKey(World.StationId), "every valley has the stationmaster");
         Check(seen.ContainsKey(World.TreasurerId), "every valley has the pirate captain");
         Check(seen.ContainsKey(World.HunterId), "every valley has the hunter");
+        for (int id = ActorIds.FirstBorderKeeper; id <= ActorIds.LastBorderKeeper; id++)
+            Check(seen.ContainsKey(id), $"every valley has the keeper of the border with ID {id}");
+        Check(seen.ContainsKey(World.PostmanId), "every valley has the postman");
         for (int id = World.FirstPlotResidentId; id <= World.LastPlotResidentId; id++)
             Check(seen.ContainsKey(id), $"every valley has the newcomer with ID {id}");
         // The quarry, the clay pit and the log yard keep their own IDs in this order.
@@ -513,7 +563,8 @@ public partial class ContractChecks : Node
 
     /// <summary>
     /// Where the valley ends while it is played (<see cref="ValleyBounds"/>) is asked only by the code that limits play:
-    /// the car, the grass, the lamps, the fireflies, the wild animals and the hunt, and the checks. The generation of the
+    /// the car, the grass, the lamps, the fireflies, the wild animals and the hunt, the coast quarry beside the road to
+    /// the sea, and the checks. The generation of the
     /// old valley keeps to <see cref="WorldTuning.CorePlayableRadius"/>, or a valley that grows would move what saved
     /// games already have. A new use elsewhere is a decision to be made on purpose, and to be added here.
     /// </summary>
@@ -529,6 +580,7 @@ public partial class ContractChecks : Node
             "Valley/Vegetation.Outland.cs",
             "Valley/Wayside.cs",
             "Valley/Wildlife.cs",
+            "Valley/World.Borderfolk.cs",
             "Valley/World.Fireflies.cs",
             "Valley/World.Hunter.cs",
             "Valley/World.Outland.cs",

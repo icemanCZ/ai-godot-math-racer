@@ -109,6 +109,47 @@ internal static class CharacterCatalog
             "8f8a84"
         );
 
+    /// <summary>
+    /// The keepers of the four borders, in the order of <c>Border</c> (<see cref="ActorIds.FirstBorderKeeper"/>): the
+    /// lighthouse keeper by the sea, the shepherd under the mountains, the ferrywoman at the border river and the forester.
+    /// </summary>
+    public static CharacterSpec[] BorderKeepers { get; } =
+        {
+            new(
+                "Medvěd majákář Kryštof",
+                "Ahoj, námořníku! Tady končí silnice a začíná moře. Odsud vidím každou loď, co pluje kolem.",
+                2,
+                "8b6d55"
+            ),
+            new(
+                "Zajíc pastýř Bohouš",
+                "Dobrý den pod horami! Pasu tu ovečky. Nahoru do hor se autem nedá, ale výhled je odsud krásný.",
+                0,
+                "efe4d2"
+            ),
+            new(
+                "Liška převoznice Vendula",
+                "Ahoj! Za řekou už je cizí kraj. Převážím přes ni lidi na pramici, auto by se do ní nevešlo.",
+                1,
+                "d9733f"
+            ),
+            new(
+                "Medvědice hajná Božena",
+                "Pšt, ať nevyplašíme srnky! Hlídám tenhle velký les a v zimě nosím zvířátkům seno do krmelce.",
+                2,
+                "7a5a3c"
+            ),
+        };
+
+    /// <summary>The postman on the village square, who sends letters out to the keepers of the borders (<see cref="ActorIds.Postman"/>).</summary>
+    public static CharacterSpec Postman { get; } =
+        new(
+            "Zajíc pošťák Pepa",
+            "Dobrý den! Mám plnou brašnu dopisů pro strážce na kraji údolí: u moře, pod horami, u hraniční řeky a v lese. Odvezeš jim je?",
+            0,
+            "c9b49a"
+        );
+
     /// <summary>The pirate captain on the village square, who hides treasures for the player to dig up (<see cref="World.TreasurerId"/>).</summary>
     public static CharacterSpec Treasurer { get; } =
         new(

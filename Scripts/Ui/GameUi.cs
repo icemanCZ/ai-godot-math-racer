@@ -132,6 +132,7 @@ public partial class GameUi : CanvasLayer
         SetupTreasure();
         SetupFireflies();
         SetupHunt();
+        SetupPost();
     }
 
     private static StyleBoxFlat Style(string color, int radius) =>

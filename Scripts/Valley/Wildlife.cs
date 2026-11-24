@@ -151,7 +151,9 @@ public partial class Wildlife : Node3D
     /// <summary><see cref="Safe"/> with the friends' places read at the start of the tick.</summary>
     private bool SafeAmongFriends(Vector3 p, WildKind kind)
     {
-        if (!Open(p, kind))
+        // An animal does not run onto a homestead of the borders or the post office's forecourt; where the animals stand
+        // when the valley is made does not change for them, so this is asked only while they move.
+        if (!Open(p, kind) || world.InBorderfolkZone(p) || world.InPostOfficeZone(p))
             return false;
         foreach (var friend in friends)
             if (friend.DistanceSquaredTo(p) < 16)
