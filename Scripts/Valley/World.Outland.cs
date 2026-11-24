@@ -24,6 +24,12 @@ public partial class World
     /// <summary>How many of <see cref="OutlandRoutePoints"/> after the ring join it to the old roads.</summary>
     internal int OutlandJoinCount { get; private set; }
 
+    /// <summary>
+    /// The roads to the borders, after the joins in <see cref="OutlandRoutePoints"/>, with the border each leads to: the
+    /// last point of each is where the road ends, 42 m inside the edge of the valley.
+    /// </summary>
+    internal (Border Border, Vector3[] Points)[] BorderRoads { get; private set; } = Array.Empty<(Border, Vector3[])>();
+
     /// <summary>A join leaves the old roads only where nothing stands within this distance of its middle.</summary>
     private const float JoinClearance = 7;
 
@@ -45,16 +51,20 @@ public partial class World
         // Each road that meets the ring ends on a point of it: a join with its last point, a road to a border with its first.
         foreach (var road in joins)
             InsertOnRing(ring, road[^1]);
-        foreach (var road in borderRoads)
+        foreach (var (_, road) in borderRoads)
             InsertOnRing(ring, road[0]);
         // The ring starts at a meeting, so that its closing point is a junction that really is one.
-        var start = joins.Select(road => road[^1]).Concat(borderRoads.Select(road => road[0])).FirstOrDefault();
+        var start = joins.Select(road => road[^1]).Concat(borderRoads.Select(road => road.Points[0])).FirstOrDefault();
         int startIndex = ring.IndexOf(start);
         if (startIndex > 0)
             ring = ring.Skip(startIndex).Concat(ring.Take(startIndex)).ToList();
         ring.Add(ring[0]);
         OutlandJoinCount = joins.Count;
-        OutlandRoutePoints = new[] { ring.ToArray() }.Concat(joins).Concat(borderRoads).ToArray();
+        BorderRoads = borderRoads.ToArray();
+        OutlandRoutePoints = new[] { ring.ToArray() }
+            .Concat(joins)
+            .Concat(borderRoads.Select(road => road.Points))
+            .ToArray();
         Ground.GradeOutlandRoads(new OutlandRoadbed(OutlandRoutePoints, Ground.Landscape, layout.Bridges));
         foreach (var bridge in layout.Bridges)
             BuildOutlandBridge(bridge);
@@ -239,7 +249,7 @@ public partial class World
     /// A road out to each border: to the foot of the mountains, down to the beach, to the bank of the border river and
     /// to the edge of the forest. Each leaves the ring where a straight line out meets it, away from the valley's river.
     /// </summary>
-    private List<Vector3[]> PlanBorderRoads(List<Vector3> ring, Random random)
+    private List<(Border Border, Vector3[] Points)> PlanBorderRoads(List<Vector3> ring, Random random)
     {
         var plan = WorldLayout.Plan;
         var borders = plan.Borders;
@@ -251,19 +261,27 @@ public partial class World
         float along = Range(-260, 260);
         var targets = new[]
         {
-            (From: new Vector3(across, 0, 0), To: new Vector3(across + Range(-25, 25), 0, -edge)),
-            (From: new Vector3(across, 0, 0), To: new Vector3(across + Range(-25, 25), 0, southEnd)),
-            (From: new Vector3(0, 0, along), To: new Vector3(plan.Side * edge, 0, along + Range(-25, 25))),
-            (From: new Vector3(0, 0, -along), To: new Vector3(-plan.Side * edge, 0, -along + Range(-25, 25))),
+            (Border.Mountains, From: new Vector3(across, 0, 0), To: new Vector3(across + Range(-25, 25), 0, -edge)),
+            (Border.Sea, From: new Vector3(across, 0, 0), To: new Vector3(across + Range(-25, 25), 0, southEnd)),
+            (
+                Border.River,
+                From: new Vector3(0, 0, along),
+                To: new Vector3(plan.Side * edge, 0, along + Range(-25, 25))
+            ),
+            (
+                Border.Forest,
+                From: new Vector3(0, 0, -along),
+                To: new Vector3(-plan.Side * edge, 0, -along + Range(-25, 25))
+            ),
         };
-        var roads = new List<Vector3[]>();
-        foreach (var (from, to) in targets)
+        var roads = new List<(Border, Vector3[])>();
+        foreach (var (border, from, to) in targets)
         {
             var direction = (to - from).Normalized();
             if (RingHit(ring, from, direction) is not Vector3 start)
                 continue;
             var middle = start.Lerp(to, .5f) + direction.Cross(Vector3.Up) * Range(-18, 18);
-            roads.Add(new[] { start, middle, to });
+            roads.Add((border, new[] { start, middle, to }));
         }
         return roads;
     }

@@ -333,6 +333,8 @@ Odchylky od plánu:
 
 Uživatel rozhodl, že obsah se zatím přidávat nebude. Nové území je zatím krajina k projížďce. Návrhy zůstávají pro pozdější práci.
 
+První vybraný obsah, pošta do čtyř koutů a maják na mysu, má vlastní plán v `docs/POST_AND_LIGHTHOUSE_PLAN.md`.
+
 Bez cílů bude nové území jen hezká a prázdná krajina. Návrhy, každý jako samostatný PR podle pravidel v `CLAUDE.md`
 (role v `ActorRoles`, ID v `ActorIds`, cesta s přívěsem jako `ITripTarget`, texty v `Texts.cs`, nová sekce v uložené hře
 s pravidlem v `SaveRules`):

@@ -7,8 +7,10 @@ using MathRacer.Vehicles;
 namespace MathRacer.Tasks;
 
 /// <summary>
-/// Road navigation toward one target: a graph of connected road samples (including the bridge),
-/// arrows anchored on the road ahead of the car and a final arrow toward an off-road target.
+/// Road navigation toward one target: a graph of connected road samples (including the bridges) of both road networks,
+/// the old valley's <see cref="World.Routes"/> and the roads beyond it (<see cref="World.OutlandRoutes"/>), which meet
+/// where a join leaves an old road; arrows anchored on the road ahead of the car and a final arrow toward an off-road
+/// target.
 /// The arrows are added to the owner node so activities keep them with their other scenery.
 /// </summary>
 internal sealed class RouteGuide
@@ -18,6 +20,18 @@ internal sealed class RouteGuide
     private readonly Node3D owner;
     private readonly Func<Vector3> destination;
     private readonly List<int>[] edges;
+
+    /// <summary>The samples of both networks: those of <see cref="World.Routes"/> first, then the outland's.</summary>
+    private readonly List<Vector3> samples;
+
+    /// <summary>The navigation anchor of each of <see cref="samples"/>, indexing <see cref="anchors"/>.</summary>
+    private readonly int[] sampleAnchors;
+
+    /// <summary>The navigation anchors of both networks, in the order of <see cref="samples"/>.</summary>
+    private readonly List<(Vector3 Position, Vector3 Forward)> anchors;
+
+    /// <summary>How many of <see cref="samples"/> belong to the old valley's roads.</summary>
+    private readonly int coreSamples;
     private readonly int[] next;
     private readonly Dictionary<(int Anchor, bool Reverse), MeshInstance3D> routeArrows = new();
     private readonly List<MeshInstance3D> guidanceArrows = new();
@@ -48,7 +62,19 @@ internal sealed class RouteGuide
         this.car = car;
         this.owner = owner;
         this.destination = destination;
-        var samples = world.Routes.Samples;
+        var core = world.Routes;
+        var outland = world.OutlandRoutes;
+        coreSamples = core.Samples.Count;
+        samples = new List<Vector3>(core.Samples.Count + outland.Samples.Count);
+        samples.AddRange(core.Samples);
+        samples.AddRange(outland.Samples);
+        anchors = new List<(Vector3 Position, Vector3 Forward)>(core.NavigationAnchors);
+        anchors.AddRange(outland.NavigationAnchors);
+        sampleAnchors = new int[samples.Count];
+        for (int i = 0; i < coreSamples; i++)
+            sampleAnchors[i] = core.SampleAnchors[i];
+        for (int i = coreSamples; i < samples.Count; i++)
+            sampleAnchors[i] = core.NavigationAnchors.Count + outland.SampleAnchors[i - coreSamples];
         edges = new List<int>[samples.Count];
         for (int i = 0; i < edges.Length; i++)
             edges[i] = new List<int>();
@@ -63,7 +89,7 @@ internal sealed class RouteGuide
             for (int z = -1; z <= 1; z++)
                 if (buckets.TryGetValue(key + new Vector2I(x, z), out var neighbors))
                     foreach (int j in neighbors)
-                        if (p.DistanceSquaredTo(samples[j]) < 10.24f)
+                        if (Connected(p, samples[j], (i < coreSamples) == (j < coreSamples)))
                         {
                             edges[i].Add(j);
                             edges[j].Add(i);
@@ -75,14 +101,44 @@ internal sealed class RouteGuide
     }
 
     /// <summary>
+    /// Whether two road samples are joined: within 3.2 m of each other, measured in 3D within one network as it always
+    /// was, and on the ground across the two, where a join starts on a point of an old road whatever its height.
+    /// </summary>
+    private static bool Connected(Vector3 a, Vector3 b, bool sameNetwork) =>
+        sameNetwork ? a.DistanceSquaredTo(b) < 10.24f : (a.X - b.X) * (a.X - b.X) + (a.Z - b.Z) * (a.Z - b.Z) < 10.24f;
+
+    /// <summary>The road samples of both networks that the route can follow, the old valley's first.</summary>
+    internal IReadOnlyList<Vector3> Samples => samples;
+
+    /// <summary>Whether every road sample of both networks can be reached from every other.</summary>
+    internal bool IsConnected()
+    {
+        if (samples.Count == 0)
+            return true;
+        var seen = new bool[samples.Count];
+        var stack = new Stack<int>();
+        stack.Push(0);
+        seen[0] = true;
+        int count = 1;
+        while (stack.TryPop(out int i))
+            foreach (int j in edges[i])
+                if (!seen[j])
+                {
+                    seen[j] = true;
+                    count++;
+                    stack.Push(j);
+                }
+        return count == samples.Count;
+    }
+
+    /// <summary>
     /// Plans the road part of the route. <paramref name="roadApproach"/> is the road end of a cleared
     /// off-road approach; without it the route ends at the road sample closest to the destination.
     /// </summary>
     public void Retarget(Vector3? roadApproach = null)
     {
-        var samples = world.Routes.Samples;
         var target = Destination;
-        destinationRoadDistance = world.Routes.Distance(target);
+        destinationRoadDistance = Mathf.Min(world.Routes.Distance(target), world.OutlandRoutes.Distance(target));
         Array.Fill(next, -1);
         int routeTarget = Nearest(roadApproach ?? target);
         roadExit = samples[routeTarget];
@@ -189,9 +245,24 @@ internal sealed class RouteGuide
             destinationArrow.Hide();
     }
 
-    private int Nearest(Vector3 p) => NearestSample(world, p);
+    /// <summary>Index of the sample of either network closest to <paramref name="p"/>.</summary>
+    private int Nearest(Vector3 p)
+    {
+        int best = 0;
+        float distance = float.PositiveInfinity;
+        for (int i = 0; i < samples.Count; i++)
+        {
+            float d = samples[i].DistanceSquaredTo(p);
+            if (d < distance)
+            {
+                best = i;
+                distance = d;
+            }
+        }
+        return best;
+    }
 
-    /// <summary>Index of the road sample closest to <paramref name="p"/>.</summary>
+    /// <summary>Index of the road sample of the old valley closest to <paramref name="p"/>.</summary>
     internal static int NearestSample(World world, Vector3 p)
     {
         int best = 0;
@@ -231,11 +302,20 @@ internal sealed class RouteGuide
         destinationArrow.Rotation = new Vector3(0, Mathf.Atan2(-direction.X, -direction.Z), 0);
     }
 
-    private bool OnRoad(Vector3 point) => world.Routes.Contains(point) || River.OnBridge(point.X, point.Z);
+    private bool OnRoad(Vector3 point) =>
+        world.Routes.Contains(point)
+        || River.OnBridge(point.X, point.Z)
+        || world.OutlandRoutes.Contains(point)
+        || WorldLayout.Plan.Outland.BridgeAt(point.X, point.Z) != null;
 
     private float ArrowRoadHeight(Vector3 point)
     {
-        float surface = world.Routes.SurfaceHeight(point, world.Ground.Height(point.X, point.Z));
+        float ground = world.Ground.Height(point.X, point.Z);
+        if (WorldLayout.Plan.Outland.BridgeAt(point.X, point.Z) is { } bridge)
+            return Mathf.Max(world.OutlandRoutes.SurfaceHeight(point, ground), bridge.Top);
+        if (!world.Routes.Contains(point) && world.OutlandRoutes.Contains(point))
+            return world.OutlandRoutes.SurfaceHeight(point, ground);
+        float surface = world.Routes.SurfaceHeight(point, ground);
         return River.OnBridge(point.X, point.Z) ? Mathf.Max(surface, River.BridgeSurfaceHeight(point.X)) : surface;
     }
 
@@ -248,7 +328,7 @@ internal sealed class RouteGuide
         while (node >= 0 && RouteLength++ < next.Length)
         {
             nodes.Add(node);
-            points.Add(world.Routes.Samples[node]);
+            points.Add(samples[node]);
             node = next[node];
         }
         var target = Destination;
@@ -263,10 +343,10 @@ internal sealed class RouteGuide
         var shownAnchors = new HashSet<int>();
         for (int sample = 0; sample < Math.Min(54, nodes.Count - 1); sample++)
         {
-            int anchorIndex = world.Routes.SampleAnchors[nodes[sample]];
+            int anchorIndex = sampleAnchors[nodes[sample]];
             if (!shownAnchors.Add(anchorIndex))
                 continue;
-            var anchor = world.Routes.NavigationAnchors[anchorIndex];
+            var anchor = anchors[anchorIndex];
             // A sample belongs to its nearest anchor, which can stand past the end of the route or past a turn,
             // and the route may step over the anchor's own sample. The anchor is shown only where the route
             // passes it and goes on, and its arrow follows the route from there.
