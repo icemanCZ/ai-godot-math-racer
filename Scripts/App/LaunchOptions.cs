@@ -38,6 +38,9 @@ internal static class LaunchOptions
         }
     }
 
+    /// <summary>God mode (<c>--god-mode</c>, started by <c>god-mode.bat</c>): holding Shift makes the car five times faster.</summary>
+    public static bool GodMode { get; } = args.Contains("--god-mode");
+
     /// <summary>Diagnostics, captures, explicit seeds and <c>--no-save</c> leave the player's save untouched.</summary>
     public static bool UsesPlayerSave { get; } =
         !args.Any(argument =>

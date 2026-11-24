@@ -25,6 +25,9 @@ public static class Settings
     public const float MaxSpeed = 15f;
     public const float ReverseSpeed = 6f;
     public const float Acceleration = 7f;
+
+    /// <summary>How many times faster the car goes while Shift is held in god mode (<c>--god-mode</c>).</summary>
+    public const float GodModeBoost = 5f;
     public const float Steering = 1.65f;
     public const float InteractionRange = 8f;
 

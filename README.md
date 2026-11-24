@@ -17,6 +17,8 @@ The local launcher finds the portable Godot .NET installation in `.tools/`. On a
 
 On Windows, `run.cmd` and `build.cmd` also work when PowerShell script execution is restricted. With the matching .NET export templates installed, `./build.ps1 -Export` builds a standalone Windows x64 `exports/MathRacer.exe`. The game data and runtime are embedded. The project can use release and debug template binaries from `.tools/windows-export-templates/`.
 
+`god-mode.bat` (or `./run.ps1 -GodMode`) starts the game in god mode: holding Shift makes the car five times faster. It plays the normal saved game.
+
 ## Controls
 
 | Action | Keyboard and mouse | Xbox controller |

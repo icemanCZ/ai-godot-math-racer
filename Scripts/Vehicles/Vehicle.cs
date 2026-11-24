@@ -112,19 +112,20 @@ public partial class Vehicle : CharacterBody3D
             Mathf.Max(Input.GetActionStrength("accelerate"), Input.GetActionStrength("stick_forward"))
             - Mathf.Max(Input.GetActionStrength("reverse"), Input.GetActionStrength("stick_reverse"));
         float steer = Input.GetAxis("left", "right");
-        float target = (throttle >= 0 ? throttle * Settings.MaxSpeed : throttle * Settings.ReverseSpeed) * LoadFactor;
+        // God mode: Shift makes the car five times faster, and it gathers and sheds that speed five times as quickly.
+        float boost = LaunchOptions.GodMode && Input.IsPhysicalKeyPressed(Key.Shift) ? Settings.GodModeBoost : 1;
+        float target =
+            (throttle >= 0 ? throttle * Settings.MaxSpeed : throttle * Settings.ReverseSpeed) * LoadFactor * boost;
         bool braking = Input.IsActionPressed("brake");
         if (braking)
             target = 0;
-        Speed = Mathf.MoveToward(
-            Speed,
-            target,
-            (
-                braking ? 25
-                : throttle == 0 ? 4
-                : Settings.Acceleration * LoadFactor
-            ) * dt
-        );
+        float rate =
+            braking ? 25
+            : throttle == 0 ? 4
+            : Settings.Acceleration * LoadFactor;
+        if (LaunchOptions.GodMode && Mathf.Abs(Speed) > Settings.MaxSpeed)
+            rate = Mathf.Max(rate, Settings.Acceleration * Settings.GodModeBoost);
+        Speed = Mathf.MoveToward(Speed, target, rate * boost * dt);
         Effort = EngineEffort(throttle, braking, Speed, target);
         Turn =
             -steer
