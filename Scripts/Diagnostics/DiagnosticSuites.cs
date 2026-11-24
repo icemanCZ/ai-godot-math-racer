@@ -93,6 +93,7 @@ internal static class DiagnosticSuites
         new("borderfolk-checks", (g, w, v) => new BorderfolkChecks(g, w, v), Seeds: ThreeSeeds),
         new("post-checks", (g, w, v) => new PostChecks(g, w, v), Seeds: ThreeSeeds),
         new("lighthouse-checks", (g, w, v) => new LighthouseChecks(g, w, v), Seeds: ThreeSeeds),
+        new("dragon-checks", (g, w, v) => new DragonChecks(g, w, v), Seeds: ThreeSeeds),
         new(
             "weather-checks",
             (g, w, v) => new WeatherChecks(g, w, v),

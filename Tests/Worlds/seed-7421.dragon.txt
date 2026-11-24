@@ -1,0 +1,4 @@
+seed 7421
+dragon lair -242.88 37.48 -1107.90 facing -0.05 -0.00 1.00 drop -243.72 37.48 -1092.12 fire side -1
+mountain slope -241.36 27.94 -838.04 road -228.37 27.55 -838.35
+trees left out 6

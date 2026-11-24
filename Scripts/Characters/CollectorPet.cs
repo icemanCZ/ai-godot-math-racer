@@ -59,6 +59,9 @@ internal enum CollectorPetKind
 
     // The lighthouse keeper's gull: owned once the lighthouse is finished.
     Gull,
+
+    // The dragon's little one, Jiskřička: owned once the egg in the warm nest has hatched.
+    Dragonling,
 }
 
 internal sealed partial class CollectorPet : Node3D

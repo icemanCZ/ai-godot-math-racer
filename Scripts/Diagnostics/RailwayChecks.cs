@@ -421,7 +421,7 @@ public partial class RailwayChecks : Node
                 },
                 "a playground panel at the stationmaster"
             );
-            Rejected(data => data.Nearby = World.PostmanId + 1, "a character beyond the stationmaster");
+            Rejected(data => data.Nearby = World.LastActorId + 1, "a character beyond the stationmaster");
 
             // A panel left open at the stationmaster and a trip under way come back as they were.
             foreach (var works in world.Industry)

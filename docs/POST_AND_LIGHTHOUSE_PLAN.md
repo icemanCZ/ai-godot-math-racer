@@ -36,8 +36,8 @@ spojené) a šipky by do pásu nikam nevedly. Proto nejdřív:
    vzorkem.
 2. `destinationRoadDistance` a `Nearest` hledají v obou sítích. Výšku šipek bere `ArrowRoadHeight` z té sítě, na
    které šipka leží.
-3. `Retarget` dnes vyhodí výjimku, když je graf nesouvislý. Pás může mít úsek bez spojky do jádra, třeba když `PlanJoins`
-   najde méně než čtyři spojky. Kontrola na 42 seedech proto ověří, že je souvislý celý graf, nejen jádro.
+3. `Retarget` dnes vyhodí výjimku, když je graf nesouvislý. Pás může mít úsek bez spojky do jádra, třeba když
+   `PlanJoins` najde méně než čtyři spojky. Kontrola na 42 seedech proto ověří, že je souvislý celý graf, nejen jádro.
 4. **Kontroly** jsou nová sada `route-checks` na seedech 1, 42, 7421 a k tomu 1 až 40 jednorázově:
    - trasa ze středu vesnice vede ke konci každé silnice k hranici;
    - každá šipka leží na povrchu silnice;

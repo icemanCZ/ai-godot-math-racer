@@ -39,6 +39,7 @@ internal static class SaveRules
         ("hunter's pen and hunt", HasInvalidHunt),
         ("post to the keepers of the borders", HasInvalidPost),
         ("lighthouse", HasInvalidLighthouse),
+        ("dragon", HasInvalidDragon),
         ("time of day", HasInvalidDay),
         ("decorations and the mayor's shop", HasInvalidDecorations),
         ("glass lamps and the lamp maker's shop", HasInvalidLamps),
@@ -79,6 +80,7 @@ internal static class SaveRules
         || data.Hunt is null
         || data.Post is null
         || data.Lighthouse is null
+        || data.Dragon is null
         || data.Day is null;
 
     /// <summary>Throws when the save is not one the game can restore.</summary>
@@ -150,7 +152,7 @@ internal static class SaveRules
         || data.Task.Picked == null
         || data.Quiz.Rejected == null
         || data.Nearby < -1
-        || data.Nearby > Math.Max(Game.BanditActorId, World.PostmanId)
+        || data.Nearby > Math.Max(Game.BanditActorId, World.LastActorId)
         || data.Task.Sender < -1
         || data.Task.Sender > World.SorcererId
         || data.Task.Sender == World.WitchId
@@ -235,6 +237,9 @@ internal static class SaveRules
             Game.Departure.Hunter => !World.IsHunter(data.Nearby) || data.Quiz.DepartureState != GameState.HunterStatus,
             Game.Departure.Lighthouse => data.Nearby != World.FirstBorderKeeperId
                 || data.Quiz.DepartureState != GameState.LighthouseStatus,
+            Game.Departure.Dragon => data.Nearby != World.DragonId
+                || data.Quiz.DepartureState != GameState.DragonStatus
+                || data.Dragon.Stage >= DragonPlans.Trips,
             // The works' missing goods are asked for from a builder, a newcomer, a resident or the lamp maker.
             Game.Departure.Missing => data.Quiz.DepartureState switch
             {
@@ -516,6 +521,39 @@ internal static class SaveRules
         || (data.Lighthouse.Stage > 0 && data.Post.Delivered is { Length: > 0 } delivered && delivered[0] == 0)
         || (data.State == GameState.LighthouseStatus && data.Nearby != World.FirstBorderKeeperId);
 
+    /// <summary>
+    /// The dragon's nest has 0 to 6 deliveries, his riddle 0 to 3 answers, given only once the nest is finished, and the
+    /// player has flown on him only after the egg has hatched. His panel is his own, and a question he asks is the one
+    /// before a trip, the loading question at the mountain slope or one of the riddle.
+    /// </summary>
+    private static bool HasInvalidDragon(SaveData data)
+    {
+        var dragon = data.Dragon;
+        if (
+            dragon.Stage is < 0 or > DragonPlans.Trips
+            || dragon.Riddle is < 0 or > DragonPlans.Riddles
+            || (dragon.Riddle > 0 && dragon.Stage < DragonPlans.Trips)
+            || (dragon.Flown && dragon.Riddle < DragonPlans.Riddles)
+            || (data.State == GameState.DragonStatus && !World.IsDragon(data.Nearby))
+        )
+            return true;
+        if (!World.IsDragon(data.Nearby))
+            return false;
+        if (data.Quiz.Handover || data.Quiz.Challenge is DeliveryChallenge)
+            return true;
+        if (data.State != GameState.Challenge)
+            return data.State is not (GameState.Exploring or GameState.DragonStatus);
+        // The question before a trip, the loading question at the slope, or an answer of the riddle.
+        bool departure = (Game.Departure)data.Quiz.Departure == Game.Departure.Dragon;
+        bool riddle =
+            data.Quiz.Departure == 0
+            && data.Quiz.Challenge is not LoadChallenge
+            && dragon.Stage == DragonPlans.Trips
+            && dragon.Riddle < DragonPlans.Riddles
+            && data.Task.Trip is not { Kind: TripKinds.Dragon };
+        return !departure && !riddle && !AsksForDragon(data);
+    }
+
     /// <summary>The clock of the day is a number of seconds within one day.</summary>
     private static bool HasInvalidDay(SaveData data) =>
         !float.IsFinite(data.Day.Clock) || data.Day.Clock < 0 || data.Day.Clock >= Weather.DayLength;
@@ -632,6 +670,9 @@ internal static class SaveRules
                     trip.Loaded
                 );
             }
+            case TripKinds.Dragon when trip.Index == 0 && data.Dragon.Stage is >= 0 and < DragonPlans.Trips:
+                // Everything is loaded at the mountain slope, which has no worker: the dragon asks the question.
+                return (DragonPlans.CargoOf(data.Dragon.Stage), new[] { World.DragonId }, trip.Loaded);
             case TripKinds.Mill when trip.Index == 0:
                 return (HaulLoad.Wheat, World.AskerIds(HaulLoad.Wheat, 0), trip.Loaded);
             case TripKinds.Glassmaker when trip.Index == 0:
@@ -757,6 +798,7 @@ internal static class SaveRules
             TripKinds.Lighthouse => trip.Index != 0
                 || data.Lighthouse.Stage >= LighthousePlans.Trips
                 || data.Post.Delivered[0] == 0,
+            TripKinds.Dragon => trip.Index != 0 || data.Dragon.Stage >= DragonPlans.Trips,
             // Wheat goes to the mill once it is finished, until its flour fills the yard.
             TripKinds.Mill => trip.Index != 0 || !MillFinished(data) || data.Buildings.FlourStock >= FlourMill.Capacity,
             // The lamp maker takes glasses again and again: there is only the one of him.
@@ -782,8 +824,24 @@ internal static class SaveRules
                 && data.Task.Trip is { Kind: TripKinds.Lighthouse, Loaded: false }
         );
 
+    /// <summary>
+    /// The dragon asks the loading question at the mountain slope: a question of the loading kind, or any question while
+    /// the trailer of his trip stands empty (an arithmetic turn becomes the loading question, the others do not).
+    /// </summary>
+    private static bool AsksForDragon(SaveData data) =>
+        World.IsDragon(data.Nearby)
+        && (
+            data.Quiz.Challenge is LoadChallenge
+            || data.State == GameState.Challenge
+                && data.Quiz.Departure == 0
+                && data.Task.Trip is { Kind: TripKinds.Dragon, Loaded: false }
+        );
+
     private static bool HasInvalidAsker(SaveData data)
     {
+        // The dragon's panel, the question before his trip and his riddle are looked after by the dragon's rules.
+        if (World.IsDragon(data.Nearby) && !AsksForDragon(data))
+            return data.Quiz.Challenge is LoadChallenge;
         // The keepers' panels and the question of a letter are looked after by the rules of the post; only the keeper of
         // the sea asks a loading question, the one of the stone for the lighthouse.
         if (World.IsBorderKeeper(data.Nearby) && !AsksForLighthouse(data))
@@ -800,6 +858,7 @@ internal static class SaveRules
             : World.IsZooKeeper(data.Nearby) ? GameState.ZooStatus
             : World.IsHunter(data.Nearby) ? GameState.HunterStatus
             : data.Nearby == World.FirstBorderKeeperId ? GameState.LighthouseStatus
+            : World.IsDragon(data.Nearby) ? GameState.DragonStatus
             : null;
         if (panel == null)
         {
@@ -814,6 +873,7 @@ internal static class SaveRules
                         or GameState.ZooStatus
                         or GameState.HunterStatus
                         or GameState.LighthouseStatus
+                        or GameState.DragonStatus
                 || data.Quiz.Challenge is LoadChallenge;
         }
         if (data.State is not (GameState.Exploring or GameState.Challenge) && data.State != panel)

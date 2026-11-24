@@ -38,6 +38,13 @@ public partial class World : Node3D
 
     internal static bool IsPostman(int id) => id == PostmanId;
 
+    internal const int DragonId = ActorIds.Dragon;
+
+    internal static bool IsDragon(int id) => id == DragonId;
+
+    /// <summary>The highest actor ID a save may name.</summary>
+    internal const int LastActorId = ActorIds.Last;
+
     internal static bool IsTreasurer(int id) => id == TreasurerId;
 
     internal static bool IsPlotResident(int id) => id is >= FirstPlotResidentId and <= LastPlotResidentId;
@@ -161,6 +168,8 @@ public partial class World : Node3D
         // The postman stood in front of the post office all along; he is registered last, so that no search that keeps
         // clear of the characters (the treasures, the fireflies, the wayside things) moves for him.
         Register(PostmanId, Postman);
+        // The dragon came after the postman, so he is registered after him.
+        RegisterDragon();
         // The borders round the valley stand on the final ground and change nothing in it.
         AddChild(BorderWater);
         BorderWater.Generate(Ground);

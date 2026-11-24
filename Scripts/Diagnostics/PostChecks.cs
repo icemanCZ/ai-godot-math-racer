@@ -122,7 +122,7 @@ public partial class PostChecks : Node
                 },
                 "a keeper's panel at the postman"
             );
-            Rejected(data => data.Nearby = World.PostmanId + 1, "a character beyond the postman");
+            Rejected(data => data.Nearby = World.LastActorId + 1, "a character beyond the postman");
 
             // ---- Twelve letters fill the album; each keeper is visited before any is visited again ----
             var order = new List<int>();

@@ -150,6 +150,15 @@ internal static class CharacterCatalog
             "c9b49a"
         );
 
+    /// <summary>The dragon on his ledge under the mountains, who has caught a cold and whose egg is getting cold (<see cref="ActorIds.Dragon"/>).</summary>
+    public static CharacterSpec Dragon { get; } =
+        new(
+            "Drak Kvído",
+            "Ahoj! Já jsem drak Kvído. Hap… hap… hapčí! Nastydl jsem a místo ohně kýchám jen kroužky kouře. A moje vejce v hnízdě stydne. Pomůžeš mi udělat teplé hnízdo?",
+            2,
+            "5fae5a"
+        );
+
     /// <summary>The pirate captain on the village square, who hides treasures for the player to dig up (<see cref="World.TreasurerId"/>).</summary>
     public static CharacterSpec Treasurer { get; } =
         new(

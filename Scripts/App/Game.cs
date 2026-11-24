@@ -52,6 +52,7 @@ public enum GameState
     KeeperStatus = 30,
     PostStatus = 31,
     LighthouseStatus = 32,
+    DragonStatus = 33,
 }
 
 public partial class Game : Node3D

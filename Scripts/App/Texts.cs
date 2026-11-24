@@ -614,6 +614,7 @@ internal static class Texts
     public const string SignLighthouse = "MAJÁK";
     public const string SignFerry = "PŘÍVOZ";
     public const string SignQuarry = "LOM";
+    public const string SignSlope = "STRÁŇ";
 
     // GameUi.Post and Game.Post
     public const string PostmanHint = "Pošťák";
@@ -634,7 +635,7 @@ internal static class Texts
         border switch
         {
             Border.Sea => "Tady končí údolí a začíná moře. Pošťák mi občas pošle psaníčko.",
-            Border.Mountains => "Až sem nahoru do hor chodí jen ovečky a pošta.",
+            Border.Mountains => "Až sem nahoru do hor chodí jen ovečky a pošta. A vedle na skále leží drak Kvído!",
             Border.River => "Za řekou už je jiná země. Pramicí převážím jen poštu.",
             _ => "V lese je ticho. Těším se na každé psaníčko z vesnice.",
         };
@@ -657,4 +658,37 @@ internal static class Texts
     public static string LighthousePart(string part, int stage, int trips) => $"Maják má {part}!  {stage} / {trips}";
 
     public static string LighthouseDone(int coins) => $"Maják na mysu je hotový!  +{coins}";
+
+    // GameUi.Dragon and Game.Dragon
+    public const string DragonHint = "Drak Kvído";
+    public const string DragonNestUnfinished = "Vejce v hnízdě stydne. Každý náklad ze stráně ho trochu zahřeje.";
+    public const string DragonNestWanted =
+        "Přivez mi písek, kameny a dřevo ze stráně u silnice. Postavíme vejci teplé hnízdo!";
+    public const string DragonNext = "Hap… hapčí! Přivezeš mi další náklad ze stráně?";
+    public const string DragonThanks = "Děkuju! Vejce je zase o kousek teplejší. Až budeš chtít, přivez další.";
+    public const string DragonRiddleWanted =
+        "Hnízdo je hotové! Ale bez ohně vejce nezahřeju. Když mi pomůžeš s hádankou, nadechnu se a kýchnu pořádně!";
+    public const string DragonRiddleStart = "Hádanka";
+    public const string DragonFlightWanted = "Jsem zdravý! Sedni si mi na záda a proletíme se nad celým údolím!";
+    public const string DragonFlightStart = "Letět";
+    public const string DragonFlightAgain = "Chceš se zase proletět? Drž se pevně!";
+    public const string DragonFlightEnd = "Hotovo, přistáváme. Bylo to krásné, viď?";
+    public const string DragonFlightSpeech =
+        "Hurá, letíme! Podívej se dolů, svítí tam schovaní kamarádi i mince. Jízdou letíme zpátky.";
+    public const string DragonHatchedSpeech = "Hapčí! Oheň je zpátky! A podívej, Jiskřička se vylíhla!";
+
+    public static string DragonPart(string part, int stage, int trips) => $"Hnízdo má {part}!  {stage} / {trips}";
+
+    public static string DragonRiddle(int answered, int all) =>
+        (all - answered) switch
+        {
+            _ when answered == 0 => $"Hádanka má {all} otázky. Za každou správnou odpověď se nadechnu víc!",
+            1 => "Nááádech! Ještě jedna otázka a kýchnu!",
+            int left and < 5 => $"Nádech! Ještě {(left == 2 ? "dvě" : left.ToString())} otázky a kýchnu.",
+            int left => $"Nádech! Ještě {left} otázek a kýchnu.",
+        };
+
+    public static string DragonHatched(int coins) => $"Drak má zase oheň a vejce se vylíhlo!  +{coins}";
+
+    public static string DragonFirstFlight(int coins) => $"První let na drakovi!  +{coins}";
 }

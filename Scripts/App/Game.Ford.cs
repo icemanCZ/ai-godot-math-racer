@@ -338,6 +338,7 @@ public partial class Game
             TripKinds.Lighthouse
                 when saved.Index == 0 && world.Lighthouse is { Complete: false } lighthouse && LighthouseWanted =>
                 lighthouse,
+            TripKinds.Dragon when saved.Index == 0 && world.DragonLair is { Complete: false } lair => lair,
             TripKinds.Mill when saved.Index == 0 && world.FlourMill is { Grinding: true, Full: false } mill => mill,
             TripKinds.Glassmaker when saved.Index == 0 && world.Glassworks != null => new GlassmakerTripTarget(world),
             TripKinds.House

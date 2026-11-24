@@ -84,6 +84,13 @@ internal abstract record UiIntent
 
     internal sealed record LighthouseTrip : UiIntent;
 
+    // The dragon under the mountains: a trip for his nest, the riddle that makes him sneeze and the flight on his back.
+    internal sealed record DragonTrip : UiIntent;
+
+    internal sealed record DragonRiddle : UiIntent;
+
+    internal sealed record DragonFlight : UiIntent;
+
     // The witch's night panel: the firefly hunt, or the weather question.
     internal sealed record StartFireflyHunt : UiIntent;
 

@@ -33,6 +33,9 @@ public partial class Game
 
         /// <summary>Stone from the coast quarry and goods from the works for the lighthouse.</summary>
         Lighthouse,
+
+        /// <summary>Sand, stone and logs from the mountain slope for the dragon's nest.</summary>
+        Dragon,
     }
 
     /// <summary>Asks the quiz that must be solved before a trip starts; the trip continues in StartDeparture.</summary>

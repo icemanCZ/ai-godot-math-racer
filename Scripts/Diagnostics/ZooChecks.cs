@@ -420,7 +420,7 @@ public partial class ZooChecks : Node
                 },
                 "a railway panel at the zoo keeper"
             );
-            Rejected(data => data.Nearby = World.PostmanId + 1, "a character beyond the zoo keeper");
+            Rejected(data => data.Nearby = World.LastActorId + 1, "a character beyond the zoo keeper");
 
             // A panel left open at the keeper and a trip under way come back as they were.
             foreach (var works in world.Industry)

@@ -62,6 +62,7 @@ public sealed partial class HaulTrip : Node3D
     internal Zoo? Zoo => Target as Zoo;
     internal HunterPen? HunterHut => Target as HunterPen;
     internal Lighthouse? Lighthouse => Target as Lighthouse;
+    internal DragonLair? DragonLair => Target as DragonLair;
     internal Works? Works => Target as Works;
     internal int House => Target is HouseTripTarget house ? house.House : -1;
     internal bool ForGlassmaker => Target is GlassmakerTripTarget;

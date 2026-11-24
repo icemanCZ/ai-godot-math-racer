@@ -83,6 +83,9 @@ public sealed class SaveData
 
     /// <summary>The lighthouse on the shore. Added after version 5 began.</summary>
     public LighthouseSave Lighthouse { get; set; } = new();
+
+    /// <summary>The dragon under the mountains. Added after version 5 began.</summary>
+    public DragonSave Dragon { get; set; } = new();
 }
 
 /// <summary>
@@ -101,6 +104,18 @@ public sealed class PostSave
 public sealed class LighthouseSave
 {
     public int Stage { get; set; }
+}
+
+/// <summary>
+/// The dragon under the mountains: the deliveries made to his nest (0 to <see cref="Buildings.DragonPlans.Trips"/>), the
+/// answers of his riddle (0 to <see cref="Buildings.DragonPlans.Riddles"/>, only once the nest is finished; the egg has
+/// hatched after the last) and whether the player has flown on his back. A save from before the dragon has none of it.
+/// </summary>
+public sealed class DragonSave
+{
+    public int Stage { get; set; }
+    public int Riddle { get; set; }
+    public bool Flown { get; set; }
 }
 
 /// <summary>

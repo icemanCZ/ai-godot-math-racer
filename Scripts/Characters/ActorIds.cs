@@ -98,4 +98,10 @@ internal static class ActorIds
 
     /// <summary>The postman on the village square, who sends letters out to the keepers of the borders.</summary>
     public const int Postman = LastBorderKeeper + 1;
+
+    /// <summary>The dragon on his ledge beside the homestead under the mountains, who wants a warm nest for his egg.</summary>
+    public const int Dragon = Postman + 1;
+
+    /// <summary>The highest actor ID that a save may name.</summary>
+    public const int Last = Dragon;
 }

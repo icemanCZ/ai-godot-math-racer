@@ -118,6 +118,29 @@ internal static class WorldFingerprint
         return lines;
     }
 
+    /// <summary>
+    /// What came after the coast (<c>docs/DRAGON_PLAN.md</c>): the dragon's ledge beside the homestead under the mountains,
+    /// the mountain slope where his nest's loads are taken, and the plants that were left out for them.
+    /// </summary>
+    internal static string DragonFileFor(int seed) => Path.Combine(Folder, $"seed-{seed}.dragon.txt");
+
+    internal static List<string> DragonLines(World world)
+    {
+        var lines = new List<string> { $"seed {Settings.Seed}" };
+        lines.Add(
+            world.DragonPlace is { } site
+                ? $"dragon lair {P(site.Lair)} facing {P(site.Facing)} drop {P(site.Drop)} fire side {site.FireSide}"
+                : "dragon none"
+        );
+        lines.Add(
+            world.SlopePlace is { } slope
+                ? $"mountain slope {P(slope.Position)} road {P(slope.Road)}"
+                : "mountain slope none"
+        );
+        lines.Add($"trees left out {world.Plants.OutlandTreePositions.Count(world.InDragonZone)}");
+        return lines;
+    }
+
     internal static List<string> Lines(World world)
     {
         var lines = new List<string> { $"seed {Settings.Seed}" };
@@ -203,6 +226,14 @@ public partial class WorldFingerprintWriter : Node
                 File.WriteAllLines(coast, WorldFingerprint.CoastLines(world));
                 GD.Print($"WROTE: {coast}");
             }
+            string dragon = WorldFingerprint.DragonFileFor(Settings.Seed);
+            if (File.Exists(dragon))
+                GD.Print($"KEPT: {dragon} already exists and stays as it is");
+            else
+            {
+                File.WriteAllLines(dragon, WorldFingerprint.DragonLines(world));
+                GD.Print($"WROTE: {dragon}");
+            }
             GetTree().Quit();
         }
         catch (Exception error)
@@ -241,16 +272,21 @@ public partial class WorldFingerprintChecks : Node
             string coastPath = WorldFingerprint.CoastFileFor(Settings.Seed);
             if (!File.Exists(coastPath))
                 throw new InvalidOperationException($"No coast fingerprint for seed {Settings.Seed}: {coastPath}");
+            string dragonPath = WorldFingerprint.DragonFileFor(Settings.Seed);
+            if (!File.Exists(dragonPath))
+                throw new InvalidOperationException($"No dragon fingerprint for seed {Settings.Seed}: {dragonPath}");
             var expected = File.ReadAllLines(path)
                 .Concat(File.ReadAllLines(glassworksPath))
                 .Concat(File.ReadAllLines(outlandPath))
                 .Concat(File.ReadAllLines(coastPath))
+                .Concat(File.ReadAllLines(dragonPath))
                 .ToArray();
             var actual = WorldFingerprint
                 .Lines(world)
                 .Concat(WorldFingerprint.GlassworksLines(world))
                 .Concat(WorldFingerprint.OutlandLines(world))
                 .Concat(WorldFingerprint.CoastLines(world))
+                .Concat(WorldFingerprint.DragonLines(world))
                 .ToList();
             var different = new List<string>();
             for (int i = 0; i < Math.Max(expected.Length, actual.Count); i++)
@@ -337,6 +373,7 @@ public partial class ContractChecks : Node
         ("KeeperStatus", 30),
         ("PostStatus", 31),
         ("LighthouseStatus", 32),
+        ("DragonStatus", 33),
     };
 
     public override void _Ready()
@@ -403,7 +440,8 @@ public partial class ContractChecks : Node
                 && ActorIds.Hunter == 73
                 && ActorIds.FirstBorderKeeper == 74
                 && ActorIds.LastBorderKeeper == 77
-                && ActorIds.Postman == 78,
+                && ActorIds.Postman == 78
+                && ActorIds.Dragon == 79,
             "the actor ID ranges are the ones saved games use"
         );
 
@@ -440,6 +478,7 @@ public partial class ContractChecks : Node
                 : id == World.HunterId ? nameof(HunterRole)
                 : World.IsBorderKeeper(id) ? nameof(BorderKeeperRole)
                 : id == World.PostmanId ? nameof(PostmanRole)
+                : World.IsDragon(id) ? nameof(DragonRole)
                 : "(no actor may have this ID)";
             Check(actor.Role.GetType().Name == expected, $"ID {id} ({actor.DisplayName}) is a {expected}");
             if (actor.Role is HouseResidentRole house)
@@ -564,7 +603,7 @@ public partial class ContractChecks : Node
     /// <summary>
     /// Where the valley ends while it is played (<see cref="ValleyBounds"/>) is asked only by the code that limits play:
     /// the car, the grass, the lamps, the fireflies, the wild animals and the hunt, the coast quarry beside the road to
-    /// the sea, and the checks. The generation of the
+    /// the sea, the dragon's ledge and his mountain slope, and the checks. The generation of the
     /// old valley keeps to <see cref="WorldTuning.CorePlayableRadius"/>, or a valley that grows would move what saved
     /// games already have. A new use elsewhere is a decision to be made on purpose, and to be added here.
     /// </summary>
@@ -581,6 +620,7 @@ public partial class ContractChecks : Node
             "Valley/Wayside.cs",
             "Valley/Wildlife.cs",
             "Valley/World.Borderfolk.cs",
+            "Valley/World.Dragon.cs",
             "Valley/World.Fireflies.cs",
             "Valley/World.Hunter.cs",
             "Valley/World.Outland.cs",

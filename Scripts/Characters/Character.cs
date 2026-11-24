@@ -18,7 +18,7 @@ public partial class Character : Node3D
         markerDistance.Y = 0;
         markerDistanceBlend = Mathf.SmoothStep(8, 32, markerDistance.Length());
         IsWaving = active && position.DistanceSquaredTo(player) < 24 * 24;
-        if (IsWaving)
+        if (IsWaving && !StaysTurned)
         {
             var direction = player - position;
             if (direction.LengthSquared() > .1f)
@@ -289,7 +289,11 @@ public partial class Character : Node3D
         // The marker is seen from afar and keeps bobbing; this is a field of its own, not a call into the engine.
         taskMarker.AnchorPosition =
             Vector3.Up
-            * (Mathf.Lerp(4.7f, 7.5f, markerBlend) + Mathf.Sin(time * 2.4f) * Mathf.Lerp(.15f, .6f, markerBlend));
+            * (
+                markerLift
+                + Mathf.Lerp(4.7f, 7.5f, markerBlend)
+                + Mathf.Sin(time * 2.4f) * Mathf.Lerp(.15f, .6f, markerBlend)
+            );
         if (still)
             return;
         wavingArm.Rotation = Running

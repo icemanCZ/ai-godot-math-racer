@@ -70,6 +70,8 @@ public partial class World
             if (seaRoad != null)
                 QuarryPlace = PlanCoastQuarry(seaRoad);
         }
+        // The dragon lies beside the homestead under the mountains; his ledge is cleared like the homesteads.
+        PlanDragon();
         Plants.OutlandCleared = InBorderfolkZone;
         GD.Print(
             $"BORDERFOLK homes={BorderHomes.Count(h => h != null)} lighthouse={LighthousePlace != null} quarry={QuarryPlace != null}"
@@ -168,6 +170,7 @@ public partial class World
             Keepers[(int)site.Border] = keeper;
         }
         BuildLighthouse();
+        BuildDragon();
     }
 
     /// <summary>The lighthouse on the shore, raised by the player's deliveries.</summary>
@@ -231,6 +234,8 @@ public partial class World
     /// </summary>
     internal bool InBorderfolkZone(Vector3 p)
     {
+        if (InDragonZone(p))
+            return true;
         foreach (var site in BorderHomes)
             if (
                 site != null

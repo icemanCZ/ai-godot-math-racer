@@ -213,7 +213,7 @@ public partial class MayorChecks : Node
                 },
                 "the mayor's shop beside someone else"
             );
-            Rejected(data => data.Nearby = World.PostmanId + 1, "a character beyond the mayor");
+            Rejected(data => data.Nearby = World.LastActorId + 1, "a character beyond the mayor");
 
             // A file made before there were decorations loads with none.
             var plain = game.CaptureProgress();

@@ -64,6 +64,12 @@ internal static class WorldPetCatalog
 
     public static readonly WorldPetSpec Gull = new(CollectorPetKind.Gull, "Racek Vlnka", "postavený maják");
 
+    public static readonly WorldPetSpec Dragonling = new(
+        CollectorPetKind.Dragonling,
+        "Dráček Jiskřička",
+        "vylíhnuté dračí vejce"
+    );
+
     public static readonly WorldPetSpec Bridge = new(CollectorPetKind.Bridge, "Mostíček", "dostavěný most");
     public static readonly WorldPetSpec Mill = new(CollectorPetKind.Mill, "Mlýnek", "dostavěný mlýn");
     public static readonly WorldPetSpec Tower = new(CollectorPetKind.Tower, "Věžička", "dostavěnou rozhlednu");
@@ -235,6 +241,9 @@ internal sealed partial class CollectorPet
                 break;
             case CollectorPetKind.Gull:
                 BuildGull();
+                break;
+            case CollectorPetKind.Dragonling:
+                BuildDragonling();
                 break;
             case CollectorPetKind.Bridge:
                 BuildBridge();
@@ -626,6 +635,37 @@ internal sealed partial class CollectorPet
             Foot(new(side * .13f, .27f, .02f), .27f, .1f, "f2a65a", side);
         }
         Eyes(.12f, 1.04f, .38f);
+    }
+
+    private void BuildDragonling()
+    {
+        // A little green dragon with a yellow belly, orange spikes, two stubby horns, small wings and a curled tail.
+        Ball(new(0, .5f, -.02f), new(.42f, .4f, .5f), "5fae5a");
+        Ball(new(0, .46f, .2f), new(.3f, .3f, .3f), "f4cf7e");
+        Ball(new(0, .96f, .2f), new(.36f, .32f, .36f), "6dbb63");
+        Ball(new(0, .86f, .48f), new(.2f, .14f, .16f), "77c46c");
+        foreach (int side in new[] { -1, 1 })
+        {
+            Ball(new(side * .06f, .9f, .62f), Vector3.One * .025f, "2c3a2a");
+            Art.Cylinder(model, new(side * .14f, 1.28f, .12f), .05f, .01f, .2f, "fff2d0").RotationDegrees = new(
+                -20,
+                0,
+                side * -18
+            );
+            var wing = Ball(new(side * .36f, .68f, -.12f), new(.04f, .2f, .26f), "f5a04a");
+            wing.Rotation = new(.3f, 0, side * -.5f);
+            Foot(new(side * .15f, .2f, .06f), .2f, .11f, "3f8a4a", side);
+        }
+        for (int i = 0; i < 3; i++)
+            Ball(new(0, .9f - i * .14f, -.32f - i * .05f), Vector3.One * (.06f - i * .01f), "f08a3c");
+        for (int i = 0; i < 4; i++)
+            Ball(
+                new(Mathf.Sin(i * .8f) * .18f, .3f + i * .03f, -.5f - i * .14f),
+                Vector3.One * (.13f - i * .025f),
+                "5fae5a"
+            );
+        Eyes(.11f, 1.02f, .45f);
+        Smile(.86f, .62f, .07f);
     }
 
     private void BuildMill()

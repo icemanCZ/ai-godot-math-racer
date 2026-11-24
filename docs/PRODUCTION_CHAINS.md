@@ -36,7 +36,8 @@ Platí pro pilu, cihelnu, štěrkovnu, sklárnu, pekárnu i mlýn (`Works`, `Flo
 
 - Surovinu vozí hráč od **dělníka u zdroje**: ten otevře panel, hned položí otázku na naložení (`StartLoadingTrip`) a
   vozík jede k závodu (`FinishSupplyDump` přidá 2 kusy).
-- Zboží se ze skladu odebere ve chvíli **naložení** u závodu (`CompleteHaulLoading`); když mezitím došlo, cesta se zruší.
+- Zboží se ze skladu odebere ve chvíli **naložení** u závodu (`CompleteHaulLoading`); když mezitím došlo, cesta se
+  zruší.
 - Každá surovina má dvě místa (druhý lom, hliniště, pískovna, skládka); vozík naloží u kteréhokoli, kam dojede první.
 - **Chybějící zboží:** když stavitel, nový obyvatel, správce hřiště, výpravčí, ošetřovatel zoo nebo obyvatel domku chce
   zboží, které závod nemá, pošle hráče rovnou pro surovinu (`BeginMissingSupply`). U chleba posílá po řetězci: mouka ze
@@ -92,8 +93,8 @@ Nejsou to výrobky, ale poslední (desátý) náklad tří staveb; nakládá se 
 
 ## Kdo co spotřebuje
 
-Pořadí nákladů je pevné (`BuildPlans`, `PlotPlans`, `PlaygroundPlans`, `RailwayPlans`, `ZooPlans`, `Village.CreateTasks`).
-Š = štěrk, C = cihly, P = prkna.
+Pořadí nákladů je pevné (`BuildPlans`, `PlotPlans`, `PlaygroundPlans`, `RailwayPlans`, `ZooPlans`,
+`Village.CreateTasks`). Š = štěrk, C = cihly, P = prkna.
 
 | Spotřebitel | Nákladů | Pořadí | Odměna |
 | --- | --- | --- | --- |
@@ -141,8 +142,8 @@ surovinu (u chleba po řetězci obilí → mouka), plný sklad zastaví dovoz a 
    Pískulka 10 nákladů písku. Teď skleničky bere bez omezení světlař Ignác, takže oba mazlíčci jsou dosažitelní.
 2. *(jen teoretické)* V údolí, které by mělo pekárnu, ale ne sklárnu, by domky chléb nikdy nechtěly: objednávka chleba
    čeká na zasklení (`Game.HouseMaterial`). Žádný ze 256 zkontrolovaných světů takový není.
-3. *(jen teoretické)* V údolí bez mlýna by sedlák neměl nad hlavou značku úkolu, protože `UpdateHaulGuides` ho navádí jen
-   tam, kde je `FlourMill`. Obilí by přesto šlo vozit do pekárny přes jeho panel.
+3. *(jen teoretické)* V údolí bez mlýna by sedlák neměl nad hlavou značku úkolu, protože `UpdateHaulGuides` ho navádí
+   jen tam, kde je `FlourMill`. Obilí by přesto šlo vozit do pekárny přes jeho panel.
 4. *(jen teoretické)* Údolí s brodem, ale bez závodů (`INDUSTRY_MISSING`), by most nemohlo dostavět: první náklad je
    štěrk a `GoodsWorks` vrátí null. Kontrola obsahu to na 256 světech vylučuje.
 5. **Opraveno:** zastaralé komentáře, které nezmiňovaly mlýn, pekárnu nebo nové cesty (`HaulTally`, `Works`,

@@ -108,6 +108,7 @@ public partial class Game
                         or Departure.Glassmaker
                         or Departure.Hunter
                         or Departure.Lighthouse
+                        or Departure.Dragon
                     ? quiz.DepartureState
                     : GameState.Title,
             },
@@ -177,6 +178,12 @@ public partial class Game
             },
             // A lighthouse that stands from the start, in a valley without the works for it, has had no deliveries.
             Lighthouse = new LighthouseSave { Stage = world.LighthouseBuildable ? Lighthouse?.Stage ?? 0 : 0 },
+            Dragon = new DragonSave
+            {
+                Stage = DragonLair?.Stage ?? 0,
+                Riddle = DragonLair?.Riddle ?? 0,
+                Flown = dragonFlown,
+            },
             Fireflies = new FirefliesSave { Caught = fireflies.Caught },
             Hunt = new HuntSave
             {
@@ -289,6 +296,8 @@ public partial class Game
         RestoreHunt(data.Hunt.Penned, data.Hunt.Active, data.Hunt.Carrying, data.Hunt.Hut);
         // The lighthouse is raised before the trips and the pets are restored, so its trip and the gull know its stage.
         RestoreLighthouse(data.Lighthouse.Stage);
+        // So is the dragon's nest, so that its trip and the little dragon know how far it is.
+        RestoreDragon(data.Dragon.Stage, data.Dragon.Riddle, data.Dragon.Flown);
         RestoreBuilds(data);
         UpdateDeliveryGuides();
         interaction.BeforePause = validEncounter ? data.State : GameState.Exploring;

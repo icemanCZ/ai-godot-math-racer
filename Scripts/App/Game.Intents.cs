@@ -102,6 +102,15 @@ public partial class Game
             case UiIntent.LighthouseTrip:
                 BeginLighthouseTrip();
                 break;
+            case UiIntent.DragonTrip:
+                BeginDragonTrip();
+                break;
+            case UiIntent.DragonRiddle:
+                BeginDragonRiddle();
+                break;
+            case UiIntent.DragonFlight:
+                BeginDragonFlight();
+                break;
             case UiIntent.StartFireflyHunt:
                 BeginFireflyHunt();
                 break;

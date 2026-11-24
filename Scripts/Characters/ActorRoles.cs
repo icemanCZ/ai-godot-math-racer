@@ -527,6 +527,29 @@ internal sealed class BorderKeeperRole : ActorRole
 }
 
 /// <summary>
+/// The dragon under the mountains (<c>docs/DRAGON_PLAN.md</c>). Talking to him shows his nest: the trailer trips that
+/// build it, then the riddle that makes him sneeze his fire back, then the flight on his back. His quizzes are the one
+/// before a trip, the loading question at the mountain slope, which has no worker of its own, and the riddle.
+/// </summary>
+internal sealed class DragonRole : ActorRole
+{
+    public override string Icon => "dragon";
+    public override bool UsesDeliveryGuide => false;
+
+    public override bool InvitesTalk(bool expeditionActive) => true;
+
+    public override void ShowHint(GameUi ui, Character actor) => ui.DragonHint();
+
+    public override void Open(Game game, Character actor) => game.OpenDragon(actor);
+
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
+    {
+        game.CompleteDragonQuiz(actor);
+        return true;
+    }
+}
+
+/// <summary>
 /// The postman on the village square. Talking to him opens the stamp album and gives out the next letter for a keeper
 /// of the borders; he asks no question.
 /// </summary>

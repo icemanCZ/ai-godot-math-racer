@@ -63,6 +63,30 @@ public partial class FollowCamera : Camera3D
         Snap();
     }
 
+    private Node3D? ride;
+
+    /// <summary>
+    /// The camera rides on <paramref name="seat"/> (the dragon's neck, <c>docs/DRAGON_PLAN.md</c>), a little behind and
+    /// above it, looking ahead past his head, until <see cref="EndRide"/>.
+    /// </summary>
+    internal void Ride(Node3D seat)
+    {
+        StopDragging();
+        moment = 0;
+        ride = seat;
+    }
+
+    internal bool Riding => ride != null;
+
+    /// <summary>Gets off the seat and goes back behind the car.</summary>
+    internal void EndRide()
+    {
+        if (ride == null)
+            return;
+        ride = null;
+        Snap();
+    }
+
     internal void ShowMoment(Vector3 target, Vector3 outward)
     {
         moment = 3;
@@ -171,6 +195,22 @@ public partial class FollowCamera : Camera3D
     public override void _Process(double delta)
     {
         float dt = (float)delta;
+        if (ride != null)
+        {
+            if (!IsInstanceValid(ride) || !ride.IsInsideTree())
+            {
+                EndRide();
+                return;
+            }
+            var seat = ride.GlobalTransform;
+            var ahead = seat.Basis.Z with { Y = 0 };
+            ahead = ahead.LengthSquared() > .01f ? ahead.Normalized() : Vector3.Forward;
+            var eye = seat.Origin - ahead * 9 + Vector3.Up * 3.4f;
+            eye.Y = Mathf.Max(eye.Y, Ground.Height(eye.X, eye.Z) + 2);
+            Position = Position.DistanceSquaredTo(eye) > 400 ? eye : Position.Lerp(eye, 1 - Mathf.Exp(-dt * 6));
+            LookAt(seat.Origin + ahead * 30 + Vector3.Down * 4);
+            return;
+        }
         if (panorama > 0)
         {
             // The pause menu needs the mouse, and the look waits until the game goes on.

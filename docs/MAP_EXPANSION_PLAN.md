@@ -1,9 +1,9 @@
 # Implementační plán: šestkrát větší údolí s přírodními hranicemi
 
-Údolí je dnes kruh o poloměru 525 m (`Settings.PlayableRadius`) uprostřed čtverce terénu ±555 m (`Settings.WorldRadius`).
-Cílem je hratelná plocha asi šestkrát větší, čtverec zhruba ±1100 m, a k tomu kulisy až do ±1400 m. Údolí má být ze
-čtyř stran uzavřené přírodou: na jedné straně horami, na druhé mořem, na třetí lesem a na čtvrté řekou. Nic z toho
-zatím není provedeno.
+Údolí je dnes kruh o poloměru 525 m (`Settings.PlayableRadius`) uprostřed čtverce terénu ±555 m
+(`Settings.WorldRadius`). Cílem je hratelná plocha asi šestkrát větší, čtverec zhruba ±1100 m, a k tomu kulisy až do
+±1400 m. Údolí má být ze čtyř stran uzavřené přírodou: na jedné straně horami, na druhé mořem, na třetí lesem a na
+čtvrté řekou. Nic z toho zatím není provedeno.
 
 Údolí už se jednou zvětšovalo, a to desetkrát, z poloměru 166 m na 525 m (`SmokeTest`: „world playable area increased
 tenfold“). Tentokrát je ale jedna podmínka navíc: rozehrané hry si ponechají své údolí.
@@ -155,15 +155,16 @@ nedostane do hratelné plochy.
    až 205 m. Výš se terén barví do skály a od 150 m do sněhu, strmé svahy jsou skalnaté i na jiných stranách. Daleko
    do stran, k obzoru, hřbet klesá do kopců, aby nekončil kolmou stěnou. Obě řeky pramení v `SpringZ` (−1260 m): od tam
    se jejich koryta během 140 m zavřou do svahu (`RiverBedWeight`), takže nikde nekončí useknutě.
-2. **Moře (jih):** pobřeží má zátoky a mysy kolem 1210 m (±61 m), hladina je −10 m. Pláž je v zátokách široká a pod
-   mysy úzká (24 až 66 m), její okraj proti trávě se vlní, dno klesá na −19 m. Voda (`BorderWater`) používá shader řeky s pomalým prouděním: u břehu jemná síť
-   s hloubkou pro pěnu, dál velké plochy až k obzoru (3,6 km). Kamera teď dohlédne na 3000 m (dřív 1200).
+2. **Moře (jih):** pobřeží má zátoky a mysy kolem 1210 m (±61 m), hladina je −10 m. Pláž je v zátokách široká a pod mysy
+   úzká (24 až 66 m), její okraj proti trávě se vlní, dno klesá na −19 m. Voda (`BorderWater`) používá shader řeky s
+   pomalým prouděním: u břehu jemná síť s hloubkou pro pěnu, dál velké plochy až k obzoru (3,6 km). Kamera teď dohlédne
+   na 3000 m (dřív 1200).
 3. **Hraniční řeka (strana `Side`):** meandruje kolem 1215 m od středu (±56 m), je široká 48 m a má stejnou hladinu
    jako dnešní řeka. Koryto se jen vyhloubí, takže u moře nevzniknou hráze. Za řekou jsou kopce s řídkými háji.
 4. **Les (strana `−Side`):** zvlněné kopce a hustý les (`BorderForest`), jehož okraj se vlní kolem 1175 m (±37 m),
    houstne během 45 m a před ním stojí osamělé stromy. Je to asi 25 tisíc jednoduchých stromů (jehličnany výš, listnáče
-   dole) ve 115 dávkách MultiMesh po 320 m, bez kolize. Dávky dál než 300 m od kamery se kreslí jednoduše: koruna o
-   pár stěnách, bez kmene a bez stínu. Žádný strom nestojí blíž než 6 m od okraje hry. Řidší háje rostou i v podhůří a za
+   dole) ve 115 dávkách MultiMesh po 320 m, bez kolize. Dávky dál než 300 m od kamery se kreslí jednoduše: koruna o pár
+   stěnách, bez kmene a bez stínu. Žádný strom nestojí blíž než 6 m od okraje hry. Řidší háje rostou i v podhůří a za
    hraniční řekou, nikdy na pláži, ve vodě ani vysoko v horách.
 5. **Hranice hry:** `ValleyBounds` je čtverec ±1130 m, těsně před úpatím hor, pláží, břehem hraniční řeky a lesem. Auto
    na jeho okraji zastaví (vrátí se na předchozí polohu). Návrat na start zůstal jen jako pojistka, když se auto dostane
@@ -331,7 +332,8 @@ Odchylky od plánu:
 
 ## Fáze 5 – Obsah nového území (odloženo)
 
-Uživatel rozhodl, že obsah se zatím přidávat nebude. Nové území je zatím krajina k projížďce. Návrhy zůstávají pro pozdější práci.
+Uživatel rozhodl, že obsah se zatím přidávat nebude. Nové území je zatím krajina k projížďce. Návrhy zůstávají pro
+pozdější práci.
 
 První vybraný obsah, pošta do čtyř koutů a maják na mysu, má vlastní plán v `docs/POST_AND_LIGHTHOUSE_PLAN.md`.
 

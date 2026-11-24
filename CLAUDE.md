@@ -43,6 +43,9 @@ game. Details are in `Tests/README.md` and `docs/REFACTORING_PLAN.md`.
 ## Code
 
 - Format C# with `dotnet csharpier format Scripts` (120 columns) before committing.
+- Wrap the prose of `docs/*.md` at 120 columns as well. A module or feature gets a `###` section of its own in
+  `docs/ARCHITECTURE.md`, never a table cell: a table row cannot be wrapped and grows into a line of thousands of
+  characters that no diff or reader can show.
 - A source file goes in a folder of `Scripts` and declares that folder's namespace (`Scripts/Saves/X.cs` is in
   `MathRacer.Saves`); the table is in `docs/ARCHITECTURE.md`. Every part of a partial class stays in the folder of the class.
   `contract-checks` enforces it. Add the `using` of another folder's namespace explicitly; there is no `global using`.

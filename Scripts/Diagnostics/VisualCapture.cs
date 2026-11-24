@@ -612,6 +612,42 @@ public partial class VisualCapture : Node
             camera.Position = penSite.Local(16, -12) + Vector3.Up * 16;
             camera.LookAt(penSite.Local(-2, 10));
         }
+        else if (
+            view is "dragon" or "dragon-nest" or "dragon-flight"
+            && world.DragonPlace is { } dragonSite
+            && world.DragonLair is { } dragonLair
+            && world.DragonBody is { } dragonBody
+        )
+        {
+            camera.SetProcess(false);
+            if (view != "dragon")
+            {
+                // The finished nest by its burning fire, and the dragon well again.
+                dragonLair.SetStage(DragonPlans.Trips);
+                dragonLair.SetRiddle(DragonPlans.Riddles);
+                dragonBody.Healthy = true;
+            }
+            if (view == "dragon-flight" && world.DragonFlight is { } flight)
+            {
+                // A third of the way round the valley, seen from beside and a little above him.
+                dragonBody.Flying = true;
+                dragonBody.Transform = flight.Pose(DragonFlight.Duration / 3);
+                for (int i = 0; i < 30; i++)
+                    dragonBody.Tick(.1f, car.GlobalPosition);
+                var pose = dragonBody.GlobalTransform;
+                camera.GlobalPosition = pose * new Vector3(-16, 7, 10);
+                camera.LookAt(pose * new Vector3(0, 2.5f, 0));
+            }
+            else
+            {
+                // From in front of him and to the side, past the drop ring: his head, the nest and the cave behind him.
+                for (int i = 0; i < 20; i++)
+                    dragonBody.Tick(.1f, car.GlobalPosition);
+                var eye = dragonSite.Local(dragonSite.FireSide * 13, DragonSite.DropAhead + 9);
+                camera.GlobalPosition = world.Ground.At(eye.X, eye.Z) + Vector3.Up * 7;
+                camera.LookAt(dragonSite.Local(0, 4) + Vector3.Up * 3);
+            }
+        }
         else if (view == "hunter-close" && world.Hunter is { } hunterClose)
         {
             // The hunter from the front and a little above, with his hat, waistcoat and landing net.

@@ -114,6 +114,9 @@ public static class Art
                 "forest" =>
                     "M38 118 V102 M14 102 L38 18 L62 102 Z M94 118 V102 M70 102 L94 30 L118 102 Z M24 72 H52 M80 76 H108",
                 "stamp" => StampPath,
+                // The dragon under the mountains: a head with a horn, an eye, a nostril and a ring of smoke.
+                "dragon" =>
+                    "M18 104 Q22 58 62 50 L70 28 L80 50 Q104 52 112 72 Q116 86 100 90 H70 Q58 96 58 112 M88 66 h0 M104 80 h0 M110 40 a10 10 0 1 0 20 0 a10 10 0 1 0 -20 0",
                 _ =>
                     "M81 29 A15 15 0 1 1 51 29 A15 15 0 1 1 81 29 Z M44 111 V77 L31 88 L22 77 L46 53 H86 L110 77 L101 88 L88 77 V111 H73 V88 H59 V111 Z",
             };
@@ -159,7 +162,7 @@ public static class Art
 
     /// <summary>
     /// A coloured picture for a <c>DeliveryPicture</c> (180 x 150, the frame it draws in) of the post and the borders:
-    /// "letter", "lighthouse", "sea", "mountains", "river", "forest" and "stamp". Null for any other name, which the
+    /// "letter", "lighthouse", "sea", "mountains", "river", "forest" and "stamp", and of the dragon: "dragon" and "egg". Null for any other name, which the
     /// picture draws itself.
     /// </summary>
     public static Texture2D? Picture(string icon)
@@ -199,6 +202,22 @@ public static class Art
                 + "<rect x='117' y='96' width='12' height='32' fill='#7a5536'/>"
                 + "<path d='M50 22 L74 66 H26 Z M50 44 L82 104 H18 Z' fill='#3f7a45'/>"
                 + "<path d='M123 12 L150 60 H96 Z M123 38 L158 100 H88 Z' fill='#2f6a3d'/>",
+            "dragon" => "<path d='M10 140 L50 70 L80 120 L112 58 L170 140 Z' fill='#93a5b8'/>"
+                + "<path d='M50 70 L60 88 L50 84 L42 90 Z M112 58 L124 80 L114 76 L104 82 Z' fill='#ffffff'/>"
+                + $"<path d='M30 140 Q34 92 80 84 L88 62 L98 84 Q132 86 140 108 Q144 122 124 124 H96 Q84 128 84 140 Z'"
+                + $" fill='#5fae5a' stroke='{ink}' stroke-width='5' stroke-linejoin='round'/>"
+                + "<path d='M88 62 L98 84 L92 84 Z' fill='#fff2d0'/>"
+                + $"<circle cx='108' cy='98' r='7' fill='#ffffff' stroke='{ink}' stroke-width='3'/>"
+                + $"<circle cx='110' cy='98' r='3' fill='{ink}'/>"
+                + $"<circle cx='132' cy='112' r='3' fill='{ink}'/>"
+                + "<circle cx='154' cy='92' r='11' fill='none' stroke='#d9dcdf' stroke-width='5'/>"
+                + "<path d='M40 128 Q60 116 76 128' fill='none' stroke='#d23b2f' stroke-width='9' stroke-linecap='round'/>",
+            "egg" => "<ellipse cx='90' cy='120' rx='62' ry='18' fill='#e2c27e'/>"
+                + $"<ellipse cx='90' cy='78' rx='34' ry='46' fill='#f6e7c8' stroke='{ink}' stroke-width='5'/>"
+                + "<circle cx='76' cy='64' r='7' fill='#7fbf6a'/><circle cx='104' cy='90' r='8' fill='#f2a14e'/>"
+                + "<circle cx='98' cy='52' r='5' fill='#f2a14e'/><circle cx='78' cy='98' r='6' fill='#7fbf6a'/>"
+                + "<path d='M66 22 q6 -10 0 -18 M90 18 q6 -10 0 -16 M114 22 q6 -10 0 -18' fill='none' stroke='#ff8a2a'"
+                + " stroke-width='5' stroke-linecap='round'/>",
             "stamp" => "<rect x='40' y='22' width='100' height='106' fill='#fff5df' stroke='#fff5df' stroke-width='14'"
                 + " stroke-dasharray='0 14' stroke-linecap='round'/>"
                 + "<rect x='52' y='36' width='76' height='78' fill='#9ed5df'/>"
