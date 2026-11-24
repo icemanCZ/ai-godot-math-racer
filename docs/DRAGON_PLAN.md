@@ -180,3 +180,4 @@ Kratší návrhy pro další strážce, podle vzoru majáku:
   ptačí pozorovatelnou.
 - **Rallye po okruhu:** razítkovací stanoviště u strážců a jízda na čas po celém okruhu.
 - **Horkovzdušný balon** u vesnice: krátký vyhlídkový let jako s drakem, pro údolí, kde ještě není drak uzdravený.
+  Hotovo jinak, daleko od vesnice a s chytáním hvězdiček: `docs/BALLOON_PLAN.md`.

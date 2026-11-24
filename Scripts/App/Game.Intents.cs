@@ -111,6 +111,9 @@ public partial class Game
             case UiIntent.DragonFlight:
                 BeginDragonFlight();
                 break;
+            case UiIntent.BalloonFlight:
+                BeginBalloonFlight();
+                break;
             case UiIntent.StartFireflyHunt:
                 BeginFireflyHunt();
                 break;

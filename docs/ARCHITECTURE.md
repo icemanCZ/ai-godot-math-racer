@@ -425,6 +425,35 @@ lit, and the pedals end it early. Only the first flight pays (`DragonPlans.Fligh
 `LegacySaves.AddedAfterVersion5`). A flight is not saved: a load puts him back on his ledge. Checked by `dragon-checks`;
 `run.ps1 -Capture` shows him with the views `dragon`, `dragon-nest` and `dragon-flight`.
 
+### `HotAirBalloon`, `BalloonStation`, `BalloonStars`, `BalloonFlight`, `BalloonRide` and `World.Balloon`
+
+The balloon station far from the village (`docs/BALLOON_PLAN.md`). `World.PlanBalloon` tries both sides of every road
+of the land beyond the old valley every 8 m and, of the places where the station fits (`BalloonFits`: 480 m from the
+village, off the roads, the rivers, the sand and the bridges, 160 m from the homesteads, the lighthouse and the dragon,
+a nearly level field the car can drive onto), takes the one whose field lies highest, without random numbers. The
+station is left out of the plants, the grass and the wayside things through `InBalloonZone`, which `InBorderfolkZone`
+asks, so nothing that was there before moves; `Tests/Worlds/seed-N.balloon.txt` holds the place and the flight.
+
+`BalloonStation` is the landing target, the hut, the windsock, the supplies, the sign and the four ropes. The balloon
+(`HotAirBalloon`, a node of its own, about 25 m tall with a rainbow envelope whose small shader glows in its own colours
+by night) floats on the ropes `BalloonStation.Hover` (9 m) above the target, over the trees, so that it is seen from
+the village; after a landing it stands on the target and rises on the ropes again (`TouchDown`, `Moor`). Seen from
+afar, the balloonist's marker rides above the balloon (`Character.RaiseFarMarker`).
+
+Liška balonářka Amálka (`BalloonistRole`, `ActorIds.Balloonist` 80) opens her panel (`GameState.BalloonStatus` 34,
+`GameUi.BalloonPanel`); the green arrow (`UiIntent.BalloonFlight`) asks a question, and the right answer
+(`CompleteBalloonQuiz`) lets the balloon go. `BalloonFlight` is the fixed way the wind takes, a closed curve from the
+field towards the middle of the valley and back, its floor 14 m above the highest ground near it; `BalloonRide` is one
+flight without scene nodes, stepped by the system `balloon` (`Game.TickBalloon`): the pedal is the burner, reverse the
+valve (the space bar is the talk button, which lands the balloon at once after a grace of 1.5 s), and the eight stars of
+`BalloonStars` hang along the way at heights that change from flight to flight (`BalloonFlight.StarHeight`). The
+camera rides behind the basket (`FollowCamera.Ride` with an eye and a look of its own), and the coins, the animals and
+the hidden friends below are lit. Every star pays a coin, all eight a bonus, the first flight more
+(`BalloonPlans`), and twenty stars bring the rooster (`CollectorPetKind.Rooster`). Saved as `SaveData.Balloon`
+(`Flights`, `Stars`; rule `HasInvalidBalloon`); a flight is not saved, a load puts the balloon back on its ropes.
+Checked by `balloon-checks`; `run.ps1 -Capture` shows it with the views `balloon`, `balloon-night`, `balloon-far`,
+`balloon-far-night`, `balloon-panel` and `balloon-flight`.
+
 ### `MayorRole`, `TownDecorations` and `Village.Mayor`
 
 The mayor (`ActorIds.Mayor` 68, `MayorRole`, `GameState.MayorShop` 23) stands on the village square and sells eight

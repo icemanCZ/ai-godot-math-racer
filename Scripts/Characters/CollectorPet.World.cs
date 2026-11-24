@@ -70,6 +70,12 @@ internal static class WorldPetCatalog
         "vylíhnuté dračí vejce"
     );
 
+    public static readonly WorldPetSpec Rooster = new(
+        CollectorPetKind.Rooster,
+        "Kohoutek Kokrháček",
+        $"{BalloonPlans.RoosterStars} hvězdiček z balónu"
+    );
+
     public static readonly WorldPetSpec Bridge = new(CollectorPetKind.Bridge, "Mostíček", "dostavěný most");
     public static readonly WorldPetSpec Mill = new(CollectorPetKind.Mill, "Mlýnek", "dostavěný mlýn");
     public static readonly WorldPetSpec Tower = new(CollectorPetKind.Tower, "Věžička", "dostavěnou rozhlednu");
@@ -244,6 +250,9 @@ internal sealed partial class CollectorPet
                 break;
             case CollectorPetKind.Dragonling:
                 BuildDragonling();
+                break;
+            case CollectorPetKind.Rooster:
+                BuildRooster();
                 break;
             case CollectorPetKind.Bridge:
                 BuildBridge();
@@ -666,6 +675,39 @@ internal sealed partial class CollectorPet
             );
         Eyes(.11f, 1.02f, .45f);
         Smile(.86f, .62f, .07f);
+    }
+
+    private void BuildRooster()
+    {
+        // A little rooster, one of the first passengers of a balloon: a red comb and wattle, a yellow beak, a brown and
+        // golden body, a tail of green and blue feathers, and a tiny rainbow balloon tied to his back.
+        Ball(new(0, .55f, -.02f), new(.4f, .4f, .48f), "b5562e");
+        Ball(new(0, .5f, .16f), new(.3f, .3f, .28f), "e2a447");
+        Ball(new(0, .98f, .2f), new(.28f, .3f, .28f), "e9b85a");
+        Ball(new(0, .95f, .46f), new(.08f, .06f, .14f), "f2c14e").RotationDegrees = new(10, 0, 0);
+        Ball(new(0, .82f, .42f), new(.06f, .1f, .05f), "d9322a");
+        for (int i = 0; i < 3; i++)
+            Ball(new(0, 1.25f + (i == 1 ? .05f : 0), .08f + i * .1f), new(.05f, .1f, .06f), "e02e2a");
+        for (int i = 0; i < 4; i++)
+        {
+            var feather = Ball(
+                new(0, .78f + i * .06f, -.4f - i * .04f),
+                new(.06f, .34f - i * .04f, .1f),
+                i % 2 == 0 ? "2f7a55" : "2e5aa8"
+            );
+            feather.RotationDegrees = new(-30 - i * 14, 0, 0);
+        }
+        foreach (int side in new[] { -1, 1 })
+        {
+            Ball(new(side * .3f, .58f, -.04f), new(.1f, .24f, .34f), "8f3f22").RotationDegrees = new(0, 0, side * 12);
+            Foot(new(side * .13f, .26f, .04f), .26f, .08f, "f2a65a", side);
+        }
+        Art.Cylinder(model, new(0, 1.35f, -.2f), .008f, .008f, .9f, "f4f1e6");
+        Ball(new(0, 1.95f, -.2f), new(.24f, .28f, .24f), "e8453c");
+        Ball(new(0, 1.95f, -.2f), new(.245f, .2f, .12f), "f6d03f");
+        Ball(new(0, 1.95f, -.2f), new(.12f, .21f, .25f), "3f8fd8");
+        Art.Block(model, new(0, 1.62f, -.2f), new(.1f, .08f, .1f), "b07a43");
+        Eyes(.1f, 1.04f, .4f);
     }
 
     private void BuildMill()

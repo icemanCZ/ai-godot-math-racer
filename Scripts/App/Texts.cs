@@ -691,4 +691,44 @@ internal static class Texts
     public static string DragonHatched(int coins) => $"Drak má zase oheň a vejce se vylíhlo!  +{coins}";
 
     public static string DragonFirstFlight(int coins) => $"První let na drakovi!  +{coins}";
+
+    // GameUi.Balloon and Game.Balloon
+    public const string SignBalloons = "BALÓNY";
+    public const string BalloonHint = "Balonářka Amálka";
+    public const string BalloonFirst = "Chceš se proletět? Nejdřív musíme nahřát vzduch v balónu.";
+    public const string BalloonAgain = "Vítr fouká přesně jak má. Poletíme zase?";
+    public const string BalloonHowTo =
+        "Vítr nás ponese nad údolím. Pedálem zapneš hořák a balón stoupá, couváním pustíš vzduch a balón klesá. Chytej zlaté hvězdičky!";
+    public const string BalloonHowToAgain =
+        "Hořák nahoru, ventil dolů. Každý let visí hvězdičky jinak vysoko, tak dávej pozor!";
+    public const string BalloonFact =
+        "Víš, že první cestující v horkovzdušném balónu byli beran, kachna a kohout? Bylo to ve Francii v roce 1783.";
+    public const string BalloonFlightStart = "Letět";
+    public const string BalloonQuiz = "Vyřeš příklad a já zatím nahřeju vzduch v balónu!";
+    public const string BalloonTakeOff = "Pouštím lana! Letíš! Já ti budu mávat ze země.";
+    public const string BalloonLand = "Přistát";
+    public const string BalloonRooster = "Kikirikí! Kohoutek Kokrháček poletí s tebou, je to přece letec!";
+    public const string BalloonControlsKeys = "W · hořák nahoru   S · ventil dolů";
+    public const string BalloonControlsPad = "RT · hořák nahoru   LT · ventil dolů";
+
+    public static string BalloonMoreStars(int left) =>
+        left switch
+        {
+            1 => "Ještě jedna hvězdička a přiletí kohoutek Kokrháček!",
+            < 5 => $"Ještě {left} hvězdičky a přiletí kohoutek Kokrháček. Poletíme?",
+            _ => $"Ještě {left} hvězdiček a přiletí kohoutek Kokrháček. Poletíme?",
+        };
+
+    public static string BalloonCaught(int caught, int stars) => $"Hvězdičky: {caught} z {stars}";
+
+    public static string BalloonStar(int caught, int stars) => $"Hvězdička!  {caught} / {stars}  +1";
+
+    public static string BalloonAllStars(int stars, int coins) => $"Všech {stars} hvězdiček!  +{coins}";
+
+    public static string BalloonFirstFlight(int coins) => $"První let balónem!  +{coins}";
+
+    public static string BalloonLanded(int caught, int stars) =>
+        caught == stars ? "Přistáli jsme! Máš úplně všechny hvězdičky, to byl let jako pro opravdové balonáře!"
+        : caught == 0 ? "Přistáli jsme! Příště zkus vyletět nebo klesnout přímo ke hvězdičce."
+        : $"Přistáli jsme! Máš {caught} z {stars} hvězdiček. Krásný let!";
 }

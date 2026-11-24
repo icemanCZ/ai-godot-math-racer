@@ -111,6 +111,8 @@ internal static class LegacySaves
         ("Dragon", "Stage"),
         ("Dragon", "Riddle"),
         ("Dragon", "Flown"),
+        ("Balloon", "Flights"),
+        ("Balloon", "Stars"),
         ("Fireflies", "Caught"),
         ("Quiz", "Offered"),
         ("Day", "Clock"),

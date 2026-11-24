@@ -184,6 +184,7 @@ public partial class Game
                 Riddle = DragonLair?.Riddle ?? 0,
                 Flown = dragonFlown,
             },
+            Balloon = new BalloonSave { Flights = balloonFlights, Stars = balloonStars },
             Fireflies = new FirefliesSave { Caught = fireflies.Caught },
             Hunt = new HuntSave
             {
@@ -298,6 +299,8 @@ public partial class Game
         RestoreLighthouse(data.Lighthouse.Stage);
         // So is the dragon's nest, so that its trip and the little dragon know how far it is.
         RestoreDragon(data.Dragon.Stage, data.Dragon.Riddle, data.Dragon.Flown);
+        // And the balloon's stars, so that the rooster knows how many were caught.
+        RestoreBalloon(data.Balloon.Flights, data.Balloon.Stars);
         RestoreBuilds(data);
         UpdateDeliveryGuides();
         interaction.BeforePause = validEncounter ? data.State : GameState.Exploring;

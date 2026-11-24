@@ -86,6 +86,9 @@ public sealed class SaveData
 
     /// <summary>The dragon under the mountains. Added after version 5 began.</summary>
     public DragonSave Dragon { get; set; } = new();
+
+    /// <summary>The balloon station far beyond the village. Added after version 5 began.</summary>
+    public BalloonSave Balloon { get; set; } = new();
 }
 
 /// <summary>
@@ -116,6 +119,17 @@ public sealed class DragonSave
     public int Stage { get; set; }
     public int Riddle { get; set; }
     public bool Flown { get; set; }
+}
+
+/// <summary>
+/// The balloon station: the flights the player has taken off for (which also picks the heights of the next flight's
+/// stars) and the stars caught on them in all, at most <see cref="Valley.BalloonFlight.Stars"/> a flight. Where a flight
+/// is is not saved; a save from before the station has none of it.
+/// </summary>
+public sealed class BalloonSave
+{
+    public int Flights { get; set; }
+    public int Stars { get; set; }
 }
 
 /// <summary>

@@ -64,16 +64,27 @@ public partial class FollowCamera : Camera3D
     }
 
     private Node3D? ride;
+    private Vector3 rideEye,
+        rideLook;
 
     /// <summary>
     /// The camera rides on <paramref name="seat"/> (the dragon's neck, <c>docs/DRAGON_PLAN.md</c>), a little behind and
     /// above it, looking ahead past his head, until <see cref="EndRide"/>.
     /// </summary>
-    internal void Ride(Node3D seat)
+    internal void Ride(Node3D seat) => Ride(seat, new Vector3(0, 3.4f, -9), new Vector3(0, -4, 30));
+
+    /// <summary>
+    /// The camera rides with <paramref name="seat"/> at <paramref name="eye"/> and looks at <paramref name="look"/>, both
+    /// in the seat's frame kept level (+X to its right, +Y up, +Z ahead), as beside the hot-air balloon
+    /// (<c>docs/BALLOON_PLAN.md</c>).
+    /// </summary>
+    internal void Ride(Node3D seat, Vector3 eye, Vector3 look)
     {
         StopDragging();
         moment = 0;
         ride = seat;
+        rideEye = eye;
+        rideLook = look;
     }
 
     internal bool Riding => ride != null;
@@ -205,10 +216,12 @@ public partial class FollowCamera : Camera3D
             var seat = ride.GlobalTransform;
             var ahead = seat.Basis.Z with { Y = 0 };
             ahead = ahead.LengthSquared() > .01f ? ahead.Normalized() : Vector3.Forward;
-            var eye = seat.Origin - ahead * 9 + Vector3.Up * 3.4f;
+            var right = Vector3.Up.Cross(ahead);
+            Vector3 InSeat(Vector3 p) => seat.Origin + right * p.X + Vector3.Up * p.Y + ahead * p.Z;
+            var eye = InSeat(rideEye);
             eye.Y = Mathf.Max(eye.Y, Ground.Height(eye.X, eye.Z) + 2);
             Position = Position.DistanceSquaredTo(eye) > 400 ? eye : Position.Lerp(eye, 1 - Mathf.Exp(-dt * 6));
-            LookAt(seat.Origin + ahead * 30 + Vector3.Down * 4);
+            LookAt(InSeat(rideLook));
             return;
         }
         if (panorama > 0)

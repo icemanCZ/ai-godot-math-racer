@@ -53,6 +53,7 @@ public enum GameState
     PostStatus = 31,
     LighthouseStatus = 32,
     DragonStatus = 33,
+    BalloonStatus = 34,
 }
 
 public partial class Game : Node3D
@@ -280,6 +281,9 @@ public partial class Game : Node3D
     internal void Interact()
     {
         if (State != GameState.Exploring)
+            return;
+        // In the balloon the talk button lands it.
+        if (LandBalloonEarly())
             return;
         if (AtGarage)
         {

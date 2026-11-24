@@ -54,6 +54,9 @@ public partial class Character : Node3D
     private Sprite3D? roleIcon;
     private float markerDistanceBlend = 1;
     private float markerBlend = 1;
+
+    /// <summary>How much higher the marker rides when seen from afar, above the balloon of the balloonist.</summary>
+    private float farMarkerLift;
     public bool RewardAvailable { get; private set; } = true;
     public int Kind { get; private set; }
     public string FurColor { get; private set; } = "";
@@ -297,6 +300,7 @@ public partial class Character : Node3D
             Vector3.Up
             * (
                 markerLift
+                + farMarkerLift * (1 - markerBlend)
                 + Mathf.Lerp(4.7f, 7.5f, markerBlend)
                 + Mathf.Sin(time * 2.4f) * Mathf.Lerp(.15f, .6f, markerBlend)
             );

@@ -40,6 +40,7 @@ internal static class SaveRules
         ("post to the keepers of the borders", HasInvalidPost),
         ("lighthouse", HasInvalidLighthouse),
         ("dragon", HasInvalidDragon),
+        ("balloon station", HasInvalidBalloon),
         ("time of day", HasInvalidDay),
         ("decorations and the mayor's shop", HasInvalidDecorations),
         ("glass lamps and the lamp maker's shop", HasInvalidLamps),
@@ -81,6 +82,7 @@ internal static class SaveRules
         || data.Post is null
         || data.Lighthouse is null
         || data.Dragon is null
+        || data.Balloon is null
         || data.Day is null;
 
     /// <summary>Throws when the save is not one the game can restore.</summary>
@@ -552,6 +554,28 @@ internal static class SaveRules
             && dragon.Riddle < DragonPlans.Riddles
             && data.Task.Trip is not { Kind: TripKinds.Dragon };
         return !departure && !riddle && !AsksForDragon(data);
+    }
+
+    /// <summary>
+    /// The balloon station: a count of flights within the limit and no more stars than its flights had, the
+    /// balloonist's panel only beside her, and her one question, the one before a take-off, which hands nothing over.
+    /// </summary>
+    private static bool HasInvalidBalloon(SaveData data)
+    {
+        var balloon = data.Balloon;
+        if (
+            balloon.Flights is < 0 or > BalloonPlans.FlightLimit
+            || balloon.Stars < 0
+            || balloon.Stars > (long)balloon.Flights * BalloonFlight.Stars
+            || (data.State == GameState.BalloonStatus && !World.IsBalloonist(data.Nearby))
+        )
+            return true;
+        if (!World.IsBalloonist(data.Nearby))
+            return false;
+        return data.Quiz.Handover
+            || data.Quiz.Challenge is DeliveryChallenge or LoadChallenge
+            || data.State is not (GameState.Exploring or GameState.BalloonStatus or GameState.Challenge)
+            || (data.State == GameState.Challenge && data.Quiz.Departure != 0);
     }
 
     /// <summary>The clock of the day is a number of seconds within one day.</summary>

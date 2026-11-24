@@ -117,6 +117,9 @@ public static class Art
                 // The dragon under the mountains: a head with a horn, an eye, a nostril and a ring of smoke.
                 "dragon" =>
                     "M18 104 Q22 58 62 50 L70 28 L80 50 Q104 52 112 72 Q116 86 100 90 H70 Q58 96 58 112 M88 66 h0 M104 80 h0 M110 40 a10 10 0 1 0 20 0 a10 10 0 1 0 -20 0",
+                // The balloon station: an envelope with its gores, the ropes and the basket.
+                "balloon" =>
+                    "M66 12 C28 12 20 50 34 70 L54 94 H78 L98 70 C112 50 104 12 66 12 Z M66 12 C52 30 54 70 60 94 M66 12 C80 30 78 70 72 94 M56 104 H76 V120 H56 Z M56 94 V104 M76 94 V104",
                 _ =>
                     "M81 29 A15 15 0 1 1 51 29 A15 15 0 1 1 81 29 Z M44 111 V77 L31 88 L22 77 L46 53 H86 L110 77 L101 88 L88 77 V111 H73 V88 H59 V111 Z",
             };
@@ -162,8 +165,8 @@ public static class Art
 
     /// <summary>
     /// A coloured picture for a <c>DeliveryPicture</c> (180 x 150, the frame it draws in) of the post and the borders:
-    /// "letter", "lighthouse", "sea", "mountains", "river", "forest" and "stamp", and of the dragon: "dragon" and "egg". Null for any other name, which the
-    /// picture draws itself.
+    /// "letter", "lighthouse", "sea", "mountains", "river", "forest" and "stamp", of the dragon: "dragon" and "egg", and of
+    /// the balloon station: "balloon" and "star". Null for any other name, which the picture draws itself.
     /// </summary>
     public static Texture2D? Picture(string icon)
     {
@@ -212,6 +215,16 @@ public static class Art
                 + $"<circle cx='132' cy='112' r='3' fill='{ink}'/>"
                 + "<circle cx='154' cy='92' r='11' fill='none' stroke='#d9dcdf' stroke-width='5'/>"
                 + "<path d='M40 128 Q60 116 76 128' fill='none' stroke='#d23b2f' stroke-width='9' stroke-linecap='round'/>",
+            "balloon" => "<path d='M90 8 C46 8 36 56 52 80 L76 108 H104 L128 80 C144 56 134 8 90 8 Z' fill='#e8453c'/>"
+                + "<path d='M90 8 C66 12 64 68 80 108 H100 C116 68 114 12 90 8 Z' fill='#f6d03f'/>"
+                + "<path d='M90 8 C82 18 82 78 86 108 H94 C98 78 98 18 90 8 Z' fill='#3f8fd8'/>"
+                + "<path d='M90 8 C46 8 36 56 52 80 L76 108 H104 L128 80 C144 56 134 8 90 8 Z' fill='none'"
+                + $" stroke='{ink}' stroke-width='5' stroke-linejoin='round'/>"
+                + $"<path d='M78 108 L80 120 M102 108 L100 120' stroke='{ink}' stroke-width='4'/>"
+                + $"<rect x='76' y='120' width='28' height='22' rx='3' fill='#b07a43' stroke='{ink}' stroke-width='4'/>",
+            "star" =>
+                "<path d='M90 18 L105 58 L147 59 L114 86 L125 127 L90 103 L55 127 L66 86 L33 59 L75 58 Z' fill='#ffd23f'"
+                    + $" stroke='{ink}' stroke-width='5' stroke-linejoin='round'/>",
             "egg" => "<ellipse cx='90' cy='120' rx='62' ry='18' fill='#e2c27e'/>"
                 + $"<ellipse cx='90' cy='78' rx='34' ry='46' fill='#f6e7c8' stroke='{ink}' stroke-width='5'/>"
                 + "<circle cx='76' cy='64' r='7' fill='#7fbf6a'/><circle cx='104' cy='90' r='8' fill='#f2a14e'/>"

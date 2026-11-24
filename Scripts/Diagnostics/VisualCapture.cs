@@ -648,6 +648,24 @@ public partial class VisualCapture : Node
                 camera.LookAt(dragonSite.Local(0, 4) + Vector3.Up * 3);
             }
         }
+        else if (view is "balloon" or "balloon-night" && world.BalloonPlace is { } balloonSite)
+        {
+            // From the road, a little to the side and above: the whole balloon, the target, the hut and the windsock.
+            camera.SetProcess(false);
+            var eye = balloonSite.Local(-17, -6);
+            camera.GlobalPosition = world.Ground.At(eye.X, eye.Z) + Vector3.Up * 6;
+            camera.LookAt(world.Ground.At(balloonSite.Pad.X, balloonSite.Pad.Z) + Vector3.Up * 9);
+        }
+        else if (view is "balloon-far" or "balloon-far-night" && world.BalloonPlace is { } farSite)
+        {
+            // From above the middle of the village, looking out to the station: the balloon stands out on the skyline.
+            camera.SetProcess(false);
+            var from = world.Village.Center;
+            camera.GlobalPosition = world.Ground.At(from.X, from.Z) + Vector3.Up * 14;
+            camera.LookAt(world.Ground.At(farSite.Pad.X, farSite.Pad.Z) + Vector3.Up * 12);
+            camera.Fov = 40;
+        }
+        else if (view is "balloon-panel" or "balloon-flight") { }
         else if (view == "hunter-close" && world.Hunter is { } hunterClose)
         {
             // The hunter from the front and a little above, with his hat, waistcoat and landing net.

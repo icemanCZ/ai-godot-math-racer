@@ -144,6 +144,7 @@ public partial class GameUi : CanvasLayer
         SetupCoins();
         SetupLamps();
         SetupTreasure();
+        SetupBalloon();
         SetupFireflies();
         SetupHunt();
         SetupPost();

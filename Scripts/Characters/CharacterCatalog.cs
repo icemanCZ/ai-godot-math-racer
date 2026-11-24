@@ -159,6 +159,15 @@ internal static class CharacterCatalog
             "5fae5a"
         );
 
+    /// <summary>The balloonist of the balloon station far beyond the village (<see cref="ActorIds.Balloonist"/>).</summary>
+    public static CharacterSpec Balloonist { get; } =
+        new(
+            "Liška balonářka Amálka",
+            "Ahoj! Já jsem Amálka a tohle je můj horkovzdušný balón. Vidíš ho z celého údolí, viď? Poletíme spolu nad údolím a pochytáme hvězdičky!",
+            1,
+            "e6a35a"
+        );
+
     /// <summary>The pirate captain on the village square, who hides treasures for the player to dig up (<see cref="World.TreasurerId"/>).</summary>
     public static CharacterSpec Treasurer { get; } =
         new(

@@ -170,6 +170,8 @@ public partial class World : Node3D
         Register(PostmanId, Postman);
         // The dragon came after the postman, so he is registered after him.
         RegisterDragon();
+        // The balloonist came after the dragon.
+        RegisterBalloonist();
         // The borders round the valley stand on the final ground and change nothing in it.
         AddChild(BorderWater);
         BorderWater.Generate(Ground);

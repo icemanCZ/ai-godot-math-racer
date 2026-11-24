@@ -72,6 +72,8 @@ public partial class World
         }
         // The dragon lies beside the homestead under the mountains; his ledge is cleared like the homesteads.
         PlanDragon();
+        // The balloon station stands on high ground beside a road far from the village, cleared in the same way.
+        PlanBalloon();
         Plants.OutlandCleared = InBorderfolkZone;
         GD.Print(
             $"BORDERFOLK homes={BorderHomes.Count(h => h != null)} lighthouse={LighthousePlace != null} quarry={QuarryPlace != null}"
@@ -171,6 +173,7 @@ public partial class World
         }
         BuildLighthouse();
         BuildDragon();
+        BuildBalloon();
     }
 
     /// <summary>The lighthouse on the shore, raised by the player's deliveries.</summary>
@@ -229,12 +232,13 @@ public partial class World
     }
 
     /// <summary>
-    /// Whether a point lies on a homestead and the turning space before it, on the lighthouse's ground or on the coast
-    /// quarry: the plants, the grass, the wayside things and the wild animals of the land beyond the old valley keep off.
+    /// Whether a point lies on a homestead and the turning space before it, on the lighthouse's ground, on the coast
+    /// quarry, by the dragon or at the balloon station: the plants, the grass, the wayside things and the wild animals
+    /// of the land beyond the old valley keep off.
     /// </summary>
     internal bool InBorderfolkZone(Vector3 p)
     {
-        if (InDragonZone(p))
+        if (InDragonZone(p) || InBalloonZone(p))
             return true;
         foreach (var site in BorderHomes)
             if (

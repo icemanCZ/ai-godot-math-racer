@@ -630,6 +630,24 @@ public partial class Game
                 OpenGlassmaker(maker);
             RefreshLampHud();
         }
+        if (view.StartsWith("balloon") && world.BalloonPlace is { } balloonSite && world.Balloonist is { } balloonist)
+        {
+            // The car on the road beside the station; at night, with the balloonist's panel or high in a flight.
+            var road = balloonSite.Local(2, 3);
+            vehicle.SetPose(world.Ground.At(road.X, road.Z, .15f), balloonSite.Yaw + Mathf.Pi);
+            if (view is "balloon-night" or "balloon-far-night")
+                Weather.Begin(WeatherKind.Night, instant: true);
+            if (view == "balloon-panel")
+            {
+                nearby = balloonist;
+                OpenBalloonist(balloonist);
+            }
+            if (view == "balloon-flight" && world.BalloonFlight is { } way)
+            {
+                TakeOff(balloonist);
+                balloonRide!.Place(way.StarDistance(2) - 36, balloonRide.StarHeight(2) - 3);
+            }
+        }
         if (view == "log-yard" && world.LogYard is { } logYard)
             vehicle.SetPose(world.Ground.At(logYard.Position.X, logYard.Position.Z, .15f), 0);
         if (view is "beaver" or "load-question" && world.Beaver != null)

@@ -550,6 +550,28 @@ internal sealed class DragonRole : ActorRole
 }
 
 /// <summary>
+/// The balloonist of the balloon station (<c>docs/BALLOON_PLAN.md</c>). Talking to her shows the stars caught so far and
+/// the button of a flight; her one quiz heats the air in the envelope before the take-off.
+/// </summary>
+internal sealed class BalloonistRole : ActorRole
+{
+    public override string Icon => "balloon";
+    public override bool UsesDeliveryGuide => false;
+
+    public override bool InvitesTalk(bool expeditionActive) => true;
+
+    public override void ShowHint(GameUi ui, Character actor) => ui.BalloonHint();
+
+    public override void Open(Game game, Character actor) => game.OpenBalloonist(actor);
+
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
+    {
+        game.CompleteBalloonQuiz(actor);
+        return true;
+    }
+}
+
+/// <summary>
 /// The postman on the village square. Talking to him opens the stamp album and gives out the next letter for a keeper
 /// of the borders; he asks no question.
 /// </summary>

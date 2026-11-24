@@ -38,6 +38,7 @@ public partial class Game
         Register("letter", TickLetter);
         Register("lighthouse", TickLighthouse);
         Register("dragon", TickDragon);
+        Register("balloon", TickBalloon);
         Register("flutters", delta => TickFlutters((float)delta));
         Register("trampling", delta => TickTrampling((float)delta));
         // The meshes built after the valley: more of them a frame while the title or the pause is shown.

@@ -117,6 +117,7 @@ public partial class Game
                         or BorderKeeperRole
                         or PostmanRole
                         or DragonRole
+                        or BalloonistRole
                     )
             )
             .ToArray();

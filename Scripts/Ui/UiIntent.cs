@@ -91,6 +91,9 @@ internal abstract record UiIntent
 
     internal sealed record DragonFlight : UiIntent;
 
+    // The balloon station: a flight in the hot-air balloon, after the question that heats its air.
+    internal sealed record BalloonFlight : UiIntent;
+
     // The witch's night panel: the firefly hunt, or the weather question.
     internal sealed record StartFireflyHunt : UiIntent;
 

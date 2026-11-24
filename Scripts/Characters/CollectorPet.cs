@@ -62,6 +62,9 @@ internal enum CollectorPetKind
 
     // The dragon's little one, Jiskřička: owned once the egg in the warm nest has hatched.
     Dragonling,
+
+    // The balloonist's rooster, Kokrháček: owned once twenty stars are caught on the balloon's flights.
+    Rooster,
 }
 
 internal sealed partial class CollectorPet : Node3D

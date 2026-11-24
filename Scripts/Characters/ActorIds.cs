@@ -102,6 +102,9 @@ internal static class ActorIds
     /// <summary>The dragon on his ledge beside the homestead under the mountains, who wants a warm nest for his egg.</summary>
     public const int Dragon = Postman + 1;
 
+    /// <summary>The balloonist of the balloon station beside a road far beyond the village.</summary>
+    public const int Balloonist = Dragon + 1;
+
     /// <summary>The highest actor ID that a save may name.</summary>
-    public const int Last = Dragon;
+    public const int Last = Balloonist;
 }

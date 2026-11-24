@@ -1,0 +1,4 @@
+seed 42
+balloon station road -772.07 35.95 445.83 inward 0.99 -0.00 -0.17 pad -751.37 35.95 442.30
+balloon flight length 851.73 star -710.28 60.94 312.94
+trees left out 14
