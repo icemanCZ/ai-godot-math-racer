@@ -170,7 +170,7 @@ public partial class SmokeTest : Node
         {
             Check(
                 River.OnBridge(car.Position.X, car.Position.Z) && car.Position.Y > River.Level(River.BridgeZ) + .6f,
-                "bridge supports vehicle above water"
+                $"bridge supports vehicle above water (car at {car.Position}, water {River.Level(River.BridgeZ):0.00})"
             );
         }
         if (frame == 465)

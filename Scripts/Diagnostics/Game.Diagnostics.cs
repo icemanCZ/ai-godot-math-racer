@@ -71,7 +71,17 @@ public partial class Game
     {
         SetProcess(false);
         vehicle.Active = true;
-        RoadPassabilityChecks.Run(world);
+        try
+        {
+            RoadPassabilityChecks.Run(world);
+        }
+        catch (Exception error)
+        {
+            // Without this the game would keep running and the case would wait for the runner's time limit.
+            GD.PushError(error.ToString());
+            GetTree().Quit(1);
+            return;
+        }
         AddChild(new RoadDrivingChecks(world, vehicle));
     }
 

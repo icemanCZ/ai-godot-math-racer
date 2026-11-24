@@ -14,7 +14,7 @@ namespace MathRacer.Diagnostics;
 /// The road guidance over both networks (<c>docs/POST_AND_LIGHTHOUSE_PLAN.md</c>, phase 0): every road of the old valley
 /// and of the land round it can be reached from every other, a route from the village leads out to the end of each
 /// road to a border with its arrows on the road, and a car that follows the guide from the ring with its own physics
-/// gets there. The ring meets the old roads at only two to four joins, so the far borders are 1.5 to 3.3 km away by road.
+/// gets there, as it does along every join from the old road it leaves out to the ring, gently graded and free of rocks. The ring meets the old roads at only two to four joins, so the far borders are 1.5 to 3.3 km away by road.
 /// </summary>
 public partial class RouteChecks : Node
 {
@@ -57,6 +57,8 @@ public partial class RouteChecks : Node
                 CheckRouteFromVillage(border, points[^1]);
             foreach (var (border, points) in world.BorderRoads)
                 await CheckDriveFromRing(border, points[0], points[^1]);
+            for (int join = 1; join <= world.OutlandJoinCount; join++)
+                await CheckDriveJoin(join, world.OutlandRoutePoints[join]);
             GD.Print("ROUTE_CHECKS_PASSED");
             GetTree().Quit();
         }
@@ -131,6 +133,45 @@ public partial class RouteChecks : Node
         Check(best < 8, $"the car follows the arrows from the ring to the {border} and arrives ({best:0.0} m)");
     }
 
+    /// <summary>
+    /// From the old road where a join leaves it, the car drives the join out to the ring. The part of it within the old
+    /// valley lies on ground that the outland's grading does not change, so it climbs out of the old road's cut on a
+    /// ramp of its own (<c>Terrain.GradeJoins</c>) and no flower rock stands in its way.
+    /// </summary>
+    private async Task CheckDriveJoin(int join, Vector3[] points)
+    {
+        var start = world.Ground.At(points[0].X, points[0].Z);
+        var end = world.Ground.At(points[^1].X, points[^1].Z);
+        var guide = Guide(start, start.Lerp(world.Ground.At(points[1].X, points[1].Z), .2f), end);
+        var route = guide.RoutePoints.ToList();
+        float steepest = 0;
+        var steepestAt = Vector3.Zero;
+        for (int i = 1; i < points.Length; i++)
+        for (float t = 0; t < 1; t += 1f / 40)
+        {
+            var a = points[i - 1].Lerp(points[i], t);
+            var b = points[i - 1].Lerp(points[i], t + 1f / 40);
+            float run = Flat(a, b);
+            float grade =
+                Mathf.Abs(world.Ground.Height(b.X, b.Z) - world.Ground.Height(a.X, a.Z)) / Mathf.Max(run, .01f);
+            if (run > .2f && grade > steepest)
+            {
+                steepest = grade;
+                steepestAt = a;
+            }
+        }
+        // The bank of an old road's cut rose .8 in one (seed 7421). The ground the joins cross by nature reaches .38,
+        // and the ramp out of that cut on seed 7421 .42, because it must pass a point of the fingerprints' grid at the
+        // point's own height (Terrain.Joins.cs).
+        Check(
+            steepest < .45f,
+            $"join {join} climbs at most {steepest:0.00} (at {steepestAt.X:0} {steepestAt.Z:0}), no bank of an old road"
+        );
+        float best = await Follow(route, end, Length(route));
+        guide.HideAll();
+        Check(best < 8, $"the car drives join {join} from the old road out to the ring ({best:0.0} m)");
+    }
+
     /// <summary>Drives along the route with the car's physics, steering a few points ahead; the nearest it came.</summary>
     private async Task<float> Follow(List<Vector3> route, Vector3 end, float length)
     {
@@ -138,6 +179,7 @@ public partial class RouteChecks : Node
         int progress = 0;
         int stuck = 0;
         var last = car.Position;
+        var previous = car.Position;
         int frames = Mathf.CeilToInt(length / 8 * Engine.PhysicsTicksPerSecond) + 600;
         for (int frame = 0; frame < frames && best > 5; frame++)
         {
@@ -152,6 +194,22 @@ public partial class RouteChecks : Node
             }
             if (game.State != GameState.Exploring)
                 throw new InvalidOperationException($"the drive was stopped by {game.State} at {car.Position}");
+            if (Flat(car.Position, previous) > 20)
+            {
+                GD.Print(
+                    $"ROUTE_RESET from {previous} (ground {world.Ground.Height(previous.X, previous.Z):0.00}), route point {progress} of {route.Count}"
+                );
+                foreach (
+                    var body in GetTree().Root.FindChildren("*", "StaticBody3D", true, false).OfType<StaticBody3D>()
+                )
+                foreach (var shape in body.GetChildren().OfType<CollisionShape3D>())
+                    if (shape.GlobalPosition.DistanceTo(previous) < 6)
+                        GD.Print(
+                            $"ROUTE_NEAR {body.GetPath()} ({body.GetParent()?.GetType().Name} {body.GetParent()?.Name} in {body.GetParent()?.GetParent()?.GetType().Name} {body.GetParent()?.GetParent()?.Name}) shape at {shape.GlobalPosition} {shape.Shape?.GetType().Name}"
+                        );
+                break;
+            }
+            previous = car.Position;
             while (
                 progress + 1 < route.Count
                 && Flat(car.Position, route[progress + 1]) < Flat(car.Position, route[progress])
@@ -176,6 +234,8 @@ public partial class RouteChecks : Node
                 }
             }
         }
+        if (best > 5)
+            GD.Print($"ROUTE_END at {car.Position}, route point {progress} of {route.Count}, speed {car.Speed:0.0}");
         Release();
         return best;
     }

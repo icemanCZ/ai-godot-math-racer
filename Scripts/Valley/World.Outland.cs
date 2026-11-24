@@ -66,9 +66,31 @@ public partial class World
             .Concat(borderRoads.Select(road => road.Points))
             .ToArray();
         Ground.GradeOutlandRoads(new OutlandRoadbed(OutlandRoutePoints, Ground.Landscape, layout.Bridges));
+        // Where the joins leave the old roads they climb out of the roads' cuts on ramps of their own, and the flowers
+        // and rocks of the old valley give way to them.
+        Ground.GradeJoins(joins, p => Routes.EdgeDistance(new Vector3(p.X, 0, p.Y)));
+        Plants.ClearDrawn(p =>
+            Mathf.Max(Mathf.Abs(p.X), Mathf.Abs(p.Z)) <= WorldTuning.CoreRadius
+            && joins.Any(join => NearJoin(join, p, JoinClearance))
+        );
         foreach (var bridge in layout.Bridges)
             BuildOutlandBridge(bridge);
         GD.Print($"OUTLAND_ROADS joins={joins.Count} borders={borderRoads.Count} ring={ring.Count}");
+    }
+
+    /// <summary>Whether <paramref name="p"/> lies within <paramref name="reach"/> of the middle of a join, on the flat.</summary>
+    private static bool NearJoin(Vector3[] join, Vector3 p, float reach)
+    {
+        var point = new Vector2(p.X, p.Z);
+        for (int i = 0; i + 1 < join.Length; i++)
+        {
+            var a = new Vector2(join[i].X, join[i].Z);
+            var delta = new Vector2(join[i + 1].X, join[i + 1].Z) - a;
+            float t = Mathf.Clamp((point - a).Dot(delta) / Mathf.Max(delta.LengthSquared(), .0001f), 0, 1);
+            if (point.DistanceTo(a + delta * t) < reach)
+                return true;
+        }
+        return false;
     }
 
     /// <summary>Whether a plant beyond the old valley would stand on a bridge of the ring or its ramps.</summary>

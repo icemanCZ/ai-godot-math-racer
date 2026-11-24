@@ -575,6 +575,41 @@ public partial class Vegetation : Node3D
         }
     }
 
+    /// <summary>
+    /// Takes out the flowers, bushes and rocks of the old valley that stand on ground laid over once they are drawn (the
+    /// joins out to the ring, <see cref="World.PlanOutlandRoads"/>): they are made invisible in the drawn batches and the
+    /// rocks lose their collision. No tree stands there (the joins keep clear of trunks), and nothing is planted anew, so
+    /// no other plant moves and <see cref="TreePositions"/> and <see cref="BushCount"/> stay as they were.
+    /// </summary>
+    internal void ClearDrawn(System.Func<Vector3, bool> inside)
+    {
+        foreach (var (key, multimesh) in renderedBatches)
+        {
+            if (key.Tree)
+                continue;
+            var buffer = multimesh.Buffer;
+            int stride = multimesh.UseCustomData ? 16 : 12;
+            bool changed = false;
+            for (int at = 0; at + stride <= buffer.Length; at += stride)
+            {
+                if (!inside(new Vector3(buffer[at + 3], buffer[at + 7], buffer[at + 11])))
+                    continue;
+                foreach (int row in new[] { 0, 4, 8 })
+                    buffer[at + row] = buffer[at + row + 1] = buffer[at + row + 2] = 0;
+                changed = true;
+            }
+            if (!changed)
+                continue;
+            multimesh.Buffer = buffer;
+            if (farBatches.TryGetValue(key, out var far))
+                far.Buffer = buffer;
+        }
+        foreach (var body in GetChildren().OfType<StaticBody3D>().ToList())
+            if (!treeVisuals.ContainsKey(body.GetInstanceId()) && inside(body.Position))
+                body.QueueFree();
+        Trampling.Forget(inside);
+    }
+
     /// <summary>Whether a tree of the old valley or of the land round it stands within <paramref name="clearance"/>.</summary>
     internal bool NearTrunk(Vector3 p, float clearance)
     {
