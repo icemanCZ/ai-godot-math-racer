@@ -74,8 +74,14 @@ public partial class Character : Node3D
         Guide(taskMarker.Visible);
     }
 
+    /// <summary>The marker over the head is shown: the yellow one, or the destination's when <see cref="GuidedThere"/>.</summary>
+    internal bool Guided => taskMarker.Visible;
+
+    internal bool GuidedThere { get; private set; }
+
     public void Guide(bool visible, bool destination = false)
     {
+        GuidedThere = visible && destination;
         taskMarker.Visible = visible;
         taskMarker.Text =
             destination ? "!"

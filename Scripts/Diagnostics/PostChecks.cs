@@ -77,6 +77,11 @@ public partial class PostChecks : Node
             var pigeon = world.WorldPets.SingleOrDefault(pet => pet.Kind == CollectorPetKind.Pigeon);
             Check(post.Total == 0 && !post.Busy, "the post starts with no letter handed over and none carried");
             Check(pigeon != null && !pigeon.IsOwned && pigeon.Collector == postman, "the pigeon waits by the postman");
+            Check(postman.Guided && !postman.GuidedThere, "the postman shows the yellow mark of a task");
+            Check(
+                world.Keepers.All(keeper => keeper is not { Guided: true }),
+                "no keeper shows a mark before a letter"
+            );
 
             // ---- Saves of the fresh valley ----
             var node = System
@@ -142,6 +147,10 @@ public partial class PostChecks : Node
                 int keeper = post.Carrying;
                 Check(keeper >= 0 && game.State == GameState.Exploring, $"letter {letter + 1} is on the car");
                 Check(InWorld("LetterTrip"), "the arrows lead to the keeper");
+                Check(
+                    !postman.Guided && world.Keepers[keeper] is { GuidedThere: true },
+                    "the postman's mark goes over to the keeper the letter is for"
+                );
                 order.Add(keeper);
                 if (save)
                 {
@@ -186,6 +195,10 @@ public partial class PostChecks : Node
                 );
                 game.FinishInteraction();
                 Check(!InWorld("LetterTrip"), "no arrows lead anywhere once the reply is home");
+                Check(
+                    postman.Guided && world.Keepers.All(k => k is not { GuidedThere: true }),
+                    "the postman shows his mark again once the reply is home"
+                );
                 if (letter == Post.Keepers - 1)
                 {
                     Check(order.Distinct().Count() == Post.Keepers, "the first four letters go to the four keepers");

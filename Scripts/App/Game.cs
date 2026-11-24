@@ -142,6 +142,8 @@ public partial class Game : Node3D
         ui.CoinCount(Coins, 0);
         SetupGolem();
         SetupTrailer();
+        // A new valley shows the same marks as a loaded one; until now every mark stood as it was made, shown.
+        UpdateDeliveryGuides();
 
         persistenceReady = true;
         bool skipTitle = false;
@@ -404,6 +406,7 @@ public partial class Game : Node3D
         bool golemReturning = Delivery?.Golem == true && Delivery.CanDeliver;
         world.Sorcerer.Guide(!GolemOwned || golemReturning, golemReturning);
         UpdateHaulGuides();
+        UpdatePostGuides();
         foreach (var animal in world.InteractionActors)
         {
             if (!animal.Role.UsesDeliveryGuide)

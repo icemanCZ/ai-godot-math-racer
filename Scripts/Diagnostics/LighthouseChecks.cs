@@ -121,6 +121,7 @@ public partial class LighthouseChecks : Node
             game.OpenBorderKeeper(keeper);
             Check(game.State == GameState.KeeperStatus, "before the first letter the keeper only talks about the sea");
             game.FinishInteraction();
+            Check(!keeper.Guided, "before the first letter the keeper of the sea shows no mark");
             Rejected(data => data.Lighthouse.Stage = 1, "a lighthouse begun before the first letter");
             Rejected(
                 data => data.Task.Trip = new SavedTrip { Kind = TripKinds.Lighthouse, Index = 0 },
@@ -130,6 +131,7 @@ public partial class LighthouseChecks : Node
             var letter = game.CaptureProgress();
             letter.Post.Delivered[(int)Border.Sea] = 1;
             game.RestoreProgress(letter);
+            Check(keeper.Guided && !keeper.GuidedThere, "the wanted lighthouse puts the yellow mark over its keeper");
             Rejected(data => data.Lighthouse.Stage = LighthousePlans.Trips + 1, "a lighthouse with nine deliveries");
             Rejected(data => data.Lighthouse.Stage = -1, "a lighthouse with a negative stage");
             Rejected(
@@ -175,6 +177,7 @@ public partial class LighthouseChecks : Node
                     trip is { Loaded: false } && trip.Lighthouse == lighthouse && trip.Step == step && trailer.Attached,
                     $"delivery {step + 1} sends the empty trailer"
                 );
+                Check(!keeper.Guided, "the keeper's mark is gone while the trailer is away");
                 bool stone = step < LighthousePlans.StoneTrips;
                 Check(
                     trip!.Load == cargo
@@ -223,6 +226,10 @@ public partial class LighthouseChecks : Node
                 Frames(40);
                 Check(lighthouse.Stage == step + 1, $"delivery {step + 1} raises the {LighthousePlans.Parts[step]}");
                 Check(game.Haul == null && !game.TaskActive, "the next delivery waits for the player");
+                Check(
+                    keeper.Guided == !lighthouse.Complete,
+                    lighthouse.Complete ? "the finished lighthouse's keeper shows no mark" : "the keeper's mark is back"
+                );
                 if (step == 5)
                 {
                     // Without the goods the keeper shows what the works needs and sends the player for the raw material.

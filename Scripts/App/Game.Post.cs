@@ -177,11 +177,23 @@ public partial class Game
             letterTrip = new LetterTrip(world, vehicle, addressee);
             world.AddChild(letterTrip);
         }
-        foreach (var keeper in world.Keepers)
-            keeper?.Guide(keeper == addressee, keeper == addressee);
-        world.Postman?.Guide(false, false);
         UpdateDeliveryGuides();
         ui.LetterHud(addressee, Post.Carrying >= 0 ? Post.Carrying : -1);
+    }
+
+    /// <summary>
+    /// The keeper a letter is for shows where to go; the postman shows his mark while he has a letter to give out, and
+    /// the keeper of the sea while the lighthouse waits for its next load, like the builders of the old valley.
+    /// </summary>
+    private void UpdatePostGuides()
+    {
+        var addressee = LetterAddressee;
+        foreach (var keeper in world.Keepers)
+            keeper?.Guide(
+                keeper == addressee || keeper == world.LighthouseKeeper && LighthouseAwaitsLoad,
+                keeper == addressee
+            );
+        world.Postman?.Guide(!Post.Busy && NextKeeper() != null);
     }
 
     /// <summary>The arrows of the letter move on; a delivery or a trailer trip under way shows its own instead.</summary>

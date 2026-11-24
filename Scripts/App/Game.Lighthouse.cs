@@ -21,6 +21,9 @@ public partial class Game
     /// <summary>The keeper of the sea has had a letter and wants the lighthouse: the panel shows its stages.</summary>
     private bool LighthouseWanted => Lighthouse != null && Post.Delivered[(int)Border.Sea] > 0;
 
+    /// <summary>The lighthouse is wanted, not finished, and no trailer trip is under way: the keeper waits for a load.</summary>
+    private bool LighthouseAwaitsLoad => LighthouseWanted && Haul == null && Lighthouse is { Complete: false };
+
     private HaulTrip? TripOf(Lighthouse lighthouse) => Haul != null && Haul.Lighthouse == lighthouse ? Haul : null;
 
     private static HaulLoad? NextLoad(Lighthouse lighthouse) =>
