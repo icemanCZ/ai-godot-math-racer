@@ -1,0 +1,10 @@
+seed 42
+sheep meadows 8
+sheep 0 meadow 966.31 27.98 153.49 way 6 hash 78B4F73B84257E54
+sheep 1 meadow 407.66 26.71 658.50 way 8 hash 595E2A825238EE6A
+sheep 2 meadow -166.17 15.14 721.58 way 6 hash 97DA7BA3C7B0DFC8
+sheep 3 meadow -973.70 30.55 676.81 way 16 hash 9EB80EEBD28B5B33
+sheep 4 meadow -999.02 32.84 -427.56 way 10 hash 6E1F0F72874A2547
+sheep 5 meadow -453.84 28.54 -705.52 way 4 hash E51111FC645C37EF
+sheep 6 meadow 697.18 30.59 -964.78 way 12 hash 2ED4F66BA779D8E8
+sheep 7 meadow 1003.31 23.66 -258.55 way 9 hash 0ABEF9525E5A5914

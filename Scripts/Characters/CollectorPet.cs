@@ -68,6 +68,9 @@ internal enum CollectorPetKind
 
     // The forest keeper's squirrel, Oříška: owned once every animal of her book of tracks is found.
     Squirrel,
+
+    // The shepherd's sheepdog puppy, Alík: owned once all eight of his lost sheep are home in the fold.
+    Sheepdog,
 }
 
 internal sealed partial class CollectorPet : Node3D

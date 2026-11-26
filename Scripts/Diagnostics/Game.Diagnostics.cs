@@ -696,6 +696,73 @@ public partial class Game
                 }
             }
         }
+        if (
+            view.StartsWith("sheep")
+            && world.Shepherd is { } shepherd
+            && world.SheepFlock != null
+            && world.BorderHomes[(int)Border.Mountains] is { } fold
+        )
+        {
+            // Beside the shepherd with his fold; out on a road with five sheep behind the car; before a lost sheep on its
+            // meadow; or the fold with seven sheep home.
+            var gate = shepherd.Position - fold.Inward * 4 + fold.Right * 2;
+            vehicle.SetPose(world.Ground.At(gate.X, gate.Z, .15f), fold.Yaw + Mathf.Pi);
+            int[] none = System.Array.Empty<int>();
+            Sheep.Restore(
+                true,
+                view switch
+                {
+                    "sheep-panel" => new[] { 0, 3, 6 },
+                    "sheep-fold" => new[] { 0, 1, 2, 3, 4, 5, 6 },
+                    _ => none,
+                },
+                view switch
+                {
+                    "sheep-panel" => new[] { 5 },
+                    "sheep-herd" => new[] { 1, 2, 4, 5, 7 },
+                    _ => none,
+                }
+            );
+            UpdateSheep();
+            if (view == "sheep-panel")
+            {
+                nearby = shepherd;
+                OpenShepherd(shepherd);
+            }
+            if (view == "sheep-lost")
+            {
+                // On the way from the road, 14 m before the sheep, facing it: open ground, no tree in front of the camera.
+                var spot = world.SheepSpots[0];
+                var way = world.SheepWays[0];
+                var stand = way[0];
+                for (int i = way.Length - 1; i >= 0; i--)
+                    if (new Vector2(way[i].X - spot.X, way[i].Z - spot.Z).Length() >= 14)
+                    {
+                        stand = way[i];
+                        break;
+                    }
+                var toward = (spot - stand) with { Y = 0 };
+                toward = toward.Normalized();
+                vehicle.SetPose(world.Ground.At(stand.X, stand.Z, .15f), Mathf.Atan2(-toward.X, -toward.Z));
+            }
+            if (view == "sheep-herd")
+            {
+                // Along a road beyond the old valley, slowly, so that the sheep line up behind the car.
+                var samples = world.OutlandRoutes.Samples;
+                int start = samples.Count / 3;
+                for (int i = start; i < start + 90 && i + 1 < samples.Count; i++)
+                {
+                    var forward = (samples[i + 1] - samples[i]) with { Y = 0 };
+                    if (forward.LengthSquared() < .0001f || forward.LengthSquared() > 25)
+                        continue;
+                    var p = samples[i];
+                    vehicle.SetPose(world.Ground.At(p.X, p.Z, .15f), Mathf.Atan2(-forward.X, -forward.Z));
+                    TickSheep(.12);
+                }
+                for (int i = 0; i < 20; i++)
+                    TickSheep(.1);
+            }
+        }
         if (view == "log-yard" && world.LogYard is { } logYard)
             vehicle.SetPose(world.Ground.At(logYard.Position.X, logYard.Position.Z, .15f), 0);
         if (view is "beaver" or "load-question" && world.Beaver != null)

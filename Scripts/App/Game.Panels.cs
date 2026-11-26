@@ -63,6 +63,9 @@ public partial class Game
         Panel(GameState.TrackingStatus, _ =>
             nearby?.Role is BorderKeeperRole { Border: Valley.Border.Forest } && TrackingWanted && Shown(ShowTracking)
         );
+        Panel(GameState.ShepherdStatus, _ =>
+            nearby?.Role is BorderKeeperRole { Border: Valley.Border.Mountains } && SheepWanted && Shown(ShowShepherd)
+        );
         Panel(GameState.MayorShop, _ => nearby?.Role is MayorRole && Shown(ShowMayor));
         Panel(GameState.GlassmakerShop, _ => nearby?.Role is GlassmakerRole && Shown(ShowGlassmaker));
         Panel(GameState.SourceStatus, _ => nearby?.Role is SourceRole && Shown(ShowSource));

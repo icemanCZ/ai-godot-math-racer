@@ -109,6 +109,7 @@ public partial class Game
                         or Departure.Hunter
                         or Departure.Lighthouse
                         or Departure.Dragon
+                        or Departure.Sheep
                     ? quiz.DepartureState
                     : GameState.Title,
             },
@@ -186,6 +187,12 @@ public partial class Game
             },
             Balloon = new BalloonSave { Flights = balloonFlights, Stars = balloonStars },
             Tracking = new TrackingSave { Started = Tracking.Started, Found = Tracking.Found },
+            Sheep = new SheepSave
+            {
+                Started = Sheep.Started,
+                Home = Sheep.Home,
+                Following = Sheep.Found,
+            },
             Fireflies = new FirefliesSave { Caught = fireflies.Caught },
             Hunt = new HuntSave
             {
@@ -304,6 +311,8 @@ public partial class Game
         RestoreBalloon(data.Balloon.Flights, data.Balloon.Stars);
         // And the animals found on the forest keeper's trails, so that the squirrel knows whether she is owned.
         RestoreTracking(data.Tracking.Started, data.Tracking.Found);
+        // And the shepherd's sheep, so that the sheepdog puppy knows whether he is owned.
+        RestoreSheep(data.Sheep.Started, data.Sheep.Home, data.Sheep.Following);
         RestoreBuilds(data);
         UpdateDeliveryGuides();
         interaction.BeforePause = validEncounter ? data.State : GameState.Exploring;

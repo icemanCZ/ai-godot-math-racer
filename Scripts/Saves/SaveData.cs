@@ -92,6 +92,21 @@ public sealed class SaveData
 
     /// <summary>The forest keeper's book of tracks. Added after version 5 began.</summary>
     public TrackingSave Tracking { get; set; } = new();
+
+    /// <summary>The shepherd's lost sheep. Added after version 5 began.</summary>
+    public SheepSave Sheep { get; set; } = new();
+}
+
+/// <summary>
+/// The shepherd's lost sheep: whether he has sent the player out after them, the numbers of the sheep at home in his
+/// fold and of those found that walk behind the car (0 to <see cref="Buildings.SheepPlans.Sheep"/> - 1, in the order
+/// they were found). Where a found sheep is, is not saved; a save from before the sheep has none of it.
+/// </summary>
+public sealed class SheepSave
+{
+    public bool Started { get; set; }
+    public int[] Home { get; set; } = System.Array.Empty<int>();
+    public int[] Following { get; set; } = System.Array.Empty<int>();
 }
 
 /// <summary>

@@ -644,6 +644,23 @@ public partial class DeliveryPicture : Control
                     new Color("ffe27a")
                 );
         }
+        else if (Icon == "sheep")
+        {
+            // One of the shepherd's sheep from the side: a cloud of wool, a dark face with an ear, dark legs and a
+            // golden bell on a red collar.
+            var face = new Color("3b3433");
+            foreach (float x in new[] { 52f, 70f, 104f, 122f })
+                DrawLine(new(x, 96), new(x, 132), face, 9, true);
+            Oval(new(86, 82), new(52, 34), new("f6f1e6"));
+            foreach (var (x, y, r) in new[] { (52f, 72f, 20f), (78f, 58f, 22f), (106f, 60f, 21f), (122f, 80f, 18f) })
+                DrawCircle(new(x, y), r, new Color("fbf8f0"), true, -1, true);
+            Oval(new(140, 70), new(20, 24), face);
+            Oval(new(128, 52), new(14, 6), face);
+            DrawCircle(new(146, 64), 4, Colors.White, true, -1, true);
+            DrawCircle(new(147, 64), 2, new Color("1d1a1a"), true, -1, true);
+            DrawLine(new(124, 88), new(140, 96), new Color("c0392b"), 5, true);
+            DrawCircle(new(134, 102), 7, new Color("e8b938"), true, -1, true);
+        }
         else if (Icon == "net")
         {
             // The hunter's net: a round hoop of rope with a grid of knots inside and a short handle.

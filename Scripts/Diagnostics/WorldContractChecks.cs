@@ -182,6 +182,23 @@ internal static class WorldFingerprint
         return lines;
     }
 
+    /// <summary>
+    /// What came after the forest keeper's trails (<c>docs/SHEEP_PLAN.md</c>): the meadows of the shepherd's lost sheep
+    /// and the ways the car drives there from a road.
+    /// </summary>
+    internal static string SheepFileFor(int seed) => Path.Combine(Folder, $"seed-{seed}.sheep.txt");
+
+    internal static List<string> SheepLines(World world)
+    {
+        var lines = new List<string> { $"seed {Settings.Seed}", $"sheep meadows {world.SheepSpots.Count}" };
+        for (int i = 0; i < world.SheepSpots.Count; i++)
+            lines.Add(
+                $"sheep {i} meadow {P(world.SheepSpots[i])} way {world.SheepWays[i].Length}"
+                    + $" hash {Hash(world.SheepWays[i].Select(P))}"
+            );
+        return lines;
+    }
+
     internal static List<string> Lines(World world)
     {
         var lines = new List<string> { $"seed {Settings.Seed}" };
@@ -291,6 +308,14 @@ public partial class WorldFingerprintWriter : Node
                 File.WriteAllLines(tracking, WorldFingerprint.TrackingLines(world));
                 GD.Print($"WROTE: {tracking}");
             }
+            string sheep = WorldFingerprint.SheepFileFor(Settings.Seed);
+            if (File.Exists(sheep))
+                GD.Print($"KEPT: {sheep} already exists and stays as it is");
+            else
+            {
+                File.WriteAllLines(sheep, WorldFingerprint.SheepLines(world));
+                GD.Print($"WROTE: {sheep}");
+            }
             GetTree().Quit();
         }
         catch (Exception error)
@@ -340,6 +365,9 @@ public partial class WorldFingerprintChecks : Node
                 throw new InvalidOperationException(
                     $"No tracking fingerprint for seed {Settings.Seed}: {trackingPath}"
                 );
+            string sheepPath = WorldFingerprint.SheepFileFor(Settings.Seed);
+            if (!File.Exists(sheepPath))
+                throw new InvalidOperationException($"No sheep fingerprint for seed {Settings.Seed}: {sheepPath}");
             var expected = File.ReadAllLines(path)
                 .Concat(File.ReadAllLines(glassworksPath))
                 .Concat(File.ReadAllLines(outlandPath))
@@ -347,6 +375,7 @@ public partial class WorldFingerprintChecks : Node
                 .Concat(File.ReadAllLines(dragonPath))
                 .Concat(File.ReadAllLines(balloonPath))
                 .Concat(File.ReadAllLines(trackingPath))
+                .Concat(File.ReadAllLines(sheepPath))
                 .ToArray();
             var actual = WorldFingerprint
                 .Lines(world)
@@ -356,6 +385,7 @@ public partial class WorldFingerprintChecks : Node
                 .Concat(WorldFingerprint.DragonLines(world))
                 .Concat(WorldFingerprint.BalloonLines(world))
                 .Concat(WorldFingerprint.TrackingLines(world))
+                .Concat(WorldFingerprint.SheepLines(world))
                 .ToList();
             var different = new List<string>();
             for (int i = 0; i < Math.Max(expected.Length, actual.Count); i++)
@@ -445,6 +475,7 @@ public partial class ContractChecks : Node
         ("DragonStatus", 33),
         ("BalloonStatus", 34),
         ("TrackingStatus", 35),
+        ("ShepherdStatus", 36),
     };
 
     public override void _Ready()
@@ -678,8 +709,8 @@ public partial class ContractChecks : Node
     /// <summary>
     /// Where the valley ends while it is played (<see cref="ValleyBounds"/>) is asked only by the code that limits play:
     /// the car, the grass, the lamps, the fireflies, the wild animals and the hunt, the coast quarry beside the road to
-    /// the sea, the dragon's ledge and his mountain slope, the balloon station, the forest keeper's trails, and the
-    /// checks. The generation of the old valley keeps to <see cref="WorldTuning.CorePlayableRadius"/>, or a valley that
+    /// the sea, the dragon's ledge and his mountain slope, the balloon station, the forest keeper's trails, the
+    /// shepherd's sheep, and the checks. The generation of the old valley keeps to <see cref="WorldTuning.CorePlayableRadius"/>, or a valley that
     /// grows would move what saved games already have. A new use elsewhere is a decision to be made on purpose, and to be added here.
     /// </summary>
     private static void CheckValleyBounds()
@@ -697,6 +728,7 @@ public partial class ContractChecks : Node
             "Valley/World.Borderfolk.cs",
             "Valley/World.Balloon.cs",
             "Valley/World.Tracking.cs",
+            "Valley/World.Sheep.cs",
             "Valley/World.Dragon.cs",
             "Valley/World.Fireflies.cs",
             "Valley/World.Hunter.cs",

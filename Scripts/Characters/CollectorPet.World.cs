@@ -82,6 +82,12 @@ internal static class WorldPetCatalog
         $"{TrackingPlans.Animals} vystopovaných zvířátek"
     );
 
+    public static readonly WorldPetSpec Sheepdog = new(
+        CollectorPetKind.Sheepdog,
+        "Ovčácký pejsek Alík",
+        $"{SheepPlans.Sheep} oveček doma v ohradě"
+    );
+
     public static readonly WorldPetSpec Bridge = new(CollectorPetKind.Bridge, "Mostíček", "dostavěný most");
     public static readonly WorldPetSpec Mill = new(CollectorPetKind.Mill, "Mlýnek", "dostavěný mlýn");
     public static readonly WorldPetSpec Tower = new(CollectorPetKind.Tower, "Věžička", "dostavěnou rozhlednu");
@@ -262,6 +268,9 @@ internal sealed partial class CollectorPet
                 break;
             case CollectorPetKind.Squirrel:
                 BuildSquirrel();
+                break;
+            case CollectorPetKind.Sheepdog:
+                BuildSheepdog();
                 break;
             case CollectorPetKind.Bridge:
                 BuildBridge();
@@ -747,6 +756,34 @@ internal sealed partial class CollectorPet
             );
         }
         Eyes(.08f, 1.02f, .26f);
+    }
+
+    private void BuildSheepdog()
+    {
+        // A fluffy black and white sheepdog puppy sitting up: a white chest and blaze, floppy ears, a pink tongue, a
+        // little red neckerchief and a bushy tail with a white tip curled up beside him.
+        Ball(new(0, .44f, -.06f), new(.46f, .5f, .52f), "2f2a2a");
+        Ball(new(0, .5f, .16f), new(.3f, .4f, .18f), "fbf6ec");
+        Ball(new(0, .96f, .06f), new(.44f, .4f, .4f), "2f2a2a");
+        Ball(new(0, .9f, .22f), new(.16f, .3f, .14f), "fbf6ec");
+        Ball(new(0, .84f, .3f), new(.22f, .16f, .16f), "fbf6ec");
+        Ball(new(0, .88f, .39f), new(.08f, .06f, .05f), "1d1a1a");
+        Ball(new(0, .77f, .35f), new(.06f, .07f, .03f), "f08a8a");
+        foreach (int side in new[] { -1, 1 })
+        {
+            Ball(new(side * .2f, 1.02f, .02f), new(.12f, .24f, .08f), "2f2a2a").RotationDegrees = new(0, 0, side * 28);
+            Ball(new(side * .12f, .64f, .22f), new(.1f, .1f, .1f), "c0392b");
+            Foot(new(side * .14f, .22f, .12f), .22f, .11f, "fbf6ec", side);
+            Ball(new(side * .2f, .18f, -.12f), new(.16f, .14f, .26f), "2f2a2a");
+        }
+        Ball(new(0, .66f, .24f), new(.1f, .1f, .06f), "c0392b");
+        for (int i = 0; i < 3; i++)
+            Ball(
+                new(.24f + i * .04f, .26f + i * .14f, -.34f - i * .04f),
+                new(.14f - i * .02f, .16f, .14f - i * .02f),
+                i == 2 ? "fbf6ec" : "2f2a2a"
+            );
+        Eyes(.1f, .98f, .25f);
     }
 
     private void BuildMill()

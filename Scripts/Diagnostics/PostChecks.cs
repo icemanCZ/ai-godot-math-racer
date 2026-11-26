@@ -78,9 +78,12 @@ public partial class PostChecks : Node
             Check(post.Total == 0 && !post.Busy, "the post starts with no letter handed over and none carried");
             Check(pigeon != null && !pigeon.IsOwned && pigeon.Collector == postman, "the pigeon waits by the postman");
             Check(postman.Guided && !postman.GuidedThere, "the postman shows the yellow mark of a task");
+            // The shepherd needs no letter: he shows his mark from the start, until he sends the player after his sheep.
             Check(
-                world.Keepers.All(keeper => keeper is not { Guided: true }),
-                "no keeper shows a mark before a letter"
+                world.Keepers.All(keeper =>
+                    keeper is not { Guided: true } || keeper == world.Shepherd && world.SheepFlock != null
+                ),
+                "no keeper but the shepherd shows a mark before a letter"
             );
 
             // ---- Saves of the fresh valley ----

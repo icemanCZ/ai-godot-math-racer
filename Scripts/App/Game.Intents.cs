@@ -117,6 +117,12 @@ public partial class Game
             case UiIntent.TrackingStart:
                 BeginTracking();
                 break;
+            case UiIntent.SheepStart:
+                BeginSheepHunt();
+                break;
+            case UiIntent.SheepPen:
+                BeginSheepPen();
+                break;
             case UiIntent.StartFireflyHunt:
                 BeginFireflyHunt();
                 break;

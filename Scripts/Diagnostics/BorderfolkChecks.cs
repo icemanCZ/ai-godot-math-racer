@@ -122,8 +122,12 @@ public partial class BorderfolkChecks : Node
                 $"a car at the end of the road is beside the keeper of the {(Border)border}"
             );
             game.Interact();
+            // The shepherd shows his fold from the start in a valley with his sheep (docs/SHEEP_PLAN.md).
+            bool fold = border == (int)Border.Mountains && world.SheepFlock != null;
             Check(
-                game.State == GameState.KeeperStatus && Has("KeeperStamps"),
+                fold
+                    ? game.State == GameState.ShepherdStatus && Has("SheepFold")
+                    : game.State == GameState.KeeperStatus && Has("KeeperStamps"),
                 $"talking to the keeper of the {(Border)border} opens the keeper's panel"
             );
             game.FinishInteraction();

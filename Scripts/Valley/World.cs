@@ -166,6 +166,8 @@ public partial class World : Node3D
         outlandWayside.GenerateOutland(this);
         // The forest keeper's trails keep off every tree, so they are planned once the plants are.
         PlanTracking();
+        // The shepherd's sheep graze on open meadows and keep off the dens, so they are planned after the trails.
+        PlanSheep();
         BuildBorderfolk();
         // The postman stood in front of the post office all along; he is registered last, so that no search that keeps
         // clear of the characters (the treasures, the fireflies, the wayside things) moves for him.

@@ -97,6 +97,11 @@ internal abstract record UiIntent
     // The forest keeper's book of tracks: out after the first animal's trail.
     internal sealed record TrackingStart : UiIntent;
 
+    // The shepherd's fold: out after his lost sheep, and the sheep that follow the car into the fold.
+    internal sealed record SheepStart : UiIntent;
+
+    internal sealed record SheepPen : UiIntent;
+
     // The witch's night panel: the firefly hunt, or the weather question.
     internal sealed record StartFireflyHunt : UiIntent;
 

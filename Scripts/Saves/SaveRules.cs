@@ -42,6 +42,7 @@ internal static class SaveRules
         ("dragon", HasInvalidDragon),
         ("balloon station", HasInvalidBalloon),
         ("forest keeper's book of tracks", HasInvalidTracking),
+        ("shepherd's lost sheep", HasInvalidSheep),
         ("time of day", HasInvalidDay),
         ("decorations and the mayor's shop", HasInvalidDecorations),
         ("glass lamps and the lamp maker's shop", HasInvalidLamps),
@@ -85,6 +86,9 @@ internal static class SaveRules
         || data.Dragon is null
         || data.Balloon is null
         || data.Tracking is null
+        || data.Sheep is null
+        || data.Sheep.Home is null
+        || data.Sheep.Following is null
         || data.Day is null;
 
     /// <summary>Throws when the save is not one the game can restore.</summary>
@@ -244,6 +248,10 @@ internal static class SaveRules
             Game.Departure.Dragon => data.Nearby != World.DragonId
                 || data.Quiz.DepartureState != GameState.DragonStatus
                 || data.Dragon.Stage >= DragonPlans.Trips,
+            Game.Departure.Sheep => data.Nearby != World.ShepherdId
+                || data.Quiz.DepartureState != GameState.ShepherdStatus
+                || !data.Sheep.Started
+                || data.Sheep.Following.Length == 0,
             // The works' missing goods are asked for from a builder, a newcomer, a resident or the lamp maker.
             Game.Departure.Missing => data.Quiz.DepartureState switch
             {
@@ -516,7 +524,9 @@ internal static class SaveRules
         bool lighthouse =
             data.Nearby == World.FirstBorderKeeperId && (Game.Departure)data.Quiz.Departure == Game.Departure.Lighthouse
             || AsksForLighthouse(data);
-        return !letter && !lighthouse;
+        // The question before the shepherd's sheep go into his fold.
+        bool sheep = data.Nearby == World.ShepherdId && (Game.Departure)data.Quiz.Departure == Game.Departure.Sheep;
+        return !letter && !lighthouse && !sheep;
     }
 
     /// <summary>The lighthouse has 0 to 8 deliveries, begun only after the first letter to the keeper of the sea.</summary>
@@ -610,6 +620,20 @@ internal static class SaveRules
                 && (data.Quiz.Departure != 0 || !tracking.Started || tracking.Found >= TrackingPlans.Animals)
             )
             || (data.State == GameState.Reward && tracking.Found == 0);
+    }
+
+    /// <summary>
+    /// The shepherd's sheep: known numbers, each at most once and never both at home and found, none of either before
+    /// he sent the player out, and his fold's panel only at the shepherd.
+    /// </summary>
+    private static bool HasInvalidSheep(SaveData data)
+    {
+        var sheep = data.Sheep;
+        var all = sheep.Home.Concat(sheep.Following).ToArray();
+        return all.Any(number => number is < 0 or >= SheepPlans.Sheep)
+            || all.Distinct().Count() != all.Length
+            || (!sheep.Started && all.Length > 0)
+            || (data.State == GameState.ShepherdStatus && data.Nearby != World.ShepherdId);
     }
 
     /// <summary>The clock of the day is a number of seconds within one day.</summary>

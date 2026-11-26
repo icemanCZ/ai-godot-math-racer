@@ -766,4 +766,77 @@ internal static class Texts
     public static string TrackingTrail(TrackingAnimal animal) => $"Stopa {TrackingPlans.Whose(animal)}";
 
     public static string TrackingBookCount(int found, int all) => $"Vystopováno {found} z {all}";
+
+    // GameUi.Sheep and Game.Sheep
+    public const string SheepTitle = "Ovečky pastýře Bohouše";
+    public const string SheepWanted =
+        "V noci byla bouřka a osm mých oveček se vyplašilo a uteklo do všech koutů kraje. Doma mám jen tři. Pomůžeš mi je najít?";
+    public const string SheepHowTo =
+        "Ovečky mají zvonečky. Dojeď k ovečce a půjde za autem. Jeď pomalu, ať ti stačí, a přiveď je sem k ohradě.";
+    public const string SheepStart = "Jdu hledat ovečky";
+    public const string SheepPenButton = "Zahnat ovečky do ohrady";
+    public const string SheepGoLook = "Děkuju! Šipka nahoře ti ukáže nejbližší ovečku. Poslouchej, jak zvoní zvoneček!";
+    public const string SheepPenQuestion = "Vyřeš příklad a ovečky skočí přes ohradu!";
+    public const string SheepAllHome =
+        "Celé moje stádo je doma! Všechny ovečky jsou v ohradě a pejsek Alík teď půjde s tebou.";
+    public const string SheepLeftBehind = "Bé! Jedna ovečka nestačila a zůstala pozadu. Vrať se pro ni!";
+    public const string SheepSlowDown = "Pomalu, ovečky nestačí!";
+    public const string SheepTakeHome = "Odveď ovečky k Bohoušovi.";
+    public const string SheepFindMore = "Najdi další, nebo je odveď k Bohoušovi.";
+    public const string SheepListen = "Ovečka se pase tímhle směrem.";
+    public const string SheepLost = "?";
+
+    /// <summary>"1 ovečka", "3 ovečky", "5 oveček".</summary>
+    public static string SheepCount(int count) =>
+        count switch
+        {
+            1 => "1 ovečka",
+            >= 2 and <= 4 => $"{count} ovečky",
+            _ => $"{count} oveček",
+        };
+
+    public static string SheepBrought(int following) =>
+        following == 1
+            ? "Jé, ovečka se vrátila! Zaženeme ji do ohrady?"
+            : $"Jé, ovečky se vrátily! Za autem: {SheepCount(following)}. Zaženeme je do ohrady?";
+
+    public static string SheepStillLost(int lost) => $"Venku jsou ještě ovečky: {lost}. Poslouchej zvonečky!";
+
+    public static string SheepThanks(int lost) =>
+        lost == 0 ? "Děkuju! Už jsou skoro všechny doma." : $"Děkuju! Venku jsou ještě ovečky: {lost}.";
+
+    public static string SheepJoined(string name, int following) =>
+        following == 1 ? $"Bé! {name} jde za tebou." : $"Bé! {name} jde za tebou. Za autem: {SheepCount(following)}";
+
+    public static string SheepGoBack(string name) => $"Ovečka {name} čeká pozadu. Vrať se pro ni!";
+
+    public static string SheepPenned(int penned, int home, int all) => $"Hop, hop, přes ohradu! Doma {home} / {all}";
+
+    public static string SheepFlockDone(int coins) => $"Celé stádo je doma!  +{coins}";
+
+    public static string SheepHome(int home, int all) => $"Doma {home} / {all}";
+
+    public static string SheepBehind(int following) => following == 0 ? "" : $"Za autem {following}";
+
+    /// <summary>Where a lost sheep grazes, near one border: "u moře", "pod horami", "u řeky", "u lesa".</summary>
+    public static string SheepNear(Border border) =>
+        border switch
+        {
+            Border.Sea => "u moře",
+            Border.Mountains => "pod horami",
+            Border.River => "u řeky",
+            _ => "u lesa",
+        };
+
+    /// <summary>Where a lost sheep grazes, in a corner between two borders: "mezi horami a lesem".</summary>
+    public static string SheepBetween(Border along, Border across) => $"mezi {With(along)} a {With(across)}";
+
+    private static string With(Border border) =>
+        border switch
+        {
+            Border.Sea => "mořem",
+            Border.Mountains => "horami",
+            Border.River => "řekou",
+            _ => "lesem",
+        };
 }

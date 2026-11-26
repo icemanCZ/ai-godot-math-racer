@@ -93,6 +93,8 @@ public partial class Game
             return;
         if (role.Border == Border.Forest && OpenTracking(keeper))
             return;
+        if (role.Border == Border.Mountains && OpenShepherd(keeper))
+            return;
         EnterInteraction(GameState.KeeperStatus, keeper);
         ShowKeeper();
         Speak(Post.Delivered[border] == 0 ? keeper.Greeting : Texts.KeeperAbout(role.Border), keeper);
@@ -194,7 +196,8 @@ public partial class Game
             keeper?.Guide(
                 keeper == addressee
                     || keeper == world.LighthouseKeeper && LighthouseAwaitsLoad
-                    || keeper == world.Forester && TrackingAwaitsStart,
+                    || keeper == world.Forester && TrackingAwaitsStart
+                    || keeper == world.Shepherd && SheepAwaitShepherd,
                 keeper == addressee
             );
         world.Postman?.Guide(!Post.Busy && NextKeeper() != null);

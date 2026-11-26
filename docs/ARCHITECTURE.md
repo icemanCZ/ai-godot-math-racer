@@ -494,6 +494,37 @@ furthest print is found again from where the car stands. Checked by `tracking-ch
 the views `tracking`, `tracking-panel`, `tracking-trail`, `tracking-night`, `tracking-lost`, `tracking-den`,
 `tracking-dens` and `tracking-dens-night`.
 
+### `SheepHerd`, `SheepFlock`, `SheepPlans`, `World.Sheep` and `Game.Sheep`
+
+The shepherd's lost sheep (`docs/SHEEP_PLAN.md`). `World.PlanSheep` runs after the trails are planned, with random
+numbers of its own (`Settings.Seed + 8311`), and chooses eight meadows, one in every eighth of the land round the valley
+between the ring road and the borders (anywhere round the valley where none fits in its eighth). A meadow
+(`SheepSpotFits`) lies on open, nearly level, dry ground off the roads, the rivers, the sand and the bridges, 160 m from
+the other meadows, 150 m from the shepherd's homestead and 80 m from the other homesteads, the lighthouse, the dragon
+and the balloon, with no trunk on it; `SheepWay` asks `TrackingPath` for a way the car can drive to it from the nearest
+open point of a road beyond the old valley. The meadows take no ground: no plant and no grass is left out for them, so
+nothing that was there moves. A valley where the eight cannot all be found gets no sheep.
+`Tests/Worlds/seed-N.sheep.txt` holds the meadows; planning takes some 40 ms.
+
+Zajíc pastýř Bohouš, the keeper of the mountain border, shows his fold from the start, with no letter needed
+(`SheepWanted`; `GameState.ShepherdStatus` 36, `GameUi.ShepherdPanel`), and his green arrow (`UiIntent.SheepStart`)
+sends the player out. `SheepHerd` is the herd without scene nodes: the status of every sheep (`SheepStatus`: lost,
+following, waiting, home) and how far the followers are behind the car along its way, kept in a `CompanionPath` of 480
+points. A lost or waiting sheep within `FindRadius` (9 m) joins; the followers line up behind the car at `Slot` and run
+at most `Run` (12 m/s), so a car that drives faster leaves them behind: past `LagWarning` the corner panel asks for a
+slower drive, and a sheep `StrayDistance` (60 m) behind its place stops and waits with a beacon over it until the car
+comes back. It is stepped by the system `sheep` (`Game.TickSheep`), whose corner panel (`GameUi.SheepHud`) points to a
+sheep left behind first, then home once three sheep follow or none is left to find, else to the nearest lost sheep.
+
+`SheepFlock` draws the eight sheep with bells, bleats and beacons, grazing on their meadows (hidden until the player is
+sent out), trotting behind the car or waiting. The shepherd's second button (`UiIntent.SheepPen`) asks a question first
+(`Departure.Sheep`); then the followers run to the fold of his homestead (`SheepPlans.FoldSpots`, beside the three sheep
+of the model that never ran off), jump over the front rail one after another and count themselves. Every sheep pays
+`SheepPlans.CoinsPerSheep`, the whole flock `FlockCoins` and the sheepdog puppy (`CollectorPetKind.Sheepdog`). Saved as
+`SaveData.Sheep` (`Started`, `Home`, `Following`; rule `HasInvalidSheep`); a following or waiting sheep is put right
+behind the car after a load. Checked by `sheep-checks`; `run.ps1 -Capture` shows it with the views `sheep`,
+`sheep-panel`, `sheep-herd`, `sheep-lost` and `sheep-fold`.
+
 ### `MayorRole`, `TownDecorations` and `Village.Mayor`
 
 The mayor (`ActorIds.Mayor` 68, `MayorRole`, `GameState.MayorShop` 23) stands on the village square and sells eight

@@ -15,11 +15,16 @@ internal sealed class CompanionPath
     /// <summary>A step of the car longer than this is a jump (a reset or a teleport), and the old way is forgotten.</summary>
     private const float Jump = 8;
 
-    /// <summary>The points kept, more than the longest trail of pets needs.</summary>
-    private const int MaxPoints = 220;
+    /// <summary>The points kept by default, more than the longest trail of pets needs.</summary>
+    private const int DefaultPoints = 220;
 
     /// <summary>The points of the way, the oldest first.</summary>
     private readonly List<Vector3> points = new();
+
+    private readonly int maxPoints;
+
+    /// <param name="maxPoints">How many points are kept: half a metre each, so 220 keep the last 110 m.</param>
+    internal CompanionPath(int maxPoints = DefaultPoints) => this.maxPoints = maxPoints;
 
     internal void Clear() => points.Clear();
 
@@ -35,8 +40,8 @@ internal sealed class CompanionPath
             points.RemoveAt(points.Count - 1);
         if (points.Count == 0 || Flat(points[^1] - car).LengthSquared() >= Spacing * Spacing)
             points.Add(car);
-        if (points.Count > MaxPoints)
-            points.RemoveRange(0, points.Count - MaxPoints);
+        if (points.Count > maxPoints)
+            points.RemoveRange(0, points.Count - maxPoints);
     }
 
     /// <summary>

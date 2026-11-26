@@ -677,6 +677,25 @@ public partial class VisualCapture : Node
             camera.LookAt(trail.Den + Vector3.Up * .6f);
         }
         else if (view is "tracking" or "tracking-panel" or "tracking-trail" or "tracking-night" or "tracking-lost") { }
+        else if (view == "sheep-herd")
+        {
+            // In front of the car and to the side, looking back past it at the sheep that trot behind it.
+            camera.SetProcess(false);
+            var back = car.GlobalBasis.Z with { Y = 0 };
+            back = back.Normalized();
+            var side = Vector3.Up.Cross(back);
+            camera.GlobalPosition = car.GlobalPosition - back * 9 + side * 6 + Vector3.Up * 4.5f;
+            camera.LookAt(car.GlobalPosition + back * 9 + Vector3.Up * .5f);
+        }
+        else if (view == "sheep-fold" && world.BorderHomes[(int)Border.Mountains] != null)
+        {
+            // The fold from its front corner and above, clear of the shepherd at the gate: the sheep at home behind its
+            // rails, the hut beside them.
+            camera.SetProcess(false);
+            camera.GlobalPosition = world.FoldPoint(11.5f, -.5f) + Vector3.Up * 5.5f;
+            camera.LookAt(world.FoldMiddle + Vector3.Up * .6f);
+        }
+        else if (view is "sheep" or "sheep-panel" or "sheep-lost") { }
         else if (view == "hunter-close" && world.Hunter is { } hunterClose)
         {
             // The hunter from the front and a little above, with his hat, waistcoat and landing net.

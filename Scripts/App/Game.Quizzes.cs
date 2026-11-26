@@ -36,6 +36,9 @@ public partial class Game
 
         /// <summary>Sand, stone and logs from the mountain slope for the dragon's nest.</summary>
         Dragon,
+
+        /// <summary>Not a trip: the shepherd's question before the sheep that follow the car go into his fold.</summary>
+        Sheep,
     }
 
     /// <summary>Asks the quiz that must be solved before a trip starts; the trip continues in StartDeparture.</summary>
