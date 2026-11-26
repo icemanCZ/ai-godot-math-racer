@@ -94,6 +94,9 @@ internal abstract record UiIntent
     // The balloon station: a flight in the hot-air balloon, after the question that heats its air.
     internal sealed record BalloonFlight : UiIntent;
 
+    // The forest keeper's book of tracks: out after the first animal's trail.
+    internal sealed record TrackingStart : UiIntent;
+
     // The witch's night panel: the firefly hunt, or the weather question.
     internal sealed record StartFireflyHunt : UiIntent;
 

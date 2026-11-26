@@ -120,6 +120,9 @@ public static class Art
                 // The balloon station: an envelope with its gores, the ropes and the basket.
                 "balloon" =>
                     "M66 12 C28 12 20 50 34 70 L54 94 H78 L98 70 C112 50 104 12 66 12 Z M66 12 C52 30 54 70 60 94 M66 12 C80 30 78 70 72 94 M56 104 H76 V120 H56 Z M56 94 V104 M76 94 V104",
+                // The animal at the end of a trail of the forest keeper: a paw print, a pad and four toes.
+                "paw" =>
+                    "M40 98 Q40 72 66 72 Q92 72 92 98 Q92 114 66 114 Q40 114 40 98 Z M20 60 a10 12 0 1 0 20 0 a10 12 0 1 0 -20 0 M42 38 a10 12 0 1 0 20 0 a10 12 0 1 0 -20 0 M70 38 a10 12 0 1 0 20 0 a10 12 0 1 0 -20 0 M92 60 a10 12 0 1 0 20 0 a10 12 0 1 0 -20 0",
                 _ =>
                     "M81 29 A15 15 0 1 1 51 29 A15 15 0 1 1 81 29 Z M44 111 V77 L31 88 L22 77 L46 53 H86 L110 77 L101 88 L88 77 V111 H73 V88 H59 V111 Z",
             };

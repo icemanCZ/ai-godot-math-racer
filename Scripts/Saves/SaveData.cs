@@ -89,6 +89,20 @@ public sealed class SaveData
 
     /// <summary>The balloon station far beyond the village. Added after version 5 began.</summary>
     public BalloonSave Balloon { get; set; } = new();
+
+    /// <summary>The forest keeper's book of tracks. Added after version 5 began.</summary>
+    public TrackingSave Tracking { get; set; } = new();
+}
+
+/// <summary>
+/// The forest keeper's book of tracks: whether she has sent the player out after the first trail, and how many of its
+/// animals are found (0 to <see cref="Buildings.TrackingPlans.Animals"/>), which is also the trail followed now. How far
+/// along it the car is, is not saved; a save from before the trails has none of it.
+/// </summary>
+public sealed class TrackingSave
+{
+    public bool Started { get; set; }
+    public int Found { get; set; }
 }
 
 /// <summary>

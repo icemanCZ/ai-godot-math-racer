@@ -95,6 +95,7 @@ internal static class DiagnosticSuites
         new("lighthouse-checks", (g, w, v) => new LighthouseChecks(g, w, v), Seeds: ThreeSeeds),
         new("dragon-checks", (g, w, v) => new DragonChecks(g, w, v), Seeds: ThreeSeeds),
         new("balloon-checks", (g, w, v) => new BalloonChecks(g, w, v), Seeds: ThreeSeeds),
+        new("tracking-checks", (g, w, v) => new TrackingChecks(g, w, v), Seeds: ThreeSeeds),
         new(
             "weather-checks",
             (g, w, v) => new WeatherChecks(g, w, v),

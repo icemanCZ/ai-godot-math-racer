@@ -105,6 +105,12 @@ internal static class ActorIds
     /// <summary>The balloonist of the balloon station beside a road far beyond the village.</summary>
     public const int Balloonist = Dragon + 1;
 
+    /// <summary>
+    /// The animal at the end of the forest keeper's trail followed now, coaxed out of its den: one character without a
+    /// body of its own that moves on from den to den.
+    /// </summary>
+    public const int TrackingAnimal = Balloonist + 1;
+
     /// <summary>The highest actor ID that a save may name.</summary>
-    public const int Last = Balloonist;
+    public const int Last = TrackingAnimal;
 }

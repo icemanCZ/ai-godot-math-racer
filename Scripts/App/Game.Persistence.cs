@@ -185,6 +185,7 @@ public partial class Game
                 Flown = dragonFlown,
             },
             Balloon = new BalloonSave { Flights = balloonFlights, Stars = balloonStars },
+            Tracking = new TrackingSave { Started = Tracking.Started, Found = Tracking.Found },
             Fireflies = new FirefliesSave { Caught = fireflies.Caught },
             Hunt = new HuntSave
             {
@@ -301,6 +302,8 @@ public partial class Game
         RestoreDragon(data.Dragon.Stage, data.Dragon.Riddle, data.Dragon.Flown);
         // And the balloon's stars, so that the rooster knows how many were caught.
         RestoreBalloon(data.Balloon.Flights, data.Balloon.Stars);
+        // And the animals found on the forest keeper's trails, so that the squirrel knows whether she is owned.
+        RestoreTracking(data.Tracking.Started, data.Tracking.Found);
         RestoreBuilds(data);
         UpdateDeliveryGuides();
         interaction.BeforePause = validEncounter ? data.State : GameState.Exploring;

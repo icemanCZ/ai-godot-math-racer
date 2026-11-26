@@ -176,6 +176,7 @@ Kratší návrhy pro další strážce, podle vzoru majáku:
 - **Ovečky pastýře Bohouše:** stádo se rozuteče po pásu a dítě ho autem zažene zpátky do ohrádky. Ovečky utíkají před
   autem jako zvířata u lovce.
 - **Krmelec hajné Boženy:** dovoz obilí a sena do krmelce v lese. V noci pak ke krmelci chodí jeleni a srnky.
+  Božena dostala jinou činnost, stopy šesti zvířátek napříč pásem: `docs/TRACKING_PLAN.md`.
 - **Pramice převoznice Venduly:** postaví se přívoz přes hraniční řeku a auto se po ní převeze na ostrůvek s
   ptačí pozorovatelnou.
 - **Rallye po okruhu:** razítkovací stanoviště u strážců a jízda na čas po celém okruhu.

@@ -164,6 +164,24 @@ internal static class WorldFingerprint
         return lines;
     }
 
+    /// <summary>
+    /// What came after the balloon station (<c>docs/TRACKING_PLAN.md</c>): the dens of the forest keeper's trails, the
+    /// ways between them and their prints.
+    /// </summary>
+    internal static string TrackingFileFor(int seed) => Path.Combine(Folder, $"seed-{seed}.tracking.txt");
+
+    internal static List<string> TrackingLines(World world)
+    {
+        var lines = new List<string> { $"seed {Settings.Seed}", $"tracking trails {world.TrackingTrails.Count}" };
+        foreach (var trail in world.TrackingTrails)
+            lines.Add(
+                $"trail {trail.Animal} den {P(trail.Den)} length {F(trail.Length)} prints {trail.Prints.Length}"
+                    + $" hash {Hash(trail.Path.Select(P))}"
+            );
+        lines.Add($"trees left out {world.Plants.OutlandTreePositions.Count(world.InTrackingZone)}");
+        return lines;
+    }
+
     internal static List<string> Lines(World world)
     {
         var lines = new List<string> { $"seed {Settings.Seed}" };
@@ -265,6 +283,14 @@ public partial class WorldFingerprintWriter : Node
                 File.WriteAllLines(balloon, WorldFingerprint.BalloonLines(world));
                 GD.Print($"WROTE: {balloon}");
             }
+            string tracking = WorldFingerprint.TrackingFileFor(Settings.Seed);
+            if (File.Exists(tracking))
+                GD.Print($"KEPT: {tracking} already exists and stays as it is");
+            else
+            {
+                File.WriteAllLines(tracking, WorldFingerprint.TrackingLines(world));
+                GD.Print($"WROTE: {tracking}");
+            }
             GetTree().Quit();
         }
         catch (Exception error)
@@ -309,12 +335,18 @@ public partial class WorldFingerprintChecks : Node
             string balloonPath = WorldFingerprint.BalloonFileFor(Settings.Seed);
             if (!File.Exists(balloonPath))
                 throw new InvalidOperationException($"No balloon fingerprint for seed {Settings.Seed}: {balloonPath}");
+            string trackingPath = WorldFingerprint.TrackingFileFor(Settings.Seed);
+            if (!File.Exists(trackingPath))
+                throw new InvalidOperationException(
+                    $"No tracking fingerprint for seed {Settings.Seed}: {trackingPath}"
+                );
             var expected = File.ReadAllLines(path)
                 .Concat(File.ReadAllLines(glassworksPath))
                 .Concat(File.ReadAllLines(outlandPath))
                 .Concat(File.ReadAllLines(coastPath))
                 .Concat(File.ReadAllLines(dragonPath))
                 .Concat(File.ReadAllLines(balloonPath))
+                .Concat(File.ReadAllLines(trackingPath))
                 .ToArray();
             var actual = WorldFingerprint
                 .Lines(world)
@@ -323,6 +355,7 @@ public partial class WorldFingerprintChecks : Node
                 .Concat(WorldFingerprint.CoastLines(world))
                 .Concat(WorldFingerprint.DragonLines(world))
                 .Concat(WorldFingerprint.BalloonLines(world))
+                .Concat(WorldFingerprint.TrackingLines(world))
                 .ToList();
             var different = new List<string>();
             for (int i = 0; i < Math.Max(expected.Length, actual.Count); i++)
@@ -411,6 +444,7 @@ public partial class ContractChecks : Node
         ("LighthouseStatus", 32),
         ("DragonStatus", 33),
         ("BalloonStatus", 34),
+        ("TrackingStatus", 35),
     };
 
     public override void _Ready()
@@ -479,7 +513,8 @@ public partial class ContractChecks : Node
                 && ActorIds.LastBorderKeeper == 77
                 && ActorIds.Postman == 78
                 && ActorIds.Dragon == 79
-                && ActorIds.Balloonist == 80,
+                && ActorIds.Balloonist == 80
+                && ActorIds.TrackingAnimal == 81,
             "the actor ID ranges are the ones saved games use"
         );
 
@@ -518,6 +553,7 @@ public partial class ContractChecks : Node
                 : id == World.PostmanId ? nameof(PostmanRole)
                 : World.IsDragon(id) ? nameof(DragonRole)
                 : World.IsBalloonist(id) ? nameof(BalloonistRole)
+                : World.IsTrackingAnimal(id) ? nameof(TrackingAnimalRole)
                 : "(no actor may have this ID)";
             Check(actor.Role.GetType().Name == expected, $"ID {id} ({actor.DisplayName}) is a {expected}");
             if (actor.Role is HouseResidentRole house)
@@ -642,9 +678,9 @@ public partial class ContractChecks : Node
     /// <summary>
     /// Where the valley ends while it is played (<see cref="ValleyBounds"/>) is asked only by the code that limits play:
     /// the car, the grass, the lamps, the fireflies, the wild animals and the hunt, the coast quarry beside the road to
-    /// the sea, the dragon's ledge and his mountain slope, the balloon station, and the checks. The generation of the
-    /// old valley keeps to <see cref="WorldTuning.CorePlayableRadius"/>, or a valley that grows would move what saved
-    /// games already have. A new use elsewhere is a decision to be made on purpose, and to be added here.
+    /// the sea, the dragon's ledge and his mountain slope, the balloon station, the forest keeper's trails, and the
+    /// checks. The generation of the old valley keeps to <see cref="WorldTuning.CorePlayableRadius"/>, or a valley that
+    /// grows would move what saved games already have. A new use elsewhere is a decision to be made on purpose, and to be added here.
     /// </summary>
     private static void CheckValleyBounds()
     {
@@ -660,6 +696,7 @@ public partial class ContractChecks : Node
             "Valley/Wildlife.cs",
             "Valley/World.Borderfolk.cs",
             "Valley/World.Balloon.cs",
+            "Valley/World.Tracking.cs",
             "Valley/World.Dragon.cs",
             "Valley/World.Fireflies.cs",
             "Valley/World.Hunter.cs",

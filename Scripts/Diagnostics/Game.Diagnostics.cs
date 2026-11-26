@@ -648,6 +648,54 @@ public partial class Game
                 balloonRide!.Place(way.StarDistance(2) - 36, balloonRide.StarHeight(2) - 3);
             }
         }
+        if (view.StartsWith("tracking") && world.Forester is { } forester && world.TrackingTrails.Count > 0)
+        {
+            // Beside the forest keeper with her book; on a trail, the car on its prints; at a den, with its animal.
+            var trails = world.TrackingTrails;
+            vehicle.SetPose(world.Ground.At(forester.Position.X + 4, forester.Position.Z + 4, .15f), 0);
+            if (view is "tracking-night" or "tracking-dens-night")
+                Weather.Begin(WeatherKind.Night, instant: true);
+            if (view == "tracking-panel")
+            {
+                // Two animals found and the third followed.
+                Tracking.Restore(true, 2, vehicle.Position);
+                UpdateTracking();
+                nearby = forester;
+                OpenTracking(forester);
+            }
+            if (view is "tracking-trail" or "tracking-night" or "tracking-lost")
+            {
+                // On the second trail, a little way along it, facing on.
+                Tracking.Restore(true, 1, Vector3.Zero);
+                var trail = trails[1];
+                int at = Mathf.Min(30, trail.Prints.Length - 1);
+                var print = trail.Prints[at];
+                var forward = print.Forward;
+                var pose = print.Position - forward * 4;
+                if (view == "tracking-lost")
+                    pose += Vector3.Up.Cross(forward) * 40;
+                vehicle.SetPose(
+                    world.Ground.At(pose.X, pose.Z, .15f),
+                    Mathf.Atan2(-forward.X, -forward.Z) + (view == "tracking-lost" ? 1.2f : 0)
+                );
+                Tracking.Step(vehicle.Position);
+                UpdateTracking();
+            }
+            if (view is "tracking-den" or "tracking-dens" or "tracking-dens-night")
+            {
+                // Before the third den with its animal peeping out, or every animal found.
+                Tracking.Restore(true, view == "tracking-den" ? 2 : trails.Count, Vector3.Zero);
+                UpdateTracking();
+                if (view == "tracking-den")
+                {
+                    // The car has just arrived, beside the den and out of the camera's way.
+                    var den = trails[2];
+                    var toward = new Vector3(Mathf.Sin(den.Yaw), 0, Mathf.Cos(den.Yaw));
+                    var stand = den.Den + toward * 4 - Vector3.Up.Cross(toward) * 3.5f;
+                    vehicle.SetPose(world.Ground.At(stand.X, stand.Z, .15f), Mathf.Atan2(toward.X, toward.Z));
+                }
+            }
+        }
         if (view == "log-yard" && world.LogYard is { } logYard)
             vehicle.SetPose(world.Ground.At(logYard.Position.X, logYard.Position.Z, .15f), 0);
         if (view is "beaver" or "load-question" && world.Beaver != null)

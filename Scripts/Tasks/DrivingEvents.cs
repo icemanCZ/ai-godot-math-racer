@@ -78,6 +78,7 @@ public partial class DrivingEvents : Node3D
                         or PostmanRole
                         or DragonRole
                         or BalloonistRole
+                        or TrackingAnimalRole
                     )
             )
             .ToArray();

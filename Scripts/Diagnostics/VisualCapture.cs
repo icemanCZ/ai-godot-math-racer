@@ -666,6 +666,17 @@ public partial class VisualCapture : Node
             camera.Fov = 40;
         }
         else if (view is "balloon-panel" or "balloon-flight") { }
+        else if (view is "tracking-den" or "tracking-dens" or "tracking-dens-night" && world.TrackingTrails.Count > 2)
+        {
+            // In front of a den, a little above, as the car arrives along the trail: the den and its animal.
+            camera.SetProcess(false);
+            var trail = world.TrackingTrails[view == "tracking-den" ? 2 : 1];
+            var toward = new Vector3(Mathf.Sin(trail.Yaw), 0, Mathf.Cos(trail.Yaw));
+            var eye = trail.Den + toward * 7 + Vector3.Up.Cross(toward) * 2;
+            camera.GlobalPosition = world.Ground.At(eye.X, eye.Z) + Vector3.Up * 2.6f;
+            camera.LookAt(trail.Den + Vector3.Up * .6f);
+        }
+        else if (view is "tracking" or "tracking-panel" or "tracking-trail" or "tracking-night" or "tracking-lost") { }
         else if (view == "hunter-close" && world.Hunter is { } hunterClose)
         {
             // The hunter from the front and a little above, with his hat, waistcoat and landing net.

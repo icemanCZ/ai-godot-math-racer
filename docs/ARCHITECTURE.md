@@ -454,6 +454,46 @@ the hidden friends below are lit. Every star pays a coin, all eight a bonus, the
 Checked by `balloon-checks`; `run.ps1 -Capture` shows it with the views `balloon`, `balloon-night`, `balloon-far`,
 `balloon-far-night`, `balloon-panel` and `balloon-flight`.
 
+### `TrackingTrail`, `TrackingPath`, `TrackingPrints`, `TrackingDens`, `TrackingHunt` and `World.Tracking`
+
+The forest keeper's book of tracks (`docs/TRACKING_PLAN.md`). `World.PlanTracking` runs once every plant of the land
+beyond the old valley is planned, with random numbers of its own (`Settings.Seed + 8123`), and lays six trails
+(`TrackingTrail`, the animals of `TrackingAnimal`) one after another: from beside the end of the forest keeper's road
+(`TrailStarts`, `StartOpen`) to a den some 270 to 440 m further round the valley, and from each den to the next. A den
+(`DenFits`) lies on level dry ground between the ring road and the borders, off the roads, the rivers, the sand and the
+bridges, 200 m from the other dens and 90 m from the homesteads, the lighthouse, the dragon and the balloon, with no
+planned tree anywhere on it; a den after which none fits is chosen again elsewhere, and where the six cannot be found
+from one start, the next start is tried. The dens are left out of the plants, the grass and the wayside things through
+`InTrackingZone`, which `InBorderfolkZone` asks, so nothing that was there before moves;
+`Tests/Worlds/seed-N.tracking.txt` holds the dens and the ways.
+
+`TrackingPath` finds a way with A* on a grid of 4 m over the cells where the car can drive (`TrailOpen`: out of the
+water, the sand and the bridges, 3.2 m from every trunk, slopes up to 0.3), with the roads and the woods costing more,
+searches only the ellipse in which the way can be at most 1.6 times the straight line (so a search with no way ends
+soon), pulls the way straight where the straight line is open, rounds its corners and walks every finished piece metre
+by metre; a way that fails is turned down. The whole plan takes 0.2 to 0.6 s.
+
+`TrackingPrints` lays the prints of the trail followed along its way at the animal's stride, left and right in turn,
+drawn 3.2 times larger than life in one MultiMesh, and shows only 40 in front of the furthest one reached and 8 behind
+it; the next four pulse golden and golden sparkles (a billboard MultiMesh) hover over the next stretch, above the grass
+that hides the prints from afar. `TrackingDens` builds the six dens (a bush, a burrow in a bank, a birch with ferns, a
+burrow under a stump, a wallow, rocks with a fallen trunk) with their animals, which peep out of the den of the trail
+followed and sit in front of it once found.
+
+Medvědice hajná Božena, the keeper of the forest border, shows the book in her panel once the post has brought her a
+letter (`TrackingWanted`; `GameState.TrackingStatus` 35, `GameUi.TrackingPanel`), and her green arrow
+(`UiIntent.TrackingStart`) sends the player out. `TrackingHunt` is the hunt without scene nodes: whether she has sent
+the player out, how many animals are found and the furthest print reached (`Step`, 6 m), with the arrow of the corner
+panel (`GameUi.TrackingHud`) back to the trail when the car is 24 m from it (`Lost`, `Lead`); it is stepped by the
+system `tracking` (`Game.TickTracking`). At the den a bodiless voice (`Character.CreateTrackingVoice`,
+`TrackingAnimalRole`, `ActorIds.TrackingAnimal` 81) stands where the animal is talked to; `Character.Away` keeps it out
+of the characters beside the car while no trail is followed. Its question (`CompleteTrackingQuiz`) pays coins and starts
+the next trail, and the sixth animal pays a bonus (`TrackingPlans`) and brings the squirrel
+(`CollectorPetKind.Squirrel`). Saved as `SaveData.Tracking` (`Started`, `Found`; rule `HasInvalidTracking`); the
+furthest print is found again from where the car stands. Checked by `tracking-checks`; `run.ps1 -Capture` shows it with
+the views `tracking`, `tracking-panel`, `tracking-trail`, `tracking-night`, `tracking-lost`, `tracking-den`,
+`tracking-dens` and `tracking-dens-night`.
+
 ### `MayorRole`, `TownDecorations` and `Village.Mayor`
 
 The mayor (`ActorIds.Mayor` 68, `MayorRole`, `GameState.MayorShop` 23) stands on the village square and sells eight

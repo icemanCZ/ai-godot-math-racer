@@ -1,0 +1,9 @@
+seed 7421
+tracking trails 6
+trail Hare den -910.93 24.85 -321.15 length 294.21 prints 105 hash 0011053653636FCE
+trail Fox den -660.49 18.83 -491.68 length 301.55 prints 236 hash 97C5446F1DA6880C
+trail Deer den -745.20 33.44 -828.99 length 350.07 prints 237 hash 3D07B21C51B00DE9
+trail Badger den -418.99 20.97 -980.54 length 370.93 prints 317 hash 5E3EB23B541FFB61
+trail Boar den -0.50 26.66 -915.86 length 433.38 prints 328 hash 860A6A5EE25FB331
+trail Lynx den -182.07 28.46 -718.18 length 268.18 prints 187 hash E0EF6F7DC13C9EBA
+trees left out 0

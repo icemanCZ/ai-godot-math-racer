@@ -91,6 +91,8 @@ public partial class Game
         }
         if (role.Border == Border.Sea && OpenLighthouse(keeper))
             return;
+        if (role.Border == Border.Forest && OpenTracking(keeper))
+            return;
         EnterInteraction(GameState.KeeperStatus, keeper);
         ShowKeeper();
         Speak(Post.Delivered[border] == 0 ? keeper.Greeting : Texts.KeeperAbout(role.Border), keeper);
@@ -190,7 +192,9 @@ public partial class Game
         var addressee = LetterAddressee;
         foreach (var keeper in world.Keepers)
             keeper?.Guide(
-                keeper == addressee || keeper == world.LighthouseKeeper && LighthouseAwaitsLoad,
+                keeper == addressee
+                    || keeper == world.LighthouseKeeper && LighthouseAwaitsLoad
+                    || keeper == world.Forester && TrackingAwaitsStart,
                 keeper == addressee
             );
         world.Postman?.Guide(!Post.Busy && NextKeeper() != null);

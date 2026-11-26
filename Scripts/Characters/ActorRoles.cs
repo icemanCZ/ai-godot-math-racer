@@ -572,6 +572,28 @@ internal sealed class BalloonistRole : ActorRole
 }
 
 /// <summary>
+/// The animal at the end of the forest keeper's trail followed now (<c>docs/TRACKING_PLAN.md</c>), in front of its den.
+/// Talking to it asks the question that coaxes it out; then the next trail begins at its den.
+/// </summary>
+internal sealed class TrackingAnimalRole : ActorRole
+{
+    public override string Icon => "paw";
+    public override bool UsesDeliveryGuide => false;
+
+    public override bool InvitesTalk(bool expeditionActive) => true;
+
+    public override void ShowHint(GameUi ui, Character actor) => ui.TrackingDenHint();
+
+    public override void Open(Game game, Character actor) => game.OpenTrackingAnimal(actor);
+
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
+    {
+        game.CompleteTrackingQuiz(actor);
+        return true;
+    }
+}
+
+/// <summary>
 /// The postman on the village square. Talking to him opens the stamp album and gives out the next letter for a keeper
 /// of the borders; he asks no question.
 /// </summary>

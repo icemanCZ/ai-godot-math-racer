@@ -164,6 +164,8 @@ public partial class World : Node3D
         var outlandWayside = new Wayside { Name = "OutlandWayside" };
         AddChild(outlandWayside);
         outlandWayside.GenerateOutland(this);
+        // The forest keeper's trails keep off every tree, so they are planned once the plants are.
+        PlanTracking();
         BuildBorderfolk();
         // The postman stood in front of the post office all along; he is registered last, so that no search that keeps
         // clear of the characters (the treasures, the fireflies, the wayside things) moves for him.
@@ -172,6 +174,8 @@ public partial class World : Node3D
         RegisterDragon();
         // The balloonist came after the dragon.
         RegisterBalloonist();
+        // The animal at the end of the forest keeper's trail came after the balloonist.
+        RegisterTrackingAnimal();
         // The borders round the valley stand on the final ground and change nothing in it.
         AddChild(BorderWater);
         BorderWater.Generate(Ground);

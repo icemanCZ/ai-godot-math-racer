@@ -54,6 +54,7 @@ public enum GameState
     LighthouseStatus = 32,
     DragonStatus = 33,
     BalloonStatus = 34,
+    TrackingStatus = 35,
 }
 
 public partial class Game : Node3D
@@ -669,7 +670,9 @@ public partial class Game : Node3D
         Weather.Tick((float)delta);
         // Prefer a character with a pending task, then the closest one.
         nearby = world
-            .InteractionActors.Where(a => a.Position.DistanceTo(vehicle.Position) < Settings.InteractionRange)
+            .InteractionActors.Where(a =>
+                !a.Away && a.Position.DistanceTo(vehicle.Position) < Settings.InteractionRange
+            )
             .OrderByDescending(a => a.RewardAvailable || CanChooseExpedition(a))
             .ThenBy(a => a.Position.DistanceSquaredTo(vehicle.Position))
             .FirstOrDefault();

@@ -41,6 +41,7 @@ internal static class SaveRules
         ("lighthouse", HasInvalidLighthouse),
         ("dragon", HasInvalidDragon),
         ("balloon station", HasInvalidBalloon),
+        ("forest keeper's book of tracks", HasInvalidTracking),
         ("time of day", HasInvalidDay),
         ("decorations and the mayor's shop", HasInvalidDecorations),
         ("glass lamps and the lamp maker's shop", HasInvalidLamps),
@@ -83,6 +84,7 @@ internal static class SaveRules
         || data.Lighthouse is null
         || data.Dragon is null
         || data.Balloon is null
+        || data.Tracking is null
         || data.Day is null;
 
     /// <summary>Throws when the save is not one the game can restore.</summary>
@@ -576,6 +578,38 @@ internal static class SaveRules
             || data.Quiz.Challenge is DeliveryChallenge or LoadChallenge
             || data.State is not (GameState.Exploring or GameState.BalloonStatus or GameState.Challenge)
             || (data.State == GameState.Challenge && data.Quiz.Departure != 0);
+    }
+
+    /// <summary>
+    /// The book of tracks: no more animals found than it has, none before the keeper sent the player out, her book's
+    /// panel only at the keeper of the forest, and the animal at the end of a trail asks only the question that coaxes
+    /// it out, while a trail is followed, and shows only the coins it paid.
+    /// </summary>
+    private static bool HasInvalidTracking(SaveData data)
+    {
+        var tracking = data.Tracking;
+        int forester = World.FirstBorderKeeperId + (int)Border.Forest;
+        if (
+            tracking.Found is < 0 or > TrackingPlans.Animals
+            || (tracking.Found > 0 && !tracking.Started)
+            || (
+                tracking.Started
+                && data.Post.Delivered is { Length: > (int)Border.Forest } delivered
+                && delivered[(int)Border.Forest] == 0
+            )
+            || (data.State == GameState.TrackingStatus && data.Nearby != forester)
+        )
+            return true;
+        if (!World.IsTrackingAnimal(data.Nearby))
+            return false;
+        return data.Quiz.Handover
+            || data.Quiz.Challenge is DeliveryChallenge or LoadChallenge
+            || data.State is not (GameState.Exploring or GameState.Challenge or GameState.Reward)
+            || (
+                data.State == GameState.Challenge
+                && (data.Quiz.Departure != 0 || !tracking.Started || tracking.Found >= TrackingPlans.Animals)
+            )
+            || (data.State == GameState.Reward && tracking.Found == 0);
     }
 
     /// <summary>The clock of the day is a number of seconds within one day.</summary>

@@ -74,6 +74,10 @@ public partial class ContentChecks : Node
             Need(world.DragonLair != null && world.SlopePlace != null, "the dragon and the mountain slope");
             Need(world.BalloonStation != null && world.Balloonist != null, "the balloon station");
             Need(
+                world.TrackingTrails.Count == TrackingPlans.Animals && world.TrackingAnimal != null,
+                "the forest keeper's trails"
+            );
+            Need(
                 world.Duck != null && world.WorldPets.Count == WorldPetsExpected,
                 $"the pets of the world ({world.WorldPets.Count} of {WorldPetsExpected})"
             );
@@ -96,8 +100,9 @@ public partial class ContentChecks : Node
     /// <summary>
     /// The duck, five raw materials (wheat too), every works, the bridge, the mill, the tower, the ducklings, a pet per
     /// hidden kind, the little stationmaster of the railway, the baby panda of the zoo, the hunter's fawn, the postman's
-    /// pigeon, the lighthouse keeper's gull, the dragon's little one and the balloonist's rooster.
+    /// pigeon, the lighthouse keeper's gull, the dragon's little one, the balloonist's rooster and the forest keeper's
+    /// squirrel.
     /// </summary>
     private static readonly int WorldPetsExpected =
-        1 + 5 + WorksCatalog.Total + 3 + WorldPetCatalog.DucklingDeliveries.Length + HiddenFriends.KindCount + 3 + 4;
+        1 + 5 + WorksCatalog.Total + 3 + WorldPetCatalog.DucklingDeliveries.Length + HiddenFriends.KindCount + 3 + 5;
 }

@@ -76,6 +76,12 @@ internal static class WorldPetCatalog
         $"{BalloonPlans.RoosterStars} hvězdiček z balónu"
     );
 
+    public static readonly WorldPetSpec Squirrel = new(
+        CollectorPetKind.Squirrel,
+        "Veverka Oříška",
+        $"{TrackingPlans.Animals} vystopovaných zvířátek"
+    );
+
     public static readonly WorldPetSpec Bridge = new(CollectorPetKind.Bridge, "Mostíček", "dostavěný most");
     public static readonly WorldPetSpec Mill = new(CollectorPetKind.Mill, "Mlýnek", "dostavěný mlýn");
     public static readonly WorldPetSpec Tower = new(CollectorPetKind.Tower, "Věžička", "dostavěnou rozhlednu");
@@ -253,6 +259,9 @@ internal sealed partial class CollectorPet
                 break;
             case CollectorPetKind.Rooster:
                 BuildRooster();
+                break;
+            case CollectorPetKind.Squirrel:
+                BuildSquirrel();
                 break;
             case CollectorPetKind.Bridge:
                 BuildBridge();
@@ -708,6 +717,36 @@ internal sealed partial class CollectorPet
         Ball(new(0, 1.95f, -.2f), new(.12f, .21f, .25f), "3f8fd8");
         Art.Block(model, new(0, 1.62f, -.2f), new(.1f, .08f, .1f), "b07a43");
         Eyes(.1f, 1.04f, .4f);
+    }
+
+    private void BuildSquirrel()
+    {
+        // A little red squirrel of the forest: a round body, a pale belly, tufted ears, a hazelnut held in her paws and a
+        // big bushy tail curled up over her back.
+        Ball(new(0, .5f, 0), new(.4f, .5f, .38f), "c65f2a");
+        Ball(new(0, .48f, .14f), new(.26f, .34f, .14f), "f3e2c4");
+        Ball(new(0, .98f, .08f), new(.36f, .34f, .34f), "c65f2a");
+        Ball(new(0, .92f, .27f), new(.16f, .12f, .12f), "f3e2c4");
+        Ball(new(0, .95f, .33f), new(.05f, .04f, .03f), "3b2418");
+        foreach (int side in new[] { -1, 1 })
+        {
+            Ball(new(side * .12f, 1.2f, .04f), new(.08f, .16f, .05f), "b4521f").RotationDegrees = new(0, 0, -side * 12);
+            Ball(new(side * .13f, 1.32f, .03f), new(.03f, .08f, .03f), "7a3214");
+            Ball(new(side * .1f, .62f, .24f), new(.08f, .08f, .1f), "b4521f");
+            Foot(new(side * .12f, .2f, .06f), .18f, .1f, "b4521f", side);
+        }
+        Ball(new(0, .66f, .3f), new(.1f, .12f, .1f), "9a6a35");
+        Ball(new(0, .72f, .3f), new(.08f, .04f, .08f), "6e4520");
+        for (int i = 0; i < 4; i++)
+        {
+            float a = i * .55f;
+            Ball(
+                new(0, .45f + Mathf.Sin(a) * .62f, -.28f - Mathf.Cos(a) * .3f + i * .04f),
+                new(.22f - i * .015f, .26f, .22f - i * .015f),
+                i % 2 == 0 ? "d06a32" : "c65f2a"
+            );
+        }
+        Eyes(.08f, 1.02f, .26f);
     }
 
     private void BuildMill()

@@ -1,3 +1,4 @@
+using MathRacer.Buildings;
 using MathRacer.Valley;
 
 namespace MathRacer.App;
@@ -731,4 +732,38 @@ internal static class Texts
         caught == stars ? "Přistáli jsme! Máš úplně všechny hvězdičky, to byl let jako pro opravdové balonáře!"
         : caught == 0 ? "Přistáli jsme! Příště zkus vyletět nebo klesnout přímo ke hvězdičce."
         : $"Přistáli jsme! Máš {caught} z {stars} hvězdiček. Krásný let!";
+
+    // GameUi.Tracking and Game.Tracking
+    public const string TrackingTitle = "Kniha stop";
+    public const string TrackingWanted =
+        "Naučím tě číst stopy zvířátek. Stopa vede přes celý kraj až k doupěti, a kde jedno zvířátko najdeš, tam začíná stopa dalšího. Půjdeš stopovat?";
+    public const string TrackingHowTo =
+        "Jeď po stopách. Zlatě svítí ty, kam jet dál. Když stopu ztratíš, šipka nahoře ti ukáže, kudy vede.";
+    public const string TrackingStart = "Jdu stopovat";
+    public const string TrackingBookFull =
+        "Moje kniha stop je plná! Všechna zvířátka sedí u svých doupat. Teď umíš číst stopy jako opravdoví hajní.";
+    public const string TrackingLast = "To byla poslední stopa z knihy! Hajná Božena bude mít radost.";
+    public const string TrackingDenHint = "Vylákat zvířátko";
+    public const string TrackingHidden = "?";
+
+    public static string TrackingFirst(TrackingAnimal animal) =>
+        $"Hned tady za plotem začíná stopa {TrackingPlans.Whose(animal)}. Sleduj ji, schovává se {TrackingPlans.Hideout(animal)}!";
+
+    public static string TrackingFollow(TrackingAnimal animal) =>
+        $"Pořád sleduješ stopu {TrackingPlans.Whose(animal)}. Schovává se {TrackingPlans.Hideout(animal)}.";
+
+    public static string TrackingCoax(TrackingAnimal animal) =>
+        $"Pšt! Tady {TrackingPlans.Hideout(animal)} někdo je. Vyřeš příklad a zvířátko vyleze!";
+
+    public static string TrackingFound(TrackingAnimal animal, int found, int all) =>
+        $"{TrackingPlans.Name(animal)}!  {found} / {all}";
+
+    public static string TrackingBookDone(int coins) => $"Kniha stop je plná!  +{coins}";
+
+    public static string TrackingNext(TrackingAnimal found, TrackingAnimal next) =>
+        $"Ahoj, já jsem {TrackingPlans.Name(found)}! Máš mě, moje stopy tě dovedly až sem. Podívej, tady u mého doupěte začíná stopa {TrackingPlans.Whose(next)}!";
+
+    public static string TrackingTrail(TrackingAnimal animal) => $"Stopa {TrackingPlans.Whose(animal)}";
+
+    public static string TrackingBookCount(int found, int all) => $"Vystopováno {found} z {all}";
 }

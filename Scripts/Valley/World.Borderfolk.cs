@@ -174,6 +174,7 @@ public partial class World
         BuildLighthouse();
         BuildDragon();
         BuildBalloon();
+        BuildTracking();
     }
 
     /// <summary>The lighthouse on the shore, raised by the player's deliveries.</summary>
@@ -233,12 +234,12 @@ public partial class World
 
     /// <summary>
     /// Whether a point lies on a homestead and the turning space before it, on the lighthouse's ground, on the coast
-    /// quarry, by the dragon or at the balloon station: the plants, the grass, the wayside things and the wild animals
+    /// quarry, by the dragon, at the balloon station or on a den of the forest keeper's trails: the plants, the grass, the wayside things and the wild animals
     /// of the land beyond the old valley keep off.
     /// </summary>
     internal bool InBorderfolkZone(Vector3 p)
     {
-        if (InDragonZone(p) || InBalloonZone(p))
+        if (InDragonZone(p) || InBalloonZone(p) || InTrackingZone(p))
             return true;
         foreach (var site in BorderHomes)
             if (

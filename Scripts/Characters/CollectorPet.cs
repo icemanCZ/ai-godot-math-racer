@@ -65,6 +65,9 @@ internal enum CollectorPetKind
 
     // The balloonist's rooster, Kokrháček: owned once twenty stars are caught on the balloon's flights.
     Rooster,
+
+    // The forest keeper's squirrel, Oříška: owned once every animal of her book of tracks is found.
+    Squirrel,
 }
 
 internal sealed partial class CollectorPet : Node3D

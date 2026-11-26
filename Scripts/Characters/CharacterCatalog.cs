@@ -168,6 +168,13 @@ internal static class CharacterCatalog
             "e6a35a"
         );
 
+    /// <summary>
+    /// The animal at the end of a trail of the forest keeper (<see cref="ActorIds.TrackingAnimal"/>); its name is the
+    /// animal's own once a trail is followed.
+    /// </summary>
+    public static CharacterSpec TrackingAnimal { get; } =
+        new("Schované zvířátko", "Pšt, někdo se tu schovává!", 2, "a5815a");
+
     /// <summary>The pirate captain on the village square, who hides treasures for the player to dig up (<see cref="World.TreasurerId"/>).</summary>
     public static CharacterSpec Treasurer { get; } =
         new(
