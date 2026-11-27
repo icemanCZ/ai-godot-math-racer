@@ -181,6 +181,7 @@ public partial class World
         BuildShells();
         BuildFerry();
         BuildCastle();
+        BuildMainLine();
     }
 
     /// <summary>The lighthouse on the shore, raised by the player's deliveries.</summary>
@@ -253,6 +254,7 @@ public partial class World
             || InShellsZone(p)
             || InFerryZone(p)
             || InCastleZone(p)
+            || InMainLineZone(p)
         )
             return true;
         foreach (var site in BorderHomes)

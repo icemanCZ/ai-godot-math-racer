@@ -82,6 +82,7 @@ public partial class DrivingEvents : Node3D
                         or CartographerRole
                         or BirdwatcherRole
                         or CastleRole
+                        or EngineerRole
                     )
             )
             .ToArray();

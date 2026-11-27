@@ -332,6 +332,20 @@ public partial class Game
                 return;
             (works, asker) = (missing, landing.Heron);
         }
+        else if (State == GameState.MainLineStatus)
+        {
+            // The engine driver, for the gravel, the planks, the bricks and the glass of the great line.
+            if (
+                world.MainLine is not { Complete: false } line
+                || nearby is not { Role: EngineerRole }
+                || Haul != null
+                || ForgeNeeded(line)
+                || LineStepReady(line)
+                || GoodsWorks(MainLinePlans.CargoOf(line.Stage)) is not { Full: false } missing
+            )
+                return;
+            (works, asker) = (missing, line.Engineer);
+        }
         else if (State == GameState.CastleStatus)
         {
             // The princess, for the gravel, the bricks, the planks and the glass of the castle.

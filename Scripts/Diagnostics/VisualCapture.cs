@@ -785,6 +785,58 @@ public partial class VisualCapture : Node
             camera.LookAt(ferrySite.PierStart + ferrySite.Inward * 6);
         }
         else if (view.StartsWith("ferry")) { }
+        else if (view == "line-forge" && world.LineForge is { } forgeView)
+        {
+            // Before the forge from the road: the hut with its glowing door, the anvil, the stack of rails and the stone.
+            camera.SetProcess(false);
+            var eye = forgeView.ToGlobal(new Vector3(-5, 4, 15));
+            camera.GlobalPosition = eye;
+            camera.LookAt(forgeView.ToGlobal(new Vector3(0, 1.8f, 0)));
+        }
+        else if (view == "line-far" && world.MainLinePlace is { } lineFarSite)
+        {
+            // From high over the first arm, looking along it from the hub.
+            camera.SetProcess(false);
+            var route = lineFarSite.Arms[0];
+            var from = route.Ground(Mathf.Min(40, route.Count - 1));
+            var toward = route.Ground(Mathf.Min(route.Count - 1, 160));
+            camera.GlobalPosition = from + Vector3.Up * 70 + (from - toward).Normalized() * 40;
+            camera.LookAt(toward);
+        }
+        else if (view == "line-terminal" && world.MainLinePlace is { } terminalSite)
+        {
+            // From the apron of the first arm's terminal, aside and above: its platform, its building and its lamps.
+            camera.SetProcess(false);
+            var terminal = terminalSite.Terminals[0];
+            var eye = terminal.Local(terminal.Side * 24, -26);
+            camera.GlobalPosition = world.Ground.At(eye.X, eye.Z) + Vector3.Up * 11;
+            camera.LookAt(world.Ground.At(terminal.Position.X, terminal.Position.Z) + Vector3.Up * 1.5f);
+        }
+        else if (view.StartsWith("line-ride") || view.StartsWith("line-panel")) { }
+        else if (view.StartsWith("line") && world.MainLine is { } lineView && world.MainLinePlace is { } lineSpot)
+        {
+            // From behind and above the end of the track laid so far, looking on along the way it takes; the finished
+            // line is seen from the road side of the hub.
+            camera.SetProcess(false);
+            int stage = view.StartsWith("line-") && int.TryParse(view["line-".Length..], out int laid) ? laid : -1;
+            if (view == "line-night")
+                stage = -1;
+            if (stage is >= 0 and < MainLinePlans.Trips)
+            {
+                var front = lineView.Front(stage);
+                var way = lineView.FrontWay(stage);
+                var eye = front - way * 24 + Vector3.Up.Cross(way) * 11;
+                camera.GlobalPosition = world.Ground.At(eye.X, eye.Z) + Vector3.Up * 9;
+                camera.LookAt(front + way * 18);
+            }
+            else
+            {
+                var hub = lineSpot.Hub;
+                var eye = hub.Local(hub.Side * 36, -44);
+                camera.GlobalPosition = world.Ground.At(eye.X, eye.Z) + Vector3.Up * 13;
+                camera.LookAt(world.Ground.At(hub.Position.X, hub.Position.Z) + Vector3.Up * 2);
+            }
+        }
         else if (view.StartsWith("explorer") || view.StartsWith("shells")) { }
         else if (view is "sheep" or "sheep-panel" or "sheep-lost") { }
         else if (view is "rally" or "rally-gate" or "rally-panel") { }

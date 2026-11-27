@@ -81,6 +81,7 @@ internal static class TrailerModel
         parts.Piles[(int)HaulLoad.Bread] = BreadCrates();
         parts.Piles[(int)HaulLoad.Flour] = Sacks("Flour", new[] { "f6f2ea", "ece6da", "fbf8f2" }, "d8d0c0");
         parts.Piles[(int)HaulLoad.Guest] = GuestBench();
+        parts.Piles[(int)HaulLoad.Rails] = RailBundles();
         foreach (var pile in parts.Piles)
         {
             pile.Visible = false;
@@ -176,6 +177,27 @@ internal static class TrailerModel
                 Art.Block(pile, new(x, .27f, strap), new(.74f, .46f, .07f), "6f5a46");
         }
         Art.Block(pile, new(0, .45f, 0), new(.7f, .12f, 1.8f), "d9b27a");
+        return pile;
+    }
+
+    /// <summary>Steel rails from the forge: two layers of long bars lying along the bed, tied with a strap.</summary>
+    private static Node3D RailBundles()
+    {
+        var pile = new Node3D { Name = "Rails" };
+        for (int layer = 0; layer < 3; layer++)
+        for (int i = 0; i < 4 - layer; i++)
+        {
+            float x = (i - (3 - layer) / 2f) * .3f;
+            var bar = Art.Block(
+                pile,
+                new(x, .1f + layer * .17f, 0),
+                new(.14f, .13f, 2.05f),
+                layer == 1 ? "7d8890" : "6a757c"
+            );
+            Art.Block(bar, new(0, .55f, 0), new(1.5f, .35f, 1), "8b969d");
+        }
+        foreach (float strap in new[] { -.6f, .6f })
+            Art.Block(pile, new(0, .22f, strap), new(1.3f, .62f, .07f), "3a3530");
         return pile;
     }
 

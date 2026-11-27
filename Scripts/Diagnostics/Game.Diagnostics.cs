@@ -953,6 +953,55 @@ public partial class Game
             for (int i = 0; i < 40; i++)
                 TickCastle(.1);
         }
+        if (
+            view.StartsWith("line")
+            && world.MainLine is { } line
+            && world.MainLinePlace is { } lineSite
+            && world.Engineer is { } engineer
+        )
+        {
+            // At the end of the track laid so far: "line-S" with S of its seventeen loads, "line" and the others finished;
+            // "line-night" at night, "line-panel" the driver's panel, "line-forge" the forge at work with rails in its
+            // stack, "line-ride" half way along an arm on the train and "line-far" from high over an arm.
+            // A number at the end of the name is the stage: "line-panel-5" is the panel with five loads delivered.
+            int lineDash = view.LastIndexOf('-');
+            bool lineNumbered = lineDash > 0 && int.TryParse(view[(lineDash + 1)..], out _);
+            int lineStage = lineNumbered
+                ? Mathf.Clamp(int.Parse(view[(lineDash + 1)..]), 0, MainLinePlans.Trips)
+                : MainLinePlans.Trips;
+            string lineName = lineNumbered ? view[..lineDash] : view;
+            RestoreMainLine(new Saves.MainLineSave { Stage = lineStage, Rails = lineName == "line-forge" ? 3 : 0 });
+            var spot = lineStage < MainLinePlans.Trips ? line.Front(lineStage) : lineSite.Hub.Drop;
+            var way = lineStage < MainLinePlans.Trips ? line.FrontWay(lineStage) : lineSite.Hub.Along;
+            vehicle.SetPose(world.Ground.At(spot.X, spot.Z, .15f), Mathf.Atan2(way.X, way.Z));
+            if (lineName == "line-night")
+                Weather.Begin(WeatherKind.Night, instant: true);
+            if (lineName == "line-terminal")
+            {
+                var back = lineSite.Terminals[0].Return;
+                vehicle.SetPose(world.Ground.At(back.X, back.Z, .15f), FacingRoad(lineSite.Terminals[0]));
+            }
+            if (lineName == "line-panel")
+            {
+                var talk = lineSite.Hub.Local(lineSite.Hub.Side * 9, -3);
+                vehicle.SetPose(world.Ground.At(talk.X, talk.Z, .15f), 0);
+                nearby = engineer;
+                OpenEngineer(engineer);
+            }
+            if (lineName == "line-forge")
+            {
+                world.LineForge!.Forge(600);
+                var at = world.LineForge.Drop;
+                vehicle.SetPose(world.Ground.At(at.X, at.Z, .15f), world.LineForge.Site.Yaw + Mathf.Pi);
+            }
+            if (lineName == "line-ride")
+            {
+                BeginRide(0, false);
+                lineRideTime = lineRideDuration * .5f;
+            }
+            for (int i = 0; i < 40; i++)
+                TickMainLine(.1);
+        }
         if (view == "log-yard" && world.LogYard is { } logYard)
             vehicle.SetPose(world.Ground.At(logYard.Position.X, logYard.Position.Z, .15f), 0);
         if (view is "beaver" or "load-question" && world.Beaver != null)

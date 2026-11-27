@@ -118,6 +118,12 @@ internal static class WorldPetCatalog
         "všichni hosté u hradní hostiny"
     );
 
+    public static readonly WorldPetSpec Mole = new(
+        CollectorPetKind.Mole,
+        "Krteček Pražec",
+        $"všech {Buildings.MainLinePlans.Trips} nákladů velké trati přes údolí"
+    );
+
     public static readonly WorldPetSpec Bridge = new(CollectorPetKind.Bridge, "Mostíček", "dostavěný most");
     public static readonly WorldPetSpec Mill = new(CollectorPetKind.Mill, "Mlýnek", "dostavěný mlýn");
     public static readonly WorldPetSpec Tower = new(CollectorPetKind.Tower, "Věžička", "dostavěnou rozhlednu");
@@ -316,6 +322,9 @@ internal sealed partial class CollectorPet
                 break;
             case CollectorPetKind.CastleGhost:
                 BuildCastleGhost();
+                break;
+            case CollectorPetKind.Mole:
+                BuildMole();
                 break;
             case CollectorPetKind.Bridge:
                 BuildBridge();
@@ -934,6 +943,28 @@ internal sealed partial class CollectorPet
         Art.Block(model, new(0, .9f, .48f), new(.06f, .06f, .36f), "2f2a26");
         Ball(new(0, .42f, -.36f), new(.14f, .08f, .24f), "1f6fa8");
         Art.Log(model, new(0, .12f, 0), Vector3.Right, .05f, .7f, "7a5536");
+    }
+
+    private void BuildMole()
+    {
+        // A small, round mole in a yellow helmet with a lamp, who helped to dig the tunnel: velvet-dark fur, a pink pointed
+        // nose, tiny eyes and two big pink spade-paws in front.
+        const string fur = "4a4a55";
+        Art.Ball(model, new(0, .42f, 0), new(.48f, .4f, .62f), fur);
+        Art.Ball(model, new(0, .5f, .5f), new(.3f, .26f, .3f), fur);
+        Art.Ball(model, new(0, .46f, .8f), new(.1f, .09f, .1f), "f4a6b3");
+        foreach (int side in new[] { -1, 1 })
+        {
+            Art.Ball(model, new(side * .12f, .6f, .72f), Vector3.One * .03f, "ffffff");
+            var paw = Art.Ball(model, new(side * .4f, .22f, .38f), new(.2f, .08f, .26f), "f4a6b3");
+            paw.RotationDegrees = new Vector3(0, side * 20, 0);
+            for (int claw = -1; claw <= 1; claw++)
+                Art.Block(model, new(side * .4f + claw * .07f, .2f, .6f), new(.03f, .03f, .1f), "e8e0d0");
+        }
+        // The helmet and its lamp.
+        Art.Ball(model, new(0, .72f, .48f), new(.27f, .14f, .27f), "f2c14e");
+        Art.Block(model, new(0, .68f, .62f), new(.36f, .04f, .2f), "e0b04a");
+        Art.Lamp(model, new(0, .76f, .74f), new(.1f, .08f, .06f), "fff1b8");
     }
 
     private void BuildCastleGhost()

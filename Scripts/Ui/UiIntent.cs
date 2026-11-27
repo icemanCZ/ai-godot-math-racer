@@ -119,6 +119,15 @@ internal abstract record UiIntent
     /// <summary>The princess's green check mark: the next load of the castle, the logs of a beacon or the next guest.</summary>
     internal sealed record CastleStart : UiIntent;
 
+    /// <summary>The engine driver's green check mark: the next load of the great line, or stone for the forge.</summary>
+    internal sealed record MainLineStart : UiIntent;
+
+    /// <summary>A ride on the train to the end of an arm of the great line (a question first).</summary>
+    internal sealed record MainLineRide(int Arm) : UiIntent;
+
+    /// <summary>The ride back to the hub from the end of an arm.</summary>
+    internal sealed record MainLineHome : UiIntent;
+
     // The ferrywoman's rally: a stage waits for the car at its start arch.
     internal sealed record RallyStart(int Stage) : UiIntent;
 

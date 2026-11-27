@@ -999,4 +999,42 @@ internal static class Texts
         $"{name} sedí u stolu!  {seated} / {all}  +{coins}";
 
     public static string CastleFeast(int coins) => $"Hostina! Strašidýlko Bubáček teď půjde s tebou.  +{coins}";
+
+    // GameUi.MainLine and Game.MainLine
+    public const string EngineerHint = "Jezevec strojvůdce Kuba";
+    public const string LineWanted =
+        "Postavíme velkou trať přes celé údolí! Nádraží, a pak koleje k horám, k moři i k řece. Potřebuju štěrk, prkna, cihly a sklo, a koleje ukuje kovárna z kamení.";
+    public const string LineBringLoad = "Teď odvez náklad na konec trati, k oranžové vlajce.";
+    public const string LineBringStation = "Teď odvez náklad před nádraží, do žlutého kruhu.";
+    public const string LineBringStone = "Teď odvez kamení do kovárny, do žlutého kruhu.";
+    public const string LineFetchRails = "Jeď do kovárny pro koleje. Čekají tam na hromadě.";
+    public const string LineRailsMissing = "Koleje ještě nejsou hotové. Kovárna je ukuje z kamení, tak ho tam zavez!";
+    public const string LineForgedSpeech =
+        "Kovárna kuje! Za chvilku budou koleje hotové. Pro koleje pojedeš zase s vozíkem.";
+    public const string LineHubReady = "Nádraží stojí! Teď pojedeme k horám, pak k moři a nakonec k řece.";
+    public const string LineAllDone = "Celá trať je hotová! Svezu tě, kam budeš chtít.";
+    public const string LineRideAsk = "Jízdenka je úloha. Vyřeš ji a svezu tě.";
+    public const string LineHomeSpeech = "Jedeme zpátky na velké nádraží! Držte se.";
+    public const string LineHomeEnd = "Jsme na velkém nádraží. Svezeme se zase někdy?";
+    public const string LineRideButton = "Svézt se vlakem";
+    public const string LineHomeButton = "Zpátky na nádraží";
+    public const string LineForgeButton = "Kamení do kovárny";
+
+    public static string LineRideSpeech(int arm) =>
+        $"Nastupovat! Jedeme {MathRacer.Buildings.MainLinePlans.ArmName(arm)}. Píííp!";
+
+    public static string LineRideEnd(int arm) =>
+        $"Jsme na konečné {MathRacer.Buildings.MainLinePlans.ArmName(arm)}. Odtud se dá jet autem, kam chceš, a zpátky se svezeš ode mě.";
+
+    public static string LinePart(string part, int stage, int all) => $"Hotovo: {part}!  {stage} / {all}";
+
+    public static string LineForged(int rails) => $"Kovárna ukovala koleje!  {rails}";
+
+    public static string LineHubDone(int coins) => $"Velké nádraží stojí!  +{coins}";
+
+    public static string LineArmDone(int arm, int coins) =>
+        $"Trať {MathRacer.Buildings.MainLinePlans.ArmName(arm)} je hotová, vlak může jet!  +{coins}";
+
+    public static string LineDone(int coins) =>
+        $"Celá velká trať je hotová! Krteček Pražec teď půjde s tebou.  +{coins}";
 }

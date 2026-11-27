@@ -663,6 +663,29 @@ internal sealed class CastleRole : ActorRole
 }
 
 /// <summary>
+/// The badger engine driver at the hub of the great line (<c>docs/MAINLINE_PLAN.md</c>). Talking to him shows the line
+/// still to be built, the forge and the arms that carry the car; his one quiz before a trailer trip or a ride sends the
+/// player off, and he asks the loading question of the rails from afar, since the forge has no worker.
+/// </summary>
+internal sealed class EngineerRole : ActorRole
+{
+    public override string Icon => "train";
+    public override bool UsesDeliveryGuide => false;
+
+    public override bool InvitesTalk(bool expeditionActive) => true;
+
+    public override void ShowHint(GameUi ui, Character actor) => ui.EngineerHint();
+
+    public override void Open(Game game, Character actor) => game.OpenEngineer(actor);
+
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
+    {
+        game.CompleteEngineerQuiz(actor);
+        return true;
+    }
+}
+
+/// <summary>
 /// The postman on the village square. Talking to him opens the stamp album and gives out the next letter for a keeper
 /// of the borders; he asks no question.
 /// </summary>

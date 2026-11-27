@@ -211,6 +211,18 @@ internal static class CharacterCatalog
             "e0a95a"
         );
 
+    /// <summary>
+    /// The badger engine driver at the hub of the great line (<see cref="ActorIds.Engineer"/>), who wants a railway across
+    /// the whole valley (<c>docs/MAINLINE_PLAN.md</c>).
+    /// </summary>
+    public static CharacterSpec Engineer { get; } =
+        new(
+            "Jezevec strojvůdce Kuba",
+            "Píííp! Já jsem strojvůdce Kuba. Chci postavit velkou trať přes celé údolí, k horám, k moři i k řece. Pomůžeš mi s ní?",
+            2,
+            "8f969b"
+        );
+
     /// <summary>The pirate captain on the village square, who hides treasures for the player to dig up (<see cref="World.TreasurerId"/>).</summary>
     public static CharacterSpec Treasurer { get; } =
         new(

@@ -47,6 +47,12 @@ internal static class TripKinds
     /// <summary>A guest of the castle's feast, from home to the castle; the index is the guest's chair.</summary>
     public const string CastleGuest = "castle-guest";
 
+    /// <summary>Gravel, planks, rails, bricks and glass for the great railway across the valley, tipped out where its track ends.</summary>
+    public const string MainLine = "mainline";
+
+    /// <summary>Stone for the forge of the great line, which makes the rails of it.</summary>
+    public const string MainLineForge = "mainline-forge";
+
     public static bool IsKnown(string? kind) =>
         kind
             is Build
@@ -64,7 +70,9 @@ internal static class TripKinds
                 or Ferry
                 or Castle
                 or CastleBeacon
-                or CastleGuest;
+                or CastleGuest
+                or MainLine
+                or MainLineForge;
 }
 
 /// <summary>

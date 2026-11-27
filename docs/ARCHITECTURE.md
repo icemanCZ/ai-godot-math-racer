@@ -699,6 +699,47 @@ guest's question at home be saved. Checked by `castle-checks`; `run.ps1 -Capture
 `castle-4`, `castle-8`, `castle-12`, `castle`, `castle-close`, `castle-night`, `castle-panel`, `castle-guests`,
 `castle-far` and `beacon`.
 
+### `MainLine`, `LineForge`, `LineTrain`, `LineRoute`, `MainLinePlans`, `World.MainLine` and `Game.MainLine`
+
+The great railway across the valley (`docs/MAINLINE_PLAN.md`). `World.PlanMainLine` runs after the castle, with no
+random numbers, so nothing planned before it moves. It first finds the forge beside the mountain slope (`PlanLineForge`)
+and the hub beside the first join road that leaves an old road (`PlanLineHub`, a `LineStationSite`: a frame with the
+track along +Z, the platform and the road on the side `Side`), then for each of three arms a terminal beside the road to
+its border (`PlanLineTerminal`) and the track to it. The track is the cheapest path over ground cells of 10 m
+(`LineSearch`, A* over `LineCell`: free, the valley's river, or ground it may not cross; `LineWhy` names the reasons:
+the sea, the border river, the bridges, everything planned or made, the trees of the old valley and the old valley's
+middle). The first arm starts at the hub, every other starts at any point of the track already planned
+(`LineRoute.Parent`, `Trunk`, `JunctionAlong`). The path is pulled straight (`LineShortcut`), rounded (Chaikin) and
+resampled every 2.5 m, and `LineRoute.Make` gives it a bed that follows the ground, rides on an embankment through dips
+and on a deck of its own over the river. No ground changes. `InMainLineZone` (part of `InBorderfolkZone`, so the plants,
+the grass, the wayside things and the wild animals of the land beyond the old valley keep off) is a grid of the track's
+segments plus the station rectangles and the forge; the flowers and rocks of the old valley in it are hidden
+(`Vegetation.ClearDrawn`), its trees are avoided. `Tests/Worlds/seed-N.railway2.txt` holds the places and a hash of
+every arm, and no older fingerprint changes. A valley where a place is not found has no line, like one without a dragon.
+
+`MainLine` is one node at the origin that makes everything in world coordinates at once and only shows and hides it
+(`SetStage`): the hub's bed and platform, its station and canopy, for each arm three stretches (a bed, sleepers, two
+rails and pillars as `MultiMesh` boxes, without collision), its terminal and its lamps and semaphores. Stakes mark every
+stretch still to come, and a flag stands at `Front(step)`, the end of the track laid so far, where the next load is
+tipped out. `LineForge` is the hut with its furnace, hammer and chimney (`Forge`), the stack of rails (`SetRails`) and
+the stone. `LineTrain` is the engine, tender and flatbed that run along a `LineRoute` (`Stand`, `Run`).
+
+`MainLine` is the `ITripTarget` of seventeen deliveries (`TripKinds.MainLine`, `MainLinePlans.Step`). The rails come
+from the forge's own pick-up place (`SourceFor`, `HaulLoad.Rails`), whose loading question the engine driver asks from
+afar. `LineForgeTrip` (`TripKinds.MainLineForge`) takes stone to the forge, which makes two rails of it
+(`MainLinePlans.RailsPerStone`) and holds four. `Game.MainLine` runs the panel, both kinds of trip, the ride and the
+forge: `UiIntent.MainLineRide` asks the ticket question (`Departure.MainLineRide`), then `BeginRide` puts the car on the
+flatbed (`Vehicle.Carry`, `FollowCamera.Ride`) and `TickMainLine` (system `mainline`) moves the train along
+`MainLine.RideTo(arm)`. At the terminal the car and the driver are put down, and the driver goes home when the car
+drives off (`SendEngineerHome`).
+
+Jezevec strojvůdce Kuba (`EngineerRole`, `ActorIds.Engineer` 85, registered after the princess and left out of the
+postcard stops and the driving courses) opens the panel `GameState.MainLineStatus` (`GameUi.EngineerPanel`). The line is
+saved as `SaveData.MainLine` (`Stage`, `Rails`; rule `HasInvalidMainLine`); a ride is not saved (the car stands on the
+hub's apron). Checked by `mainline-checks`; `run.ps1 -Capture` shows it with the views `line`, `line-0`, `line-2`,
+`line-5`, `line-9`, `line-14`, `line-far`, `line-night`, `line-forge`, `line-panel`, `line-panel-4`, `line-panel-9` and
+`line-ride`.
+
 ### `MayorRole`, `TownDecorations` and `Village.Mayor`
 
 The mayor (`ActorIds.Mayor` 68, `MayorRole`, `GameState.MayorShop` 23) stands on the village square and sells eight

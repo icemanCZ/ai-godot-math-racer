@@ -1,0 +1,10 @@
+seed 7421
+hub 589.14 26.50 199.68 along 0.93 0.00 0.36 side 1 half 30.00
+forge -242.08 28.59 -868.03 drop -238.51 28.45 -860.32 road -228.37 27.55 -838.35 yaw 0.43
+terminal 0 -265.46 37.28 -1020.50 along 0.06 0.00 -1.00 side -1 half 16.00
+arm 0 parent -1 junction 0.00 points 702 length 1752.50 hash C286FF4518141363 bed 7B462C83F6463A38
+terminal 1 -268.85 20.30 971.50 along 0.08 0.00 1.00 side 1 half 16.00
+arm 1 parent 0 junction 0.00 points 524 length 1307.50 hash CFA909FF4362610B bed 59FF3D9FDA8A9FF2
+terminal 2 1020.16 20.91 106.10 along 1.00 0.00 -0.07 side 1 half 16.00
+arm 2 parent 0 junction 60.00 points 173 length 430.00 hash 079F502BC7B41686 bed 92FB2755B811A01B
+engineer 85 Jezevec strojvůdce Kuba 588.29 27.46 193.56

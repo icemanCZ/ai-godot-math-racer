@@ -320,6 +320,40 @@ internal static class WorldFingerprint
         return lines;
     }
 
+    /// <summary>
+    /// What came after the castle (<c>docs/MAINLINE_PLAN.md</c>): the great railway across the valley, its hub, the three
+    /// arms with their terminals, the forge and the engine driver.
+    /// </summary>
+    internal static string Railway2FileFor(int seed) => Path.Combine(Folder, $"seed-{seed}.railway2.txt");
+
+    internal static List<string> Railway2Lines(World world)
+    {
+        var lines = new List<string> { $"seed {Settings.Seed}" };
+        if (world.MainLinePlace is not { } site)
+        {
+            lines.Add("railway2 none");
+            return lines;
+        }
+        lines.Add($"hub {P(site.Hub.Position)} along {P(site.Hub.Along)} side {site.Hub.Side} half {F(site.Hub.Half)}");
+        lines.Add(
+            $"forge {P(site.Forge.Foot)} drop {P(site.Forge.Drop)} road {P(site.Forge.Road)} yaw {F(site.Forge.Yaw)}"
+        );
+        for (int arm = 0; arm < site.Arms.Length; arm++)
+        {
+            var terminal = site.Terminals[arm];
+            var route = site.Arms[arm];
+            lines.Add(
+                $"terminal {arm} {P(terminal.Position)} along {P(terminal.Along)} side {terminal.Side} half {F(terminal.Half)}"
+            );
+            lines.Add(
+                $"arm {arm} parent {route.Parent} junction {F(route.JunctionAlong)} points {route.Count} length {F(route.Length)} hash {Hash(route.Points.Select(P))} bed {Hash(Enumerable.Range(0, route.Count).Select(i => F(route.Bed(i))))}"
+            );
+        }
+        if (world.Engineer is { } engineer)
+            lines.Add($"engineer {world.ActorId(engineer)} {engineer.DisplayName} {P(engineer.Position)}");
+        return lines;
+    }
+
     internal static List<string> Lines(World world)
     {
         var lines = new List<string> { $"seed {Settings.Seed}" };
@@ -452,6 +486,7 @@ public partial class WorldFingerprintWriter : Node
                     (WorldFingerprint.ShellsFileFor(Settings.Seed), WorldFingerprint.ShellsLines(world)),
                     (WorldFingerprint.FerryFileFor(Settings.Seed), WorldFingerprint.FerryLines(world)),
                     (WorldFingerprint.CastleFileFor(Settings.Seed), WorldFingerprint.CastleLines(world)),
+                    (WorldFingerprint.Railway2FileFor(Settings.Seed), WorldFingerprint.Railway2Lines(world)),
                 }
             )
             {
@@ -532,6 +567,11 @@ public partial class WorldFingerprintChecks : Node
             string castlePath = WorldFingerprint.CastleFileFor(Settings.Seed);
             if (!File.Exists(castlePath))
                 throw new InvalidOperationException($"No castle fingerprint for seed {Settings.Seed}: {castlePath}");
+            string railway2Path = WorldFingerprint.Railway2FileFor(Settings.Seed);
+            if (!File.Exists(railway2Path))
+                throw new InvalidOperationException(
+                    $"No great railway fingerprint for seed {Settings.Seed}: {railway2Path}"
+                );
             var expected = File.ReadAllLines(path)
                 .Concat(File.ReadAllLines(glassworksPath))
                 .Concat(File.ReadAllLines(outlandPath))
@@ -545,6 +585,7 @@ public partial class WorldFingerprintChecks : Node
                 .Concat(File.ReadAllLines(shellsPath))
                 .Concat(File.ReadAllLines(ferryPath))
                 .Concat(File.ReadAllLines(castlePath))
+                .Concat(File.ReadAllLines(railway2Path))
                 .ToArray();
             var actual = WorldFingerprint
                 .Lines(world)
@@ -560,6 +601,7 @@ public partial class WorldFingerprintChecks : Node
                 .Concat(WorldFingerprint.ShellsLines(world))
                 .Concat(WorldFingerprint.FerryLines(world))
                 .Concat(WorldFingerprint.CastleLines(world))
+                .Concat(WorldFingerprint.Railway2Lines(world))
                 .ToList();
             var different = new List<string>();
             for (int i = 0; i < Math.Max(expected.Length, actual.Count); i++)
@@ -654,6 +696,7 @@ public partial class ContractChecks : Node
         ("ExplorerStatus", 38),
         ("FerryStatus", 39),
         ("CastleStatus", 40),
+        ("MainLineStatus", 41),
     };
 
     public override void _Ready()
@@ -726,7 +769,8 @@ public partial class ContractChecks : Node
                 && ActorIds.TrackingAnimal == 81
                 && ActorIds.Cartographer == 82
                 && ActorIds.Birdwatcher == 83
-                && ActorIds.Castellan == 84,
+                && ActorIds.Castellan == 84
+                && ActorIds.Engineer == 85,
             "the actor ID ranges are the ones saved games use"
         );
 
@@ -769,6 +813,7 @@ public partial class ContractChecks : Node
                 : World.IsCartographer(id) ? nameof(CartographerRole)
                 : World.IsBirdwatcher(id) ? nameof(BirdwatcherRole)
                 : World.IsCastellan(id) ? nameof(CastleRole)
+                : World.IsEngineer(id) ? nameof(EngineerRole)
                 : "(no actor may have this ID)";
             Check(actor.Role.GetType().Name == expected, $"ID {id} ({actor.DisplayName}) is a {expected}");
             if (actor.Role is HouseResidentRole house)
@@ -918,6 +963,7 @@ public partial class ContractChecks : Node
             "Valley/World.Shells.cs",
             "Valley/World.Ferry.cs",
             "Valley/World.Castle.cs",
+            "Valley/World.MainLine.cs",
             "Valley/World.Fireflies.cs",
             "Valley/World.Hunter.cs",
             "Valley/World.Outland.cs",

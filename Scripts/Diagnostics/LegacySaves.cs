@@ -134,6 +134,8 @@ internal static class LegacySaves
         ("Castle", "Beacons"),
         ("Castle", "Guests"),
         ("Castle", "Feast"),
+        ("MainLine", "Stage"),
+        ("MainLine", "Rails"),
         ("Fireflies", "Caught"),
         ("Quiz", "Offered"),
         ("Day", "Clock"),

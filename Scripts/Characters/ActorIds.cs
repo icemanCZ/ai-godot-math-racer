@@ -120,6 +120,9 @@ internal static class ActorIds
     /// <summary>The lioness princess at the gate of the castle on the hill, who builds it and holds its feast.</summary>
     public const int Castellan = Birdwatcher + 1;
 
+    /// <summary>The badger engine driver at the hub of the great line across the valley, who builds it and drives its train.</summary>
+    public const int Engineer = Castellan + 1;
+
     /// <summary>The highest actor ID that a save may name.</summary>
-    public const int Last = Castellan;
+    public const int Last = Engineer;
 }

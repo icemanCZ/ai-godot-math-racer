@@ -178,6 +178,8 @@ public partial class World : Node3D
         PlanFerry();
         // The castle on the hill and its beacons keep off everything planned before them.
         PlanCastle();
+        // The great railway keeps its stations, its forge and its track off everything planned before it.
+        PlanMainLine();
         BuildBorderfolk();
         // The postman stood in front of the post office all along; he is registered last, so that no search that keeps
         // clear of the characters (the treasures, the fireflies, the wayside things) moves for him.
@@ -194,6 +196,8 @@ public partial class World : Node3D
         RegisterBirdwatcher();
         // The princess of the castle came after the heron.
         RegisterCastellan();
+        // The engine driver of the great line came after the princess.
+        RegisterEngineer();
         // The borders round the valley stand on the final ground and change nothing in it.
         AddChild(BorderWater);
         BorderWater.Generate(Ground);

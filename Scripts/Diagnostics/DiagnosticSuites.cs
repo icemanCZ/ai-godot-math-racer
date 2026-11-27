@@ -102,6 +102,7 @@ internal static class DiagnosticSuites
         new("shell-checks", (g, w, v) => new ShellChecks(g, w, v), Seeds: ThreeSeeds),
         new("ferry-checks", (g, w, v) => new FerryChecks(g, w, v), Seeds: ThreeSeeds),
         new("castle-checks", (g, w, v) => new CastleChecks(g, w, v), Seeds: ThreeSeeds),
+        new("mainline-checks", (g, w, v) => new MainLineChecks(g, w, v), Seeds: ThreeSeeds),
         new(
             "weather-checks",
             (g, w, v) => new WeatherChecks(g, w, v),

@@ -126,6 +126,9 @@ public static class Art
                 // The castle on the hill: a wall with merlons, two towers with pointed roofs and a gate.
                 "castle" =>
                     "M14 118 V50 L26 30 L38 50 V118 M94 118 V50 L106 30 L118 50 V118 M38 118 V66 H94 V118 M38 66 V56 H48 V66 M58 66 V56 H74 V66 M84 66 V56 H94 V66 M56 118 V96 Q66 82 76 96 V118 M106 30 V14 L118 20 L106 24",
+                // The great railway: a steam engine with its chimney, a cab, two wheels and the rails under it.
+                "train" =>
+                    "M10 100 H122 M16 100 V62 H46 V44 H86 V100 M46 62 H60 M86 66 H116 V100 M30 112 a9 9 0 1 0 18 0 a9 9 0 1 0 -18 0 M70 112 a9 9 0 1 0 18 0 a9 9 0 1 0 -18 0 M58 44 V24 H72 V44",
                 // The animal at the end of a trail of the forest keeper: a paw print, a pad and four toes.
                 "paw" =>
                     "M40 98 Q40 72 66 72 Q92 72 92 98 Q92 114 66 114 Q40 114 40 98 Z M20 60 a10 12 0 1 0 20 0 a10 12 0 1 0 -20 0 M42 38 a10 12 0 1 0 20 0 a10 12 0 1 0 -20 0 M70 38 a10 12 0 1 0 20 0 a10 12 0 1 0 -20 0 M92 60 a10 12 0 1 0 20 0 a10 12 0 1 0 -20 0",
@@ -272,6 +275,39 @@ public static class Art
                 + $"<path d='M72 74 L52 140 M108 74 L128 140 M66 96 H114 M60 118 H120 M66 96 L120 118 M114 96 L60 118'"
                 + $" fill='none' stroke='#8a6040' stroke-width='8' stroke-linecap='round'/>"
                 + $"<path d='M72 74 L52 140 M108 74 L128 140' fill='none' stroke='{ink}' stroke-width='2'/>",
+            // The great railway: a steam engine with a tall chimney, a red cab and red wheels, smoke, on its track.
+            "train" => "<ellipse cx='90' cy='140' rx='84' ry='8' fill='#70b765'/>"
+                + "<rect x='4' y='122' width='172' height='8' rx='3' fill='#9a9488'/>"
+                + $"<circle cx='34' cy='28' r='9' fill='#f4f1ea'/><circle cx='22' cy='16' r='6' fill='#f4f1ea'/>"
+                + $"<rect x='28' y='38' width='16' height='34' fill='#30363a' stroke='{ink}' stroke-width='4'/>"
+                + $"<rect x='96' y='52' width='62' height='60' rx='5' fill='#d23b2f' stroke='{ink}' stroke-width='5'/>"
+                + "<rect x='108' y='62' width='34' height='24' rx='4' fill='#9ed0e6'/>"
+                + $"<rect x='14' y='66' width='88' height='44' rx='20' fill='#2f5d62' stroke='{ink}' stroke-width='5'/>"
+                + $"<path d='M96 52 H160' stroke='{ink}' stroke-width='6'/>"
+                + "<circle cx='62' cy='68' r='8' fill='#e0b04a'/>"
+                + $"<circle cx='44' cy='116' r='15' fill='#30363a' stroke='{ink}' stroke-width='3'/>"
+                + $"<circle cx='84' cy='116' r='15' fill='#30363a' stroke='{ink}' stroke-width='3'/>"
+                + $"<circle cx='130' cy='116' r='13' fill='#30363a' stroke='{ink}' stroke-width='3'/>"
+                + "<circle cx='44' cy='116' r='5' fill='#e8453c'/><circle cx='84' cy='116' r='5' fill='#e8453c'/>"
+                + "<circle cx='130' cy='116' r='4' fill='#e8453c'/>",
+            // The forge: a stone hut with a chimney and a glowing door, an anvil, and a rail on the ground.
+            "forge" => "<ellipse cx='90' cy='140' rx='84' ry='8' fill='#70b765'/>"
+                + $"<rect x='122' y='28' width='20' height='46' fill='#8a857e' stroke='{ink}' stroke-width='4'/>"
+                + $"<rect x='24' y='62' width='116' height='72' fill='#b9b3a8' stroke='{ink}' stroke-width='5'/>"
+                + $"<path d='M16 66 L82 26 L148 66 Z' fill='#6d625a' stroke='{ink}' stroke-width='5' stroke-linejoin='round'/>"
+                + $"<rect x='46' y='88' width='46' height='46' rx='4' fill='#3a3530' stroke='{ink}' stroke-width='4'/>"
+                + "<rect x='52' y='96' width='34' height='30' rx='3' fill='#ff8a2a'/><rect x='60' y='104' width='18' height='16' rx='3' fill='#ffe08a'/>"
+                + $"<path d='M104 128 H130 L124 118 H110 Z' fill='#30363a' stroke='{ink}' stroke-width='3'/>"
+                + $"<rect x='100' y='110' width='36' height='10' rx='3' fill='#4a5258' stroke='{ink}' stroke-width='3'/>",
+            // Rails: two steel bars along three sleepers.
+            "rails" => "<ellipse cx='90' cy='140' rx='76' ry='7' fill='#70b765'/>"
+                + $"<rect x='36' y='52' width='20' height='84' rx='3' fill='#8a6040' stroke='{ink}' stroke-width='4' transform='rotate(18 46 94)'/>"
+                + $"<rect x='80' y='44' width='20' height='92' rx='3' fill='#8a6040' stroke='{ink}' stroke-width='4' transform='rotate(18 90 90)'/>"
+                + $"<rect x='122' y='40' width='20' height='92' rx='3' fill='#8a6040' stroke='{ink}' stroke-width='4' transform='rotate(18 132 86)'/>"
+                + $"<path d='M20 78 L160 40' stroke='{ink}' stroke-width='14' stroke-linecap='round'/>"
+                + "<path d='M20 78 L160 40' stroke='#a7b2b9' stroke-width='7' stroke-linecap='round'/>"
+                + $"<path d='M30 122 L170 84' stroke='{ink}' stroke-width='14' stroke-linecap='round'/>"
+                + "<path d='M30 122 L170 84' stroke='#a7b2b9' stroke-width='7' stroke-linecap='round'/>",
             // A guest of the castle's feast: the bench of the trailer with its red cushion and a garland.
             "guest" => "<ellipse cx='90' cy='140' rx='76' ry='8' fill='#70b765'/>"
                 + $"<rect x='26' y='40' width='128' height='50' rx='10' fill='#c49a64' stroke='{ink}' stroke-width='5'/>"

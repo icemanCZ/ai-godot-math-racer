@@ -60,6 +60,7 @@ public enum GameState
     ExplorerStatus = 38,
     FerryStatus = 39,
     CastleStatus = 40,
+    MainLineStatus = 41,
 }
 
 public partial class Game : Node3D
@@ -682,7 +683,10 @@ public partial class Game : Node3D
         // Prefer a character with a pending task, then the closest one.
         nearby = world
             .InteractionActors.Where(a =>
-                !a.Away && !FerryHolds(a) && a.Position.DistanceTo(vehicle.Position) < Settings.InteractionRange
+                !a.Away
+                && !FerryHolds(a)
+                && !LineHolds(a)
+                && a.Position.DistanceTo(vehicle.Position) < Settings.InteractionRange
             )
             .OrderByDescending(a => a.RewardAvailable || CanChooseExpedition(a))
             .ThenBy(a => a.Position.DistanceSquaredTo(vehicle.Position))

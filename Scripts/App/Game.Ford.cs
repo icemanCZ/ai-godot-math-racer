@@ -166,7 +166,9 @@ public partial class Game
             return;
         nearby = trip.Asker;
         vehicle.Active = false;
-        BeginQuiz(load: HaulLoads.IsSpecial(trip.Load) || trip.Load == HaulLoad.Guest ? null : trip.Load);
+        BeginQuiz(
+            load: HaulLoads.IsSpecial(trip.Load) || trip.Load is HaulLoad.Guest or HaulLoad.Rails ? null : trip.Load
+        );
     }
 
     private bool TakeCounted(Works works)
@@ -189,6 +191,7 @@ public partial class Game
         if (
             GoodsWorks(trip.Load) is { } works && !TakeCounted(works)
             || trip.Load == HaulLoad.Flour && !legacyWheat && world.FlourMill?.Take(FlourMill.PerTrip) != true
+            || trip.Load == HaulLoad.Rails && !TakeRail()
         )
         {
             EndHaul();
@@ -342,6 +345,7 @@ public partial class Game
             TripKinds.Ferry when saved.Index == 0 && world.FerryLanding is { Complete: false } ferry && FerryWanted =>
                 ferry,
             TripKinds.Castle when saved.Index == 0 && world.Castle is { Complete: false } castle => castle,
+            TripKinds.MainLine or TripKinds.MainLineForge when MainLineTripTarget(saved) is { } line => line,
             TripKinds.CastleBeacon when CastleBeaconTarget(saved.Index) is { } beacon => beacon,
             TripKinds.CastleGuest when CastleGuestTarget(saved.Index) is { } guest => guest,
             TripKinds.Mill when saved.Index == 0 && world.FlourMill is { Grinding: true, Full: false } mill => mill,
@@ -373,6 +377,10 @@ public partial class Game
             { Loaded: true, Railway: not null } => Texts.TedOdvezNakladNaNadraziA,
             { Loaded: true, Zoo: not null } => Texts.TedOdvezNakladDoZooA,
             { Loaded: true, ForGlassmaker: true } => Texts.TedOdvezSklenickyNaNaves,
+            { Loaded: true, ForgeTrip: not null } => Texts.LineBringStone,
+            { Loaded: true, Line: not null } when MainLinePlans.Step(trip.Step).Part != LinePart.Section =>
+                Texts.LineBringStation,
+            { Loaded: true, Line: not null } => Texts.LineBringLoad,
             { Loaded: true, Guest: not null } => Texts.CastleBringGuest,
             { Loaded: true, Castle: not null } => Texts.CastleBringLoad,
             { Loaded: true, Beacon: not null } => Texts.CastleBringLogs,
@@ -394,6 +402,7 @@ public partial class Game
                 HaulLoad.Capstone => Texts.JedSVozikemProKamenKe,
                 HaulLoad.Flag => Texts.JedSVozikemProVlajeckuK,
                 HaulLoad.Guest when trip.Guest is { } guest => Texts.CastleFetchGuest(guest.Character.DisplayName),
+                HaulLoad.Rails => Texts.LineFetchRails,
                 _ => Texts.JedSVozikemProPisek,
             },
         };

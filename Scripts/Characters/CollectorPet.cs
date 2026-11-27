@@ -86,6 +86,9 @@ internal enum CollectorPetKind
 
     // The ghost of the castle, Bubáček: owned once every guest of the valley sits at the castle's feast.
     CastleGhost,
+
+    // The engine driver's mole, Pražec: owned once the whole great line is laid.
+    Mole,
 }
 
 internal sealed partial class CollectorPet : Node3D

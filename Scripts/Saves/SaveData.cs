@@ -110,6 +110,20 @@ public sealed class SaveData
 
     /// <summary>The castle on the hill, its beacons and its feast (<c>docs/CASTLE_PLAN.md</c>).</summary>
     public CastleSave Castle { get; set; } = new();
+
+    /// <summary>The great railway across the valley and its forge (<c>docs/MAINLINE_PLAN.md</c>).</summary>
+    public MainLineSave MainLine { get; set; } = new();
+}
+
+/// <summary>
+/// The great railway across the valley: the deliveries it has had (0 to <see cref="Buildings.MainLinePlans.Trips"/>) and
+/// the rails that wait in the forge (0 to <see cref="Buildings.MainLinePlans.RailCapacity"/>). A save from before the line
+/// has none of it. A ride on the train is not saved: a car on the train or at a terminal is saved at the hub.
+/// </summary>
+public sealed class MainLineSave
+{
+    public int Stage { get; set; }
+    public int Rails { get; set; }
 }
 
 /// <summary>

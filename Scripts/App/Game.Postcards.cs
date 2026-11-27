@@ -122,6 +122,7 @@ public partial class Game
                         or CartographerRole
                         or BirdwatcherRole
                         or CastleRole
+                        or EngineerRole
                     )
             )
             .ToArray();

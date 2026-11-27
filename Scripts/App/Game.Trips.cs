@@ -35,6 +35,8 @@ public partial class Game
             [Departure.Ferry] = BeginFerryStart,
             [Departure.FerrySail] = BeginFerrySail,
             [Departure.Castle] = BeginCastleStart,
+            [Departure.MainLine] = BeginMainLineStart,
+            [Departure.MainLineRide] = BeginMainLineRide,
         };
 
     /// <summary>Starts the trailer trip of a target after its quiz, the speaker being its contractor.</summary>

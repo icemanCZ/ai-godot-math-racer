@@ -141,6 +141,15 @@ public partial class Game
             case UiIntent.CastleStart:
                 BeginCastleStart();
                 break;
+            case UiIntent.MainLineStart:
+                BeginMainLineStart();
+                break;
+            case UiIntent.MainLineRide ride:
+                BeginMainLineRide(ride.Arm);
+                break;
+            case UiIntent.MainLineHome:
+                BeginMainLineHome();
+                break;
             case UiIntent.RallyStart start:
                 BeginRallyStage(start.Stage);
                 break;

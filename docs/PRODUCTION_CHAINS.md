@@ -19,6 +19,8 @@ obilí   (pole: sedlák Klásek)    ──► Mlýn (Mlynář Bruno)        ─�
                                                                                 ──► dokončené domky (jednou každý)
                                                                                 ──► Pekař František (objednávky)
 
+kamení  (lom: Kvido, Zdeněk)     ──► Kovárna u horské stráně (Kuba) ──► koleje ──► velká trať přes údolí
+
 přímo bez závodu:  písek ──► most (poslední náklad)      klády ──► molo (piloty)
 od sběratelů:      látka (Farmář Tonda) ──► mlýn   kámen (sběratel drahokamů) ──► rozhledna   vlajka (hračkář) ──► molo
 ```
@@ -82,7 +84,18 @@ Platí pro pilu, cihelnu, štěrkovnu, sklárnu, pekárnu i mlýn (`Works`, `Flo
 - Mazlíčci: Zrníčko (10 nákladů obilí), Housánek (20 chlebů).
 - Údolí bez mlýna (žádné ze zkontrolovaných) by vozilo obilí rovnou do pekárny (`Works.Input = Wheat`).
 
-### 6. Zvláštní náklady od sběratelů
+### 6. Koleje: kamení → kovárna → koleje
+- Zdroj: stejné dva lomy jako u štěrku (Králíček lomař Kvido, Zajíc lomař Zdeněk).
+- Závod: **kovárna u horské stráně** (`LineForge`, `docs/MAINLINE_PLAN.md`). Není `Works`: je to vlastní budova se
+  zásobou, která se ukládá jako `SaveData.MainLine.Rails`. Jeden náklad kamení dá 2 koleje, zásoba drží nejvýš 4.
+- Koleje se nakládají u kovárny po vyřešené otázce, kterou klade jezevec strojvůdce Kuba z dálky (kovárna nemá dělníka).
+  Odebírají se při naložení stejně jako zboží ze skladu závodu.
+- Když kovárna koleje nemá a trať je chce, panel Kuby pošle přívěs rovnou s kamením do kovárny. Koleje jsou potřeba
+  třikrát (třetí úsek každého ze tří ramen trati), takže celá trať chce aspoň 2 náklady kamení.
+- Spotřeba: velká trať přes údolí, 17 nákladů (štěrk 4, cihly 4, prkna 3, koleje 3, sklo 3) a nejméně 2 náklady kamení
+  pro kovárnu.
+
+### 7. Zvláštní náklady od sběratelů
 Nejsou to výrobky, ale poslední (desátý) náklad tří staveb; nakládá se po vyřešené otázce u sběratele:
 
 | Náklad | Kdo ho dá | Stavba |
@@ -106,6 +119,7 @@ Pořadí nákladů je pevné (`BuildPlans`, `PlotPlans`, `PlaygroundPlans`, `Rai
 | Hřiště (Medvědice Madla) | 6 | Š P P C P C | 20 mincí |
 | Železnice (Králíček výpravčí Špendlík) | 6 | Š P C P C P | 25 mincí |
 | Zoo (Medvěd ošetřovatel Bruno) | 12 | Š C P Š C P P C Š C P Š | 60 mincí |
+| Velká trať (Jezevec strojvůdce Kuba) | 17 | Š C, pak 3× (Š P koleje C sklo) | 10 + 3×20 + 40 mincí, krteček |
 | Domky obyvatel (4×) | 2 P + 2 C každý, náhodně mezi 10 úkoly | – | 5 mincí za úkol |
 | Dokončený domek (4×) | 1 skleničky, pak 1 chléb | – | 5 mincí za každé |
 | Světlař Ignác | 1 skleničky na cestu, bez konce | – | 5 mincí za cestu |
@@ -115,10 +129,10 @@ Pořadí nákladů je pevné (`BuildPlans`, `PlotPlans`, `PlaygroundPlans`, `Rai
 
 | Zboží | Kusů za hru | Nákladů suroviny | Rozpis |
 | --- | --- | --- | --- |
-| Štěrk | 22 | 11 nákladů kamení | stavby 10, parcely 6, hřiště 1, železnice 1, zoo 4 |
-| Cihly | 38 | 19 nákladů hlíny | stavby 10, parcely 12, hřiště 2, železnice 2, zoo 4, domky 8 |
-| Prkna | 50 | 25 nákladů klád | stavby 14, parcely 18, hřiště 3, železnice 3, zoo 4, domky 8 |
-| Skleničky | 4 + Ignác | 2 náklady písku | domky 4, Ignác bez omezení |
+| Štěrk | 26 | 13 nákladů kamení | stavby 10, parcely 6, hřiště 1, železnice 1, zoo 4, trať 4 |
+| Cihly | 42 | 21 nákladů hlíny | stavby 10, parcely 12, hřiště 2, železnice 2, zoo 4, domky 8, trať 4 |
+| Prkna | 53 | 27 nákladů klád | stavby 14, parcely 18, hřiště 3, železnice 3, zoo 4, domky 8, trať 3 |
+| Skleničky | 7 + Ignác | 4 náklady písku | domky 4, trať 3, Ignác bez omezení |
 | Chléb | 4 + objednávky | 1 obilí na 4 chleby | domky 4, pekař bez omezení |
 | Přímo | – | 2 klády, 1 písek | molo, most |
 

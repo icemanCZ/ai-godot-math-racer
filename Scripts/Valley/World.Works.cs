@@ -460,7 +460,8 @@ public partial class World
     /// one unless <paramref name="source"/> is the second), if there is one.
     /// </summary>
     internal Character? PickupActor(HaulLoad load, HaulSource? source = null) =>
-        HaulLoads.IsGoods(load) ? WorksFor(HaulLoads.ProductOf(load))!.Worker
+        load == HaulLoad.Rails ? Engineer
+        : HaulLoads.IsGoods(load) ? WorksFor(HaulLoads.ProductOf(load))!.Worker
         : HaulLoads.IsSpecial(load) ? SpecialGiver(load)
         : source is { } site && ExtraSources.Contains(site) ? ExtraSourceWorker(load)
         : SourceWorker(load);
@@ -486,6 +487,8 @@ public partial class World
             return new[] { GemCollectorId };
         if (load == HaulLoad.Flag)
             return new[] { ToymakerId };
+        if (load == HaulLoad.Rails)
+            return new[] { EngineerId };
         if (HaulLoads.IsGoods(load))
             return new[] { WorksId(HaulLoads.ProductOf(load)) };
         if (load == HaulLoad.Wheat)

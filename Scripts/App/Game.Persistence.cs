@@ -114,6 +114,8 @@ public partial class Game
                         or Departure.Ferry
                         or Departure.FerrySail
                         or Departure.Castle
+                        or Departure.MainLine
+                        or Departure.MainLineRide
                     ? quiz.DepartureState
                     : GameState.Title,
             },
@@ -219,6 +221,7 @@ public partial class Game
                 Kinds = Ferry.Kinds,
             },
             Castle = CaptureCastle(),
+            MainLine = CaptureMainLine(),
             Fireflies = new FirefliesSave { Caught = fireflies.Caught },
             Hunt = new HuntSave
             {
@@ -348,6 +351,8 @@ public partial class Game
         RestoreFerry(data.Ferry.Stage, data.Ferry.Visit, data.Ferry.Spotted, data.Ferry.Kinds);
         // And the castle with its beacons and its table, so that the ghost knows whether he is owned.
         RestoreCastle(data.Castle);
+        // And the great line with its forge and its driver, who wait at the hub.
+        RestoreMainLine(data.MainLine);
         RestoreBuilds(data);
         UpdateDeliveryGuides();
         interaction.BeforePause = validEncounter ? data.State : GameState.Exploring;

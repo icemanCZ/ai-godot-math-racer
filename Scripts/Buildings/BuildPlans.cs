@@ -37,6 +37,9 @@ public enum HaulLoad
 
     /// <summary>A guest of the castle's feast on the bench of the trailer, from home to the castle.</summary>
     Guest = 14,
+
+    /// <summary>Rails the forge makes of stone, loaded at the forge and laid on the great line.</summary>
+    Rails = 15,
 }
 
 internal static class HaulLoads

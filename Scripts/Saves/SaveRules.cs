@@ -48,6 +48,7 @@ internal static class SaveRules
         ("shells of the beach", HasInvalidShells),
         ("ferry to the bird island", HasInvalidFerry),
         ("castle on the hill", HasInvalidCastle),
+        ("great railway line", HasInvalidMainLine),
         ("time of day", HasInvalidDay),
         ("decorations and the mayor's shop", HasInvalidDecorations),
         ("glass lamps and the lamp maker's shop", HasInvalidLamps),
@@ -108,6 +109,7 @@ internal static class SaveRules
         || data.Castle is null
         || data.Castle.Beacons is null
         || data.Castle.Guests is null
+        || data.MainLine is null
         || data.Day is null;
 
     /// <summary>Throws when the save is not one the game can restore.</summary>
@@ -284,6 +286,12 @@ internal static class SaveRules
             Game.Departure.Castle => !World.IsCastellan(data.Nearby)
                 || data.Quiz.DepartureState != GameState.CastleStatus
                 || data.Castle.Feast,
+            Game.Departure.MainLine => !World.IsEngineer(data.Nearby)
+                || data.Quiz.DepartureState != GameState.MainLineStatus
+                || data.MainLine.Stage >= MainLinePlans.Trips,
+            Game.Departure.MainLineRide => !World.IsEngineer(data.Nearby)
+                || data.Quiz.DepartureState != GameState.MainLineStatus
+                || !MainLinePlans.ArmDone(data.MainLine.Stage, 0),
             // The works' missing goods are asked for from a builder, a newcomer, a resident or the lamp maker.
             Game.Departure.Missing => data.Quiz.DepartureState switch
             {
@@ -298,6 +306,7 @@ internal static class SaveRules
                 GameState.LighthouseStatus => data.Nearby != World.FirstBorderKeeperId,
                 GameState.FerryStatus => !World.IsBirdwatcher(data.Nearby),
                 GameState.CastleStatus => !World.IsCastellan(data.Nearby),
+                GameState.MainLineStatus => !World.IsEngineer(data.Nearby),
                 // The baker of the village shop, whose bakery has run out of bread for his order.
                 GameState.TradeStatus => data.Nearby != World.FirstTraderId,
                 _ => true,
@@ -803,6 +812,35 @@ internal static class SaveRules
     }
 
     /// <summary>
+    /// The great line: 0 to 17 deliveries and 0 to 4 rails in the forge, none before the third stretch of the first arm
+    /// wants them, the driver's panel only beside him, and his questions only those before a trailer trip or a ride, before
+    /// the goods missing for it, or the loading question of the rails.
+    /// </summary>
+    private static bool HasInvalidMainLine(SaveData data)
+    {
+        var line = data.MainLine;
+        if (
+            line.Stage is < 0 or > MainLinePlans.Trips
+            || line.Rails is < 0 or > MainLinePlans.RailCapacity
+            || (line.Rails > 0 && line.Stage < MainLinePlans.RailStep(0))
+            || (data.State == GameState.MainLineStatus && !World.IsEngineer(data.Nearby))
+        )
+            return true;
+        if (!World.IsEngineer(data.Nearby))
+            return false;
+        return data.Quiz.Handover
+            || data.Quiz.Challenge is DeliveryChallenge
+            || data.State
+                is not (GameState.Exploring or GameState.MainLineStatus or GameState.Challenge or GameState.Reward)
+            || (
+                data.State == GameState.Challenge
+                && data.Quiz.Departure != 0
+                && (Game.Departure)data.Quiz.Departure
+                    is not (Game.Departure.MainLine or Game.Departure.MainLineRide or Game.Departure.Missing)
+            );
+    }
+
+    /// <summary>
     /// A guest of the castle's feast asks the question at home before getting on the trailer's bench: a question that is
     /// not of the loading kind, while the trailer of that guest's trip stands empty.
     /// </summary>
@@ -946,6 +984,18 @@ internal static class SaveRules
                     trip.Loaded
                 );
             }
+            case TripKinds.MainLine when trip.Index == 0 && data.MainLine.Stage is >= 0 and < MainLinePlans.Trips:
+            {
+                // The rails are loaded at the forge, which has no worker: the engine driver asks the question.
+                var cargo = MainLinePlans.CargoOf(data.MainLine.Stage);
+                return (
+                    cargo,
+                    cargo == HaulLoad.Rails ? new[] { World.EngineerId } : World.AskerIds(cargo, 0),
+                    trip.Loaded
+                );
+            }
+            case TripKinds.MainLineForge when trip.Index == 0:
+                return (HaulLoad.Stones, World.AskerIds(HaulLoad.Stones, 0), trip.Loaded);
             case TripKinds.CastleBeacon when trip.Index is >= 0 and < CastlePlans.Beacons:
                 return (HaulLoad.Logs, World.AskerIds(HaulLoad.Logs, 0), trip.Loaded);
             case TripKinds.CastleGuest when trip.Index is >= 0 and < CastlePlans.Guests:
@@ -1082,6 +1132,11 @@ internal static class SaveRules
             TripKinds.Dragon => trip.Index != 0 || data.Dragon.Stage >= DragonPlans.Trips,
             TripKinds.Ferry => trip.Index != 0 || data.Ferry.Stage >= FerryPlans.Trips,
             TripKinds.Castle => trip.Index != 0 || data.Castle.Stage >= CastlePlans.Trips,
+            TripKinds.MainLine => trip.Index != 0 || data.MainLine.Stage >= MainLinePlans.Trips,
+            // Stone for the forge is wanted when the next delivery is rails and it has none.
+            TripKinds.MainLineForge => trip.Index != 0
+                || data.MainLine.Stage >= MainLinePlans.Trips
+                || data.MainLine.Stage < MainLinePlans.RailStep(0),
             // The beacons and the guests come once the castle stands, each one once.
             TripKinds.CastleBeacon => trip.Index is < 0 or >= CastlePlans.Beacons
                 || data.Castle.Stage < CastlePlans.Trips
@@ -1151,6 +1206,7 @@ internal static class SaveRules
             : World.IsDragon(data.Nearby) ? GameState.DragonStatus
             : World.IsBirdwatcher(data.Nearby) ? GameState.FerryStatus
             : World.IsCastellan(data.Nearby) ? GameState.CastleStatus
+            : World.IsEngineer(data.Nearby) ? GameState.MainLineStatus
             : null;
         if (panel == null)
         {
@@ -1168,6 +1224,7 @@ internal static class SaveRules
                         or GameState.DragonStatus
                         or GameState.FerryStatus
                         or GameState.CastleStatus
+                        or GameState.MainLineStatus
                 || data.Quiz.Challenge is LoadChallenge;
         }
         if (data.State is not (GameState.Exploring or GameState.Challenge) && data.State != panel)

@@ -545,6 +545,12 @@ public partial class Game
     {
         if ((ferryRide >= 0 || OnBirdIsland) && world.FerryPlace is { } site)
             return (world.Ground.At(site.Return.X, site.Return.Z) + Vector3.Up * .15f, site.Yaw);
+        // A ride on the train is not saved either: the car stands on the apron of the hub again.
+        if (lineRide >= 0 && world.MainLinePlace is { } line)
+        {
+            var back = line.Hub.Return;
+            return (world.Ground.At(back.X, back.Z) + Vector3.Up * .15f, FacingRoad(line.Hub));
+        }
         return (vehicle.Position, vehicle.Heading);
     }
 
