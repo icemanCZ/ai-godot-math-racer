@@ -46,6 +46,31 @@ public partial class FollowCamera : Camera3D
 
     internal bool PanoramaActive => panorama > 0;
 
+    private float? telescopeFov;
+
+    /// <summary>
+    /// The camera looks through the telescope of the hide on the bird island (<c>docs/FERRY_PLAN.md</c>): it stands at
+    /// <paramref name="eye"/>, sees <paramref name="fov"/> degrees from top to bottom and turns only when it is steered
+    /// (<see cref="SteerPanorama"/>, or the mouse), until <see cref="EndPanorama"/>.
+    /// </summary>
+    internal void ShowTelescope(Vector3 eye, float yaw, float fov)
+    {
+        ShowPanorama(eye, float.MaxValue, yaw, -.06f);
+        panoramaSteered = true;
+        telescopeFov ??= Fov;
+        Fov = fov;
+    }
+
+    /// <summary>Turns the look round by <paramref name="yaw"/> and up by <paramref name="elevation"/>, in radians.</summary>
+    internal void SteerPanorama(float yaw, float elevation)
+    {
+        if (panorama <= 0)
+            return;
+        panoramaSteered = true;
+        panoramaYaw = Mathf.Wrap(panoramaYaw + yaw, -Mathf.Pi, Mathf.Pi);
+        panoramaElevation = Mathf.Clamp(panoramaElevation + elevation, Mathf.DegToRad(-40), Mathf.DegToRad(65));
+    }
+
     /// <summary>Whether the player has taken the look over with the mouse, so that it does not end by itself.</summary>
     internal bool PanoramaSteered => panoramaSteered;
 
@@ -60,6 +85,11 @@ public partial class FollowCamera : Camera3D
         panorama = 0;
         CullMask |= panoramaHidden;
         panoramaHidden = 0;
+        if (telescopeFov is { } fov)
+        {
+            Fov = fov;
+            telescopeFov = null;
+        }
         Snap();
     }
 
@@ -168,9 +198,11 @@ public partial class FollowCamera : Camera3D
     private void LookRound(Vector2 relative)
     {
         panoramaSteered = true;
-        panoramaYaw = Mathf.Wrap(panoramaYaw - relative.X * Sensitivity, -Mathf.Pi, Mathf.Pi);
+        // Through the telescope the view is magnified, so the mouse turns it more slowly.
+        float sensitivity = Sensitivity * (telescopeFov is { } wide ? Fov / wide : 1);
+        panoramaYaw = Mathf.Wrap(panoramaYaw - relative.X * sensitivity, -Mathf.Pi, Mathf.Pi);
         panoramaElevation = Mathf.Clamp(
-            panoramaElevation - relative.Y * Sensitivity,
+            panoramaElevation - relative.Y * sensitivity,
             Mathf.DegToRad(-40),
             Mathf.DegToRad(65)
         );

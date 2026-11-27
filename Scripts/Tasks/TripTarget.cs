@@ -35,6 +35,9 @@ internal static class TripKinds
     /// <summary>Sand, stone and logs from the mountain slope for the nest of the dragon under the mountains.</summary>
     public const string Dragon = "dragon";
 
+    /// <summary>Logs from the log yard and planks from the sawmill for the heron's landing and punt.</summary>
+    public const string Ferry = "ferry";
+
     public static bool IsKnown(string? kind) =>
         kind
             is Build
@@ -48,7 +51,8 @@ internal static class TripKinds
                 or Glassmaker
                 or Hunter
                 or Lighthouse
-                or Dragon;
+                or Dragon
+                or Ferry;
 }
 
 /// <summary>

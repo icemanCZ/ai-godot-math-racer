@@ -624,6 +624,36 @@ Saved as `SaveData.Shells` (`Tide`, `Picked`, `Kinds`; rule `HasInvalidShells`).
 `outland-checks` (the car goes down the beach and stops at the water); `run.ps1 -Capture` shows it with the views
 `shells`, `shells-close` and `shells-high`.
 
+### `FerryLanding`, `BirdIsland`, `FerryRoute`, `FerryLog`, `World.Ferry` and `Game.Ferry`
+
+The ferry to the bird island (`docs/FERRY_PLAN.md`). `World.PlanFerry` runs after the shells, with no random numbers of
+its own except the birds' (`FerrySeed`), so nothing planned before it moves. It takes the landing (`FerrySite`) beside
+the homestead of the river border on open ground inside the valley, the pier from the edge of the valley straight on to
+the water of the border river (`Berth`), the island in the sea before the river's mouth (`Island`, beyond the edge),
+the way of the punt down the middle of the river (`FerryRoute`, a Catmull-Rom curve, 20 to 40 seconds) and twelve
+clumps of reeds round the island (`World.ReedSpots`). `World.BirdsOfVisit` works out the four birds of a crossing, of
+different kinds drawn by `FerryPlans.Weights` and in different reeds, from the valley and the crossing's number, so they
+are not saved. `Tests/Worlds/seed-N.ferry.txt` holds the landing, the pier, the island, the way, the reeds and the birds
+of the first two crossings; the island is a model of its own, so no older fingerprint changes.
+
+`FerryLanding` is an `ITripTarget` (`TripKinds.Ferry`): five trailer trips of logs and planks (`FerryPlans.CargoOf`)
+raise the landing's deck, the pier's piles and boards and the punt; a valley without the log yard or the sawmill has it
+finished from the start (`World.FerryBuildable`). `BirdIsland` is the island's mesh with its collision, the pier, the
+hide with its telescope, the reeds and the eight birds' models (`Lay`, `HeadOf`, `Cheer`). The heron Klárka
+(`BirdwatcherRole`, `ActorIds.Birdwatcher`) opens the panel `GameState.FerryStatus` (`GameUi.BirdwatcherPanel`) in one
+of three modes: the loads still to bring, the atlas with the crossing, or the island's telescope and punt home. A crossing
+(`Departure.FerrySail`, then `Game.BeginCrossing`) carries the car (`Vehicle.Carry`) and the heron on the punt along the
+way while the camera rides behind (`FollowCamera.Ride`); the pedals cut it short. On the island `World.IslandOpen` lets
+`World.SeaDepth` allow the car on the island only. The telescope (`FollowCamera.ShowTelescope`, `SteerPanorama`) is
+turned by the steering or the mouse; the system `ferry` (`Game.TickFerry`) writes a bird kept within
+`FerryPlans.SpotAngle` of the middle for `SpotSeconds` into `FerryLog` with its coins, more for the first of a kind, and
+the full atlas brings the kingfisher (`CollectorPetKind.Kingfisher`). `TelescopeOverlay` draws the lens, the filling
+ring, the arrow to the nearest bird still hidden and the birds of the crossing (`BirdPicture`). Saved as
+`SaveData.Ferry` (`Stage`, `Visit`, `Spotted`, `Kinds`; rule `HasInvalidFerry`); a crossing and a stay on the island are
+not, so such a save puts the car back at the landing (`Game.CarPoseToSave`). Checked by `ferry-checks`;
+`run.ps1 -Capture` shows it with the views `ferry`, `ferry-0`, `ferry-2`, `ferry-panel`, `ferry-ride`, `ferry-island`
+and `ferry-telescope`.
+
 ### `MayorRole`, `TownDecorations` and `Village.Mayor`
 
 The mayor (`ActorIds.Mayor` 68, `MayorRole`, `GameState.MayorShop` 23) stands on the village square and sells eight

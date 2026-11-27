@@ -179,6 +179,7 @@ public partial class World
         BuildRally();
         BuildExplorer();
         BuildShells();
+        BuildFerry();
     }
 
     /// <summary>The lighthouse on the shore, raised by the player's deliveries.</summary>
@@ -243,7 +244,14 @@ public partial class World
     /// </summary>
     internal bool InBorderfolkZone(Vector3 p)
     {
-        if (InDragonZone(p) || InBalloonZone(p) || InTrackingZone(p) || InExplorerZone(p) || InShellsZone(p))
+        if (
+            InDragonZone(p)
+            || InBalloonZone(p)
+            || InTrackingZone(p)
+            || InExplorerZone(p)
+            || InShellsZone(p)
+            || InFerryZone(p)
+        )
             return true;
         foreach (var site in BorderHomes)
             if (

@@ -1,0 +1,25 @@
+seed 42
+landing 1092.10 21.59 -39.48 inward 0.99 0.00 -0.11 talk 1087.73 21.59 -38.99 drop 1083.15 21.59 -38.49
+pier 1129.87 13.19 -43.64 berth 1232.26 -0.36 -54.94
+island 1270.76 -8.60 1253.00 berth 1270.76 0.00 1224.00 hide 1270.76 -8.60 1257.00
+way 1302.59 points 653 seconds 40.00
+reeds 0 1282.41 -9.75 1296.47
+reeds 1 1315.31 -9.75 1297.55
+reeds 2 1349.00 -9.75 1273.96
+reeds 3 1314.23 -9.75 1241.35
+reeds 4 1315.31 -9.75 1208.45
+reeds 5 1291.73 -9.75 1174.76
+reeds 6 1256.01 -9.75 1197.94
+reeds 7 1226.21 -9.75 1208.45
+reeds 8 1192.52 -9.75 1232.04
+reeds 9 1227.30 -9.75 1264.65
+reeds 10 1226.21 -9.75 1297.55
+reeds 11 1249.80 -9.75 1331.24
+visit 1 bird 0 Čáp reeds 0 yaw 4.58
+visit 1 bird 1 Plameňák reeds 9 yaw 5.66
+visit 1 bird 2 Rybák reeds 11 yaw 3.49
+visit 1 bird 3 Labuť reeds 7 yaw 5.01
+visit 2 bird 0 Plameňák reeds 10 yaw 3.99
+visit 2 bird 1 Labuť reeds 1 yaw 3.66
+visit 2 bird 2 Kulík reeds 8 yaw 4.07
+visit 2 bird 3 Potápka reeds 3 yaw 6.03

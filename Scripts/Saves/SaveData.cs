@@ -104,6 +104,9 @@ public sealed class SaveData
 
     /// <summary>The shells on the beach of the sea. Added after version 5 began.</summary>
     public ShellsSave Shells { get; set; } = new();
+
+    /// <summary>The heron's landing and the atlas of the bird island (<c>docs/FERRY_PLAN.md</c>).</summary>
+    public FerrySave Ferry { get; set; } = new();
 }
 
 /// <summary>
@@ -130,6 +133,21 @@ public sealed class ShellsSave
     public int Tide { get; set; }
     public int[] Picked { get; set; } = System.Array.Empty<int>();
     public int[] Kinds { get; set; } = new int[Buildings.ShellPlans.Kinds];
+}
+
+/// <summary>
+/// The ferry to the bird island: the deliveries the heron's landing and punt have had (0 to
+/// <see cref="Buildings.FerryPlans.Trips"/>), how many crossings to the island were made, which of the four birds of the
+/// last crossing the telescope has seen (0 to <see cref="Buildings.FerryPlans.PerVisit"/> - 1) and how many birds of each
+/// kind the player has seen. Which birds a crossing has follows from the valley and its number. A crossing and a stay on
+/// the island are not saved; a save from before the ferry has none of it.
+/// </summary>
+public sealed class FerrySave
+{
+    public int Stage { get; set; }
+    public int Visit { get; set; }
+    public int[] Spotted { get; set; } = System.Array.Empty<int>();
+    public int[] Kinds { get; set; } = new int[Buildings.FerryPlans.Kinds];
 }
 
 /// <summary>

@@ -46,6 +46,7 @@ internal static class SaveRules
         ("ferrywoman's rally", HasInvalidRally),
         ("owl's map", HasInvalidExplorer),
         ("shells of the beach", HasInvalidShells),
+        ("ferry to the bird island", HasInvalidFerry),
         ("time of day", HasInvalidDay),
         ("decorations and the mayor's shop", HasInvalidDecorations),
         ("glass lamps and the lamp maker's shop", HasInvalidLamps),
@@ -100,6 +101,9 @@ internal static class SaveRules
         || data.Shells is null
         || data.Shells.Picked is null
         || data.Shells.Kinds is null
+        || data.Ferry is null
+        || data.Ferry.Spotted is null
+        || data.Ferry.Kinds is null
         || data.Day is null;
 
     /// <summary>Throws when the save is not one the game can restore.</summary>
@@ -267,6 +271,12 @@ internal static class SaveRules
                 || data.Quiz.DepartureState != GameState.ExplorerStatus
                 || !data.Explorer.Started
                 || data.Explorer.Spotted.Length <= data.Explorer.Recorded.Length,
+            Game.Departure.Ferry => data.Nearby != World.BirdwatcherId
+                || data.Quiz.DepartureState != GameState.FerryStatus
+                || data.Ferry.Stage >= FerryPlans.Trips,
+            Game.Departure.FerrySail => data.Nearby != World.BirdwatcherId
+                || data.Quiz.DepartureState != GameState.FerryStatus
+                || data.Ferry.Stage < FerryPlans.Trips,
             // The works' missing goods are asked for from a builder, a newcomer, a resident or the lamp maker.
             Game.Departure.Missing => data.Quiz.DepartureState switch
             {
@@ -279,6 +289,7 @@ internal static class SaveRules
                 GameState.GlassmakerShop => !World.IsGlassmaker(data.Nearby),
                 GameState.HunterStatus => !World.IsHunter(data.Nearby),
                 GameState.LighthouseStatus => data.Nearby != World.FirstBorderKeeperId,
+                GameState.FerryStatus => !World.IsBirdwatcher(data.Nearby),
                 // The baker of the village shop, whose bakery has run out of bread for his order.
                 GameState.TradeStatus => data.Nearby != World.FirstTraderId,
                 _ => true,
@@ -711,6 +722,42 @@ internal static class SaveRules
             || shells.Kinds.Any(count => count is < 0 or > ShellPlans.MostOfAKind);
     }
 
+    /// <summary>
+    /// The ferry: a landing of 0 to 5 deliveries, crossings that are not negative, each bird of the last crossing seen at
+    /// most once and none before the first crossing, a count that is not negative for each kind and that holds the birds
+    /// of the crossing seen, the heron's panel only beside her, and her questions only those before a trailer trip for the
+    /// landing, before the goods missing for it, or before a crossing.
+    /// </summary>
+    private static bool HasInvalidFerry(SaveData data)
+    {
+        var ferry = data.Ferry;
+        if (
+            ferry.Stage is < 0 or > FerryPlans.Trips
+            || ferry.Visit is < 0 or > FerryPlans.MostVisits
+            || ferry.Spotted.Any(bird => bird is < 0 or >= FerryPlans.PerVisit)
+            || ferry.Spotted.Distinct().Count() != ferry.Spotted.Length
+            || (ferry.Visit == 0 && ferry.Spotted.Length > 0)
+            || (ferry.Visit > 0 && ferry.Stage < FerryPlans.Trips)
+            || ferry.Kinds.Length != FerryPlans.Kinds
+            || ferry.Kinds.Any(count => count is < 0 or > FerryPlans.MostOfAKind)
+            || ferry.Kinds.Sum(count => (long)count) < ferry.Spotted.Length
+            || (data.State == GameState.FerryStatus && !World.IsBirdwatcher(data.Nearby))
+        )
+            return true;
+        if (!World.IsBirdwatcher(data.Nearby))
+            return false;
+        return data.Quiz.Handover
+            || data.Quiz.Challenge is DeliveryChallenge
+            || data.State
+                is not (GameState.Exploring or GameState.FerryStatus or GameState.Challenge or GameState.Reward)
+            || (
+                data.State == GameState.Challenge
+                && data.Quiz.Departure != 0
+                && (Game.Departure)data.Quiz.Departure
+                    is not (Game.Departure.Ferry or Game.Departure.FerrySail or Game.Departure.Missing)
+            );
+    }
+
     /// <summary>The clock of the day is a number of seconds within one day.</summary>
     private static bool HasInvalidDay(SaveData data) =>
         !float.IsFinite(data.Day.Clock) || data.Day.Clock < 0 || data.Day.Clock >= Weather.DayLength;
@@ -826,6 +873,11 @@ internal static class SaveRules
                         : World.AskerIds(cargo, 0),
                     trip.Loaded
                 );
+            }
+            case TripKinds.Ferry when trip.Index == 0 && data.Ferry.Stage is >= 0 and < FerryPlans.Trips:
+            {
+                var cargo = FerryPlans.CargoOf(data.Ferry.Stage);
+                return (cargo, World.AskerIds(cargo, 0), trip.Loaded);
             }
             case TripKinds.Dragon when trip.Index == 0 && data.Dragon.Stage is >= 0 and < DragonPlans.Trips:
                 // Everything is loaded at the mountain slope, which has no worker: the dragon asks the question.
@@ -956,6 +1008,7 @@ internal static class SaveRules
                 || data.Lighthouse.Stage >= LighthousePlans.Trips
                 || data.Post.Delivered[0] == 0,
             TripKinds.Dragon => trip.Index != 0 || data.Dragon.Stage >= DragonPlans.Trips,
+            TripKinds.Ferry => trip.Index != 0 || data.Ferry.Stage >= FerryPlans.Trips,
             // Wheat goes to the mill once it is finished, until its flour fills the yard.
             TripKinds.Mill => trip.Index != 0 || !MillFinished(data) || data.Buildings.FlourStock >= FlourMill.Capacity,
             // The lamp maker takes glasses again and again: there is only the one of him.
@@ -1016,6 +1069,7 @@ internal static class SaveRules
             : World.IsHunter(data.Nearby) ? GameState.HunterStatus
             : data.Nearby == World.FirstBorderKeeperId ? GameState.LighthouseStatus
             : World.IsDragon(data.Nearby) ? GameState.DragonStatus
+            : World.IsBirdwatcher(data.Nearby) ? GameState.FerryStatus
             : null;
         if (panel == null)
         {
@@ -1031,6 +1085,7 @@ internal static class SaveRules
                         or GameState.HunterStatus
                         or GameState.LighthouseStatus
                         or GameState.DragonStatus
+                        or GameState.FerryStatus
                 || data.Quiz.Challenge is LoadChallenge;
         }
         if (data.State is not (GameState.Exploring or GameState.Challenge) && data.State != panel)

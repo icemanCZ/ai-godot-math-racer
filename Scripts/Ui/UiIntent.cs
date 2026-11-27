@@ -107,6 +107,15 @@ internal abstract record UiIntent
 
     internal sealed record ExplorerGuide : UiIntent;
 
+    /// <summary>The heron's green check mark at the landing: the next load of the landing, or the crossing.</summary>
+    internal sealed record FerryStart : UiIntent;
+
+    /// <summary>The heron's green check mark on the island: the telescope of the hide.</summary>
+    internal sealed record FerryTelescope : UiIntent;
+
+    /// <summary>The heron's punt on the island: the crossing home.</summary>
+    internal sealed record FerryHome : UiIntent;
+
     // The ferrywoman's rally: a stage waits for the car at its start arch.
     internal sealed record RallyStart(int Stage) : UiIntent;
 

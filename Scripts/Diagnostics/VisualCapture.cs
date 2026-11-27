@@ -722,6 +722,26 @@ public partial class VisualCapture : Node
             camera.GlobalPosition = car.GlobalPosition + new Vector3(-5, 3, -6);
             camera.LookAt(car.GlobalPosition + new Vector3(0, 0, 14));
         }
+        else if (view == "ferry-island" && world.FerryPlace is { } islandSite)
+        {
+            // From over the water before the island's pier: the punt at the pier, the car, the heron and the hide.
+            camera.SetProcess(false);
+            camera.GlobalPosition = islandSite.IslandBerth + new Vector3(16, ValleyBorders.SeaLevel + 9, -18);
+            camera.LookAt(islandSite.Hide + Vector3.Up * 2);
+        }
+        else if (
+            view.StartsWith("ferry")
+            && view is not ("ferry-panel" or "ferry-ride" or "ferry-telescope")
+            && world.FerryPlace is { } ferrySite
+        )
+        {
+            // From inside the valley and above, past the landing and its pier to the punt on the border river.
+            camera.SetProcess(false);
+            var behind = ferrySite.Landing - ferrySite.Inward * 16 + ferrySite.Right * 14;
+            camera.GlobalPosition = world.Ground.At(behind.X, behind.Z) + Vector3.Up * 9;
+            camera.LookAt(ferrySite.PierStart + ferrySite.Inward * 6);
+        }
+        else if (view.StartsWith("ferry")) { }
         else if (view.StartsWith("explorer") || view.StartsWith("shells")) { }
         else if (view is "sheep" or "sheep-panel" or "sheep-lost") { }
         else if (view is "rally" or "rally-gate" or "rally-panel") { }

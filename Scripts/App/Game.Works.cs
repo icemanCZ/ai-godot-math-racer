@@ -319,6 +319,19 @@ public partial class Game
                 return;
             (works, asker) = (missing, lighthouse.Keeper);
         }
+        else if (State == GameState.FerryStatus)
+        {
+            // The heron, for the planks of the pier and the punt.
+            if (
+                world.FerryLanding is not { Complete: false } landing
+                || nearby is not { Role: BirdwatcherRole }
+                || Haul != null
+                || FerryStepReady(landing)
+                || GoodsWorks(FerryPlans.CargoOf(landing.Stage)) is not { Full: false } missing
+            )
+                return;
+            (works, asker) = (missing, landing.Heron);
+        }
         else if (State == GameState.HouseMaterialOffer)
         {
             // A resident who wants goods that the works has not made does the same: the way to the raw material.

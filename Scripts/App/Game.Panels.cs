@@ -72,6 +72,7 @@ public partial class Game
         Panel(GameState.ExplorerStatus, _ =>
             nearby?.Role is CartographerRole && ExplorerWanted && Shown(ShowCartographer)
         );
+        Panel(GameState.FerryStatus, _ => nearby?.Role is BirdwatcherRole && FerryWanted && Shown(ShowBirdwatcher));
         Panel(GameState.MayorShop, _ => nearby?.Role is MayorRole && Shown(ShowMayor));
         Panel(GameState.GlassmakerShop, _ => nearby?.Role is GlassmakerRole && Shown(ShowGlassmaker));
         Panel(GameState.SourceStatus, _ => nearby?.Role is SourceRole && Shown(ShowSource));

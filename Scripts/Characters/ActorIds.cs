@@ -114,6 +114,9 @@ internal static class ActorIds
     /// <summary>The owl, the mapmaker of the valley, at her stand where the road leaves the old valley.</summary>
     public const int Cartographer = TrackingAnimal + 1;
 
+    /// <summary>The heron at the landing of the ferry beside the homestead of the river border, who goes to the bird island.</summary>
+    public const int Birdwatcher = Cartographer + 1;
+
     /// <summary>The highest actor ID that a save may name.</summary>
-    public const int Last = Cartographer;
+    public const int Last = Birdwatcher;
 }

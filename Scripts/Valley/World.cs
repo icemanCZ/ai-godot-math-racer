@@ -174,6 +174,8 @@ public partial class World : Node3D
         PlanExplorer();
         // The cove of the shells keeps its sign off everything planned before it.
         PlanShells();
+        // The ferry to the bird island keeps its landing off everything planned before it.
+        PlanFerry();
         BuildBorderfolk();
         // The postman stood in front of the post office all along; he is registered last, so that no search that keeps
         // clear of the characters (the treasures, the fireflies, the wayside things) moves for him.
@@ -186,6 +188,8 @@ public partial class World : Node3D
         RegisterTrackingAnimal();
         // The owl came after that animal.
         RegisterCartographer();
+        // The heron came after the owl.
+        RegisterBirdwatcher();
         // The borders round the valley stand on the final ground and change nothing in it.
         AddChild(BorderWater);
         BorderWater.Generate(Ground);

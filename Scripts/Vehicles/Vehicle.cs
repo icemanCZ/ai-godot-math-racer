@@ -113,6 +113,20 @@ public partial class Vehicle : CharacterBody3D
         PoseReset?.Invoke();
     }
 
+    /// <summary>
+    /// Carries the standing car along, as the punt does over the water (<c>docs/FERRY_PLAN.md</c>): unlike
+    /// <see cref="SetPose"/> it keeps its tracks and the trailer where they are; the car must not be active.
+    /// </summary>
+    internal void Carry(Vector3 position, float heading)
+    {
+        Position = position;
+        Heading = heading;
+        Rotation = new Vector3(0, heading, 0);
+        Speed = 0;
+        Velocity = Vector3.Zero;
+        lastPosition = position;
+    }
+
     public override void _PhysicsProcess(double delta)
     {
         float dt = (float)delta;

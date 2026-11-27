@@ -132,6 +132,9 @@ public partial class World
     /// </summary>
     internal float SeaDepth(Vector3 p)
     {
+        // On the bird island, where the punt has brought the car, it may drive about but not off it.
+        if (IslandOpen)
+            return OnIsland(p) ? -1 : float.PositiveInfinity;
         if (
             p.Z < ValleyBounds.HalfSize - 1
             || Mathf.Abs(p.X) > ValleyBounds.HalfSize

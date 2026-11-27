@@ -120,6 +120,7 @@ public partial class Game
                         or BalloonistRole
                         or TrackingAnimalRole
                         or CartographerRole
+                        or BirdwatcherRole
                     )
             )
             .ToArray();

@@ -63,6 +63,7 @@ public sealed partial class HaulTrip : Node3D
     internal HunterPen? HunterHut => Target as HunterPen;
     internal Lighthouse? Lighthouse => Target as Lighthouse;
     internal DragonLair? DragonLair => Target as DragonLair;
+    internal FerryLanding? Ferry => Target as FerryLanding;
     internal Works? Works => Target as Works;
     internal int House => Target is HouseTripTarget house ? house.House : -1;
     internal bool ForGlassmaker => Target is GlassmakerTripTarget;

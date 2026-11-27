@@ -187,6 +187,18 @@ internal static class CharacterCatalog
             "9a7652"
         );
 
+    /// <summary>
+    /// The heron at the landing of the ferry beside the homestead of the river border (<see cref="ActorIds.Birdwatcher"/>),
+    /// who wants to go to the bird island (<c>docs/FERRY_PLAN.md</c>).
+    /// </summary>
+    public static CharacterSpec Birdwatcher { get; } =
+        new(
+            "Volavka pozorovatelka Klárka",
+            "Ahoj! Já jsem Klárka a pozoruju ptáky. Na ostrůvku v deltě jich je spousta, jen se tam nedá dojet. Postavíme pramici?",
+            2,
+            "9aa6b2"
+        );
+
     /// <summary>The pirate captain on the village square, who hides treasures for the player to dig up (<see cref="World.TreasurerId"/>).</summary>
     public static CharacterSpec Treasurer { get; } =
         new(

@@ -617,6 +617,29 @@ internal sealed class CartographerRole : ActorRole
 }
 
 /// <summary>
+/// The heron at the landing of the ferry (<c>docs/FERRY_PLAN.md</c>), beside the homestead of the river border, and on the
+/// bird island while the car is there. Talking to her shows the landing and the punt still to be built, or the atlas of
+/// the birds; her one quiz before a trailer trip or a crossing sends the player off.
+/// </summary>
+internal sealed class BirdwatcherRole : ActorRole
+{
+    public override string Icon => "binoculars";
+    public override bool UsesDeliveryGuide => false;
+
+    public override bool InvitesTalk(bool expeditionActive) => true;
+
+    public override void ShowHint(GameUi ui, Character actor) => ui.BirdwatcherHint();
+
+    public override void Open(Game game, Character actor) => game.OpenBirdwatcher(actor);
+
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
+    {
+        game.CompleteBirdwatcherQuiz(actor);
+        return true;
+    }
+}
+
+/// <summary>
 /// The postman on the village square. Talking to him opens the stamp album and gives out the next letter for a keeper
 /// of the borders; he asks no question.
 /// </summary>

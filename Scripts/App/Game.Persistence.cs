@@ -70,8 +70,8 @@ public partial class Game
             Nearby = ActorId(nearby),
             Vehicle = new VehicleSave
             {
-                Position = new[] { vehicle.Position.X, vehicle.Position.Y, vehicle.Position.Z },
-                Heading = vehicle.Heading,
+                Position = new[] { CarPoseToSave().Position.X, CarPoseToSave().Position.Y, CarPoseToSave().Position.Z },
+                Heading = CarPoseToSave().Heading,
                 Look = vehicle.Appearance.CurrentLookId,
                 Model = vehicle.Appearance.CurrentModelId,
                 Trail = vehicle.Appearance.CurrentTrailId,
@@ -111,6 +111,8 @@ public partial class Game
                         or Departure.Dragon
                         or Departure.Sheep
                         or Departure.Explorer
+                        or Departure.Ferry
+                        or Departure.FerrySail
                     ? quiz.DepartureState
                     : GameState.Title,
             },
@@ -207,6 +209,13 @@ public partial class Game
                 Tide = Shells.Tide,
                 Picked = Shells.Picked,
                 Kinds = Shells.Kinds,
+            },
+            Ferry = new FerrySave
+            {
+                Stage = world.FerryLanding?.Stage ?? 0,
+                Visit = Ferry.Visit,
+                Spotted = Ferry.Spotted,
+                Kinds = Ferry.Kinds,
             },
             Fireflies = new FirefliesSave { Caught = fireflies.Caught },
             Hunt = new HuntSave
@@ -333,6 +342,8 @@ public partial class Game
         // And the owl's map and the shells, so that the little owl and the crab know whether they are owned.
         RestoreExplorer(data.Explorer.Started, data.Explorer.Spotted, data.Explorer.Recorded, data.Explorer.Guided);
         RestoreShells(data.Shells.Tide, data.Shells.Picked, data.Shells.Kinds);
+        // And the heron's landing and atlas, so that the kingfisher knows whether he is owned.
+        RestoreFerry(data.Ferry.Stage, data.Ferry.Visit, data.Ferry.Spotted, data.Ferry.Kinds);
         RestoreBuilds(data);
         UpdateDeliveryGuides();
         interaction.BeforePause = validEncounter ? data.State : GameState.Exploring;

@@ -80,6 +80,9 @@ internal enum CollectorPetKind
 
     // The crab of the beach, Klepetko: owned once a shell of every kind is found on the sand.
     Crab,
+
+    // The heron's kingfisher, Modroušek: owned once a bird of every kind is in the atlas of the bird island.
+    Kingfisher,
 }
 
 internal sealed partial class CollectorPet : Node3D

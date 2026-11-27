@@ -852,6 +852,46 @@ public partial class Game
             for (int i = 0; i < 3; i++)
                 TickShells(.1);
         }
+        if (
+            view.StartsWith("ferry")
+            && world.FerryLanding is { } ferryLanding
+            && world.FerryPlace is { } ferrySite
+            && world.Birdwatcher is { } heron
+        )
+        {
+            // At the landing beside the homestead of the river border: "ferry-S" with S of its five loads, "ferry" and
+            // the others finished; "ferry-panel" with her atlas, "ferry-ride" a while into the crossing, "ferry-island" on
+            // the island and "ferry-telescope" through the telescope, aimed at a bird of the crossing.
+            int ferryStage =
+                view.StartsWith("ferry-") && int.TryParse(view["ferry-".Length..], out int ferryBuilt)
+                    ? Mathf.Clamp(ferryBuilt, 0, FerryPlans.Trips)
+                    : FerryPlans.Trips;
+            RestoreFerry(ferryStage, 0, Array.Empty<int>(), new int[FerryPlans.Kinds]);
+            var stand = ferrySite.Return;
+            vehicle.SetPose(world.Ground.At(stand.X, stand.Z, .15f), ferrySite.Yaw);
+            if (view == "ferry-panel")
+            {
+                RestoreFerry(FerryPlans.Trips, 3, Array.Empty<int>(), new[] { 2, 1, 0, 3, 0, 1, 0, 0 });
+                nearby = heron;
+                OpenBirdwatcher(heron);
+            }
+            if (view is "ferry-ride" or "ferry-island" or "ferry-telescope")
+            {
+                BeginCrossing(false);
+                for (int i = 0; i < 600 && FerrySailing && (view != "ferry-ride" || i < 150); i++)
+                    TickFerry(.1);
+            }
+            if (view == "ferry-telescope")
+            {
+                nearby = heron;
+                EnterInteraction(GameState.FerryStatus, heron);
+                BeginTelescope();
+                if (BirdsNow.Length > 0)
+                    AimTelescope(world.BirdIsland!.HeadOf(BirdsNow[0].Number));
+                for (int i = 0; i < 3; i++)
+                    TickFerry(.1);
+            }
+        }
         if (view == "log-yard" && world.LogYard is { } logYard)
             vehicle.SetPose(world.Ground.At(logYard.Position.X, logYard.Position.Z, .15f), 0);
         if (view is "beaver" or "load-question" && world.Beaver != null)
@@ -932,6 +972,23 @@ public partial class Game
             : null;
 
     /// <summary>"playground-S" shows the playground with S of its six deliveries made.</summary>
+    /// <summary>
+    /// Turns the open telescope straight at <paramref name="point"/>, as the steering would, for the checks and the
+    /// captures, which do not turn the camera frame by frame.
+    /// </summary>
+    internal void AimTelescope(Vector3 point)
+    {
+        if (!telescopeOn || world.FerryPlace is not { } site)
+            return;
+        var to = point - site.Eye;
+        float yaw = Mathf.Atan2(to.X, to.Z);
+        float elevation = Mathf.Atan2(to.Y, new Vector2(to.X, to.Z).Length());
+        var now = followCamera.PanoramaDirection;
+        followCamera.SteerPanorama(Mathf.Wrap(yaw - now.X, -Mathf.Pi, Mathf.Pi), elevation - now.Y);
+        followCamera.GlobalPosition = site.Eye;
+        followCamera.LookAt(point);
+    }
+
     internal static int? ParsePlaygroundView(string view) =>
         view.StartsWith("playground-")
         && int.TryParse(view["playground-".Length..], out int stage)

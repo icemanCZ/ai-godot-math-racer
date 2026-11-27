@@ -42,6 +42,12 @@ public partial class Game
 
         /// <summary>Not a trip: the owl's question before the wonders seen go into her map.</summary>
         Explorer,
+
+        /// <summary>The heron's question before a trailer trip for her landing and punt.</summary>
+        Ferry,
+
+        /// <summary>Not a trip: the heron's question before the crossing to the bird island.</summary>
+        FerrySail,
     }
 
     /// <summary>Asks the quiz that must be solved before a trip starts; the trip continues in StartDeparture.</summary>

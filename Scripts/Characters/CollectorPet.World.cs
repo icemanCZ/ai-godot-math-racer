@@ -106,6 +106,12 @@ internal static class WorldPetCatalog
         $"mušle všech {ShellPlans.Kinds} druhů z pláže"
     );
 
+    public static readonly WorldPetSpec Kingfisher = new(
+        CollectorPetKind.Kingfisher,
+        "Ledňáček Modroušek",
+        $"všech {FerryPlans.Kinds} druhů ptáků v atlasu z ostrůvku"
+    );
+
     public static readonly WorldPetSpec Bridge = new(CollectorPetKind.Bridge, "Mostíček", "dostavěný most");
     public static readonly WorldPetSpec Mill = new(CollectorPetKind.Mill, "Mlýnek", "dostavěný mlýn");
     public static readonly WorldPetSpec Tower = new(CollectorPetKind.Tower, "Věžička", "dostavěnou rozhlednu");
@@ -298,6 +304,9 @@ internal sealed partial class CollectorPet
                 break;
             case CollectorPetKind.Crab:
                 BuildCrab();
+                break;
+            case CollectorPetKind.Kingfisher:
+                BuildKingfisher();
                 break;
             case CollectorPetKind.Bridge:
                 BuildBridge();
@@ -895,6 +904,27 @@ internal sealed partial class CollectorPet
             }
         }
         Art.Block(model, new(0, .26f, .265f), new(.14f, .02f, .01f), "8e2a18");
+    }
+
+    private void BuildKingfisher()
+    {
+        // A small, round kingfisher: a shining blue back and head, an orange breast, a white throat, a long dark beak,
+        // little red feet and a short tail; on a little stick, as it sits on a branch over the water.
+        Ball(new(0, .55f, 0), new(.46f, .5f, .62f), "2a86c9");
+        Ball(new(0, .5f, .12f), new(.36f, .4f, .4f), "f08a3a");
+        Ball(new(0, .9f, .1f), new(.4f, .36f, .4f), "2f95d8");
+        Ball(new(0, .8f, .26f), new(.18f, .1f, .12f), "fffdf5");
+        foreach (int side in new[] { -1, 1 })
+        {
+            Ball(new(side * .2f, .55f, -.04f), new(.12f, .34f, .4f), "1f6fa8");
+            Art.Ball(model, new(side * .12f, .95f, .24f), new(.06f, .06f, .03f), "2a2522");
+            Art.Ball(model, new(side * .11f, .97f, .255f), Vector3.One * .015f, "ffffff");
+            Ball(new(side * .17f, .9f, .2f), new(.06f, .05f, .05f), "f08a3a");
+            Foot(new(side * .07f, .18f, .06f), .1f, .08f, "d84a3a", side);
+        }
+        Art.Block(model, new(0, .9f, .48f), new(.06f, .06f, .36f), "2f2a26");
+        Ball(new(0, .42f, -.36f), new(.14f, .08f, .24f), "1f6fa8");
+        Art.Log(model, new(0, .12f, 0), Vector3.Right, .05f, .7f, "7a5536");
     }
 
     private void BuildMill()

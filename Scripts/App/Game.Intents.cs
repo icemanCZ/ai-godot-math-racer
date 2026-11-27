@@ -129,6 +129,15 @@ public partial class Game
             case UiIntent.ExplorerGuide:
                 BeginExplorerGuide();
                 break;
+            case UiIntent.FerryStart:
+                BeginFerryStart();
+                break;
+            case UiIntent.FerryTelescope:
+                BeginTelescope();
+                break;
+            case UiIntent.FerryHome:
+                BeginFerryHome();
+                break;
             case UiIntent.RallyStart start:
                 BeginRallyStage(start.Stage);
                 break;

@@ -880,6 +880,7 @@ internal static class Texts
     // GameUi.Explorer and Game.Explorer
     public const string SignMaps = "MAPY";
     public const string SignShells = "MUŠLE";
+    public const string SignBirds = "PTÁCI";
     public const string CartographerHint = "Sova kartografka Mapka";
     public const string ExplorerWanted =
         "Za starým údolím je osm divů krajiny. Projeď kolem nich a pak se vrať, já je zakreslím do mapy. Zmáčkni zelenou fajfku a já ti ukážu cestu k nejbližšímu.";
@@ -926,4 +927,41 @@ internal static class Texts
     public static string ShellsAllKinds(int coins) => $"Všechny druhy mušlí!  +{coins}";
 
     public static string ShellsKinds(int found, int all) => $"Druhy mušlí: {found} z {all}";
+
+    // GameUi.Ferry and Game.Ferry
+    public const string BirdwatcherHint = "Volavka pozorovatelka Klárka";
+    public const string FerryWanted =
+        "Převoznice Vendula mi půjčí svou starou pramici, ale je celá rozbitá. Přivezeš mi klády a prkna? Postavím molo a novou pramici.";
+    public const string FerryBuiltSpeech =
+        "Pramice je hotová! Až budeš chtít, poplujeme po řece až do delty na ptačí ostrůvek.";
+    public const string FerryReady = "Pramice je připravená. Poplujeme na ptačí ostrůvek? Zmáčkni zelenou fajfku.";
+    public const string FerrySailQuestion = "Než odrazím, vyřeš úlohu!";
+    public const string FerrySailSpeech = "Držte se! Plujeme po proudu až k moři.";
+    public const string FerryHomeSpeech = "Tak domů! Pluju proti proudu k přístavišti.";
+    public const string FerryHomeEnd = "Jsme doma. Přijeď zase, ptáci se pořád střídají!";
+    public const string FerryIslandHello =
+        "Jsme na ostrůvku! V rákosí kolem se schovávají ptáci. Vylez do pozorovatelny a najdi je dalekohledem.";
+    public const string FerryIslandAllSeen = "Všechny ptáky z dnešní plavby už máš v atlasu. Poplujeme domů?";
+    public const string FerryTelescopeHow =
+        "Otáčej dalekohledem volantem nebo myší. Když je pták uprostřed kroužku, chvilku počkej. Pedál dalekohled zavře.";
+    public const string FerryAtlasFull = "Atlas je plný! Ale ptáci se rádi vracejí, poplujeme se zase podívat?";
+    public const string FerryTelescopeButton = "Dalekohled";
+    public const string FerryHomeButton = "Plout domů";
+    public const string FerrySailButton = "Plout na ostrůvek";
+
+    public static string FerrySailAgain(int missing) =>
+        $"V atlasu ještě chybí {missing} {(missing == 1 ? "druh" : missing < 5 ? "druhy" : "druhů")} ptáků. Poplujeme na ostrůvek?";
+
+    public static string FerryPart(string part, int stage, int all) => $"Hotovo: {part}!  {stage} / {all}";
+
+    public static string FerryBuilt(int coins) => $"Pramice je hotová!  +{coins}";
+
+    public static string FerryNewBird(string name, int found, int all) =>
+        $"{name}! Nový pták v atlasu: {found} z {all}";
+
+    public static string FerryBirdAgain(string name) => $"{name}! Zase jeden do atlasu.";
+
+    public static string FerryAtlasDone(int coins) => $"Atlas je plný! Ledňáček Modroušek teď půjde s tebou.  +{coins}";
+
+    public static string FerryTelescopeSeen(int seen, int all) => $"Dalekohled. Ptáci: {seen} z {all}";
 }
