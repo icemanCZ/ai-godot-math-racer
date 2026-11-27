@@ -594,6 +594,29 @@ internal sealed class TrackingAnimalRole : ActorRole
 }
 
 /// <summary>
+/// The owl, the mapmaker of the valley (<c>docs/EXPLORER_PLAN.md</c>), at her stand where the road leaves the old valley.
+/// Talking to her shows her map of the valley with the wonders found so far; her one quiz writes the wonders the car
+/// has seen into the map.
+/// </summary>
+internal sealed class CartographerRole : ActorRole
+{
+    public override string Icon => "map";
+    public override bool UsesDeliveryGuide => false;
+
+    public override bool InvitesTalk(bool expeditionActive) => true;
+
+    public override void ShowHint(GameUi ui, Character actor) => ui.CartographerHint();
+
+    public override void Open(Game game, Character actor) => game.OpenCartographer(actor);
+
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
+    {
+        game.CompleteCartographerQuiz(actor);
+        return true;
+    }
+}
+
+/// <summary>
 /// The postman on the village square. Talking to him opens the stamp album and gives out the next letter for a keeper
 /// of the borders; he asks no question.
 /// </summary>

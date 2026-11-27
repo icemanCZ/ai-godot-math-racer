@@ -1,0 +1,10 @@
+seed 42
+owl road -576.49 14.51 448.05 inward 0.84 -0.00 0.55 talk -572.17 14.51 453.86
+landmark 0 Starý dub -355.84 24.90 -778.75 road -356.71 24.59 -793.72 yaw -3.08
+landmark 1 Skalní brána 462.83 27.35 744.28 road 466.37 25.87 758.85 yaw 0.24
+landmark 2 Zřícenina hradu -749.98 36.32 -288.95 road -765.97 35.93 -289.61 yaw -1.61
+landmark 3 Obří muchomůrka -734.23 24.40 606.30 road -722.66 24.15 600.37 yaw 2.04
+landmark 4 Kamenný kruh -428.35 32.15 769.51 road -430.57 32.67 784.34 yaw -0.15
+landmark 5 Kostra dinosaura 806.74 28.16 -341.42 road 790.80 29.88 -340.05 yaw -1.48
+landmark 6 Studánka 533.18 21.84 -753.91 road 529.10 22.51 -742.62 yaw -0.35
+landmark 7 Strašák v poli 709.72 28.13 70.79 road 708.76 27.99 57.82 yaw -3.07

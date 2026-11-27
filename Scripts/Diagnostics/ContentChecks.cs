@@ -83,6 +83,16 @@ public partial class ContentChecks : Node
                 "the ferrywoman's rally"
             );
             Need(
+                world.Landmarks.Count == ExplorerPlans.Landmarks
+                    && world.Cartographer != null
+                    && world.LandmarkModels != null,
+                "the owl's map and its wonders"
+            );
+            Need(
+                world.ShellCove != null && world.BeachShells != null && world.ShellsOfTide(0).Length >= 6,
+                "the shells of the beach"
+            );
+            Need(
                 world.Duck != null && world.WorldPets.Count == WorldPetsExpected,
                 $"the pets of the world ({world.WorldPets.Count} of {WorldPetsExpected})"
             );
@@ -106,8 +116,8 @@ public partial class ContentChecks : Node
     /// The duck, five raw materials (wheat too), every works, the bridge, the mill, the tower, the ducklings, a pet per
     /// hidden kind, the little stationmaster of the railway, the baby panda of the zoo, the hunter's fawn, the postman's
     /// pigeon, the lighthouse keeper's gull, the dragon's little one, the balloonist's rooster, the forest keeper's
-    /// squirrel, the shepherd's sheepdog puppy and the ferrywoman's otter.
+    /// squirrel, the shepherd's sheepdog puppy, the ferrywoman's otter, the owl's little owl and the crab of the beach.
     /// </summary>
     private static readonly int WorldPetsExpected =
-        1 + 5 + WorksCatalog.Total + 3 + WorldPetCatalog.DucklingDeliveries.Length + HiddenFriends.KindCount + 3 + 7;
+        1 + 5 + WorksCatalog.Total + 3 + WorldPetCatalog.DucklingDeliveries.Length + HiddenFriends.KindCount + 3 + 9;
 }

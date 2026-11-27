@@ -44,6 +44,8 @@ internal static class SaveRules
         ("forest keeper's book of tracks", HasInvalidTracking),
         ("shepherd's lost sheep", HasInvalidSheep),
         ("ferrywoman's rally", HasInvalidRally),
+        ("owl's map", HasInvalidExplorer),
+        ("shells of the beach", HasInvalidShells),
         ("time of day", HasInvalidDay),
         ("decorations and the mayor's shop", HasInvalidDecorations),
         ("glass lamps and the lamp maker's shop", HasInvalidLamps),
@@ -92,6 +94,12 @@ internal static class SaveRules
         || data.Sheep.Following is null
         || data.Rally is null
         || data.Rally.Best is null
+        || data.Explorer is null
+        || data.Explorer.Spotted is null
+        || data.Explorer.Recorded is null
+        || data.Shells is null
+        || data.Shells.Picked is null
+        || data.Shells.Kinds is null
         || data.Day is null;
 
     /// <summary>Throws when the save is not one the game can restore.</summary>
@@ -255,6 +263,10 @@ internal static class SaveRules
                 || data.Quiz.DepartureState != GameState.ShepherdStatus
                 || !data.Sheep.Started
                 || data.Sheep.Following.Length == 0,
+            Game.Departure.Explorer => data.Nearby != World.CartographerId
+                || data.Quiz.DepartureState != GameState.ExplorerStatus
+                || !data.Explorer.Started
+                || data.Explorer.Spotted.Length <= data.Explorer.Recorded.Length,
             // The works' missing goods are asked for from a builder, a newcomer, a resident or the lamp maker.
             Game.Departure.Missing => data.Quiz.DepartureState switch
             {
@@ -654,6 +666,49 @@ internal static class SaveRules
                 && delivered[(int)Border.River] == 0
             )
             || (data.State == GameState.RallyStatus && data.Nearby != World.FerrywomanId);
+    }
+
+    /// <summary>
+    /// The owl's map: known wonders, each seen and written in at most once, written in only once seen and once she has
+    /// shown her map, her arrows only to a wonder not yet seen, her panel only beside her, and her one question, the one
+    /// before the wonders seen go into her map.
+    /// </summary>
+    private static bool HasInvalidExplorer(SaveData data)
+    {
+        var map = data.Explorer;
+        if (
+            map.Spotted.Concat(map.Recorded).Any(kind => kind is < 0 or >= ExplorerPlans.Landmarks)
+            || map.Spotted.Distinct().Count() != map.Spotted.Length
+            || map.Recorded.Distinct().Count() != map.Recorded.Length
+            || map.Recorded.Any(kind => !map.Spotted.Contains(kind))
+            || (!map.Started && map.Recorded.Length > 0)
+            || map.Guided < -1
+            || map.Guided >= ExplorerPlans.Landmarks
+            || (map.Guided >= 0 && map.Spotted.Contains(map.Guided))
+            || (data.State == GameState.ExplorerStatus && !World.IsCartographer(data.Nearby))
+        )
+            return true;
+        if (!World.IsCartographer(data.Nearby))
+            return false;
+        return data.Quiz.Handover
+            || data.Quiz.Challenge is DeliveryChallenge or LoadChallenge
+            || data.State
+                is not (GameState.Exploring or GameState.ExplorerStatus or GameState.Challenge or GameState.Reward)
+            || (data.State == GameState.Challenge && (Game.Departure)data.Quiz.Departure != Game.Departure.Explorer);
+    }
+
+    /// <summary>
+    /// The shells: a tide that is not negative, each of its shells picked up at most once, and a count that is not
+    /// negative for each of the kinds.
+    /// </summary>
+    private static bool HasInvalidShells(SaveData data)
+    {
+        var shells = data.Shells;
+        return shells.Tide < 0
+            || shells.Picked.Any(shell => shell is < 0 or >= ShellPlans.PerTide)
+            || shells.Picked.Distinct().Count() != shells.Picked.Length
+            || shells.Kinds.Length != ShellPlans.Kinds
+            || shells.Kinds.Any(count => count is < 0 or > ShellPlans.MostOfAKind);
     }
 
     /// <summary>The clock of the day is a number of seconds within one day.</summary>

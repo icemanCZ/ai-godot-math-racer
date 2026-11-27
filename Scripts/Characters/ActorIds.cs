@@ -111,6 +111,9 @@ internal static class ActorIds
     /// </summary>
     public const int TrackingAnimal = Balloonist + 1;
 
+    /// <summary>The owl, the mapmaker of the valley, at her stand where the road leaves the old valley.</summary>
+    public const int Cartographer = TrackingAnimal + 1;
+
     /// <summary>The highest actor ID that a save may name.</summary>
-    public const int Last = TrackingAnimal;
+    public const int Last = Cartographer;
 }

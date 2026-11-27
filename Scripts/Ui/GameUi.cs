@@ -147,6 +147,8 @@ public partial class GameUi : CanvasLayer
         SetupBalloon();
         SetupTracking();
         SetupSheep();
+        SetupExplorer();
+        SetupShells();
         SetupRally();
         SetupFireflies();
         SetupHunt();

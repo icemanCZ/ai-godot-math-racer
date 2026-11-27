@@ -568,6 +568,62 @@ tenths of a second per stage, 0 when not driven; rule `HasInvalidRally`); medals
 drive under way is not saved. Checked by `rally-checks`; `run.ps1 -Capture` shows it with the views `rally`,
 `rally-gate` and `rally-panel`.
 
+### `ExplorerLog`, `LandmarkModels`, `CartographerStand`, `World.Explorer` and `Game.Explorer`
+
+The owl's map of the valley (`docs/EXPLORER_PLAN.md`). `World.PlanExplorer` runs after the rally, with random numbers of
+its own (`ExplorerSeed`). It first places the owl's stand (`PlanCartographer`, `CartographerSite`) beside the first
+stretch beyond the old valley of the road that joins the ring nearest the village, then one wonder of each of the eight
+kinds of `ExplorerPlans` beside the roads of the land beyond the old valley: the kinds are shuffled over the eight
+directions round the valley (`EighthOf`), and for each a random one of the places along both sides of every road where
+it fits is taken (`LandmarkFits`: open, nearly level, dry ground off the roads, rivers, beach and bridges, 220 m from
+the other wonders, 140 m from the owl, away from the homesteads, the lighthouse, the dragon, the balloon, the dens and
+ways of the trails, the sheep's meadows and the rally's gates); a second pass allows any direction. A valley where the
+stand or a wonder does not fit has no map. The stand and the wonders are left out of the plants, the grass and the
+wayside things through `InExplorerZone`, which `InBorderfolkZone` asks, so nothing that was there moves.
+`Tests/Worlds/seed-N.explorer.txt` holds them; planning takes some 20 ms.
+
+`LandmarkModels` builds the eight wonders (an oak with a door, a rock arch, a ruined tower, a giant toadstool, standing
+stones, a dinosaur's skeleton, a well and a scarecrow), with collision, and a blue flag of the owl beside each that
+shows once it is written into her map. Sova kartografka Mapka (`CartographerRole`, `ActorIds.Cartographer` 82,
+`Character.DressAsOwl`) opens her panel (`GameState.ExplorerStatus` 38, `GameUi.CartographerPanel`) with the map drawn
+by `ValleyMapPicture` (mountains, sea, both rivers, the forest, the roads, the village, her stand, the car and the
+wonders: a question mark while hidden, its `LandmarkPicture` with an exclamation mark once seen, with her flag once
+written in). `ExplorerLog` holds the map without scene nodes: whether she has shown it, the wonders seen and written in,
+and the one her road arrows lead to. The system `explorer` (`Game.TickExplorer`) sees a wonder when the car comes within
+its radius and `ExplorerPlans.SpotReach`, from the very start of a game; `ExplorerTrip` (a `RouteGuide`) draws the
+arrows to the nearest wonder not yet seen (`UiIntent.ExplorerGuide`) while no delivery, trailer trip or letter shows its
+own, and the corner panel (`GameUi.ExplorerHud`) shows its picture and distance. Her green check mark
+(`UiIntent.ExplorerRecord`) asks a question (`Departure.Explorer`) and writes every wonder seen into the map for
+`CoinsPerLandmark` each and `MapCoins` for the full map, which brings the little owl (`CollectorPetKind.Owlet`). Saved
+as `SaveData.Explorer` (`Started`, `Spotted`, `Recorded`, `Guided`; rule `HasInvalidExplorer`). Checked by
+`explorer-checks`; `run.ps1 -Capture` shows it with the views `explorer`, `explorer-panel`, `explorer-hud` and
+`landmark-0` to `landmark-7`.
+
+### `Tide`, `ShellsLog`, `BeachShells`, `World.Shells` and `Game.Shells`
+
+The shells of the beach (`docs/SHELLS_PLAN.md`). `Tide` turns the clock of the day into the level of the sea: high at
+the start and the middle of the day, `Tide.Range` (1.5 m) lower a quarter of a day later. `World.SetTide` moves the
+sea's mesh (`BorderWater.SetTide`) and the night boat; the border river keeps its level. The beach lies beyond the edge
+where the valley is played (`ValleyBounds`), so `Vehicle.SeaDepth` (`World.SeaDepth`) lets the car on past the edge by
+the sea only, down the beach as far as the water is at most 0.3 m deep; caught by the rising tide it may still drive
+out. `World.PlanShells` runs after the owl's map and takes the cove below the homestead of the keeper of the sea (or
+where the coast comes nearest) and the place of its sign at the edge of the valley. `World.ShellsOfTide` works out the
+shells a high tide leaves, with random numbers of their own from the valley and the tide's number (`ShellSeed`), so they
+are not saved: `ShellPlans.PerTide` shells of the eight kinds, drawn by `ShellPlans.Weights`, on the wet sand of the
+cove that only the low tide uncovers, off the river's mouth and the lighthouse. `Tests/Worlds/seed-N.shells.txt` holds
+the cove, the sign and the first two tides.
+
+`BeachShells` lays out the shells of the tide with a twinkle above each and shows those not yet picked up while the sea
+leaves them uncovered. `ShellsLog` holds the shells without scene nodes: the tide's number, its shells picked up and how
+many of each kind the player has. The system `shells` (`Game.TickShells`) follows the tide, takes the next tide's shells
+at every high tide (`Tide.HalfOfDay` changes), picks up a shell the car drives to (`ShellPlans.PickReach`) for
+`CoinsPerShell`, more for the first of a kind (`NewKindCoins`) and `AllKindsCoins` for the eighth kind, which brings the
+crab (`CollectorPetKind.Crab`, waiting by the keeper of the sea), and by the cove shows the corner panel
+(`GameUi.ShellsHud`) with the arrow to the nearest shell uncovered and the eight kinds in pictures (`ShellPicture`).
+Saved as `SaveData.Shells` (`Tide`, `Picked`, `Kinds`; rule `HasInvalidShells`). Checked by `shell-checks` and
+`outland-checks` (the car goes down the beach and stops at the water); `run.ps1 -Capture` shows it with the views
+`shells`, `shells-close` and `shells-high`.
+
 ### `MayorRole`, `TownDecorations` and `Village.Mayor`
 
 The mayor (`ActorIds.Mayor` 68, `MayorRole`, `GameState.MayorShop` 23) stands on the village square and sells eight

@@ -123,6 +123,12 @@ public partial class Game
             case UiIntent.SheepPen:
                 BeginSheepPen();
                 break;
+            case UiIntent.ExplorerRecord:
+                BeginExplorerRecord();
+                break;
+            case UiIntent.ExplorerGuide:
+                BeginExplorerGuide();
+                break;
             case UiIntent.RallyStart start:
                 BeginRallyStage(start.Stage);
                 break;

@@ -204,6 +204,7 @@ public partial class Game
                 keeper == addressee
             );
         world.Postman?.Guide(!Post.Busy && NextKeeper() != null);
+        world.Cartographer?.Guide(CartographerAwaits);
     }
 
     /// <summary>The arrows of the letter move on; a delivery or a trailer trip under way shows its own instead.</summary>

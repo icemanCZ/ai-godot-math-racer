@@ -39,6 +39,9 @@ public partial class Game
 
         /// <summary>Not a trip: the shepherd's question before the sheep that follow the car go into his fold.</summary>
         Sheep,
+
+        /// <summary>Not a trip: the owl's question before the wonders seen go into her map.</summary>
+        Explorer,
     }
 
     /// <summary>Asks the quiz that must be solved before a trip starts; the trip continues in StartDeparture.</summary>

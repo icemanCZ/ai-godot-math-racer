@@ -472,10 +472,22 @@ public partial class OutlandChecks : Node
             }
             world.Ground.StreamColliders(spot);
             car.SetPose(world.Ground.At(spot.X, spot.Z, .15f), heading);
+            // By the sea the car drives on down the beach (docs/SHELLS_PLAN.md), which takes longer, and stops at the water.
+            bool sea = name == "the sea";
             Input.ActionPress("accelerate");
-            await Frames(240);
+            await Frames(sea ? 900 : 240);
             Input.ActionRelease("accelerate");
             float travelled = FlatMath.Length(car.Position.X - spot.X, car.Position.Z - spot.Z);
+            if (sea)
+            {
+                float depth = world.SeaDepth(car.Position);
+                Check(
+                    !ValleyBounds.Contains(car.Position.X, car.Position.Z) && depth < .5f && travelled > 20,
+                    $"a car driving towards the sea goes down the beach and stops at the water (it drove {travelled:0.0} m,"
+                        + $" {depth:0.00} m deep)"
+                );
+                continue;
+            }
             Check(
                 ValleyBounds.Contains(car.Position.X, car.Position.Z) && travelled > 5,
                 $"a car driving towards {name} stops at the edge of the valley (it drove {travelled:0.0} m)"

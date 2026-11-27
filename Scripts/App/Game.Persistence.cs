@@ -110,6 +110,7 @@ public partial class Game
                         or Departure.Lighthouse
                         or Departure.Dragon
                         or Departure.Sheep
+                        or Departure.Explorer
                     ? quiz.DepartureState
                     : GameState.Title,
             },
@@ -194,6 +195,19 @@ public partial class Game
                 Following = Sheep.Found,
             },
             Rally = new RallySave { Best = rallyBest.ToArray() },
+            Explorer = new ExplorerSave
+            {
+                Started = Explorer.Started,
+                Spotted = Explorer.Spotted,
+                Recorded = Explorer.Recorded,
+                Guided = Explorer.Guided,
+            },
+            Shells = new ShellsSave
+            {
+                Tide = Shells.Tide,
+                Picked = Shells.Picked,
+                Kinds = Shells.Kinds,
+            },
             Fireflies = new FirefliesSave { Caught = fireflies.Caught },
             Hunt = new HuntSave
             {
@@ -316,6 +330,9 @@ public partial class Game
         RestoreSheep(data.Sheep.Started, data.Sheep.Home, data.Sheep.Following);
         // And the best times of the rally, so that the otter knows whether she is owned.
         RestoreRally(data.Rally.Best);
+        // And the owl's map and the shells, so that the little owl and the crab know whether they are owned.
+        RestoreExplorer(data.Explorer.Started, data.Explorer.Spotted, data.Explorer.Recorded, data.Explorer.Guided);
+        RestoreShells(data.Shells.Tide, data.Shells.Picked, data.Shells.Kinds);
         RestoreBuilds(data);
         UpdateDeliveryGuides();
         interaction.BeforePause = validEncounter ? data.State : GameState.Exploring;

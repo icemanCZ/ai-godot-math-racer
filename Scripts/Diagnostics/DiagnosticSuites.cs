@@ -98,6 +98,8 @@ internal static class DiagnosticSuites
         new("tracking-checks", (g, w, v) => new TrackingChecks(g, w, v), Seeds: ThreeSeeds),
         new("sheep-checks", (g, w, v) => new SheepChecks(g, w, v), Seeds: ThreeSeeds),
         new("rally-checks", (g, w, v) => new RallyChecks(g, w, v), Seeds: ThreeSeeds),
+        new("explorer-checks", (g, w, v) => new ExplorerChecks(g, w, v), Seeds: ThreeSeeds),
+        new("shell-checks", (g, w, v) => new ShellChecks(g, w, v), Seeds: ThreeSeeds),
         new(
             "weather-checks",
             (g, w, v) => new WeatherChecks(g, w, v),

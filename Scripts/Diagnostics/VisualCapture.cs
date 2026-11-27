@@ -695,6 +695,34 @@ public partial class VisualCapture : Node
             camera.GlobalPosition = world.FoldPoint(11.5f, -.5f) + Vector3.Up * 5.5f;
             camera.LookAt(world.FoldMiddle + Vector3.Up * .6f);
         }
+        else if (view == "explorer" && world.CartographerPlace is { } owlStand)
+        {
+            // From across the road and above: the owl on her perch, her big map on its easel, the table and the sign.
+            camera.SetProcess(false);
+            camera.GlobalPosition = owlStand.Local(1, -9) + Vector3.Up * 5;
+            camera.LookAt(owlStand.Local(0, 8) + Vector3.Up * 2);
+        }
+        else if (view.StartsWith("landmark-") && int.TryParse(view["landmark-".Length..], out int wonder))
+        {
+            // From the road beside it, a little along and above: the whole wonder with the owl's flag.
+            if (wonder < world.Landmarks.Count)
+            {
+                var landmark = world.Landmarks[wonder];
+                var along = Vector3.Up.Cross(landmark.Facing).Normalized();
+                camera.SetProcess(false);
+                var eye = landmark.Road + landmark.Facing * 6 + along * 10;
+                camera.GlobalPosition = world.Ground.At(eye.X, eye.Z) + Vector3.Up * 5;
+                camera.LookAt(landmark.Center + Vector3.Up * 3);
+            }
+        }
+        else if (view == "shells-close" && world.ShellCove is { })
+        {
+            // Low over the wet sand behind the car: the shells and their twinkles before the sea.
+            camera.SetProcess(false);
+            camera.GlobalPosition = car.GlobalPosition + new Vector3(-5, 3, -6);
+            camera.LookAt(car.GlobalPosition + new Vector3(0, 0, 14));
+        }
+        else if (view.StartsWith("explorer") || view.StartsWith("shells")) { }
         else if (view is "sheep" or "sheep-panel" or "sheep-lost") { }
         else if (view is "rally" or "rally-gate" or "rally-panel") { }
         else if (view == "hunter-close" && world.Hunter is { } hunterClose)

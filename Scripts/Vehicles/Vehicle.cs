@@ -1,3 +1,4 @@
+using System;
 using Godot;
 using MathRacer.App;
 using MathRacer.Buildings;
@@ -48,6 +49,22 @@ public partial class Vehicle : CharacterBody3D
         bool gathering = (target - speed) * Mathf.Sign(target) > .5f;
         return pedal * (gathering ? 1 : TrainSmoke.Holding);
     }
+
+    /// <summary>
+    /// How deep the sea is over the ground at a point past the edge of the valley by the sea, negative on the dry beach
+    /// and infinite where the car may not drive (<c>docs/SHELLS_PLAN.md</c>); without it the car stops at every edge.
+    /// </summary>
+    internal Func<Vector3, float>? SeaDepth { get; set; }
+
+    /// <summary>How deep the car may drive into the sea at the edge of the beach.</summary>
+    private const float BeachWading = .3f;
+
+    /// <summary>
+    /// How far the car is from where it may drive at <paramref name="p"/>: less than nothing inside the valley,
+    /// the depth of the sea past the edge by the beach, and infinite past every other edge.
+    /// </summary>
+    private float WaterAhead(Vector3 p) =>
+        ValleyBounds.Contains(p.X, p.Z) ? -1 : SeaDepth?.Invoke(p) ?? float.PositiveInfinity;
 
     public void Setup(Terrain ground, Roads routes, Ford? crossing = null)
     {
@@ -183,9 +200,11 @@ public partial class Vehicle : CharacterBody3D
             Velocity = Vector3.Zero;
         }
         // The valley ends at its natural borders: the car stops at the edge as it does at the water and can turn back.
-        bool atEdge =
-            !ValleyBounds.Contains(Position.X, Position.Z)
-            && ValleyBounds.Contains(previousPosition.X, previousPosition.Z);
+        // By the sea it may drive on down the beach (SeaDepth), as far as the water lets it; caught by the rising tide,
+        // it may still drive out of the water but not further into it.
+        float depth = WaterAhead(Position),
+            depthBefore = WaterAhead(previousPosition);
+        bool atEdge = depth > BeachWading && depth > depthBefore;
         if (atEdge)
         {
             Position = previousPosition;
@@ -221,7 +240,7 @@ public partial class Vehicle : CharacterBody3D
             Reset();
         // A car that is far beyond the edge was put there, not driven: it goes back to the start.
         if (
-            !ValleyBounds.Contains(Position.X, Position.Z, -30)
+            !ValleyBounds.Contains(Position.X, Position.Z, -30) && float.IsPositiveInfinity(WaterAhead(Position))
             || Position.Y < terrain.Height(Position.X, Position.Z) - 25
         )
             Reset();

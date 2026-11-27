@@ -876,4 +876,54 @@ internal static class Texts
             Buildings.RallyMedal.Bronze => "Máš bronzovou medaili.",
             _ => "Tuhle etapu jsi ještě nejel.",
         };
+
+    // GameUi.Explorer and Game.Explorer
+    public const string SignMaps = "MAPY";
+    public const string SignShells = "MUŠLE";
+    public const string CartographerHint = "Sova kartografka Mapka";
+    public const string ExplorerWanted =
+        "Za starým údolím je osm divů krajiny. Projeď kolem nich a pak se vrať, já je zakreslím do mapy. Zmáčkni zelenou fajfku a já ti ukážu cestu k nejbližšímu.";
+    public const string ExplorerMapFull = "Hú hú! Moje mapa je celá. Jsi ten nejlepší průzkumník!";
+    public const string ExplorerRecordQuestion = "Vyřeš příklad a já zatím namočím pero do inkoustu!";
+    public const string ExplorerRecordButton = "Zakreslit divy do mapy";
+    public const string ExplorerGuideButton = "Ukaž mi cestu k nejbližšímu divu";
+    public const string ExplorerMap = "Mapa údolí";
+
+    public static string ExplorerSeen(int seen) =>
+        seen == 1
+            ? "Hú! Viděl jsi nový div krajiny! Zakreslíme ho do mapy? Zmáčkni zelenou fajfku."
+            : $"Hú! Viděl jsi nové divy krajiny: {seen}. Zakreslíme je do mapy? Zmáčkni zelenou fajfku.";
+
+    public static string ExplorerStillHidden(int hidden) =>
+        $"Divů, které jsi ještě neviděl: {hidden}. Zmáčkni zelenou fajfku a já ti ukážu cestu.";
+
+    public static string ExplorerGo(string name) => $"{name}! Šipky na silnici tě k němu dovedou. Hú hú!";
+
+    public static string ExplorerSpotted(string name) => $"Div krajiny: {name}! Řekni to sově Mapce.";
+
+    public static string ExplorerRecorded(string[] names, int recorded, int all) =>
+        $"V mapě: {string.Join(", ", names)}  {recorded} / {all}";
+
+    public static string ExplorerMapDone(int coins) => $"Mapa je celá!  +{coins}";
+
+    public static string ExplorerThanks(int left) => $"Děkuju! Ještě chybí divy: {left}. Najdeš je?";
+
+    public static string ExplorerOnMap(int recorded, int all) => $"V mapě {recorded} / {all}";
+
+    // GameUi.Shells and Game.Shells
+    public const string ShellsLowTide = "Odliv! Moře ustoupilo a nechalo na písku mušle. Sbírej je, než se voda vrátí!";
+    public const string ShellsWait = "Počkej na odliv";
+    public const string ShellsCrab = "Máš všech osm druhů! Krab Klepetko z pláže teď půjde s tebou.";
+    public const string ShellsHud = "Mušle";
+
+    public static string ShellPicked(string name, int count) => $"{name}  {count}×  +1";
+
+    public static string ShellNewKind(string name, int found, int all, int coins) =>
+        $"Nový druh: {name}!  {found} / {all}  +{coins}";
+
+    public static string ShellNewKindSpoken(string name) => $"Nový druh mušle! {name}.";
+
+    public static string ShellsAllKinds(int coins) => $"Všechny druhy mušlí!  +{coins}";
+
+    public static string ShellsKinds(int found, int all) => $"Druhy mušlí: {found} z {all}";
 }

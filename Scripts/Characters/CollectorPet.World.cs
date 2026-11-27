@@ -94,6 +94,18 @@ internal static class WorldPetCatalog
         $"zlatá medaile ve všech {RallyPlans.Stages} etapách rallye"
     );
 
+    public static readonly WorldPetSpec Owlet = new(
+        CollectorPetKind.Owlet,
+        "Sovička Houkalka",
+        $"všech {ExplorerPlans.Landmarks} divů krajiny v mapě"
+    );
+
+    public static readonly WorldPetSpec Crab = new(
+        CollectorPetKind.Crab,
+        "Krab Klepetko",
+        $"mušle všech {ShellPlans.Kinds} druhů z pláže"
+    );
+
     public static readonly WorldPetSpec Bridge = new(CollectorPetKind.Bridge, "Mostíček", "dostavěný most");
     public static readonly WorldPetSpec Mill = new(CollectorPetKind.Mill, "Mlýnek", "dostavěný mlýn");
     public static readonly WorldPetSpec Tower = new(CollectorPetKind.Tower, "Věžička", "dostavěnou rozhlednu");
@@ -280,6 +292,12 @@ internal sealed partial class CollectorPet
                 break;
             case CollectorPetKind.Otter:
                 BuildOtter();
+                break;
+            case CollectorPetKind.Owlet:
+                BuildOwlet();
+                break;
+            case CollectorPetKind.Crab:
+                BuildCrab();
                 break;
             case CollectorPetKind.Bridge:
                 BuildBridge();
@@ -832,6 +850,51 @@ internal sealed partial class CollectorPet
             );
         }
         Eyes(.08f, 1.0f, .2f);
+    }
+
+    private void BuildOwlet()
+    {
+        // A round fluffy little owl: a speckled body that is also the head, two ear tufts, big eyes in a pale face, a
+        // tiny beak, wings folded at the sides and yellow feet; on her head a little map rolled up like a hat.
+        Ball(new(0, .55f, 0), new(.62f, .78f, .56f), "9a7652");
+        Ball(new(0, .48f, .17f), new(.42f, .5f, .26f), "eedcbc");
+        Ball(new(0, .86f, .16f), new(.5f, .34f, .22f), "f3e6cc");
+        foreach (int side in new[] { -1, 1 })
+        {
+            Ball(new(side * .18f, 1.06f, .02f), new(.1f, .24f, .08f), "7d5c3e").RotationDegrees = new(0, 0, -side * 22);
+            Art.Ball(model, new(side * .11f, .88f, .27f), new(.075f, .08f, .03f), "fffdf5");
+            Art.Ball(model, new(side * .11f, .88f, .295f), new(.045f, .05f, .02f), "2a2522");
+            Art.Ball(model, new(side * .095f, .9f, .31f), Vector3.One * .013f, "ffffff");
+            Ball(new(side * .3f, .52f, -.02f), new(.16f, .5f, .36f), "7d5c3e");
+            Foot(new(side * .1f, .18f, .08f), .14f, .1f, "e8b938", side);
+        }
+        Ball(new(0, .8f, .3f), new(.06f, .09f, .06f), "e8a33a");
+        foreach (var (x, y) in new[] { (-.08f, .55f), (.08f, .55f), (0, .42f), (-.1f, .32f), (.1f, .32f) })
+            Art.Block(model, new(x, y, .3f), new(.05f, .02f, .01f), "7d5c3e");
+        Art.Log(model, new(0, 1.12f, 0), Vector3.Right, .05f, .3f, "f3e6c4");
+    }
+
+    private void BuildCrab()
+    {
+        // A cheerful red crab of the beach: a wide shell, eyes on stalks, two big claws held up and four legs a side.
+        Ball(new(0, .3f, 0), new(.7f, .32f, .52f), "e0532f");
+        Ball(new(0, .36f, .04f), new(.5f, .2f, .4f), "ee6d42");
+        foreach (int side in new[] { -1, 1 })
+        {
+            Art.Cylinder(model, new(side * .1f, .5f, .2f), .02f, .02f, .2f, "e0532f");
+            Art.Ball(model, new(side * .1f, .62f, .2f), Vector3.One * .05f, "fffdf5");
+            Art.Ball(model, new(side * .1f, .63f, .235f), Vector3.One * .028f, "2a2522");
+            var arm = Art.Block(model, new(side * .36f, .38f, .22f), new(.2f, .06f, .06f), "d24a28");
+            arm.RotationDegrees = new Vector3(0, -side * 30, side * 30);
+            Ball(new(side * .46f, .52f, .3f), new(.2f, .18f, .14f), "e0532f");
+            Ball(new(side * .52f, .6f, .33f), new(.1f, .1f, .08f), "d24a28").RotationDegrees = new(0, 0, side * 30);
+            for (int leg = 0; leg < 4; leg++)
+            {
+                var piece = Art.Block(model, new(side * .38f, .16f, .08f - leg * .1f), new(.26f, .04f, .04f), "c9432a");
+                piece.RotationDegrees = new Vector3(0, side * (leg * 12 - 15), -side * 35);
+            }
+        }
+        Art.Block(model, new(0, .26f, .265f), new(.14f, .02f, .01f), "8e2a18");
     }
 
     private void BuildMill()

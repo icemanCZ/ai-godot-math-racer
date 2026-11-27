@@ -170,6 +170,10 @@ public partial class World : Node3D
         PlanSheep();
         // The ferrywoman's rally keeps its gates off the sheep's meadows and the dens, so it is planned after them.
         PlanRally();
+        // The owl's map keeps its wonders off everything planned before it, so it is planned last.
+        PlanExplorer();
+        // The cove of the shells keeps its sign off everything planned before it.
+        PlanShells();
         BuildBorderfolk();
         // The postman stood in front of the post office all along; he is registered last, so that no search that keeps
         // clear of the characters (the treasures, the fireflies, the wayside things) moves for him.
@@ -180,6 +184,8 @@ public partial class World : Node3D
         RegisterBalloonist();
         // The animal at the end of the forest keeper's trail came after the balloonist.
         RegisterTrackingAnimal();
+        // The owl came after that animal.
+        RegisterCartographer();
         // The borders round the valley stand on the final ground and change nothing in it.
         AddChild(BorderWater);
         BorderWater.Generate(Ground);

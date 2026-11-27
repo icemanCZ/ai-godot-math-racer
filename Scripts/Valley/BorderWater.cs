@@ -22,19 +22,33 @@ public partial class BorderWater : Node3D
         var sea = new ShaderMaterial { Shader = shader };
         // The sea barely flows.
         sea.SetShaderParameter("flow_speed", .06f);
-        AddWater(Sea(ground), sea);
+        seaWater = AddWater(Sea(ground), sea);
         AddWater(BorderRiver(ground), new ShaderMaterial { Shader = shader });
     }
 
-    private void AddWater(Mesh mesh, Material material) =>
-        AddChild(
-            new MeshInstance3D
-            {
-                Mesh = mesh,
-                MaterialOverride = material,
-                CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
-            }
-        );
+    private MeshInstance3D? seaWater;
+
+    /// <summary>
+    /// The tide (<see cref="Tide"/>): the sea lies <paramref name="offset"/> above its level, which is 0 at high tide and
+    /// down to <see cref="Tide.Range"/> below it at low tide. The border river keeps its own level.
+    /// </summary>
+    internal void SetTide(float offset)
+    {
+        if (seaWater != null)
+            seaWater.Position = new Vector3(0, offset, 0);
+    }
+
+    private MeshInstance3D AddWater(Mesh mesh, Material material)
+    {
+        var water = new MeshInstance3D
+        {
+            Mesh = mesh,
+            MaterialOverride = material,
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+        };
+        AddChild(water);
+        return water;
+    }
 
     private static Color Depth(float depth) => new(Mathf.Clamp(depth, 0, 3) / 3, 0, 0);
 

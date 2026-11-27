@@ -222,6 +222,45 @@ internal static class WorldFingerprint
         return lines;
     }
 
+    /// <summary>
+    /// What came after the ferrywoman's rally (<c>docs/EXPLORER_PLAN.md</c>): the owl's stand and the eight wonders of
+    /// her map.
+    /// </summary>
+    internal static string ExplorerFileFor(int seed) => Path.Combine(Folder, $"seed-{seed}.explorer.txt");
+
+    internal static List<string> ExplorerLines(World world)
+    {
+        var lines = new List<string> { $"seed {Settings.Seed}" };
+        lines.Add(
+            world.CartographerPlace is { } owl
+                ? $"owl road {P(owl.Road)} inward {P(owl.Inward)} talk {P(owl.Talk)}"
+                : "owl none"
+        );
+        foreach (var landmark in world.Landmarks)
+            lines.Add(
+                $"landmark {landmark.Kind} {ExplorerPlans.Name(landmark.Kind)} {P(landmark.Center)}"
+                    + $" road {P(landmark.Road)} yaw {F(landmark.Yaw)}"
+            );
+        return lines;
+    }
+
+    /// <summary>
+    /// What came after the owl's map (<c>docs/SHELLS_PLAN.md</c>): the cove of the shells, its sign and the shells of its
+    /// first two tides.
+    /// </summary>
+    internal static string ShellsFileFor(int seed) => Path.Combine(Folder, $"seed-{seed}.shells.txt");
+
+    internal static List<string> ShellsLines(World world)
+    {
+        var lines = new List<string> { $"seed {Settings.Seed}" };
+        lines.Add(world.ShellCove is { } cove ? $"cove {P(cove)}" : "cove none");
+        lines.Add(world.ShellSign is { } sign ? $"sign {P(sign)}" : "sign none");
+        for (int tide = 0; tide < 2; tide++)
+            foreach (var shell in world.ShellsOfTide(tide))
+                lines.Add($"tide {tide} shell {shell.Number} kind {shell.Kind} {P(shell.Position)} yaw {F(shell.Yaw)}");
+        return lines;
+    }
+
     internal static List<string> Lines(World world)
     {
         var lines = new List<string> { $"seed {Settings.Seed}" };
@@ -347,6 +386,22 @@ public partial class WorldFingerprintWriter : Node
                 File.WriteAllLines(rally, WorldFingerprint.RallyLines(world));
                 GD.Print($"WROTE: {rally}");
             }
+            foreach (
+                var (file, lines) in new[]
+                {
+                    (WorldFingerprint.ExplorerFileFor(Settings.Seed), WorldFingerprint.ExplorerLines(world)),
+                    (WorldFingerprint.ShellsFileFor(Settings.Seed), WorldFingerprint.ShellsLines(world)),
+                }
+            )
+            {
+                if (File.Exists(file))
+                    GD.Print($"KEPT: {file} already exists and stays as it is");
+                else
+                {
+                    File.WriteAllLines(file, lines);
+                    GD.Print($"WROTE: {file}");
+                }
+            }
             GetTree().Quit();
         }
         catch (Exception error)
@@ -402,6 +457,14 @@ public partial class WorldFingerprintChecks : Node
             string rallyPath = WorldFingerprint.RallyFileFor(Settings.Seed);
             if (!File.Exists(rallyPath))
                 throw new InvalidOperationException($"No rally fingerprint for seed {Settings.Seed}: {rallyPath}");
+            string explorerPath = WorldFingerprint.ExplorerFileFor(Settings.Seed);
+            if (!File.Exists(explorerPath))
+                throw new InvalidOperationException(
+                    $"No explorer fingerprint for seed {Settings.Seed}: {explorerPath}"
+                );
+            string shellsPath = WorldFingerprint.ShellsFileFor(Settings.Seed);
+            if (!File.Exists(shellsPath))
+                throw new InvalidOperationException($"No shells fingerprint for seed {Settings.Seed}: {shellsPath}");
             var expected = File.ReadAllLines(path)
                 .Concat(File.ReadAllLines(glassworksPath))
                 .Concat(File.ReadAllLines(outlandPath))
@@ -411,6 +474,8 @@ public partial class WorldFingerprintChecks : Node
                 .Concat(File.ReadAllLines(trackingPath))
                 .Concat(File.ReadAllLines(sheepPath))
                 .Concat(File.ReadAllLines(rallyPath))
+                .Concat(File.ReadAllLines(explorerPath))
+                .Concat(File.ReadAllLines(shellsPath))
                 .ToArray();
             var actual = WorldFingerprint
                 .Lines(world)
@@ -422,6 +487,8 @@ public partial class WorldFingerprintChecks : Node
                 .Concat(WorldFingerprint.TrackingLines(world))
                 .Concat(WorldFingerprint.SheepLines(world))
                 .Concat(WorldFingerprint.RallyLines(world))
+                .Concat(WorldFingerprint.ExplorerLines(world))
+                .Concat(WorldFingerprint.ShellsLines(world))
                 .ToList();
             var different = new List<string>();
             for (int i = 0; i < Math.Max(expected.Length, actual.Count); i++)
@@ -513,6 +580,7 @@ public partial class ContractChecks : Node
         ("TrackingStatus", 35),
         ("ShepherdStatus", 36),
         ("RallyStatus", 37),
+        ("ExplorerStatus", 38),
     };
 
     public override void _Ready()
@@ -582,7 +650,8 @@ public partial class ContractChecks : Node
                 && ActorIds.Postman == 78
                 && ActorIds.Dragon == 79
                 && ActorIds.Balloonist == 80
-                && ActorIds.TrackingAnimal == 81,
+                && ActorIds.TrackingAnimal == 81
+                && ActorIds.Cartographer == 82,
             "the actor ID ranges are the ones saved games use"
         );
 
@@ -622,6 +691,7 @@ public partial class ContractChecks : Node
                 : World.IsDragon(id) ? nameof(DragonRole)
                 : World.IsBalloonist(id) ? nameof(BalloonistRole)
                 : World.IsTrackingAnimal(id) ? nameof(TrackingAnimalRole)
+                : World.IsCartographer(id) ? nameof(CartographerRole)
                 : "(no actor may have this ID)";
             Check(actor.Role.GetType().Name == expected, $"ID {id} ({actor.DisplayName}) is a {expected}");
             if (actor.Role is HouseResidentRole house)
@@ -767,6 +837,8 @@ public partial class ContractChecks : Node
             "Valley/World.Tracking.cs",
             "Valley/World.Sheep.cs",
             "Valley/World.Dragon.cs",
+            "Valley/World.Explorer.cs",
+            "Valley/World.Shells.cs",
             "Valley/World.Fireflies.cs",
             "Valley/World.Hunter.cs",
             "Valley/World.Outland.cs",

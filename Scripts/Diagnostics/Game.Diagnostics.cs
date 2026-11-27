@@ -806,6 +806,52 @@ public partial class Game
                     TickSheep(.1);
             }
         }
+        if (view.StartsWith("explorer") && world.Cartographer is { } owl && world.CartographerPlace is { } owlSite)
+        {
+            // On the road beside the owl's stand; with her panel, the map has wonders hidden, seen and written in.
+            var road = owlSite.Road - owlSite.Right * 6;
+            vehicle.SetPose(world.Ground.At(road.X, road.Z, .15f), Mathf.Atan2(owlSite.Right.X, owlSite.Right.Z));
+            if (view == "explorer-panel")
+            {
+                Explorer.Restore(true, new[] { 0, 2, 3, 5, 6 }, new[] { 0, 3, 6 }, 1);
+                world.LandmarkModels?.SetRecorded(Explorer.RecordedSet);
+                nearby = owl;
+                OpenCartographer(owl);
+            }
+            if (view == "explorer-hud")
+            {
+                Explorer.Restore(
+                    true,
+                    System.Array.Empty<int>(),
+                    System.Array.Empty<int>(),
+                    NearestHiddenLandmark(road)
+                );
+                UpdateExplorerTrip();
+                for (int i = 0; i < 5; i++)
+                    TickExplorer(.1);
+            }
+        }
+        if (view.StartsWith("landmark-") && int.TryParse(view["landmark-".Length..], out int wonder))
+        {
+            // On the road beside a wonder, once it is written into the map, so that the owl's flag shows.
+            if (wonder < world.Landmarks.Count)
+            {
+                var landmark = world.Landmarks[wonder];
+                vehicle.SetPose(world.Ground.At(landmark.Road.X, landmark.Road.Z, .15f), 0);
+                world.LandmarkModels?.SetRecorded(new[] { wonder });
+            }
+        }
+        if (view.StartsWith("shells") && world.BeachShells != null)
+        {
+            // On the beach at low tide (or at high tide), before the first shell of the tide, facing the sea.
+            Weather.SetClock(view == "shells-high" ? 0 : Tide.Period / 2, true);
+            TickShells(.1);
+            var target = ShellsOnSand.Length > 0 ? ShellsOnSand[0].Position : world.ShellCove!.Value;
+            var stand = target + new Vector3(0, 0, -14);
+            vehicle.SetPose(world.Ground.At(stand.X, stand.Z, .15f), Mathf.Pi);
+            for (int i = 0; i < 3; i++)
+                TickShells(.1);
+        }
         if (view == "log-yard" && world.LogYard is { } logYard)
             vehicle.SetPose(world.Ground.At(logYard.Position.X, logYard.Position.Z, .15f), 0);
         if (view is "beaver" or "load-question" && world.Beaver != null)

@@ -57,6 +57,7 @@ public enum GameState
     TrackingStatus = 35,
     ShepherdStatus = 36,
     RallyStatus = 37,
+    ExplorerStatus = 38,
 }
 
 public partial class Game : Node3D
@@ -111,6 +112,7 @@ public partial class Game : Node3D
             world.FarParts.Drop();
         AddChild(vehicle);
         vehicle.Setup(world.Ground, world.Routes, world.Ford);
+        vehicle.SeaDepth = world.SeaDepth;
         // A car that is put somewhere new leaves no way behind it for the companions to follow.
         vehicle.PoseReset += companionPath.Clear;
         RunDiagnosticsWithVehicle(ref diagnosticOnly);

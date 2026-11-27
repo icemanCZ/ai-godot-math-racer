@@ -175,6 +175,18 @@ internal static class CharacterCatalog
     public static CharacterSpec TrackingAnimal { get; } =
         new("Schované zvířátko", "Pšt, někdo se tu schovává!", 2, "a5815a");
 
+    /// <summary>
+    /// The owl at her stand where the road leaves the old valley (<see cref="ActorIds.Cartographer"/>), who keeps the map
+    /// of the valley (<c>docs/EXPLORER_PLAN.md</c>).
+    /// </summary>
+    public static CharacterSpec Cartographer { get; } =
+        new(
+            "Sova kartografka Mapka",
+            "Hú hú! Já jsem Mapka a kreslím mapu celého údolí. Za starým údolím je osm divů krajiny. Najdeš je?",
+            2,
+            "9a7652"
+        );
+
     /// <summary>The pirate captain on the village square, who hides treasures for the player to dig up (<see cref="World.TreasurerId"/>).</summary>
     public static CharacterSpec Treasurer { get; } =
         new(

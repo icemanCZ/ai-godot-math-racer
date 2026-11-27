@@ -98,6 +98,38 @@ public sealed class SaveData
 
     /// <summary>The ferrywoman's rally. Added after version 5 began.</summary>
     public RallySave Rally { get; set; } = new();
+
+    /// <summary>The owl's map of the wonders beyond the old valley. Added after version 5 began.</summary>
+    public ExplorerSave Explorer { get; set; } = new();
+
+    /// <summary>The shells on the beach of the sea. Added after version 5 began.</summary>
+    public ShellsSave Shells { get; set; } = new();
+}
+
+/// <summary>
+/// The owl's map (<c>docs/EXPLORER_PLAN.md</c>): whether she has shown it to the player, the wonders the car has seen and
+/// those written into her map (0 to <see cref="Buildings.ExplorerPlans.Landmarks"/> - 1, in the order it happened), and
+/// the wonder her road arrows lead to, or -1. A save from before the map has seen nothing.
+/// </summary>
+public sealed class ExplorerSave
+{
+    public bool Started { get; set; }
+    public int[] Spotted { get; set; } = System.Array.Empty<int>();
+    public int[] Recorded { get; set; } = System.Array.Empty<int>();
+    public int Guided { get; set; } = -1;
+}
+
+/// <summary>
+/// The shells of the beach (<c>docs/SHELLS_PLAN.md</c>): the number of the tide whose shells lie on the beach now (each
+/// high tide brings the next), the numbers of its shells already picked up, and how many shells of each kind the player
+/// has. Where the shells of a tide lie follows from the valley and the tide's number. A save from before the shells has
+/// picked none.
+/// </summary>
+public sealed class ShellsSave
+{
+    public int Tide { get; set; }
+    public int[] Picked { get; set; } = System.Array.Empty<int>();
+    public int[] Kinds { get; set; } = new int[Buildings.ShellPlans.Kinds];
 }
 
 /// <summary>

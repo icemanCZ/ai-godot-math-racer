@@ -1,0 +1,23 @@
+seed 7421
+cove -225.11 -10.00 1230.66
+sign -201.11 -1.94 1126.00
+tide 0 shell 0 kind 3 -254.92 -10.20 1248.88 yaw 2.78
+tide 0 shell 1 kind 1 -209.09 -10.48 1251.21 yaw 2.54
+tide 0 shell 2 kind 5 -99.51 -10.73 1261.30 yaw 5.51
+tide 0 shell 3 kind 3 -98.79 -10.32 1251.47 yaw 5.12
+tide 0 shell 4 kind 2 -307.05 -10.17 1250.23 yaw 4.58
+tide 0 shell 5 kind 2 -225.82 -10.51 1253.87 yaw 4.64
+tide 0 shell 6 kind 1 -129.26 -10.29 1247.11 yaw 2.94
+tide 0 shell 7 kind 3 -206.76 -10.07 1236.74 yaw 2.98
+tide 0 shell 8 kind 1 -294.11 -10.25 1253.19 yaw 0.53
+tide 0 shell 9 kind 3 -170.48 -10.08 1236.09 yaw 3.73
+tide 1 shell 0 kind 3 -320.41 -10.44 1257.15 yaw 1.56
+tide 1 shell 1 kind 0 -118.22 -10.28 1247.94 yaw 0.37
+tide 1 shell 2 kind 1 -96.81 -10.22 1248.32 yaw 4.30
+tide 1 shell 3 kind 0 -159.13 -10.20 1241.35 yaw 6.20
+tide 1 shell 4 kind 2 -119.30 -10.08 1240.01 yaw 4.81
+tide 1 shell 5 kind 5 -246.22 -10.21 1248.13 yaw 4.08
+tide 1 shell 6 kind 3 -339.05 -10.10 1242.29 yaw 3.45
+tide 1 shell 7 kind 0 -142.54 -10.08 1237.03 yaw 1.77
+tide 1 shell 8 kind 4 -154.84 -10.08 1236.57 yaw 3.71
+tide 1 shell 9 kind 1 -344.01 -10.05 1238.28 yaw 5.07

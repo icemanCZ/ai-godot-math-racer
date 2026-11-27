@@ -26,6 +26,9 @@ public partial class NightBoat : Node3D
     private float time;
     private float shownNight = -1;
 
+    /// <summary>How far above its level the sea is now, with the tide (0 at high tide, negative at low tide).</summary>
+    internal float TideLift { get; set; }
+
     /// <summary>
     /// A boat that sails round the path from <paramref name="from"/> to <paramref name="to"/>; the height of
     /// <paramref name="from"/> is the water's surface (<see cref="MathRacer.Valley.ValleyBorders.SeaLevel"/>).
@@ -136,7 +139,7 @@ public partial class NightBoat : Node3D
             p = from - (side * Mathf.Cos(a) + along * Mathf.Sin(a)) * r;
             heading = side * Mathf.Sin(a) - along * Mathf.Cos(a);
         }
-        Position = new Vector3(p.X, from.Y + .05f + Mathf.Sin(time * 1.4f) * .08f, p.Z);
+        Position = new Vector3(p.X, from.Y + TideLift + .05f + Mathf.Sin(time * 1.4f) * .08f, p.Z);
         Rotation = new Vector3(
             Mathf.Sin(time * 1.1f) * .03f,
             Mathf.Atan2(heading.X, heading.Z),

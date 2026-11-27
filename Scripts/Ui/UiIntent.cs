@@ -102,6 +102,11 @@ internal abstract record UiIntent
 
     internal sealed record SheepPen : UiIntent;
 
+    // The owl's map: the wonders seen go into it, and the road arrows lead to the nearest wonder not yet seen.
+    internal sealed record ExplorerRecord : UiIntent;
+
+    internal sealed record ExplorerGuide : UiIntent;
+
     // The ferrywoman's rally: a stage waits for the car at its start arch.
     internal sealed record RallyStart(int Stage) : UiIntent;
 

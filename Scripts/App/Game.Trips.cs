@@ -31,6 +31,7 @@ public partial class Game
             [Departure.Lighthouse] = BeginLighthouseTrip,
             [Departure.Dragon] = BeginDragonTrip,
             [Departure.Sheep] = BeginSheepPen,
+            [Departure.Explorer] = BeginExplorerRecord,
         };
 
     /// <summary>Starts the trailer trip of a target after its quiz, the speaker being its contractor.</summary>

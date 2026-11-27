@@ -74,6 +74,12 @@ internal enum CollectorPetKind
 
     // The ferrywoman's otter, Šplouchalka: owned once every stage of her rally is driven for gold.
     Otter,
+
+    // The mapmaker's little owl, Houkalka: owned once every wonder of the land beyond the old valley is in her map.
+    Owlet,
+
+    // The crab of the beach, Klepetko: owned once a shell of every kind is found on the sand.
+    Crab,
 }
 
 internal sealed partial class CollectorPet : Node3D
