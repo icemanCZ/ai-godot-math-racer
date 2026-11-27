@@ -113,6 +113,7 @@ public partial class Game
                         or Departure.Explorer
                         or Departure.Ferry
                         or Departure.FerrySail
+                        or Departure.Castle
                     ? quiz.DepartureState
                     : GameState.Title,
             },
@@ -217,6 +218,7 @@ public partial class Game
                 Spotted = Ferry.Spotted,
                 Kinds = Ferry.Kinds,
             },
+            Castle = CaptureCastle(),
             Fireflies = new FirefliesSave { Caught = fireflies.Caught },
             Hunt = new HuntSave
             {
@@ -344,6 +346,8 @@ public partial class Game
         RestoreShells(data.Shells.Tide, data.Shells.Picked, data.Shells.Kinds);
         // And the heron's landing and atlas, so that the kingfisher knows whether he is owned.
         RestoreFerry(data.Ferry.Stage, data.Ferry.Visit, data.Ferry.Spotted, data.Ferry.Kinds);
+        // And the castle with its beacons and its table, so that the ghost knows whether he is owned.
+        RestoreCastle(data.Castle);
         RestoreBuilds(data);
         UpdateDeliveryGuides();
         interaction.BeforePause = validEncounter ? data.State : GameState.Exploring;

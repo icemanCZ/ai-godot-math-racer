@@ -199,6 +199,18 @@ internal static class CharacterCatalog
             "9aa6b2"
         );
 
+    /// <summary>
+    /// The lioness princess at the gate of the castle on the hill (<see cref="ActorIds.Castellan"/>), who wants her castle
+    /// built and a feast held in it (<c>docs/CASTLE_PLAN.md</c>).
+    /// </summary>
+    public static CharacterSpec Castellan { get; } =
+        new(
+            "Lvice kněžna Libuše",
+            "Vítej! Já jsem kněžna Libuše. Tady na kopci bude stát hrad, nejkrásnější v celém údolí. Pomůžeš mi ho postavit?",
+            2,
+            "e0a95a"
+        );
+
     /// <summary>The pirate captain on the village square, who hides treasures for the player to dig up (<see cref="World.TreasurerId"/>).</summary>
     public static CharacterSpec Treasurer { get; } =
         new(

@@ -640,6 +640,29 @@ internal sealed class BirdwatcherRole : ActorRole
 }
 
 /// <summary>
+/// The lioness princess at the gate of the castle on the hill (<c>docs/CASTLE_PLAN.md</c>). Talking to her shows the
+/// castle still to be built, the beacons still dark or the guests of the feast; her one quiz before a trailer trip sends
+/// the player off, and she asks the loading question of the stone from afar, since its places have no worker.
+/// </summary>
+internal sealed class CastleRole : ActorRole
+{
+    public override string Icon => "castle";
+    public override bool UsesDeliveryGuide => false;
+
+    public override bool InvitesTalk(bool expeditionActive) => true;
+
+    public override void ShowHint(GameUi ui, Character actor) => ui.CastellanHint();
+
+    public override void Open(Game game, Character actor) => game.OpenCastellan(actor);
+
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
+    {
+        game.CompleteCastellanQuiz(actor);
+        return true;
+    }
+}
+
+/// <summary>
 /// The postman on the village square. Talking to him opens the stamp album and gives out the next letter for a keeper
 /// of the borders; he asks no question.
 /// </summary>

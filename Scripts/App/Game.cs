@@ -59,6 +59,7 @@ public enum GameState
     RallyStatus = 37,
     ExplorerStatus = 38,
     FerryStatus = 39,
+    CastleStatus = 40,
 }
 
 public partial class Game : Node3D
@@ -585,8 +586,13 @@ public partial class Game : Node3D
             StartDeparture(trip);
             return;
         }
-        // A solved quiz with the collector who holds the special load of the trip under way hands the load over.
-        if (Haul is { Loaded: false } pickup && HaulLoads.IsSpecial(pickup.Load) && pickup.Asker == nearby)
+        // A solved quiz with the collector who holds the special load of the trip under way hands the load over, and a
+        // guest of the castle's feast gets on the trailer's bench.
+        if (
+            Haul is { Loaded: false } pickup
+            && (HaulLoads.IsSpecial(pickup.Load) || pickup.Load == HaulLoad.Guest)
+            && pickup.Asker == nearby
+        )
         {
             CompleteHaulLoading();
             return;

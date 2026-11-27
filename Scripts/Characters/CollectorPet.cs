@@ -83,6 +83,9 @@ internal enum CollectorPetKind
 
     // The heron's kingfisher, Modroušek: owned once a bird of every kind is in the atlas of the bird island.
     Kingfisher,
+
+    // The ghost of the castle, Bubáček: owned once every guest of the valley sits at the castle's feast.
+    CastleGhost,
 }
 
 internal sealed partial class CollectorPet : Node3D

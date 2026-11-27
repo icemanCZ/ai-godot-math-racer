@@ -34,6 +34,7 @@ public partial class Game
             [Departure.Explorer] = BeginExplorerRecord,
             [Departure.Ferry] = BeginFerryStart,
             [Departure.FerrySail] = BeginFerrySail,
+            [Departure.Castle] = BeginCastleStart,
         };
 
     /// <summary>Starts the trailer trip of a target after its quiz, the speaker being its contractor.</summary>

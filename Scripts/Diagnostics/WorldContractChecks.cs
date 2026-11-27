@@ -289,6 +289,37 @@ internal static class WorldFingerprint
         return lines;
     }
 
+    /// <summary>
+    /// What came after the ferry (<c>docs/CASTLE_PLAN.md</c>): the castle on the hill, the princess at its gate, its four
+    /// beacons and the guests of its feast.
+    /// </summary>
+    internal static string CastleFileFor(int seed) => Path.Combine(Folder, $"seed-{seed}.castle.txt");
+
+    internal static List<string> CastleLines(World world)
+    {
+        var lines = new List<string> { $"seed {Settings.Seed}" };
+        if (world.CastlePlace is not { } site)
+        {
+            lines.Add("castle none");
+            return lines;
+        }
+        lines.Add($"castle road {P(site.Road)} inward {P(site.Inward)} yaw {F(site.Yaw)}");
+        lines.Add(
+            $"courtyard {P(world.Ground.At(site.Center.X, site.Center.Z))} gate {P(site.Gate)} drop {P(site.Drop)}"
+        );
+        if (world.Castellan is { } princess)
+            lines.Add($"princess {world.ActorId(princess)} {princess.DisplayName} {P(princess.Position)}");
+        foreach (var beacon in world.BeaconPlaces)
+            if (beacon != null)
+                lines.Add($"beacon {beacon.Border} foot {P(beacon.Foot)} drop {P(beacon.Drop)} yaw {F(beacon.Yaw)}");
+        for (int chair = 0; chair < CastlePlans.Guests; chair++)
+            if (world.CastleGuests[chair] is { } guest)
+                lines.Add(
+                    $"guest {chair} {world.ActorId(guest)} {guest.DisplayName} road {P(world.CastleGuestRoads[chair])}"
+                );
+        return lines;
+    }
+
     internal static List<string> Lines(World world)
     {
         var lines = new List<string> { $"seed {Settings.Seed}" };
@@ -420,6 +451,7 @@ public partial class WorldFingerprintWriter : Node
                     (WorldFingerprint.ExplorerFileFor(Settings.Seed), WorldFingerprint.ExplorerLines(world)),
                     (WorldFingerprint.ShellsFileFor(Settings.Seed), WorldFingerprint.ShellsLines(world)),
                     (WorldFingerprint.FerryFileFor(Settings.Seed), WorldFingerprint.FerryLines(world)),
+                    (WorldFingerprint.CastleFileFor(Settings.Seed), WorldFingerprint.CastleLines(world)),
                 }
             )
             {
@@ -497,6 +529,9 @@ public partial class WorldFingerprintChecks : Node
             string ferryPath = WorldFingerprint.FerryFileFor(Settings.Seed);
             if (!File.Exists(ferryPath))
                 throw new InvalidOperationException($"No ferry fingerprint for seed {Settings.Seed}: {ferryPath}");
+            string castlePath = WorldFingerprint.CastleFileFor(Settings.Seed);
+            if (!File.Exists(castlePath))
+                throw new InvalidOperationException($"No castle fingerprint for seed {Settings.Seed}: {castlePath}");
             var expected = File.ReadAllLines(path)
                 .Concat(File.ReadAllLines(glassworksPath))
                 .Concat(File.ReadAllLines(outlandPath))
@@ -509,6 +544,7 @@ public partial class WorldFingerprintChecks : Node
                 .Concat(File.ReadAllLines(explorerPath))
                 .Concat(File.ReadAllLines(shellsPath))
                 .Concat(File.ReadAllLines(ferryPath))
+                .Concat(File.ReadAllLines(castlePath))
                 .ToArray();
             var actual = WorldFingerprint
                 .Lines(world)
@@ -523,6 +559,7 @@ public partial class WorldFingerprintChecks : Node
                 .Concat(WorldFingerprint.ExplorerLines(world))
                 .Concat(WorldFingerprint.ShellsLines(world))
                 .Concat(WorldFingerprint.FerryLines(world))
+                .Concat(WorldFingerprint.CastleLines(world))
                 .ToList();
             var different = new List<string>();
             for (int i = 0; i < Math.Max(expected.Length, actual.Count); i++)
@@ -616,6 +653,7 @@ public partial class ContractChecks : Node
         ("RallyStatus", 37),
         ("ExplorerStatus", 38),
         ("FerryStatus", 39),
+        ("CastleStatus", 40),
     };
 
     public override void _Ready()
@@ -687,7 +725,8 @@ public partial class ContractChecks : Node
                 && ActorIds.Balloonist == 80
                 && ActorIds.TrackingAnimal == 81
                 && ActorIds.Cartographer == 82
-                && ActorIds.Birdwatcher == 83,
+                && ActorIds.Birdwatcher == 83
+                && ActorIds.Castellan == 84,
             "the actor ID ranges are the ones saved games use"
         );
 
@@ -729,6 +768,7 @@ public partial class ContractChecks : Node
                 : World.IsTrackingAnimal(id) ? nameof(TrackingAnimalRole)
                 : World.IsCartographer(id) ? nameof(CartographerRole)
                 : World.IsBirdwatcher(id) ? nameof(BirdwatcherRole)
+                : World.IsCastellan(id) ? nameof(CastleRole)
                 : "(no actor may have this ID)";
             Check(actor.Role.GetType().Name == expected, $"ID {id} ({actor.DisplayName}) is a {expected}");
             if (actor.Role is HouseResidentRole house)
@@ -877,6 +917,7 @@ public partial class ContractChecks : Node
             "Valley/World.Explorer.cs",
             "Valley/World.Shells.cs",
             "Valley/World.Ferry.cs",
+            "Valley/World.Castle.cs",
             "Valley/World.Fireflies.cs",
             "Valley/World.Hunter.cs",
             "Valley/World.Outland.cs",

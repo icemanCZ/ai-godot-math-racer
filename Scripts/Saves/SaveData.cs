@@ -107,6 +107,23 @@ public sealed class SaveData
 
     /// <summary>The heron's landing and the atlas of the bird island (<c>docs/FERRY_PLAN.md</c>).</summary>
     public FerrySave Ferry { get; set; } = new();
+
+    /// <summary>The castle on the hill, its beacons and its feast (<c>docs/CASTLE_PLAN.md</c>).</summary>
+    public CastleSave Castle { get; set; } = new();
+}
+
+/// <summary>
+/// The castle on the hill: the deliveries it has had (0 to <see cref="Buildings.CastlePlans.Trips"/>), the borders whose
+/// beacons burn (the numbers of <c>Valley.Border</c>), the chairs at its table where a guest sits (0 to
+/// <see cref="Buildings.CastlePlans.Guests"/> - 1) and whether the feast was held. A save from before the castle has
+/// none of it.
+/// </summary>
+public sealed class CastleSave
+{
+    public int Stage { get; set; }
+    public int[] Beacons { get; set; } = System.Array.Empty<int>();
+    public int[] Guests { get; set; } = System.Array.Empty<int>();
+    public bool Feast { get; set; }
 }
 
 /// <summary>

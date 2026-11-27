@@ -138,6 +138,9 @@ public partial class Game
             case UiIntent.FerryHome:
                 BeginFerryHome();
                 break;
+            case UiIntent.CastleStart:
+                BeginCastleStart();
+                break;
             case UiIntent.RallyStart start:
                 BeginRallyStage(start.Stage);
                 break;

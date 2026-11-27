@@ -112,6 +112,12 @@ internal static class WorldPetCatalog
         $"všech {FerryPlans.Kinds} druhů ptáků v atlasu z ostrůvku"
     );
 
+    public static readonly WorldPetSpec CastleGhost = new(
+        CollectorPetKind.CastleGhost,
+        "Strašidýlko Bubáček",
+        "všichni hosté u hradní hostiny"
+    );
+
     public static readonly WorldPetSpec Bridge = new(CollectorPetKind.Bridge, "Mostíček", "dostavěný most");
     public static readonly WorldPetSpec Mill = new(CollectorPetKind.Mill, "Mlýnek", "dostavěný mlýn");
     public static readonly WorldPetSpec Tower = new(CollectorPetKind.Tower, "Věžička", "dostavěnou rozhlednu");
@@ -307,6 +313,9 @@ internal sealed partial class CollectorPet
                 break;
             case CollectorPetKind.Kingfisher:
                 BuildKingfisher();
+                break;
+            case CollectorPetKind.CastleGhost:
+                BuildCastleGhost();
                 break;
             case CollectorPetKind.Bridge:
                 BuildBridge();
@@ -925,6 +934,36 @@ internal sealed partial class CollectorPet
         Art.Block(model, new(0, .9f, .48f), new(.06f, .06f, .36f), "2f2a26");
         Ball(new(0, .42f, -.36f), new(.14f, .08f, .24f), "1f6fa8");
         Art.Log(model, new(0, .12f, 0), Vector3.Right, .05f, .7f, "7a5536");
+    }
+
+    private void BuildCastleGhost()
+    {
+        // A small, friendly ghost of the castle: a white sheet rounded at the top with a wavy hem that hovers over the
+        // ground, big dark eyes, a round open mouth, two little arms and a tiny golden crown sliding off its head.
+        const string sheet = "f6f8ff";
+        Art.Ball(model, new(0, .82f, 0), new(.56f, .56f, .52f), sheet);
+        Art.Cylinder(model, new(0, .55f, 0), .5f, .58f, .55f, sheet);
+        for (int i = 0; i < 7; i++)
+        {
+            float a = i * Mathf.Tau / 7;
+            Art.Ball(model, new(Mathf.Sin(a) * .5f, .3f, Mathf.Cos(a) * .5f), new(.17f, .16f, .17f), sheet);
+        }
+        foreach (int side in new[] { -1, 1 })
+        {
+            Art.Ball(model, new(side * .17f, .9f, .45f), new(.1f, .14f, .05f), "2a2a3a");
+            Art.Ball(model, new(side * .15f, .95f, .48f), Vector3.One * .03f, "ffffff");
+            Art.Ball(model, new(side * .27f, .76f, .42f), new(.07f, .045f, .02f), "f6b3c4");
+            var arm = Art.Ball(model, new(side * .56f, .64f, .1f), new(.12f, .2f, .12f), sheet);
+            arm.RotationDegrees = new Vector3(0, 0, side * 40);
+        }
+        Art.Ball(model, new(0, .68f, .48f), new(.08f, .09f, .04f), "3a2a3a");
+        var crown = Art.Cylinder(model, new(.12f, 1.36f, 0), .16f, .18f, .12f, "f2c14e");
+        crown.RotationDegrees = new Vector3(0, 0, -18);
+        for (int i = 0; i < 4; i++)
+        {
+            float a = i * Mathf.Tau / 4;
+            Art.Cylinder(crown, new(Mathf.Sin(a) * .14f, .1f, Mathf.Cos(a) * .14f), .04f, .005f, .1f, "f2c14e");
+        }
     }
 
     private void BuildMill()

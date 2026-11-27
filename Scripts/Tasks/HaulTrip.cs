@@ -37,7 +37,8 @@ public sealed partial class HaulTrip : Node3D
     /// The character who loads the cargo and asks the loading question: the source worker, else the contractor, who also
     /// asks it at a place of the target's own, which has no worker.
     /// </summary>
-    internal Character Asker => own != null ? Contractor : world.PickupActor(Load, Source) ?? Contractor;
+    internal Character Asker =>
+        own != null ? Target.AskerFor(Step) ?? Contractor : world.PickupActor(Load, Source) ?? Contractor;
     internal bool Loaded { get; private set; }
 
     /// <summary>Set on reaching the current target; cleared when the car leaves it again.</summary>
@@ -64,6 +65,9 @@ public sealed partial class HaulTrip : Node3D
     internal Lighthouse? Lighthouse => Target as Lighthouse;
     internal DragonLair? DragonLair => Target as DragonLair;
     internal FerryLanding? Ferry => Target as FerryLanding;
+    internal Castle? Castle => Target as Castle;
+    internal BeaconTower? Beacon => Target as BeaconTower;
+    internal CastleGuestTrip? Guest => Target as CastleGuestTrip;
     internal Works? Works => Target as Works;
     internal int House => Target is HouseTripTarget house ? house.House : -1;
     internal bool ForGlassmaker => Target is GlassmakerTripTarget;
@@ -118,7 +122,7 @@ public sealed partial class HaulTrip : Node3D
     /// <summary>An empty trailer is loaded at whichever site of the material it reaches first.</summary>
     private bool AnySource(Vector3 car)
     {
-        float range = HaulLoads.IsSpecial(Load) ? Settings.InteractionRange : 6;
+        float range = HaulLoads.IsSpecial(Load) || Load == HaulLoad.Guest ? Settings.InteractionRange : 6;
         // A target with a place of its own (the coast quarry) is loaded there and nowhere else.
         if (own is { } only)
             return Near(car, only.Position, range);

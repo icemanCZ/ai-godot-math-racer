@@ -44,6 +44,7 @@ public partial class Game
         Register("rally", TickRally);
         Register("explorer", TickExplorer);
         Register("ferry", TickFerry);
+        Register("castle", TickCastle);
         Register("shells", TickShells);
         Register("flutters", delta => TickFlutters((float)delta));
         Register("trampling", delta => TickTrampling((float)delta));

@@ -101,6 +101,13 @@ public partial class ContentChecks : Node
                 "the ferry to the bird island"
             );
             Need(
+                world.Castle != null
+                    && world.Castellan != null
+                    && world.BeaconCount >= 3
+                    && world.CastleGuestCount >= 5,
+                "the castle on the hill, its beacons and its guests"
+            );
+            Need(
                 world.Duck != null && world.WorldPets.Count == WorldPetsExpected,
                 $"the pets of the world ({world.WorldPets.Count} of {WorldPetsExpected})"
             );
@@ -124,9 +131,9 @@ public partial class ContentChecks : Node
     /// The duck, five raw materials (wheat too), every works, the bridge, the mill, the tower, the ducklings, a pet per
     /// hidden kind, the little stationmaster of the railway, the baby panda of the zoo, the hunter's fawn, the postman's
     /// pigeon, the lighthouse keeper's gull, the dragon's little one, the balloonist's rooster, the forest keeper's
-    /// squirrel, the shepherd's sheepdog puppy, the ferrywoman's otter, the owl's little owl, the crab of the beach and
-    /// the heron's kingfisher.
+    /// squirrel, the shepherd's sheepdog puppy, the ferrywoman's otter, the owl's little owl, the crab of the beach, the heron's
+    /// kingfisher and the ghost of the castle.
     /// </summary>
     private static readonly int WorldPetsExpected =
-        1 + 5 + WorksCatalog.Total + 3 + WorldPetCatalog.DucklingDeliveries.Length + HiddenFriends.KindCount + 3 + 10;
+        1 + 5 + WorksCatalog.Total + 3 + WorldPetCatalog.DucklingDeliveries.Length + HiddenFriends.KindCount + 3 + 11;
 }

@@ -38,6 +38,15 @@ internal static class TripKinds
     /// <summary>Logs from the log yard and planks from the sawmill for the heron's landing and punt.</summary>
     public const string Ferry = "ferry";
 
+    /// <summary>Stone from the coast quarry and the mountain slope and goods from the works for the castle on the hill.</summary>
+    public const string Castle = "castle";
+
+    /// <summary>Logs for a beacon of the castle beside the homestead of a border; the index is the border.</summary>
+    public const string CastleBeacon = "castle-beacon";
+
+    /// <summary>A guest of the castle's feast, from home to the castle; the index is the guest's chair.</summary>
+    public const string CastleGuest = "castle-guest";
+
     public static bool IsKnown(string? kind) =>
         kind
             is Build
@@ -52,7 +61,10 @@ internal static class TripKinds
                 or Hunter
                 or Lighthouse
                 or Dragon
-                or Ferry;
+                or Ferry
+                or Castle
+                or CastleBeacon
+                or CastleGuest;
 }
 
 /// <summary>
@@ -96,6 +108,12 @@ internal interface ITripTarget
     /// coast quarry); null where the load comes from the sources of its material, as for every other target.
     /// </summary>
     HaulSource? SourceFor(int step) => null;
+
+    /// <summary>
+    /// Who asks the loading question at a place of the target's own, where it is not the contractor: the guest of the
+    /// castle's feast at home. Null for every other target.
+    /// </summary>
+    Character? AskerFor(int step) => null;
 }
 
 /// <summary>

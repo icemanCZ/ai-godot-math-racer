@@ -1,0 +1,15 @@
+seed 42
+castle road 811.00 31.26 351.43 inward -0.99 0.00 -0.11 yaw -1.68
+courtyard 779.20 32.78 347.79 gate 795.10 31.26 349.61 drop 801.06 31.26 350.29
+princess 84 Lvice kněžna Libuše 800.20 31.29 344.66
+beacon Sea foot -202.88 6.36 1090.32 drop -208.86 6.70 1089.74 yaw -1.67
+beacon Mountains foot -200.52 29.27 -1086.19 drop -206.48 30.00 -1086.87 yaw -1.68
+beacon River foot 1090.19 20.84 -2.04 drop 1089.54 21.76 -8.01 yaw -3.03
+beacon Forest foot -1089.18 31.21 -0.87 drop -1088.74 30.80 -6.85 yaw 3.07
+guest 0 74 Medvěd majákář Kryštof road -226.77 18.90 1088.00
+guest 1 75 Zajíc pastýř Bohouš road -216.42 29.71 -1088.00
+guest 2 76 Liška převoznice Vendula road 1088.00 24.14 -21.92
+guest 3 77 Medvědice hajná Božena road -1088.00 30.68 -16.83
+guest 4 80 Liška balonářka Amálka road -772.07 35.95 445.83
+guest 5 82 Sova kartografka Mapka road -576.49 14.51 448.05
+guest 6 83 Volavka pozorovatelka Klárka road 1088.00 24.14 -21.92

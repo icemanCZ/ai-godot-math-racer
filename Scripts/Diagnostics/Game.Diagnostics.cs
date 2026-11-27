@@ -6,6 +6,7 @@ using MathRacer.Diagnostics;
 using MathRacer.Garage;
 using MathRacer.Quizzes;
 using MathRacer.Settlement;
+using MathRacer.Tasks;
 using MathRacer.Valley;
 using MathRacer.Vehicles;
 
@@ -891,6 +892,66 @@ public partial class Game
                 for (int i = 0; i < 3; i++)
                     TickFerry(.1);
             }
+        }
+        if (
+            (view.StartsWith("castle") || view == "beacon")
+            && world.Castle is { } castle
+            && world.CastlePlace is { } castleSite
+            && world.Castellan is { } princess
+        )
+        {
+            // Before the gate of the castle: "castle-S" with S of its sixteen loads, "castle" and the others finished
+            // with every beacon lit and every guest at the table; "castle-night" at night with its fireworks,
+            // "castle-panel" with the princess's panel of the guests, "castle-guests" the empty table and a guest on
+            // the trailer's bench, "castle-far" from the village and "beacon" a burning beacon at night.
+            int castleStage =
+                view.StartsWith("castle-") && int.TryParse(view["castle-".Length..], out int castleBuilt)
+                    ? Mathf.Clamp(castleBuilt, 0, CastlePlans.Trips)
+                    : CastlePlans.Trips;
+            bool built = castleStage == CastlePlans.Trips;
+            bool feast = built && view is not ("castle-panel" or "castle-guests");
+            RestoreCastle(
+                new Saves.CastleSave
+                {
+                    Stage = castleStage,
+                    Beacons = built ? new[] { 0, 1, 2, 3 } : Array.Empty<int>(),
+                    Guests =
+                        feast ? Enumerable.Range(0, CastlePlans.Guests).ToArray()
+                        : view == "castle-panel" ? new[] { 0, 2, 4 }
+                        : Array.Empty<int>(),
+                    Feast = feast,
+                }
+            );
+            var stand = castleSite.Local(3, 4);
+            vehicle.SetPose(world.Ground.At(stand.X, stand.Z, .15f), castleSite.Yaw);
+            if (view is "castle-night" or "beacon")
+                Weather.Begin(WeatherKind.Night, instant: true);
+            if (view == "castle-panel")
+            {
+                nearby = princess;
+                OpenCastellan(princess);
+            }
+            if (view == "castle-guests" && world.CastleGuests[0] is { } guest)
+            {
+                StartHaul(
+                    new HaulTrip(
+                        world,
+                        vehicle,
+                        new CastleGuestTrip(castle, 0, guest, world.CastleGuestRoads[0]),
+                        0,
+                        true
+                    )
+                );
+                trailer.Attach(true);
+                trailer.Fill(HaulLoad.Guest);
+            }
+            if (view == "beacon" && world.Beacons.FirstOrDefault(b => b != null) is { } beacon)
+            {
+                var road = beacon.Site.Drop + (beacon.Site.Drop - beacon.Site.Foot).Normalized() * 8;
+                vehicle.SetPose(world.Ground.At(road.X, road.Z, .15f), beacon.Site.Yaw + Mathf.Pi);
+            }
+            for (int i = 0; i < 40; i++)
+                TickCastle(.1);
         }
         if (view == "log-yard" && world.LogYard is { } logYard)
             vehicle.SetPose(world.Ground.At(logYard.Position.X, logYard.Position.Z, .15f), 0);

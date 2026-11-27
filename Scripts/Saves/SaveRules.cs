@@ -47,6 +47,7 @@ internal static class SaveRules
         ("owl's map", HasInvalidExplorer),
         ("shells of the beach", HasInvalidShells),
         ("ferry to the bird island", HasInvalidFerry),
+        ("castle on the hill", HasInvalidCastle),
         ("time of day", HasInvalidDay),
         ("decorations and the mayor's shop", HasInvalidDecorations),
         ("glass lamps and the lamp maker's shop", HasInvalidLamps),
@@ -104,6 +105,9 @@ internal static class SaveRules
         || data.Ferry is null
         || data.Ferry.Spotted is null
         || data.Ferry.Kinds is null
+        || data.Castle is null
+        || data.Castle.Beacons is null
+        || data.Castle.Guests is null
         || data.Day is null;
 
     /// <summary>Throws when the save is not one the game can restore.</summary>
@@ -277,6 +281,9 @@ internal static class SaveRules
             Game.Departure.FerrySail => data.Nearby != World.BirdwatcherId
                 || data.Quiz.DepartureState != GameState.FerryStatus
                 || data.Ferry.Stage < FerryPlans.Trips,
+            Game.Departure.Castle => !World.IsCastellan(data.Nearby)
+                || data.Quiz.DepartureState != GameState.CastleStatus
+                || data.Castle.Feast,
             // The works' missing goods are asked for from a builder, a newcomer, a resident or the lamp maker.
             Game.Departure.Missing => data.Quiz.DepartureState switch
             {
@@ -290,6 +297,7 @@ internal static class SaveRules
                 GameState.HunterStatus => !World.IsHunter(data.Nearby),
                 GameState.LighthouseStatus => data.Nearby != World.FirstBorderKeeperId,
                 GameState.FerryStatus => !World.IsBirdwatcher(data.Nearby),
+                GameState.CastleStatus => !World.IsCastellan(data.Nearby),
                 // The baker of the village shop, whose bakery has run out of bread for his order.
                 GameState.TradeStatus => data.Nearby != World.FirstTraderId,
                 _ => true,
@@ -552,7 +560,7 @@ internal static class SaveRules
             || AsksForLighthouse(data);
         // The question before the shepherd's sheep go into his fold.
         bool sheep = data.Nearby == World.ShepherdId && (Game.Departure)data.Quiz.Departure == Game.Departure.Sheep;
-        return !letter && !lighthouse && !sheep;
+        return !letter && !lighthouse && !sheep && !AsksAsGuest(data);
     }
 
     /// <summary>The lighthouse has 0 to 8 deliveries, begun only after the first letter to the keeper of the sea.</summary>
@@ -705,7 +713,11 @@ internal static class SaveRules
             || data.Quiz.Challenge is DeliveryChallenge or LoadChallenge
             || data.State
                 is not (GameState.Exploring or GameState.ExplorerStatus or GameState.Challenge or GameState.Reward)
-            || (data.State == GameState.Challenge && (Game.Departure)data.Quiz.Departure != Game.Departure.Explorer);
+            || (
+                data.State == GameState.Challenge
+                && (Game.Departure)data.Quiz.Departure != Game.Departure.Explorer
+                && !AsksAsGuest(data)
+            );
     }
 
     /// <summary>
@@ -757,6 +769,51 @@ internal static class SaveRules
                     is not (Game.Departure.Ferry or Game.Departure.FerrySail or Game.Departure.Missing)
             );
     }
+
+    /// <summary>
+    /// The castle: 0 to 16 deliveries, beacons of known borders and guests of known chairs, each at most once and none
+    /// before the castle stands, the feast only with a guest at the table, the princess's panel only beside her, and her
+    /// questions only those before a trailer trip, before the goods missing for it, or the stone's loading question.
+    /// </summary>
+    private static bool HasInvalidCastle(SaveData data)
+    {
+        var castle = data.Castle;
+        if (
+            castle.Stage is < 0 or > CastlePlans.Trips
+            || castle.Beacons.Any(border => border is < 0 or >= CastlePlans.Beacons)
+            || castle.Beacons.Distinct().Count() != castle.Beacons.Length
+            || castle.Guests.Any(chair => chair is < 0 or >= CastlePlans.Guests)
+            || castle.Guests.Distinct().Count() != castle.Guests.Length
+            || (castle.Stage < CastlePlans.Trips && (castle.Beacons.Length > 0 || castle.Guests.Length > 0))
+            || (castle.Feast && castle.Guests.Length == 0)
+            || (data.State == GameState.CastleStatus && !World.IsCastellan(data.Nearby))
+        )
+            return true;
+        if (!World.IsCastellan(data.Nearby))
+            return false;
+        return data.Quiz.Handover
+            || data.Quiz.Challenge is DeliveryChallenge
+            || data.State
+                is not (GameState.Exploring or GameState.CastleStatus or GameState.Challenge or GameState.Reward)
+            || (
+                data.State == GameState.Challenge
+                && data.Quiz.Departure != 0
+                && (Game.Departure)data.Quiz.Departure is not (Game.Departure.Castle or Game.Departure.Missing)
+            );
+    }
+
+    /// <summary>
+    /// A guest of the castle's feast asks the question at home before getting on the trailer's bench: a question that is
+    /// not of the loading kind, while the trailer of that guest's trip stands empty.
+    /// </summary>
+    private static bool AsksAsGuest(SaveData data) =>
+        data.State == GameState.Challenge
+        && data.Quiz.Departure == 0
+        && data.Quiz.Challenge is not (LoadChallenge or DeliveryChallenge)
+        && !data.Quiz.Handover
+        && data.Task.Trip is { Kind: TripKinds.CastleGuest, Loaded: false } trip
+        && trip.Index is >= 0 and < CastlePlans.Guests
+        && World.CastleGuestId(trip.Index) == data.Nearby;
 
     /// <summary>The clock of the day is a number of seconds within one day.</summary>
     private static bool HasInvalidDay(SaveData data) =>
@@ -879,6 +936,21 @@ internal static class SaveRules
                 var cargo = FerryPlans.CargoOf(data.Ferry.Stage);
                 return (cargo, World.AskerIds(cargo, 0), trip.Loaded);
             }
+            case TripKinds.Castle when trip.Index == 0 && data.Castle.Stage is >= 0 and < CastlePlans.Trips:
+            {
+                // The stone is loaded by the sea or in the mountains, which have no worker: the princess asks.
+                var cargo = CastlePlans.CargoOf(data.Castle.Stage);
+                return (
+                    cargo,
+                    cargo == HaulLoad.Stones ? new[] { World.CastellanId } : World.AskerIds(cargo, 0),
+                    trip.Loaded
+                );
+            }
+            case TripKinds.CastleBeacon when trip.Index is >= 0 and < CastlePlans.Beacons:
+                return (HaulLoad.Logs, World.AskerIds(HaulLoad.Logs, 0), trip.Loaded);
+            case TripKinds.CastleGuest when trip.Index is >= 0 and < CastlePlans.Guests:
+                // The guest asks at home before getting on the bench.
+                return (HaulLoad.Guest, new[] { World.CastleGuestId(trip.Index) }, trip.Loaded);
             case TripKinds.Dragon when trip.Index == 0 && data.Dragon.Stage is >= 0 and < DragonPlans.Trips:
                 // Everything is loaded at the mountain slope, which has no worker: the dragon asks the question.
                 return (DragonPlans.CargoOf(data.Dragon.Stage), new[] { World.DragonId }, trip.Loaded);
@@ -1009,6 +1081,14 @@ internal static class SaveRules
                 || data.Post.Delivered[0] == 0,
             TripKinds.Dragon => trip.Index != 0 || data.Dragon.Stage >= DragonPlans.Trips,
             TripKinds.Ferry => trip.Index != 0 || data.Ferry.Stage >= FerryPlans.Trips,
+            TripKinds.Castle => trip.Index != 0 || data.Castle.Stage >= CastlePlans.Trips,
+            // The beacons and the guests come once the castle stands, each one once.
+            TripKinds.CastleBeacon => trip.Index is < 0 or >= CastlePlans.Beacons
+                || data.Castle.Stage < CastlePlans.Trips
+                || data.Castle.Beacons.Contains(trip.Index),
+            TripKinds.CastleGuest => trip.Index is < 0 or >= CastlePlans.Guests
+                || data.Castle.Stage < CastlePlans.Trips
+                || data.Castle.Guests.Contains(trip.Index),
             // Wheat goes to the mill once it is finished, until its flour fills the yard.
             TripKinds.Mill => trip.Index != 0 || !MillFinished(data) || data.Buildings.FlourStock >= FlourMill.Capacity,
             // The lamp maker takes glasses again and again: there is only the one of him.
@@ -1070,6 +1150,7 @@ internal static class SaveRules
             : data.Nearby == World.FirstBorderKeeperId ? GameState.LighthouseStatus
             : World.IsDragon(data.Nearby) ? GameState.DragonStatus
             : World.IsBirdwatcher(data.Nearby) ? GameState.FerryStatus
+            : World.IsCastellan(data.Nearby) ? GameState.CastleStatus
             : null;
         if (panel == null)
         {
@@ -1086,6 +1167,7 @@ internal static class SaveRules
                         or GameState.LighthouseStatus
                         or GameState.DragonStatus
                         or GameState.FerryStatus
+                        or GameState.CastleStatus
                 || data.Quiz.Challenge is LoadChallenge;
         }
         if (data.State is not (GameState.Exploring or GameState.Challenge) && data.State != panel)

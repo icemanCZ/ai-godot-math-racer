@@ -123,6 +123,9 @@ public static class Art
                 // The owl's map of the valley: a folded sheet of paper with a dotted way and a cross on it.
                 "map" =>
                     "M16 30 L50 18 L82 30 L116 18 V102 L82 114 L50 102 L16 114 Z M50 18 V102 M82 30 V114 M28 88 Q40 70 56 76 T84 60 M92 42 L104 54 M104 42 L92 54",
+                // The castle on the hill: a wall with merlons, two towers with pointed roofs and a gate.
+                "castle" =>
+                    "M14 118 V50 L26 30 L38 50 V118 M94 118 V50 L106 30 L118 50 V118 M38 118 V66 H94 V118 M38 66 V56 H48 V66 M58 66 V56 H74 V66 M84 66 V56 H94 V66 M56 118 V96 Q66 82 76 96 V118 M106 30 V14 L118 20 L106 24",
                 // The animal at the end of a trail of the forest keeper: a paw print, a pad and four toes.
                 "paw" =>
                     "M40 98 Q40 72 66 72 Q92 72 92 98 Q92 114 66 114 Q40 114 40 98 Z M20 60 a10 12 0 1 0 20 0 a10 12 0 1 0 -20 0 M42 38 a10 12 0 1 0 20 0 a10 12 0 1 0 -20 0 M70 38 a10 12 0 1 0 20 0 a10 12 0 1 0 -20 0 M92 60 a10 12 0 1 0 20 0 a10 12 0 1 0 -20 0",
@@ -172,7 +175,8 @@ public static class Art
     /// <summary>
     /// A coloured picture for a <c>DeliveryPicture</c> (180 x 150, the frame it draws in) of the post and the borders:
     /// "letter", "lighthouse", "sea", "mountains", "river", "forest" and "stamp", of the dragon: "dragon" and "egg", and of
-    /// the balloon station: "balloon" and "star". Null for any other name, which the picture draws itself.
+    /// the balloon station: "balloon" and "star", and of the castle: "castle", "beacon" and "guest". Null for any other
+    /// name, which the picture draws itself.
     /// </summary>
     public static Texture2D? Picture(string icon)
     {
@@ -244,6 +248,38 @@ public static class Art
                 + "<rect x='52' y='36' width='76' height='78' fill='#9ed5df'/>"
                 + "<circle cx='110' cy='56' r='9' fill='#f3c23c'/>"
                 + "<path d='M52 114 L76 76 L92 94 L106 80 L128 114 Z' fill='#70b765'/>",
+            // The castle on the hill: grey walls with merlons, two round towers with red roofs and flags, a gate with its
+            // drawbridge and a lit window.
+            "castle" => "<ellipse cx='90' cy='140' rx='84' ry='9' fill='#70b765'/>"
+                + $"<path d='M46 138 V70 H134 V138 Z' fill='#cfc7b8' stroke='{ink}' stroke-width='5'/>"
+                + $"<path d='M46 70 V58 H58 V70 M70 70 V58 H82 V70 M98 70 V58 H110 V70 M122 70 V58 H134 V70' fill='#cfc7b8'"
+                + $" stroke='{ink}' stroke-width='5' stroke-linejoin='round'/>"
+                + $"<rect x='18' y='52' width='30' height='86' fill='#bdb4a4' stroke='{ink}' stroke-width='5'/>"
+                + $"<rect x='132' y='52' width='30' height='86' fill='#bdb4a4' stroke='{ink}' stroke-width='5'/>"
+                + $"<path d='M12 54 L33 18 L54 54 Z M126 54 L147 18 L168 54 Z' fill='#d23b2f' stroke='{ink}'"
+                + " stroke-width='5' stroke-linejoin='round'/>"
+                + $"<path d='M33 18 V4 M147 18 V4' stroke='{ink}' stroke-width='4'/>"
+                + "<path d='M33 4 L50 9 L33 14 Z M147 4 L164 9 L147 14 Z' fill='#f3c23c'/>"
+                + $"<path d='M74 138 V108 Q90 86 106 108 V138 Z' fill='#5a3d26' stroke='{ink}' stroke-width='5'/>"
+                + "<rect x='26' y='76' width='14' height='18' rx='6' fill='#ffe27a'/>"
+                + "<rect x='140' y='76' width='14' height='18' rx='6' fill='#ffe27a'/>",
+            // A beacon of the castle: a wooden lookout on four legs with a basket of fire on top.
+            "beacon" => "<ellipse cx='90' cy='140' rx='70' ry='8' fill='#70b765'/>"
+                + "<path d='M90 4 Q112 26 104 44 Q120 30 116 18 Q134 40 116 58 H64 Q46 40 64 18 Q60 30 76 44 Q68 26 90 4 Z'"
+                + " fill='#ff8a2a'/>"
+                + "<path d='M90 22 Q104 40 98 56 H82 Q76 40 90 22 Z' fill='#ffe27a'/>"
+                + $"<path d='M62 56 H118 L110 74 H70 Z' fill='#3b3530' stroke='{ink}' stroke-width='5' stroke-linejoin='round'/>"
+                + $"<path d='M72 74 L52 140 M108 74 L128 140 M66 96 H114 M60 118 H120 M66 96 L120 118 M114 96 L60 118'"
+                + $" fill='none' stroke='#8a6040' stroke-width='8' stroke-linecap='round'/>"
+                + $"<path d='M72 74 L52 140 M108 74 L128 140' fill='none' stroke='{ink}' stroke-width='2'/>",
+            // A guest of the castle's feast: the bench of the trailer with its red cushion and a garland.
+            "guest" => "<ellipse cx='90' cy='140' rx='76' ry='8' fill='#70b765'/>"
+                + $"<rect x='26' y='40' width='128' height='50' rx='10' fill='#c49a64' stroke='{ink}' stroke-width='5'/>"
+                + $"<rect x='18' y='88' width='144' height='22' rx='6' fill='#d23b2f' stroke='{ink}' stroke-width='5'/>"
+                + $"<path d='M34 110 V138 M146 110 V138' stroke='{ink}' stroke-width='8' stroke-linecap='round'/>"
+                + "<path d='M30 44 Q60 70 90 44 Q120 70 150 44' fill='none' stroke='#70b765' stroke-width='7'/>"
+                + "<circle cx='46' cy='56' r='6' fill='#f3c23c'/><circle cx='90' cy='48' r='6' fill='#e8453c'/>"
+                + "<circle cx='134' cy='56' r='6' fill='#4f8fd6'/>",
             _ => null,
         };
         ImageTexture? texture = null;

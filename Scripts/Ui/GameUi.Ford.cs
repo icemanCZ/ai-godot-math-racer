@@ -30,6 +30,7 @@ public partial class GameUi
             HaulLoad.Wheat => "wheat",
             HaulLoad.Bread => "bread",
             HaulLoad.Flour => "flour",
+            HaulLoad.Guest => "guest",
             _ => "sand",
         };
 

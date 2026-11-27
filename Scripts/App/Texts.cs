@@ -614,6 +614,7 @@ internal static class Texts
     public const string SignPost = "POŠTA";
     public const string SignLighthouse = "MAJÁK";
     public const string SignFerry = "PŘÍVOZ";
+    public const string SignCastle = "HRAD";
     public const string SignQuarry = "LOM";
     public const string SignSlope = "STRÁŇ";
 
@@ -964,4 +965,38 @@ internal static class Texts
     public static string FerryAtlasDone(int coins) => $"Atlas je plný! Ledňáček Modroušek teď půjde s tebou.  +{coins}";
 
     public static string FerryTelescopeSeen(int seen, int all) => $"Dalekohled. Ptáci: {seen} z {all}";
+
+    // GameUi.Castle and Game.Castle
+    public const string CastellanHint = "Lvice kněžna Libuše";
+    public const string CastleWanted =
+        "Na hrad potřebuju kamení od moře i z hor, štěrk, cihly, prkna, klády a sklo. Přivezeš mi je? Šestnáct nákladů a hrad bude stát.";
+    public const string CastleBuiltSpeech =
+        "Hrad stojí! Teď ještě hlídky na hranicích. Postavíme u každé hranice strážní věž s ohněm?";
+    public const string CastleBeaconsWanted =
+        "U každé hranice má stát strážní věž s ohněm. Přivez k ní klády a uvidíme ten oheň až z hradu!";
+    public const string CastleBeaconsLit =
+        "Všechny ohně hoří! Teď uspořádáme hostinu. Přivezeš mi hosty z celého údolí? Jezdí se pro ně s vozíkem.";
+    public const string CastleGuestsWanted = "Ke stolu se ještě nevešli všichni hosté. Pojedeš pro dalšího?";
+    public const string CastleFeastSpeech =
+        "Všichni hosté sedí u stolu! Ať žije hostina! Dnes v noci bude nad hradem ohňostroj.";
+    public const string CastleFeastOver = "Děkuju za krásnou hostinu! Přijeď se v noci podívat na ohňostroj.";
+    public const string CastleBringLoad = "Teď odvez náklad před bránu hradu, do žlutého kruhu.";
+    public const string CastleBringLogs = "Teď odvez klády ke strážní věži, do žlutého kruhu.";
+    public const string CastleBringGuest =
+        "Host sedí na lavičce! Opatrně ho odvez na hrad, do žlutého kruhu před bránou.";
+    public const string CastleGuestHello = "Jedu na hostinu! Ale nejdřív vyřeš úlohu.";
+
+    public static string CastleFetchGuest(string name) => $"Jeď pro hosta: {name}. Čeká u svého domu.";
+
+    public static string CastlePart(string part, int stage, int all) => $"Hotovo: {part}!  {stage} / {all}";
+
+    public static string CastleBuilt(int coins) => $"Hrad je hotový!  +{coins}";
+
+    public static string BeaconLit(int lit, int all, int coins) =>
+        $"Oheň na strážní věži hoří!  {lit} / {all}  +{coins}";
+
+    public static string GuestSeated(string name, int seated, int all, int coins) =>
+        $"{name} sedí u stolu!  {seated} / {all}  +{coins}";
+
+    public static string CastleFeast(int coins) => $"Hostina! Strašidýlko Bubáček teď půjde s tebou.  +{coins}";
 }

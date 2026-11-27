@@ -332,6 +332,19 @@ public partial class Game
                 return;
             (works, asker) = (missing, landing.Heron);
         }
+        else if (State == GameState.CastleStatus)
+        {
+            // The princess, for the gravel, the bricks, the planks and the glass of the castle.
+            if (
+                world.Castle is not { Complete: false } castle
+                || nearby is not { Role: CastleRole }
+                || Haul != null
+                || CastleStepReady(castle)
+                || GoodsWorks(CastlePlans.CargoOf(castle.Stage)) is not { Full: false } missing
+            )
+                return;
+            (works, asker) = (missing, castle.Princess);
+        }
         else if (State == GameState.HouseMaterialOffer)
         {
             // A resident who wants goods that the works has not made does the same: the way to the raw material.

@@ -117,6 +117,9 @@ internal static class ActorIds
     /// <summary>The heron at the landing of the ferry beside the homestead of the river border, who goes to the bird island.</summary>
     public const int Birdwatcher = Cartographer + 1;
 
+    /// <summary>The lioness princess at the gate of the castle on the hill, who builds it and holds its feast.</summary>
+    public const int Castellan = Birdwatcher + 1;
+
     /// <summary>The highest actor ID that a save may name.</summary>
-    public const int Last = Birdwatcher;
+    public const int Last = Castellan;
 }

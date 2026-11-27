@@ -722,6 +722,49 @@ public partial class VisualCapture : Node
             camera.GlobalPosition = car.GlobalPosition + new Vector3(-5, 3, -6);
             camera.LookAt(car.GlobalPosition + new Vector3(0, 0, 14));
         }
+        else if (view == "castle-far" && world.CastlePlace is { } farCastle)
+        {
+            // From above the middle of the village, looking out to the castle on its hill.
+            camera.SetProcess(false);
+            var from = world.Village.Center;
+            camera.GlobalPosition = world.Ground.At(from.X, from.Z) + Vector3.Up * 14;
+            camera.LookAt(world.Ground.At(farCastle.Center.X, farCastle.Center.Z) + Vector3.Up * 14);
+            camera.Fov = 35;
+        }
+        else if (view == "beacon" && world.Beacons.FirstOrDefault(b => b != null) is { } beaconTower)
+        {
+            // From the place of its logs, a little aside and below the fire: the whole beacon burning.
+            camera.SetProcess(false);
+            var away = (beaconTower.Site.Drop - beaconTower.Site.Foot).Normalized();
+            var eye = beaconTower.Site.Foot + away * 14 + Vector3.Up.Cross(away) * 5;
+            camera.GlobalPosition = world.Ground.At(eye.X, eye.Z) + Vector3.Up * 3;
+            camera.LookAt(beaconTower.Position + Vector3.Up * 6);
+        }
+        else if (view == "castle-close" && world.CastlePlace is { } closeCastle)
+        {
+            // Over the front wall into the courtyard: the palace, the keep, the well and the table of the feast.
+            camera.SetProcess(false);
+            var eye = closeCastle.Local(-12, 8);
+            camera.GlobalPosition = world.Ground.At(eye.X, eye.Z) + Vector3.Up * 16;
+            camera.LookAt(world.Ground.At(closeCastle.Center.X, closeCastle.Center.Z) + Vector3.Up * 2);
+        }
+        else if (view.StartsWith("castle") && view != "castle-guests" && world.CastlePlace is { } castleSite)
+        {
+            // From the road before the castle, aside and above: the walls, the towers, the gate and the keep.
+            camera.SetProcess(false);
+            var eye = castleSite.Local(-26, -14);
+            camera.GlobalPosition = world.Ground.At(eye.X, eye.Z) + Vector3.Up * 12;
+            camera.LookAt(world.Ground.At(castleSite.Center.X, castleSite.Center.Z) + Vector3.Up * 8);
+        }
+        else if (view == "castle-guests" && world.CastlePlace is { } guestCastle)
+        {
+            // Beside the trailer, a little above: the guest on its bench, and the castle behind.
+            camera.SetProcess(false);
+            var behind = car.GlobalPosition - guestCastle.Inward * 3.2f;
+            camera.GlobalPosition = behind + guestCastle.Right * 3.5f - guestCastle.Inward * 2.5f + Vector3.Up * 2.2f;
+            camera.LookAt(behind + Vector3.Up * .8f);
+        }
+        else if (view.StartsWith("castle")) { }
         else if (view == "ferry-island" && world.FerryPlace is { } islandSite)
         {
             // From over the water before the island's pier: the punt at the pier, the car, the heron and the hide.

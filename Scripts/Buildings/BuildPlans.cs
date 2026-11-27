@@ -34,6 +34,9 @@ public enum HaulLoad
 
     /// <summary>Flour ground at the finished mill from the wheat, hauled from the mill to the bakery.</summary>
     Flour = 13,
+
+    /// <summary>A guest of the castle's feast on the bench of the trailer, from home to the castle.</summary>
+    Guest = 14,
 }
 
 internal static class HaulLoads

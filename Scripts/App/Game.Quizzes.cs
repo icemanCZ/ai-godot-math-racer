@@ -48,6 +48,9 @@ public partial class Game
 
         /// <summary>Not a trip: the heron's question before the crossing to the bird island.</summary>
         FerrySail,
+
+        /// <summary>The princess's question before a trailer trip for the castle, a beacon or a guest of the feast.</summary>
+        Castle,
     }
 
     /// <summary>Asks the quiz that must be solved before a trip starts; the trip continues in StartDeparture.</summary>

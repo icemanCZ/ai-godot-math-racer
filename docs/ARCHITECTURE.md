@@ -654,6 +654,51 @@ not, so such a save puts the car back at the landing (`Game.CarPoseToSave`). Che
 `run.ps1 -Capture` shows it with the views `ferry`, `ferry-0`, `ferry-2`, `ferry-panel`, `ferry-ride`, `ferry-island`
 and `ferry-telescope`.
 
+### `Castle`, `BeaconTower`, `CastleGuestTrip`, `CastlePlans`, `World.Castle` and `Game.Castle`
+
+The castle on the hill (`docs/CASTLE_PLAN.md`). `World.PlanCastle` runs after the ferry, with no random numbers, so
+nothing planned before it moves. Like the balloon, it tries both sides of every road beyond the old valley every 8 m,
+highest courtyard first, and takes the first `CastleSite` whose zone (`CastleFits`) is off the roads, the rivers, the
+sand and the bridges, clear of everything planned before (`InBorderfolkZone`, `NearCastleSights`: the dens and trails,
+the sheep's meadows and ways, the owl's wonders), 480 m from the village, 300 m from the balloon and 160 m from the
+homesteads, the lighthouse, the dragon and the landing, with the ground under the walls within 3 m (then 4.5, 6 and 8 m)
+and a way from the road to the gate no steeper than 25 degrees. `PlanBeacons` puts a `BeaconSite` beside the homestead
+of each border, with the place of its logs towards the road's end. `InCastleZone` (part of `InBorderfolkZone`) keeps the
+plants, the grass and the wild animals off the castle, its way and the beacons; the plants are planned as before and
+only left out (`Vegetation.OutlandCleared`). The wayside flowers were placed earlier and still stand.
+`Tests/Worlds/seed-N.castle.txt` holds the castle, the princess, the beacons and the guests, and no older fingerprint
+changes.
+
+`Castle` is one node in the castle's frame (local -Z to the gate). Its parts follow the stage, each shown and made solid
+(`Obstacles.Add`) from its own delivery: the plinth, two courses of the walls, the walk with its merlons, four round
+towers, the gatehouse, the drawbridge on its hinge, the palace, the keep, the roofs and windows, the well and the table
+with seven chairs, and the lanterns. Until it is finished a building site stands before it (the stakes of the plan, a
+treadwheel crane with a squirrel, heaps of stone and a sign with the count). Its tick (`Game.TickCastle`, system
+`castle`) turns the wheel, waves the flags, lowers the drawbridge while the car is near the gate or inside, lights the
+lanterns at night, burns the great fire on the keep (`KeepFire`) and sends up fireworks (`Fireworks`, three pooled
+bursts).
+
+`Castle` is the `ITripTarget` of sixteen deliveries (`TripKinds.Castle`, `CastlePlans.CargoOf`). Its four loads of stone
+come from the coast quarry and the mountain slope in turn (`StoneSource`, `ITripTarget.SourceFor`), whose loading
+question the princess asks from afar (`CompleteCastellanQuiz`). Each `BeaconTower` is a trip of its own with one load of
+logs (`TripKinds.CastleBeacon`, index the border). Once all burn, so does the keep. `CastleGuestTrip`
+(`TripKinds.CastleGuest`, index the chair) takes the empty trailer to a guest's home. There the guest asks the question
+(`ITripTarget.AskerFor`, a `HaulLoad.Guest` handed over like a special load), and the trailer comes back with a copy of
+the guest (`Character.Figure`) on its bench (`Trailer.SetPassenger`). At the castle the figure goes to the guest's chair
+(`Castle.Seat`) while the guest stays at home. The guests are the four keepers, the balloonist, the owl and the heron
+(`World.CastleGuests`, `World.CastleGuestId`). The full table holds the feast with its coins and fireworks and brings
+the ghost Bubáček (`CollectorPetKind.CastleGhost`). A valley without the works or the log yard has the castle and the
+beacons finished from the start (`World.CastleBuildable`, `BeaconsBuildable`).
+
+Lvice kněžna Libuše (`CastleRole`, `ActorIds.Castellan` 84, registered after the heron and left out of the postcard
+stops and the driving courses) opens the panel `GameState.CastleStatus` (`GameUi.CastlePanel`). Its four modes are the
+loads, the beacons by their borders, the guests' portraits with the ghost, and the feast held. One green check mark
+(`UiIntent.CastleStart`, `Departure.Castle`) sends the trailer for whatever comes next. The castle is saved as
+`SaveData.Castle` (`Stage`, `Beacons`, `Guests`, `Feast`; rule `HasInvalidCastle`). `SaveRules.AsksAsGuest` lets a
+guest's question at home be saved. Checked by `castle-checks`; `run.ps1 -Capture` shows it with the views `castle-0`,
+`castle-4`, `castle-8`, `castle-12`, `castle`, `castle-close`, `castle-night`, `castle-panel`, `castle-guests`,
+`castle-far` and `beacon`.
+
 ### `MayorRole`, `TownDecorations` and `Village.Mayor`
 
 The mayor (`ActorIds.Mayor` 68, `MayorRole`, `GameState.MayorShop` 23) stands on the village square and sells eight

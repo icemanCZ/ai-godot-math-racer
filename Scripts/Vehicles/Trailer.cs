@@ -80,6 +80,7 @@ internal static class TrailerModel
         parts.Piles[(int)HaulLoad.Wheat] = Sacks("Wheat", new[] { "e8dcc0", "dccfae", "efe4c8" }, "c9b78e");
         parts.Piles[(int)HaulLoad.Bread] = BreadCrates();
         parts.Piles[(int)HaulLoad.Flour] = Sacks("Flour", new[] { "f6f2ea", "ece6da", "fbf8f2" }, "d8d0c0");
+        parts.Piles[(int)HaulLoad.Guest] = GuestBench();
         foreach (var pile in parts.Piles)
         {
             pile.Visible = false;
@@ -227,6 +228,21 @@ internal static class TrailerModel
         return pile;
     }
 
+    /// <summary>
+    /// The bench that a guest of the castle's feast rides on: a red cushion on a wooden seat, a back at the rear of
+    /// the trailer and a garland of little flags along it. The guest's figure is put on it by <see cref="Trailer.SetPassenger"/>.
+    /// </summary>
+    private static Node3D GuestBench()
+    {
+        var bench = new Node3D { Name = "Guest" };
+        Art.Block(bench, new(0, .2f, .1f), new(1.5f, .14f, .8f), "a8754a");
+        Art.Block(bench, new(0, .3f, .1f), new(1.4f, .1f, .7f), "c23b30");
+        Art.Block(bench, new(0, .6f, .55f), new(1.5f, .7f, .1f), "a8754a");
+        foreach (float x in new[] { -.6f, -.2f, .2f, .6f })
+            Art.Block(bench, new(x, .98f, .55f), new(.16f, .16f, .04f), x < 0 ? "f2c14e" : "4f8fb8");
+        return bench;
+    }
+
     private static Node3D Mound(string name, string color, string shade)
     {
         var mound = new Node3D { Name = name };
@@ -272,6 +288,31 @@ public partial class Trailer : Node3D
     private string paint = TrailerModel.Paints[0].Id;
 
     internal HaulLoad? Load { get; private set; }
+
+    private Node3D? passenger;
+
+    /// <summary>The figure of a guest of the castle's feast that rides on the bench, or null.</summary>
+    internal Node3D? Passenger => passenger;
+
+    /// <summary>Puts a figure on the guest's bench (it sits facing the car), or takes the one there away with null.</summary>
+    internal void SetPassenger(Node3D? figure)
+    {
+        if (passenger == figure)
+            return;
+        if (passenger != null)
+        {
+            passenger.GetParent()?.RemoveChild(passenger);
+            passenger.QueueFree();
+        }
+        passenger = figure;
+        if (figure == null || parts == null)
+            return;
+        figure.Position = new Vector3(0, .32f, .05f);
+        figure.Rotation = new Vector3(0, Mathf.Pi, 0);
+        figure.Scale = Vector3.One * .5f;
+        parts.Piles[(int)HaulLoad.Guest].AddChild(figure);
+    }
+
     internal bool Attached => Visible;
     internal bool Dumping => dumpTime >= 0;
     internal string PaintId => paint;

@@ -166,7 +166,7 @@ public partial class Game
             return;
         nearby = trip.Asker;
         vehicle.Active = false;
-        BeginQuiz(load: HaulLoads.IsSpecial(trip.Load) ? null : trip.Load);
+        BeginQuiz(load: HaulLoads.IsSpecial(trip.Load) || trip.Load == HaulLoad.Guest ? null : trip.Load);
     }
 
     private bool TakeCounted(Works works)
@@ -341,6 +341,9 @@ public partial class Game
             TripKinds.Dragon when saved.Index == 0 && world.DragonLair is { Complete: false } lair => lair,
             TripKinds.Ferry when saved.Index == 0 && world.FerryLanding is { Complete: false } ferry && FerryWanted =>
                 ferry,
+            TripKinds.Castle when saved.Index == 0 && world.Castle is { Complete: false } castle => castle,
+            TripKinds.CastleBeacon when CastleBeaconTarget(saved.Index) is { } beacon => beacon,
+            TripKinds.CastleGuest when CastleGuestTarget(saved.Index) is { } guest => guest,
             TripKinds.Mill when saved.Index == 0 && world.FlourMill is { Grinding: true, Full: false } mill => mill,
             TripKinds.Glassmaker when saved.Index == 0 && world.Glassworks != null => new GlassmakerTripTarget(world),
             TripKinds.House
@@ -370,6 +373,9 @@ public partial class Game
             { Loaded: true, Railway: not null } => Texts.TedOdvezNakladNaNadraziA,
             { Loaded: true, Zoo: not null } => Texts.TedOdvezNakladDoZooA,
             { Loaded: true, ForGlassmaker: true } => Texts.TedOdvezSklenickyNaNaves,
+            { Loaded: true, Guest: not null } => Texts.CastleBringGuest,
+            { Loaded: true, Castle: not null } => Texts.CastleBringLoad,
+            { Loaded: true, Beacon: not null } => Texts.CastleBringLogs,
             { Loaded: true } => Texts.TedOdvezNakladDoZlutehoKruhu,
             _ => trip.Load switch
             {
@@ -387,6 +393,7 @@ public partial class Game
                 HaulLoad.Fabric => Texts.JedSVozikemProLatkuK,
                 HaulLoad.Capstone => Texts.JedSVozikemProKamenKe,
                 HaulLoad.Flag => Texts.JedSVozikemProVlajeckuK,
+                HaulLoad.Guest when trip.Guest is { } guest => Texts.CastleFetchGuest(guest.Character.DisplayName),
                 _ => Texts.JedSVozikemProPisek,
             },
         };

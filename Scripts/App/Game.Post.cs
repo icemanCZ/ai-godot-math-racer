@@ -206,6 +206,7 @@ public partial class Game
         world.Postman?.Guide(!Post.Busy && NextKeeper() != null);
         world.Cartographer?.Guide(CartographerAwaits);
         world.Birdwatcher?.Guide(BirdwatcherAwaits);
+        world.Castellan?.Guide(CastellanAwaits);
     }
 
     /// <summary>The arrows of the letter move on; a delivery or a trailer trip under way shows its own instead.</summary>
