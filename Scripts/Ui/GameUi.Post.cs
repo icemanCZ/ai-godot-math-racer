@@ -171,20 +171,27 @@ public partial class GameUi
         Clear();
         Text(keeper.DisplayName, 30);
         StatusPicture(BorderIcon((int)border));
+        KeeperStamps(stamps);
+        Text(Texts.KeeperAbout(border), 20);
+        BackButton().GrabFocus();
+    }
+
+    /// <summary>The stamps a keeper sends the album: three of them, the ones sent bright, the others faint.</summary>
+    private void KeeperStamps(int stamps)
+    {
         var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, Name = "KeeperStamps" };
         row.AddThemeConstantOverride("separation", 6);
+        row.TooltipText = Texts.PostStamps(stamps, Post.StampsPerKeeper);
         content.AddChild(row);
         for (int stamp = 0; stamp < Post.StampsPerKeeper; stamp++)
             row.AddChild(
                 new DeliveryPicture
                 {
                     Icon = "stamp",
-                    CustomMinimumSize = new(56, 48),
+                    CustomMinimumSize = new(78, 64),
                     MouseFilter = Control.MouseFilterEnum.Ignore,
                     Modulate = new Color(1, 1, 1, stamp < stamps ? 1 : .25f),
                 }
             );
-        Text(Texts.KeeperAbout(border), 20);
-        BackButton().GrabFocus();
     }
 }

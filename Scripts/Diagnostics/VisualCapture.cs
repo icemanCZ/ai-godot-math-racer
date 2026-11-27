@@ -696,6 +696,7 @@ public partial class VisualCapture : Node
             camera.LookAt(world.FoldMiddle + Vector3.Up * .6f);
         }
         else if (view is "sheep" or "sheep-panel" or "sheep-lost") { }
+        else if (view is "rally" or "rally-gate" or "rally-panel") { }
         else if (view == "hunter-close" && world.Hunter is { } hunterClose)
         {
             // The hunter from the front and a little above, with his hat, waistcoat and landing net.

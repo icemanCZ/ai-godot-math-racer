@@ -44,9 +44,9 @@ Proč právě takhle:
 ## Hra
 
 1. Od začátku hry visí nad Bohoušem žlutá značka (dopis od pošťáka není potřeba) a jeho
-   panel (`GameState.ShepherdStatus` 36, `GameUi.ShepherdPanel`) ukazuje ohradu: ovečky doma, ovečky za autem a otazníky
-   u ztracených i se směrem, kam utekly („u moře“, „pod horami“…). Zelená šipka (`UiIntent.SheepStart`) pošle dítě
-   hledat a ovečky se objeví na loukách.
+   panel (`GameState.ShepherdStatus` 36, `GameUi.ShepherdPanel`) ukazuje ohradu: ovečky doma, ovečky za autem a u
+   ztracených obrázky hranic, ke kterým utekly (moře, hory, řeka, les, v rohu kraje dvě). Zelená fajfka
+   (`UiIntent.SheepStart`) pošle dítě hledat a ovečky se objeví na loukách. Co dělat, řekne Bohouš nahlas.
 2. Ztracená ovečka se pase a zvoní zvonečkem, který je slyšet zdaleka. Rohový panel (`GameUi.SheepHud`) ukazuje šipku a
    vzdálenost k nejbližší ztracené ovečce a kolik oveček jde za autem a kolik je doma.
 3. Když auto přijede na 9 m (`SheepHerd.FindRadius`), ovečka zabečí a jde za autem. Ovečky jdou po dráze auta v řadě

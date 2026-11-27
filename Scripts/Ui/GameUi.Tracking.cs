@@ -143,15 +143,22 @@ public partial class GameUi
     }
 
     /// <summary>
-    /// The forest keeper's book of tracks: the print of every animal, with the names of those found and a question mark
-    /// for the others, how to follow a trail or what the trail followed now tells, the squirrel the full book brings, the
-    /// stamps of the post, and the green arrow that sends the player out after the first trail.
+    /// The forest keeper's book of tracks, made to be understood without reading: the print of every animal, with the
+    /// names of those found and a question mark for the others, what the trail followed now tells, the prints that bring
+    /// the squirrel, the stamps of the post, and the green check mark that sends the player out after the first trail.
+    /// How to follow a trail is said aloud when the panel opens.
     /// </summary>
-    internal void TrackingPanel(Character keeper, bool started, int found, TrackingAnimal? current, int stamps)
+    internal void TrackingPanel(
+        Character keeper,
+        bool started,
+        int found,
+        TrackingAnimal? current,
+        CollectorPet? squirrel,
+        int stamps
+    )
     {
         Clear();
         Text(keeper.DisplayName, 30);
-        Text(Texts.TrackingTitle, 24);
         var grid = new GridContainer { Columns = 3, Name = "TrackingBook" };
         grid.AddThemeConstantOverride("h_separation", 18);
         grid.AddThemeConstantOverride("v_separation", 6);
@@ -183,23 +190,21 @@ public partial class GameUi
             name.AddThemeFontSizeOverride("font_size", 17);
             cell.AddChild(name);
         }
-        Text(
-            !started ? Texts.TrackingHowTo
-                : current is { } now ? TrackingPlans.About(now)
-                : Texts.TrackingBookFull,
-            19
+        if (current is { } now)
+            Text(TrackingPlans.About(now), 19);
+        PetGoal(
+            squirrel,
+            new TextureRect
+            {
+                Texture = TrackPicture(TrackingAnimal.Fox),
+                ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+                StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+            }
         );
-        Text(
-            found >= TrackingPlans.Animals
-                ? $"✓ {WorldPetCatalog.Squirrel.Name}"
-                : $"{WorldPetCatalog.Squirrel.Name} · {found} / {TrackingPlans.Animals}",
-            19
-        );
-        Text(Texts.PostStamps(stamps, Post.StampsPerKeeper), 17);
+        KeeperStamps(stamps);
         if (!started)
         {
-            var go = IconButton("play", () => Send(new UiIntent.TrackingStart()), "StartTracking");
-            go.AccessibilityName = Texts.TrackingStart;
+            var go = AcceptButton(() => Send(new UiIntent.TrackingStart()), "StartTracking", Texts.TrackingStart);
             go.GrabFocus();
             BackButton();
             return;

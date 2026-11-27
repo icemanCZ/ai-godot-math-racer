@@ -1,3 +1,4 @@
+using System.Linq;
 using Godot;
 using MathRacer.Buildings;
 using MathRacer.Characters;
@@ -59,7 +60,14 @@ public partial class Game
         if (nearby is not { Role: BorderKeeperRole { Border: Border.Forest } } keeper || world.TrackingDens == null)
             return;
         var hunt = Tracking;
-        ui.TrackingPanel(keeper, hunt.Started, hunt.Found, hunt.Current?.Animal, Post.Stamps((int)Border.Forest));
+        ui.TrackingPanel(
+            keeper,
+            hunt.Started,
+            hunt.Found,
+            hunt.Current?.Animal,
+            world.AllPets.FirstOrDefault(pet => pet.Kind == CollectorPetKind.Squirrel),
+            Post.Stamps((int)Border.Forest)
+        );
     }
 
     /// <summary>The green arrow of her panel: the first trail begins beside her homestead.</summary>

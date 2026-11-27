@@ -88,6 +88,12 @@ internal static class WorldPetCatalog
         $"{SheepPlans.Sheep} oveček doma v ohradě"
     );
 
+    public static readonly WorldPetSpec Otter = new(
+        CollectorPetKind.Otter,
+        "Vydra Šplouchalka",
+        $"zlatá medaile ve všech {RallyPlans.Stages} etapách rallye"
+    );
+
     public static readonly WorldPetSpec Bridge = new(CollectorPetKind.Bridge, "Mostíček", "dostavěný most");
     public static readonly WorldPetSpec Mill = new(CollectorPetKind.Mill, "Mlýnek", "dostavěný mlýn");
     public static readonly WorldPetSpec Tower = new(CollectorPetKind.Tower, "Věžička", "dostavěnou rozhlednu");
@@ -271,6 +277,9 @@ internal sealed partial class CollectorPet
                 break;
             case CollectorPetKind.Sheepdog:
                 BuildSheepdog();
+                break;
+            case CollectorPetKind.Otter:
+                BuildOtter();
                 break;
             case CollectorPetKind.Bridge:
                 BuildBridge();
@@ -784,6 +793,45 @@ internal sealed partial class CollectorPet
                 i == 2 ? "fbf6ec" : "2f2a2a"
             );
         Eyes(.1f, .98f, .25f);
+    }
+
+    private void BuildOtter()
+    {
+        // A sleek brown otter of the border river sitting up on her tail: a cream face and chest, small round ears,
+        // whiskers, a little fish held in her paws and a long tapering tail curled round in front of her feet.
+        Ball(new(0, .46f, -.04f), new(.4f, .58f, .38f), "7a5032");
+        Ball(new(0, .5f, .12f), new(.28f, .42f, .16f), "e9d6b4");
+        Ball(new(0, .98f, .04f), new(.36f, .32f, .32f), "7a5032");
+        Ball(new(0, .92f, .19f), new(.24f, .18f, .16f), "e9d6b4");
+        Ball(new(0, .96f, .27f), new(.07f, .05f, .04f), "2b1d14");
+        foreach (int side in new[] { -1, 1 })
+        {
+            Ball(new(side * .15f, 1.12f, .0f), new(.08f, .08f, .05f), "5e3c24");
+            for (int w = 0; w < 2; w++)
+                Art.Block(
+                    model,
+                    new(side * .13f, .9f - w * .03f, .28f),
+                    new(.12f, .008f, .008f),
+                    "f6efe2"
+                ).RotationDegrees = new(0, 0, side * (8 - w * 16));
+            Ball(new(side * .1f, .66f, .2f), new(.08f, .1f, .1f), "6b4529");
+            Foot(new(side * .12f, .18f, .1f), .16f, .12f, "5e3c24", side);
+        }
+        // The fish: a silver body with a blue back and a forked tail.
+        Ball(new(0, .7f, .27f), new(.24f, .07f, .06f), "b9c9d4");
+        Ball(new(0, .72f, .27f), new(.2f, .03f, .05f), "5b84a8");
+        Ball(new(.14f, .7f, .27f), new(.05f, .08f, .02f), "5b84a8");
+        for (int i = 0; i < 5; i++)
+        {
+            // From behind her round to the front, beside her feet.
+            float a = Mathf.Pi - i * .6f;
+            Ball(
+                new(Mathf.Sin(a) * .32f, .1f, Mathf.Cos(a) * .32f - .02f),
+                new(.16f - i * .022f, .12f - i * .014f, .16f - i * .022f),
+                "6b4529"
+            );
+        }
+        Eyes(.08f, 1.0f, .2f);
     }
 
     private void BuildMill()

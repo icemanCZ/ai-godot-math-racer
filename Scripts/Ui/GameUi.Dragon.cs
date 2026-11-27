@@ -68,8 +68,11 @@ public partial class GameUi
         Text(Texts.DragonFlightWanted, 20);
         if (canFly)
         {
-            var fly = IconButton("play", () => Send(new UiIntent.DragonFlight()), "StartDragonFlight");
-            fly.AccessibilityName = Texts.DragonFlightStart;
+            var fly = AcceptButton(
+                () => Send(new UiIntent.DragonFlight()),
+                "StartDragonFlight",
+                Texts.DragonFlightStart
+            );
             fly.GrabFocus();
             BackButton();
             return;

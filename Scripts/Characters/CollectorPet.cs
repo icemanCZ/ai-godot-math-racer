@@ -71,6 +71,9 @@ internal enum CollectorPetKind
 
     // The shepherd's sheepdog puppy, Alík: owned once all eight of his lost sheep are home in the fold.
     Sheepdog,
+
+    // The ferrywoman's otter, Šplouchalka: owned once every stage of her rally is driven for gold.
+    Otter,
 }
 
 internal sealed partial class CollectorPet : Node3D

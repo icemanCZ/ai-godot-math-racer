@@ -28,7 +28,7 @@ public partial class GameUi
         if (stage >= LighthousePlans.Trips)
         {
             Text(Texts.LighthouseShining, 20);
-            Text(Texts.PostStamps(stamps, Post.StampsPerKeeper), 18);
+            KeeperStamps(stamps);
             BackButton().GrabFocus();
             return;
         }

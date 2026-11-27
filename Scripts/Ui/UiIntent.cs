@@ -102,6 +102,9 @@ internal abstract record UiIntent
 
     internal sealed record SheepPen : UiIntent;
 
+    // The ferrywoman's rally: a stage waits for the car at its start arch.
+    internal sealed record RallyStart(int Stage) : UiIntent;
+
     // The witch's night panel: the firefly hunt, or the weather question.
     internal sealed record StartFireflyHunt : UiIntent;
 

@@ -696,12 +696,10 @@ internal static class Texts
     // GameUi.Balloon and Game.Balloon
     public const string SignBalloons = "BALÓNY";
     public const string BalloonHint = "Balonářka Amálka";
-    public const string BalloonFirst = "Chceš se proletět? Nejdřív musíme nahřát vzduch v balónu.";
+    public const string BalloonFirst =
+        "Chceš se proletět? Plynem zapneš hořák a balón stoupá, couváním pustíš vzduch a balón klesá."
+        + " Chytej zlaté hvězdičky! Zelená fajfka spustí let.";
     public const string BalloonAgain = "Vítr fouká přesně jak má. Poletíme zase?";
-    public const string BalloonHowTo =
-        "Vítr nás ponese nad údolím. Pedálem zapneš hořák a balón stoupá, couváním pustíš vzduch a balón klesá. Chytej zlaté hvězdičky!";
-    public const string BalloonHowToAgain =
-        "Hořák nahoru, ventil dolů. Každý let visí hvězdičky jinak vysoko, tak dávej pozor!";
     public const string BalloonFact =
         "Víš, že první cestující v horkovzdušném balónu byli beran, kachna a kohout? Bylo to ve Francii v roce 1783.";
     public const string BalloonFlightStart = "Letět";
@@ -709,8 +707,7 @@ internal static class Texts
     public const string BalloonTakeOff = "Pouštím lana! Letíš! Já ti budu mávat ze země.";
     public const string BalloonLand = "Přistát";
     public const string BalloonRooster = "Kikirikí! Kohoutek Kokrháček poletí s tebou, je to přece letec!";
-    public const string BalloonControlsKeys = "W · hořák nahoru   S · ventil dolů";
-    public const string BalloonControlsPad = "RT · hořák nahoru   LT · ventil dolů";
+    public const string BalloonControls = "Hořák nahoru, ventil dolů.";
 
     public static string BalloonMoreStars(int left) =>
         left switch
@@ -734,11 +731,10 @@ internal static class Texts
         : $"Přistáli jsme! Máš {caught} z {stars} hvězdiček. Krásný let!";
 
     // GameUi.Tracking and Game.Tracking
-    public const string TrackingTitle = "Kniha stop";
     public const string TrackingWanted =
-        "Naučím tě číst stopy zvířátek. Stopa vede přes celý kraj až k doupěti, a kde jedno zvířátko najdeš, tam začíná stopa dalšího. Půjdeš stopovat?";
-    public const string TrackingHowTo =
-        "Jeď po stopách. Zlatě svítí ty, kam jet dál. Když stopu ztratíš, šipka nahoře ti ukáže, kudy vede.";
+        "Naučím tě číst stopy zvířátek. Stopa vede přes celý kraj až k doupěti, a kde jedno zvířátko najdeš, tam začíná stopa dalšího."
+        + " Jeď po stopách, zlatě svítí ty, kam jet dál. Když stopu ztratíš, šipka nahoře ti ukáže, kudy vede."
+        + " Půjdeš stopovat? Zelená fajfka tě pošle na cestu.";
     public const string TrackingStart = "Jdu stopovat";
     public const string TrackingBookFull =
         "Moje kniha stop je plná! Všechna zvířátka sedí u svých doupat. Teď umíš číst stopy jako opravdoví hajní.";
@@ -768,11 +764,9 @@ internal static class Texts
     public static string TrackingBookCount(int found, int all) => $"Vystopováno {found} z {all}";
 
     // GameUi.Sheep and Game.Sheep
-    public const string SheepTitle = "Ovečky pastýře Bohouše";
     public const string SheepWanted =
-        "V noci byla bouřka a osm mých oveček se vyplašilo a uteklo do všech koutů kraje. Doma mám jen tři. Pomůžeš mi je najít?";
-    public const string SheepHowTo =
-        "Ovečky mají zvonečky. Dojeď k ovečce a půjde za autem. Jeď pomalu, ať ti stačí, a přiveď je sem k ohradě.";
+        "V noci byla bouřka a osm mých oveček se vyplašilo a uteklo do všech koutů kraje. Doma mám jen tři. Pomůžeš mi je najít?"
+        + " Ovečky mají zvonečky. Dojeď k ovečce a půjde za autem, jen jeď pomalu. Zelená fajfka tě pošle hledat.";
     public const string SheepStart = "Jdu hledat ovečky";
     public const string SheepPenButton = "Zahnat ovečky do ohrady";
     public const string SheepGoLook = "Děkuju! Šipka nahoře ti ukáže nejbližší ovečku. Poslouchej, jak zvoní zvoneček!";
@@ -784,7 +778,6 @@ internal static class Texts
     public const string SheepTakeHome = "Odveď ovečky k Bohoušovi.";
     public const string SheepFindMore = "Najdi další, nebo je odveď k Bohoušovi.";
     public const string SheepListen = "Ovečka se pase tímhle směrem.";
-    public const string SheepLost = "?";
 
     /// <summary>"1 ovečka", "3 ovečky", "5 oveček".</summary>
     public static string SheepCount(int count) =>
@@ -797,8 +790,8 @@ internal static class Texts
 
     public static string SheepBrought(int following) =>
         following == 1
-            ? "Jé, ovečka se vrátila! Zaženeme ji do ohrady?"
-            : $"Jé, ovečky se vrátily! Za autem: {SheepCount(following)}. Zaženeme je do ohrady?";
+            ? "Jé, ovečka se vrátila! Zaženeme ji do ohrady? Zmáčkni zelenou fajfku."
+            : $"Jé, ovečky se vrátily! Za autem: {SheepCount(following)}. Zaženeme je do ohrady? Zmáčkni zelenou fajfku.";
 
     public static string SheepStillLost(int lost) => $"Venku jsou ještě ovečky: {lost}. Poslouchej zvonečky!";
 
@@ -818,25 +811,69 @@ internal static class Texts
 
     public static string SheepBehind(int following) => following == 0 ? "" : $"Za autem {following}";
 
-    /// <summary>Where a lost sheep grazes, near one border: "u moře", "pod horami", "u řeky", "u lesa".</summary>
-    public static string SheepNear(Border border) =>
-        border switch
+    // GameUi.Rally and Game.Rally
+    public const string RallyWanted =
+        "Děkuju za dopis! Pořádám rallye kolem celého kraje. Má čtyři etapy, od jedné cesty k hranici k další."
+        + " Na trati jsou branky se třemi odpověďmi. Projeď tou správnou!";
+    public const string RallyAgain =
+        "Ahoj, závodníku! Kterou etapu pojedeš? Zelená fajfka u etapy tě pošle na start, červený křížek okno zavře.";
+    public const string RallyAllGold = "Samé zlato! Jsi nejlepší řidič kraje. Šplouchalka tě bude ráda doprovázet.";
+    public const string RallyGo = "Start! Jeď po okruhu a dávej pozor na branky.";
+    public const string RallyAbandoned = "Sjel jsi z trati. Etapu můžeš jet znovu, Vendula na tebe počká.";
+    public const string RallyDriveToStart = "Jeď na start a projeď bránou.";
+    public const string RallyPickLane = "Projeď pruhem se správnou odpovědí!";
+    public const string RallyToGate = "Jeď k další brance.";
+    public const string RallyToFinish = "Ještě kousek do cíle!";
+    public const string RallyRight = "Správně!  +1";
+    public const string RallyBestTime = "Nový nejlepší čas!";
+    public const string RallyOtter = "Samé zlato! Vydra Šplouchalka teď pojede s tebou.";
+    public const string RallyCompare = "Porovnej čísla.";
+
+    public static string RallyToStart(string stage) =>
+        $"Hurá do závodu! Jeď na start etapy {stage}. Šipka ti ukáže cestu.";
+
+    public static string RallyQuestion(string instruction) => $"Otázka! {instruction}";
+
+    public static string RallyLetter(string letter) => $"Co začíná na písmeno {letter}?";
+
+    public static string RallyReading(string word) => $"Přečti slovo {word}.";
+
+    public static string RallyWrong(string answer, int seconds) => $"Škoda, správně bylo {answer}.  +{seconds} s";
+
+    public static string RallyMedalName(RallyMedal medal) =>
+        medal switch
         {
-            Border.Sea => "u moře",
-            Border.Mountains => "pod horami",
-            Border.River => "u řeky",
-            _ => "u lesa",
+            Buildings.RallyMedal.Gold => "zlato",
+            Buildings.RallyMedal.Silver => "stříbro",
+            Buildings.RallyMedal.Bronze => "bronz",
+            _ => "",
         };
 
-    /// <summary>Where a lost sheep grazes, in a corner between two borders: "mezi horami a lesem".</summary>
-    public static string SheepBetween(Border along, Border across) => $"mezi {With(along)} a {With(across)}";
+    public static string RallyFinished(string stage, string time, RallyMedal medal, int right, int gates) =>
+        $"Cíl! {stage}: {time}  ·  {RallyMedalName(medal)}  ·  správně {right} / {gates}";
 
-    private static string With(Border border) =>
-        border switch
+    public static string RallyMedalSpoken(RallyMedal medal) =>
+        medal switch
         {
-            Border.Sea => "mořem",
-            Border.Mountains => "horami",
-            Border.River => "řekou",
-            _ => "lesem",
+            Buildings.RallyMedal.Gold => "Cíl! Výborně, máš zlatou medaili!",
+            Buildings.RallyMedal.Silver => "Cíl! Máš stříbrnou medaili. Zkusíš příště zlatou?",
+            _ => "Cíl! Máš bronzovou medaili. Příště to půjde rychleji!",
+        };
+
+    public static string RallyBetterMedal(int coins) => $"Nová medaile!  +{coins}";
+
+    public static string RallyLap(int coins) => $"Objel jsi celý kraj!  +{coins}";
+
+    public static string RallyStage(int number, string name) => $"{number}. {name}";
+
+    /// <summary>A stage's green check mark read aloud: which stage it is and the medal it has, if any.</summary>
+    public static string RallyStageSpoken(int number, string name, RallyMedal medal) =>
+        $"Etapa {number}, {name.ToLowerInvariant()}. "
+        + medal switch
+        {
+            Buildings.RallyMedal.Gold => "Máš zlatou medaili.",
+            Buildings.RallyMedal.Silver => "Máš stříbrnou medaili.",
+            Buildings.RallyMedal.Bronze => "Máš bronzovou medaili.",
+            _ => "Tuhle etapu jsi ještě nejel.",
         };
 }

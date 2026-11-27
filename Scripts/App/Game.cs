@@ -56,6 +56,7 @@ public enum GameState
     BalloonStatus = 34,
     TrackingStatus = 35,
     ShepherdStatus = 36,
+    RallyStatus = 37,
 }
 
 public partial class Game : Node3D

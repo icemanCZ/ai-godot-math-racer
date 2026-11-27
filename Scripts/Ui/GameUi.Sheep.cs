@@ -19,7 +19,9 @@ public partial class GameUi
     private PanelContainer sheepHud = null!;
     private DeliveryPicture sheepArrow = null!;
     private HBoxContainer sheepGoal = null!;
-    private Label sheepCount = null!;
+    private DeliveryPicture sheepFollowPicture = null!;
+    private Label sheepFollowCount = null!;
+    private Label sheepHomeCount = null!;
     private Label sheepDistance = null!;
     private Label sheepNote = null!;
     private string sheepGoalKey = "";
@@ -62,8 +64,28 @@ public partial class GameUi
         var top = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         top.AddThemeConstantOverride("separation", 14);
         column.AddChild(top);
-        sheepCount = HudLabel("SheepCount", 24);
-        top.AddChild(sheepCount);
+        // In pictures: a sheep and how many follow the car, a barn and how many are home of all.
+        sheepFollowPicture = new DeliveryPicture
+        {
+            Name = "SheepFollowPicture",
+            Icon = "sheep",
+            CustomMinimumSize = new(44, 36),
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        };
+        top.AddChild(sheepFollowPicture);
+        sheepFollowCount = HudLabel("SheepFollowCount", 28);
+        top.AddChild(sheepFollowCount);
+        top.AddChild(
+            new DeliveryPicture
+            {
+                Name = "SheepHomePicture",
+                Icon = "barn",
+                CustomMinimumSize = new(44, 36),
+                MouseFilter = Control.MouseFilterEnum.Ignore,
+            }
+        );
+        sheepHomeCount = HudLabel("SheepHomeCount", 28);
+        top.AddChild(sheepHomeCount);
         sheepDistance = HudLabel("SheepDistance", 24);
         sheepDistance.AddThemeColorOverride("font_color", new Color("fff3c4"));
         top.AddChild(sheepDistance);
@@ -125,12 +147,15 @@ public partial class GameUi
                 }
             );
         }
-        string behind = Texts.SheepBehind(following);
-        sheepCount.Text = behind == "" ? Texts.SheepHome(home, all) : $"{behind} · {Texts.SheepHome(home, all)}";
+        sheepFollowPicture.Visible = sheepFollowCount.Visible = following > 0;
+        sheepFollowCount.Text = following.ToString();
+        sheepHomeCount.Text = $"{home} / {all}";
         sheepDistance.Text = distance;
         sheepNote.Text = note;
         sheepNote.Visible = note != "";
-        sheepHud.AccessibilityName = $"{sheepCount.Text}. {note}";
+        string behind = Texts.SheepBehind(following);
+        string count = behind == "" ? Texts.SheepHome(home, all) : $"{behind} · {Texts.SheepHome(home, all)}";
+        sheepHud.AccessibilityName = $"{count}. {note}";
         var camera = GetViewport().GetCamera3D();
         if (camera == null)
             return;
@@ -151,35 +176,32 @@ public partial class GameUi
     internal string SheepHudNote => sheepHud.Visible ? sheepNote.Text : "";
 
     /// <summary>
-    /// The shepherd's fold: a sheep for every one that ran off, bright with its name when it is home (✓) or behind the
-    /// car (…), faint with a question mark and the place it ran to while it is lost; how to look for them or how many are
-    /// still out, the puppy that the whole flock brings, the stamps of the post, the green arrow that sends the player
-    /// out and the button that drives the sheep behind the car into the fold.
+    /// The shepherd's fold, made to be understood without reading: a sheep for every one that ran off, bright with its
+    /// name when it is home (✓) or behind the car (…), faint with the pictures of the borders it ran to while it is lost;
+    /// the sheep that bring the puppy, the stamps of the post, and the green check mark that sends the player out or
+    /// drives the sheep behind the car into the fold. What to do is said aloud when the panel opens.
     /// </summary>
     internal void ShepherdPanel(
         Character keeper,
         bool started,
         SheepStatus[] status,
-        string[] where,
+        Border[][] where,
         int following,
+        CollectorPet? dog,
         int stamps
     )
     {
         Clear();
         Text(keeper.DisplayName, 30);
-        Text(Texts.SheepTitle, 24);
         var grid = new GridContainer { Columns = 4, Name = "SheepFold" };
         grid.AddThemeConstantOverride("h_separation", 16);
         grid.AddThemeConstantOverride("v_separation", 4);
         var middle = new CenterContainer();
         content.AddChild(middle);
         middle.AddChild(grid);
-        int home = 0;
         for (int i = 0; i < status.Length; i++)
         {
             bool known = status[i] is SheepStatus.Home or SheepStatus.Following or SheepStatus.Waiting;
-            if (status[i] == SheepStatus.Home)
-                home++;
             var cell = new VBoxContainer { Name = $"Sheep{i}", Alignment = BoxContainer.AlignmentMode.Center };
             grid.AddChild(cell);
             cell.AddChild(
@@ -190,44 +212,50 @@ public partial class GameUi
                     Modulate = known ? Colors.White : new Color(1, 1, 1, .4f),
                 }
             );
-            var name = new Label
+            if (known)
             {
-                Text = status[i] switch
+                var name = new Label
                 {
-                    SheepStatus.Home => "✓ " + SheepPlans.Name(i),
-                    SheepStatus.Following or SheepStatus.Waiting => "… " + SheepPlans.Name(i),
-                    _ => started ? $"{Texts.SheepLost} {where[i]}" : Texts.SheepLost,
-                },
-                HorizontalAlignment = HorizontalAlignment.Center,
+                    Text = (status[i] == SheepStatus.Home ? "✓ " : "… ") + SheepPlans.Name(i),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                };
+                name.AddThemeFontSizeOverride("font_size", 16);
+                cell.AddChild(name);
+                continue;
+            }
+            // A lost sheep: where it ran, as the pictures of the borders, once the shepherd has told it.
+            var place = new HBoxContainer
+            {
+                Name = "SheepWhere",
+                Alignment = BoxContainer.AlignmentMode.Center,
+                CustomMinimumSize = new(0, 34),
             };
-            name.AddThemeFontSizeOverride("font_size", 16);
-            cell.AddChild(name);
+            place.AddThemeConstantOverride("separation", 2);
+            cell.AddChild(place);
+            if (!started)
+                continue;
+            foreach (var border in where[i])
+                place.AddChild(
+                    new DeliveryPicture
+                    {
+                        Icon = BorderIcon((int)border),
+                        CustomMinimumSize = new(40, 34),
+                        MouseFilter = Control.MouseFilterEnum.Ignore,
+                    }
+                );
         }
-        int all = status.Length;
-        Text(
-            !started ? Texts.SheepHowTo
-                : home == all ? Texts.SheepAllHome
-                : following > 0 ? Texts.SheepBrought(following)
-                : Texts.SheepStillLost(all - home),
-            19
-        );
-        Text(
-            home >= all ? $"✓ {WorldPetCatalog.Sheepdog.Name}" : $"{WorldPetCatalog.Sheepdog.Name} · {home} / {all}",
-            19
-        );
-        Text(Texts.PostStamps(stamps, Post.StampsPerKeeper), 17);
+        PetGoal(dog, "sheep");
+        KeeperStamps(stamps);
         if (!started)
         {
-            var go = IconButton("play", () => Send(new UiIntent.SheepStart()), "StartSheep");
-            go.AccessibilityName = Texts.SheepStart;
+            var go = AcceptButton(() => Send(new UiIntent.SheepStart()), "StartSheep", Texts.SheepStart);
             go.GrabFocus();
             BackButton();
             return;
         }
         if (following > 0)
         {
-            var pen = IconButton("play", () => Send(new UiIntent.SheepPen()), "PenSheep");
-            pen.AccessibilityName = Texts.SheepPenButton;
+            var pen = AcceptButton(() => Send(new UiIntent.SheepPen()), "PenSheep", Texts.SheepPenButton);
             pen.GrabFocus();
             BackButton();
             return;

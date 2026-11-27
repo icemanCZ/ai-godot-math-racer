@@ -68,6 +68,19 @@ Build panels and HUD elements, manage menu focus and emit player intents. The pa
 sends a `UiIntent` through the single `Intended` event and `Game.HandleIntent` (`Game.Intents.cs`) is the one switch
 that answers it. A new button is a new `UiIntent` record and a new case there.
 
+### Panels for children who cannot read
+
+The players are small children who do not read yet, so a panel is made to be understood from pictures and the voice;
+its text is only for a grown-up looking on. A panel offers a task or a ride with the green check mark
+(`GameUi.AcceptButton`, its words read aloud when it is chosen) and leaves with the red X (`BackButton`); no other
+picture is used for these two answers. What to do and what the check mark does is said aloud by the character when the
+panel opens (`Speak`), not written as a paragraph. Progress is a row of pictures that light up (loads, stamps, sheep,
+prints, medals) or a picture with a count; the stamps of a keeper are `KeeperStamps`, and the pet that a task brings is
+`PetGoal`: what is counted, how many of how many, an arrow and the pet itself in a small 3D portrait, grey until it is
+earned. A place is the picture of its border (`BorderIcon`: the sea, the mountains, the river, the forest), keys are
+drawn as key caps with arrows (`BalloonKeys`), and a corner panel during a drive shows its state in pictures as well,
+like the strip of a rally stage with its gates and the car (`RallyStrip`).
+
 ### `Texts`
 
 The fixed Czech texts of `Game*.cs` and `GameUi*.cs` as constants (names made from the text without diacritics). Texts
@@ -441,7 +454,7 @@ the village; after a landing it stands on the target and rises on the ropes agai
 afar, the balloonist's marker rides above the balloon (`Character.RaiseFarMarker`).
 
 Liška balonářka Amálka (`BalloonistRole`, `ActorIds.Balloonist` 80) opens her panel (`GameState.BalloonStatus` 34,
-`GameUi.BalloonPanel`); the green arrow (`UiIntent.BalloonFlight`) asks a question, and the right answer
+`GameUi.BalloonPanel`); the green check mark (`UiIntent.BalloonFlight`) asks a question, and the right answer
 (`CompleteBalloonQuiz`) lets the balloon go. `BalloonFlight` is the fixed way the wind takes, a closed curve from the
 field towards the middle of the valley and back, its floor 14 m above the highest ground near it; `BalloonRide` is one
 flight without scene nodes, stepped by the system `balloon` (`Game.TickBalloon`): the pedal is the burner, reverse the
@@ -481,7 +494,7 @@ burrow under a stump, a wallow, rocks with a fallen trunk) with their animals, w
 followed and sit in front of it once found.
 
 Medvědice hajná Božena, the keeper of the forest border, shows the book in her panel once the post has brought her a
-letter (`TrackingWanted`; `GameState.TrackingStatus` 35, `GameUi.TrackingPanel`), and her green arrow
+letter (`TrackingWanted`; `GameState.TrackingStatus` 35, `GameUi.TrackingPanel`), and her green check mark
 (`UiIntent.TrackingStart`) sends the player out. `TrackingHunt` is the hunt without scene nodes: whether she has sent
 the player out, how many animals are found and the furthest print reached (`Step`, 6 m), with the arrow of the corner
 panel (`GameUi.TrackingHud`) back to the trail when the car is 24 m from it (`Lost`, `Lead`); it is stepped by the
@@ -507,7 +520,7 @@ nothing that was there moves. A valley where the eight cannot all be found gets 
 `Tests/Worlds/seed-N.sheep.txt` holds the meadows; planning takes some 40 ms.
 
 Zajíc pastýř Bohouš, the keeper of the mountain border, shows his fold from the start, with no letter needed
-(`SheepWanted`; `GameState.ShepherdStatus` 36, `GameUi.ShepherdPanel`), and his green arrow (`UiIntent.SheepStart`)
+(`SheepWanted`; `GameState.ShepherdStatus` 36, `GameUi.ShepherdPanel`), and his green check mark (`UiIntent.SheepStart`)
 sends the player out. `SheepHerd` is the herd without scene nodes: the status of every sheep (`SheepStatus`: lost,
 following, waiting, home) and how far the followers are behind the car along its way, kept in a `CompanionPath` of 480
 points. A lost or waiting sheep within `FindRadius` (9 m) joins; the followers line up behind the car at `Slot` and run
@@ -524,6 +537,36 @@ of the model that never ran off), jump over the front rail one after another and
 `SaveData.Sheep` (`Started`, `Home`, `Following`; rule `HasInvalidSheep`); a following or waiting sheep is put right
 behind the car after a load. Checked by `sheep-checks`; `run.ps1 -Capture` shows it with the views `sheep`,
 `sheep-panel`, `sheep-herd`, `sheep-lost` and `sheep-fold`.
+
+### `RallyCourse`, `RallyRun`, `RallyGates`, `RallyPlans`, `World.Rally` and `Game.Rally`
+
+The ferrywoman's rally round the land beyond the old valley (`docs/RALLY_PLAN.md`). `World.PlanRally` runs after the
+sheep are planned, with no random numbers, and samples the ring road every 2 m into a `RallyCourse` (position, forward
+and right at a distance along it, wrapping round; `Project` finds where the car is on it, `LaneAt` which of the three
+lanes it is in). Four start arches stand some 30 m past the roads to the borders (`ArchFits`: off and 25 m from the
+bridges, 22 m from every junction, on dry, open posts), the river's first, and cut the ring into four stages
+(`RallyStage`). Each stage gets three gates near its quarters (`PlanGates`, `GateFits`): 190 m past its start, 150 m
+apart, 90 m before its finish, on a straight stretch 40 m from the bridges and junctions, away from the sheep, dens,
+balloon, quarry and lighthouse, with all three lanes over 13 m across dry, free of trunks and near the height of the
+road. The course takes no ground and its gates have no collision, so nothing that was there moves.
+`Tests/Worlds/seed-N.rally.txt` holds it; planning takes some 15 ms.
+
+Liška převoznice Vendula, the keeper of the river border, shows her race card once the postman has brought her a letter
+(`RallyWanted`; `GameState.RallyStatus` 37, `GameUi.RallyPanel`), with every stage's medal, the pictures of the borders
+it runs between, its best time and a green check mark for each (`UiIntent.RallyStart`). `RallyRun` is the drive of one
+stage without scene nodes: it waits for the car to cross the start arch forwards, then reports the gates crossed with
+the lane taken and the finish (`RallyEventKind`), counts the time driven plus `RallyPlans.PenaltySeconds` for each wrong
+or missed gate, gives up when the car is 45 m off the course for 4 s or 30 m behind the start, and goes on into the next
+stage after a finish. It is stepped by the system `rally` (`Game.TickRally`): within `RallyQuestionAhead` (170 m) of the
+next gate it asks `QuizSession.NextGate` (any enabled kind but syllables, which are put together, not chosen), and
+`RallyGates` draws the three answers on the boards of that gate with small viewports (text or a `WordPicture`) while the
+corner panel (`GameUi.RallyHud`, on the left so the gate ahead stays in sight) shows the question with the lanes'
+colours above the strip of the stage (`RallyStrip`). A finish earns a medal by the average speed with the penalties
+(`MedalFor`: 11.5 m/s gold, 8.5 m/s silver), coins by the medal, `NewMedalCoins` for a better medal, `LapCoins` for four
+stages in one go and, with gold on all four, the otter (`CollectorPetKind.Otter`). Saved as `SaveData.Rally` (`Best`,
+tenths of a second per stage, 0 when not driven; rule `HasInvalidRally`); medals are worked out from the times, and a
+drive under way is not saved. Checked by `rally-checks`; `run.ps1 -Capture` shows it with the views `rally`,
+`rally-gate` and `rally-panel`.
 
 ### `MayorRole`, `TownDecorations` and `Village.Mayor`
 

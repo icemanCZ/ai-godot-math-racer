@@ -1,0 +1,6 @@
+seed 7421
+rally ring 5572.00 points 2786 hash 67BB9753EBCE5AE6
+stage River Sea start 793.69 19.53 102.48 length 1538.00 gates 756.96 29.87 489.55 505.88 29.46 750.55 244.90 1.23 789.22
+stage Sea Forest start -259.45 21.67 794.71 length 1224.00 gates -563.41 31.09 747.61 -737.70 34.91 515.28 -762.29 25.45 210.63
+stage Forest Mountains start -791.58 31.56 -93.92 length 1110.00 gates -788.19 24.82 -378.99 -704.64 20.92 -632.28 -473.37 28.34 -773.25
+stage Mountains River start -197.16 28.95 -793.43 length 1700.00 gates 263.43 13.67 -786.16 635.49 25.88 -688.00 818.67 27.30 -321.20

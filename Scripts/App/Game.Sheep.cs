@@ -65,11 +65,22 @@ public partial class Game
         var herd = Sheep;
         var status = Enumerable.Range(0, herd.Count).Select(herd.StatusOf).ToArray();
         var where = Enumerable.Range(0, herd.Count).Select(i => SheepWhere(herd.Spot(i))).ToArray();
-        ui.ShepherdPanel(keeper, herd.Started, status, where, herd.FollowingCount, Post.Stamps((int)Border.Mountains));
+        ui.ShepherdPanel(
+            keeper,
+            herd.Started,
+            status,
+            where,
+            herd.FollowingCount,
+            world.AllPets.FirstOrDefault(pet => pet.Kind == CollectorPetKind.Sheepdog),
+            Post.Stamps((int)Border.Mountains)
+        );
     }
 
-    /// <summary>Where a meadow lies, as the shepherd says it: by the sea, under the mountains, between the river and the sea…</summary>
-    private static string SheepWhere(Vector3 spot)
+    /// <summary>
+    /// The borders a meadow lies by, shown as their pictures under a lost sheep: one border (by the sea, under the
+    /// mountains…) or the two of a corner (between the river and the sea…).
+    /// </summary>
+    internal static Border[] SheepWhere(Vector3 spot)
     {
         int side = WorldLayout.Plan.Side;
         var across = side * spot.X > 0 ? Border.River : Border.Forest;
@@ -77,10 +88,10 @@ public partial class Game
         float x = Mathf.Abs(spot.X),
             z = Mathf.Abs(spot.Z);
         if (x > z * 1.8f)
-            return Texts.SheepNear(across);
+            return new[] { across };
         if (z > x * 1.8f)
-            return Texts.SheepNear(along);
-        return Texts.SheepBetween(along, across);
+            return new[] { along };
+        return new[] { along, across };
     }
 
     /// <summary>The green arrow of his panel: the sheep appear on their meadows.</summary>

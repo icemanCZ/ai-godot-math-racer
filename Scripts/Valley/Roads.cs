@@ -64,6 +64,9 @@ public partial class Roads : Node3D
     internal readonly List<(Vector3 Position, Vector3 Forward)> NavigationAnchors = new();
     internal readonly List<int> SampleAnchors = new();
 
+    /// <summary>The length of the first route: the main road of the old valley, or the ring beyond it.</summary>
+    internal float MainLength => mainRoute.GetBakedLength();
+
     public (Vector3 Center, Vector3 Forward) SampleMain(float distance)
     {
         float length = mainRoute.GetBakedLength();

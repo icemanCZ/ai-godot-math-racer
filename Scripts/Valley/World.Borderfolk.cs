@@ -176,6 +176,7 @@ public partial class World
         BuildBalloon();
         BuildTracking();
         BuildSheep();
+        BuildRally();
     }
 
     /// <summary>The lighthouse on the shore, raised by the player's deliveries.</summary>

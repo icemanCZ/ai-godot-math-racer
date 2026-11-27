@@ -234,7 +234,9 @@ public static class Art
                 + "<circle cx='98' cy='52' r='5' fill='#f2a14e'/><circle cx='78' cy='98' r='6' fill='#7fbf6a'/>"
                 + "<path d='M66 22 q6 -10 0 -18 M90 18 q6 -10 0 -16 M114 22 q6 -10 0 -18' fill='none' stroke='#ff8a2a'"
                 + " stroke-width='5' stroke-linecap='round'/>",
-            "stamp" => "<rect x='40' y='22' width='100' height='106' fill='#fff5df' stroke='#fff5df' stroke-width='14'"
+            // The perforated paper is outlined, so that a stamp shows on the cream of a panel too.
+            "stamp" => $"<rect x='36' y='18' width='108' height='114' rx='4' fill='{ink}'/>"
+                + "<rect x='40' y='22' width='100' height='106' fill='#fff5df' stroke='#fff5df' stroke-width='14'"
                 + " stroke-dasharray='0 14' stroke-linecap='round'/>"
                 + "<rect x='52' y='36' width='76' height='78' fill='#9ed5df'/>"
                 + "<circle cx='110' cy='56' r='9' fill='#f3c23c'/>"

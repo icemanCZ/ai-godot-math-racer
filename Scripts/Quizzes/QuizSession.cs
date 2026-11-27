@@ -78,6 +78,29 @@ internal sealed class QuizSession
     }
 
     /// <summary>
+    /// The question of a gate of the ferrywoman's rally: the next enabled kind that has three answers to drive through,
+    /// so never syllables, which are put together; with only syllables enabled, a letter question.
+    /// </summary>
+    public IChallenge NextGate()
+    {
+        for (int i = 0; i < Rotation.Length; i++)
+        {
+            var type = Rotation[NextQuiz];
+            NextQuiz = (NextQuiz + 1) % Rotation.Length;
+            if (type == QuizType.Syllables || !Enabled.HasFlag(type))
+                continue;
+            return type switch
+            {
+                QuizType.Math => math.Next(ThreeTermMath),
+                QuizType.Letters => letters.Next(),
+                QuizType.Reading => reading.Next(),
+                _ => compare.Next(),
+            };
+        }
+        return letters.Next();
+    }
+
+    /// <summary>
     /// A new question of the same kind as <paramref name="missed"/>, asked after a wrong answer so that the answers
     /// cannot be tried one after another. It is never the same question again. A delivery has none: its answer is
     /// the cargo really carried.

@@ -1,4 +1,5 @@
 using Godot;
+using MathRacer.Characters;
 using MathRacer.Garage;
 
 namespace MathRacer.Ui;
@@ -7,7 +8,75 @@ public partial class GameUi
 {
     private static ImageTexture? activePetBadge;
 
-    private static void AddPetPreview(Button button, Node3D model, Material? material, bool active)
+    private static ShaderMaterial? petGray;
+
+    /// <summary>Draws a pet in grey, for a pet not earned yet.</summary>
+    private static ShaderMaterial PetGray =>
+        petGray ??= new ShaderMaterial
+        {
+            Shader = new Shader
+            {
+                Code =
+                    "shader_type canvas_item; void fragment() { vec4 c = texture(TEXTURE, UV); float g = dot(c.rgb, vec3(0.299, 0.587, 0.114)); COLOR = vec4(vec3(g), c.a * 0.75); }",
+            },
+        };
+
+    /// <summary>
+    /// The pet that a panel's task brings, for a child who cannot read: what is counted (<paramref name="unit"/>) and how
+    /// many of how many, an arrow, and the pet itself, grey until it is earned and with a check mark once it is.
+    /// </summary>
+    private void PetGoal(CollectorPet? pet, Control unit)
+    {
+        if (pet == null)
+        {
+            unit.QueueFree();
+            return;
+        }
+        var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, Name = "PetGoal" };
+        row.AddThemeConstantOverride("separation", 10);
+        row.TooltipText = pet.RewardHint;
+        content.AddChild(row);
+        unit.CustomMinimumSize = new(56, 56);
+        unit.SizeFlagsVertical = Control.SizeFlags.ShrinkCenter;
+        unit.MouseFilter = Control.MouseFilterEnum.Ignore;
+        row.AddChild(unit);
+        var count = new Label
+        {
+            Name = "PetGoalCount",
+            Text = $"{Mathf.Min(pet.Count, pet.Goal)} / {pet.Goal}",
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        count.AddThemeFontSizeOverride("font_size", 26);
+        row.AddChild(count);
+        row.AddChild(
+            new DeliveryPicture
+            {
+                Icon = "arrow",
+                Direction = Mathf.Pi / 2,
+                CustomMinimumSize = new(44, 40),
+                MouseFilter = Control.MouseFilterEnum.Ignore,
+            }
+        );
+        var portrait = new Control
+        {
+            Name = "PetGoalPortrait",
+            CustomMinimumSize = new(120, 112),
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+        };
+        row.AddChild(portrait);
+        AddPetPreview(portrait, pet.CreatePreviewModel(), pet.IsOwned ? null : PetGray, pet.IsOwned, 1.45f);
+    }
+
+    /// <summary>The pet goal counted in pictures of <paramref name="icon"/>.</summary>
+    private void PetGoal(CollectorPet? pet, string icon) => PetGoal(pet, new DeliveryPicture { Icon = icon });
+
+    private static void AddPetPreview(
+        Control button,
+        Node3D model,
+        Material? material,
+        bool active,
+        float frame = 1.95f
+    )
     {
         var viewport = new SubViewport
         {
@@ -23,7 +92,7 @@ public partial class GameUi
         var camera = new Camera3D
         {
             Projection = Camera3D.ProjectionType.Orthogonal,
-            Size = 1.95f,
+            Size = frame,
             Position = new(2.4f, 1.9f, 4),
             Current = true,
         };

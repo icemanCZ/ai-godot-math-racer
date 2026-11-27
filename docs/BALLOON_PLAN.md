@@ -43,8 +43,9 @@ Proč právě takhle:
 
 ## Let
 
-1. Amálčin panel (`GameState.BalloonStatus` 34) ukáže, kolik hvězdiček dítě chytilo a kolik chybí do kohoutka, a
-   zelenou šipkou (`UiIntent.BalloonFlight`) nabídne let.
+1. Amálčin panel (`GameState.BalloonStatus` 34) ukáže klávesy letu jako obrázky (W se šipkou nahoru, S se šipkou
+   dolů), kolik hvězdiček dítě chytilo z dvaceti a kohoutka, a zelenou fajfkou (`UiIntent.BalloonFlight`) nabídne let.
+   Jak se létá, řekne Amálka nahlas při prvním rozhovoru.
 2. Nejdřív přijde otázka (`BeginQuiz`). Správná odpověď pustí lana a balon stoupá.
 3. Vítr nese balon po pevné trase (`BalloonFlight`): uzavřená křivka od pole směrem ke středu údolí a zpátky, dlouhá 500
    až 1200 m. Letí rychlostí 10,5 m/s a let trvá zhruba minutu a půl. Spodní hranice trasy je nejméně 14 m nad

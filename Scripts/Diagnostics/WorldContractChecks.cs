@@ -199,6 +199,29 @@ internal static class WorldFingerprint
         return lines;
     }
 
+    /// <summary>
+    /// What came after the shepherd's sheep (<c>docs/RALLY_PLAN.md</c>): the ring of the ferrywoman's rally, its four
+    /// stages with their arches and the gates on each.
+    /// </summary>
+    internal static string RallyFileFor(int seed) => Path.Combine(Folder, $"seed-{seed}.rally.txt");
+
+    internal static List<string> RallyLines(World world)
+    {
+        var lines = new List<string> { $"seed {Settings.Seed}" };
+        if (world.Rally is not { } course)
+        {
+            lines.Add("rally none");
+            return lines;
+        }
+        lines.Add($"rally ring {F(course.Length)} points {course.Points.Count} hash {Hash(course.Points.Select(P))}");
+        foreach (var stage in course.Stages)
+            lines.Add(
+                $"stage {stage.From} {stage.To} start {P(course.At(stage.Start))} length {F(stage.Length)}"
+                    + $" gates {string.Join(" ", stage.Gates.Select(g => P(course.At(g))))}"
+            );
+        return lines;
+    }
+
     internal static List<string> Lines(World world)
     {
         var lines = new List<string> { $"seed {Settings.Seed}" };
@@ -316,6 +339,14 @@ public partial class WorldFingerprintWriter : Node
                 File.WriteAllLines(sheep, WorldFingerprint.SheepLines(world));
                 GD.Print($"WROTE: {sheep}");
             }
+            string rally = WorldFingerprint.RallyFileFor(Settings.Seed);
+            if (File.Exists(rally))
+                GD.Print($"KEPT: {rally} already exists and stays as it is");
+            else
+            {
+                File.WriteAllLines(rally, WorldFingerprint.RallyLines(world));
+                GD.Print($"WROTE: {rally}");
+            }
             GetTree().Quit();
         }
         catch (Exception error)
@@ -368,6 +399,9 @@ public partial class WorldFingerprintChecks : Node
             string sheepPath = WorldFingerprint.SheepFileFor(Settings.Seed);
             if (!File.Exists(sheepPath))
                 throw new InvalidOperationException($"No sheep fingerprint for seed {Settings.Seed}: {sheepPath}");
+            string rallyPath = WorldFingerprint.RallyFileFor(Settings.Seed);
+            if (!File.Exists(rallyPath))
+                throw new InvalidOperationException($"No rally fingerprint for seed {Settings.Seed}: {rallyPath}");
             var expected = File.ReadAllLines(path)
                 .Concat(File.ReadAllLines(glassworksPath))
                 .Concat(File.ReadAllLines(outlandPath))
@@ -376,6 +410,7 @@ public partial class WorldFingerprintChecks : Node
                 .Concat(File.ReadAllLines(balloonPath))
                 .Concat(File.ReadAllLines(trackingPath))
                 .Concat(File.ReadAllLines(sheepPath))
+                .Concat(File.ReadAllLines(rallyPath))
                 .ToArray();
             var actual = WorldFingerprint
                 .Lines(world)
@@ -386,6 +421,7 @@ public partial class WorldFingerprintChecks : Node
                 .Concat(WorldFingerprint.BalloonLines(world))
                 .Concat(WorldFingerprint.TrackingLines(world))
                 .Concat(WorldFingerprint.SheepLines(world))
+                .Concat(WorldFingerprint.RallyLines(world))
                 .ToList();
             var different = new List<string>();
             for (int i = 0; i < Math.Max(expected.Length, actual.Count); i++)
@@ -476,6 +512,7 @@ public partial class ContractChecks : Node
         ("BalloonStatus", 34),
         ("TrackingStatus", 35),
         ("ShepherdStatus", 36),
+        ("RallyStatus", 37),
     };
 
     public override void _Ready()

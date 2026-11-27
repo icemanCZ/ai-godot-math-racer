@@ -118,6 +118,7 @@ internal static class LegacySaves
         ("Sheep", "Started"),
         ("Sheep", "Home"),
         ("Sheep", "Following"),
+        ("Rally", "Best"),
         ("Fireflies", "Caught"),
         ("Quiz", "Offered"),
         ("Day", "Clock"),

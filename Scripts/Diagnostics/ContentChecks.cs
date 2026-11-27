@@ -79,6 +79,10 @@ public partial class ContentChecks : Node
             );
             Need(world.SheepSpots.Count == SheepPlans.Sheep && world.SheepFlock != null, "the shepherd's lost sheep");
             Need(
+                world.Rally is { Stages.Count: RallyPlans.Stages } && world.RallyGates != null,
+                "the ferrywoman's rally"
+            );
+            Need(
                 world.Duck != null && world.WorldPets.Count == WorldPetsExpected,
                 $"the pets of the world ({world.WorldPets.Count} of {WorldPetsExpected})"
             );
@@ -102,8 +106,8 @@ public partial class ContentChecks : Node
     /// The duck, five raw materials (wheat too), every works, the bridge, the mill, the tower, the ducklings, a pet per
     /// hidden kind, the little stationmaster of the railway, the baby panda of the zoo, the hunter's fawn, the postman's
     /// pigeon, the lighthouse keeper's gull, the dragon's little one, the balloonist's rooster, the forest keeper's
-    /// squirrel and the shepherd's sheepdog puppy.
+    /// squirrel, the shepherd's sheepdog puppy and the ferrywoman's otter.
     /// </summary>
     private static readonly int WorldPetsExpected =
-        1 + 5 + WorksCatalog.Total + 3 + WorldPetCatalog.DucklingDeliveries.Length + HiddenFriends.KindCount + 3 + 6;
+        1 + 5 + WorksCatalog.Total + 3 + WorldPetCatalog.DucklingDeliveries.Length + HiddenFriends.KindCount + 3 + 7;
 }

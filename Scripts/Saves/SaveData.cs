@@ -95,6 +95,19 @@ public sealed class SaveData
 
     /// <summary>The shepherd's lost sheep. Added after version 5 began.</summary>
     public SheepSave Sheep { get; set; } = new();
+
+    /// <summary>The ferrywoman's rally. Added after version 5 began.</summary>
+    public RallySave Rally { get; set; } = new();
+}
+
+/// <summary>
+/// The ferrywoman's rally: the best time of each of its stages (in the order they are driven round the ring) in tenths
+/// of a second, 0 for a stage not yet driven; the medals follow from them. A drive under way is not saved; a save from
+/// before the rally has driven no stage.
+/// </summary>
+public sealed class RallySave
+{
+    public int[] Best { get; set; } = new int[Buildings.RallyPlans.Stages];
 }
 
 /// <summary>

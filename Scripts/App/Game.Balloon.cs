@@ -1,3 +1,4 @@
+using System.Linq;
 using Godot;
 using MathRacer.Buildings;
 using MathRacer.Characters;
@@ -47,7 +48,7 @@ public partial class Game
         ShowBalloon();
         Speak(
             balloonFlights == 0 ? balloonist.Greeting + "\n" + Texts.BalloonFirst
-                : balloonStars >= BalloonPlans.RoosterStars ? Texts.BalloonAgain
+                : balloonStars >= BalloonPlans.RoosterStars ? Texts.BalloonAgain + "\n" + Texts.BalloonFact
                 : Texts.BalloonMoreStars(BalloonPlans.RoosterStars - balloonStars),
             balloonist
         );
@@ -57,7 +58,12 @@ public partial class Game
     {
         if (nearby is not { Role: BalloonistRole } balloonist || BalloonStation == null)
             return;
-        ui.BalloonPanel(balloonist, balloonFlights, balloonStars, !BalloonFlying);
+        ui.BalloonPanel(
+            balloonist,
+            balloonStars,
+            world.AllPets.FirstOrDefault(pet => pet.Kind == CollectorPetKind.Rooster),
+            !BalloonFlying
+        );
     }
 
     /// <summary>The green arrow of her panel: first the question that heats the air in the envelope.</summary>

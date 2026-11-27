@@ -697,6 +697,49 @@ public partial class Game
             }
         }
         if (
+            view.StartsWith("rally")
+            && world.Rally is { } course
+            && world.Ferrywoman is { } ferrywoman
+            && world.BorderHomes[(int)Border.River] is { } ferry
+        )
+        {
+            // Her letter came; beside her with the card of two stages driven, or on the first stage: before its start
+            // arch, or nearing its first gate with the question in the corner panel.
+            var delivered = Post.Delivered.ToArray();
+            delivered[(int)Border.River] = 1;
+            Post.Restore(delivered, -1, -1);
+            var first = course.Stages[0];
+            void Pose(float along)
+            {
+                var forward = course.Forward(along);
+                var p = course.At(along);
+                vehicle.SetPose(world.Ground.At(p.X, p.Z, .15f), Mathf.Atan2(-forward.X, -forward.Z));
+            }
+            if (view == "rally-panel")
+            {
+                RestoreRally(
+                    new[] { RallyPlans.Tenths(first.Length / 12), 0, RallyPlans.Tenths(course.Stages[2].Length / 9), 0 }
+                );
+                var gate = ferrywoman.Position - ferry.Inward * 4 + ferry.Right * 2;
+                vehicle.SetPose(world.Ground.At(gate.X, gate.Z, .15f), ferry.Yaw + Mathf.Pi);
+                nearby = ferrywoman;
+                OpenRally(ferrywoman);
+            }
+            else
+            {
+                RestoreRally(new int[RallyPlans.Stages]);
+                rallyRun = new RallyRun(course, 0);
+                float end = view == "rally" ? first.Start - 16 : first.Gates[0] - 38;
+                for (float d = first.Start - 24; d < end; d += 3)
+                {
+                    Pose(d);
+                    TickRally(.22);
+                }
+                Pose(end);
+                TickRally(.1);
+            }
+        }
+        if (
             view.StartsWith("sheep")
             && world.Shepherd is { } shepherd
             && world.SheepFlock != null

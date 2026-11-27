@@ -14,7 +14,8 @@ public partial class GameUi
 {
     private PanelContainer balloonHud = null!;
     private Label balloonCount = null!;
-    private Label balloonControls = null!;
+    private HBoxContainer balloonControls = null!;
+    private bool? balloonKeysForPad;
 
     private void SetupBalloon()
     {
@@ -52,13 +53,8 @@ public partial class GameUi
         };
         balloonCount.AddThemeFontSizeOverride("font_size", 38);
         row.AddChild(balloonCount);
-        balloonControls = new Label
-        {
-            Name = "BalloonControls",
-            MouseFilter = Control.MouseFilterEnum.Ignore,
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
-        };
-        balloonControls.AddThemeFontSizeOverride("font_size", 20);
+        balloonControls = new HBoxContainer { Name = "BalloonControls", MouseFilter = Control.MouseFilterEnum.Ignore };
+        balloonControls.AddThemeConstantOverride("separation", 6);
         column.AddChild(balloonControls);
     }
 
@@ -69,7 +65,16 @@ public partial class GameUi
         if (!visible)
             return;
         balloonCount.Text = $"{caught} / {stars}";
-        balloonControls.Text = controller ? Texts.BalloonControlsPad : Texts.BalloonControlsKeys;
+        if (balloonKeysForPad != controller)
+        {
+            balloonKeysForPad = controller;
+            foreach (var child in balloonControls.GetChildren())
+            {
+                balloonControls.RemoveChild(child);
+                child.QueueFree();
+            }
+            BalloonKeys(balloonControls, 34);
+        }
         balloonHud.AccessibilityName = Texts.BalloonCaught(caught, stars);
     }
 
@@ -80,33 +85,78 @@ public partial class GameUi
     }
 
     /// <summary>
-    /// The balloonist's panel: her balloon, how it is flown, the stars caught in all and the rooster they bring, a fact
-    /// about the first balloon, and the arrow of a flight while the balloon stands on its field.
+    /// How the balloon is flown, in pictures: the key (or trigger) of the burner with an arrow up and the key of the valve
+    /// with an arrow down.
     /// </summary>
-    internal void BalloonPanel(Character balloonist, int flights, int stars, bool canFly)
+    private void BalloonKeys(Container parent, int size)
+    {
+        parent.TooltipText = Texts.BalloonControls;
+        foreach (var (key, pad, up) in new[] { ("W", "RT", true), ("S", "LT", false) })
+        {
+            var cap = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+            var face = Style("fff5df", 10);
+            face.BorderColor = new Color("8a6d4a");
+            face.BorderWidthBottom = 4;
+            face.BorderWidthLeft = face.BorderWidthRight = face.BorderWidthTop = 2;
+            face.ContentMarginLeft = face.ContentMarginRight = 10;
+            cap.AddThemeStyleboxOverride("panel", face);
+            parent.AddChild(cap);
+            var label = new Label
+            {
+                Text = controller ? pad : key,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                CustomMinimumSize = new(size, size),
+                MouseFilter = Control.MouseFilterEnum.Ignore,
+            };
+            label.AddThemeFontSizeOverride("font_size", size * 2 / 3);
+            label.AddThemeColorOverride("font_color", new Color("3d4a4f"));
+            cap.AddChild(label);
+            parent.AddChild(
+                new DeliveryPicture
+                {
+                    Icon = "arrow",
+                    Direction = up ? 0 : Mathf.Pi,
+                    CustomMinimumSize = new(size * 1.6f, size * 1.6f),
+                    MouseFilter = Control.MouseFilterEnum.Ignore,
+                }
+            );
+            if (up)
+                parent.AddChild(new Control { CustomMinimumSize = new(size / 2, 0) });
+        }
+    }
+
+    /// <summary>
+    /// The balloonist's panel, made to be understood without reading: her balloon, how it is flown (the keys with arrows
+    /// up and down), the stars that bring the rooster (and all the stars caught once it came), and the green check mark of
+    /// a flight while the balloon stands on its field. How to fly is said aloud when the panel opens for the first time.
+    /// </summary>
+    internal void BalloonPanel(Character balloonist, int stars, CollectorPet? rooster, bool canFly)
     {
         Clear();
         Text(balloonist.DisplayName, 30);
         StatusPicture("balloon");
-        Text(flights == 0 ? Texts.BalloonHowTo : Texts.BalloonHowToAgain, 20);
-        var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, Name = "BalloonStars" };
-        row.AddThemeConstantOverride("separation", 8);
-        content.AddChild(row);
-        Picture(row, "star")!.CustomMinimumSize = new(56, 46);
-        var count = new Label { Text = stars.ToString(), VerticalAlignment = VerticalAlignment.Center };
-        count.AddThemeFontSizeOverride("font_size", 30);
-        row.AddChild(count);
-        Text(
-            stars >= BalloonPlans.RoosterStars
-                ? $"✓ {WorldPetCatalog.Rooster.Name}"
-                : $"{WorldPetCatalog.Rooster.Name} · {stars} / {BalloonPlans.RoosterStars}",
-            20
-        );
-        Text(Texts.BalloonFact, 18);
+        var keys = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, Name = "BalloonKeys" };
+        content.AddChild(keys);
+        BalloonKeys(keys, 44);
+        PetGoal(rooster, "star");
+        if (stars >= BalloonPlans.RoosterStars)
+        {
+            var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, Name = "BalloonStars" };
+            row.AddThemeConstantOverride("separation", 8);
+            content.AddChild(row);
+            Picture(row, "star")!.CustomMinimumSize = new(56, 46);
+            var count = new Label { Text = stars.ToString(), VerticalAlignment = VerticalAlignment.Center };
+            count.AddThemeFontSizeOverride("font_size", 30);
+            row.AddChild(count);
+        }
         if (canFly)
         {
-            var fly = IconButton("play", () => Send(new UiIntent.BalloonFlight()), "StartBalloonFlight");
-            fly.AccessibilityName = Texts.BalloonFlightStart;
+            var fly = AcceptButton(
+                () => Send(new UiIntent.BalloonFlight()),
+                "StartBalloonFlight",
+                Texts.BalloonFlightStart
+            );
             fly.GrabFocus();
             BackButton();
             return;

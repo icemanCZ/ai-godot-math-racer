@@ -193,6 +193,7 @@ public partial class Game
                 Home = Sheep.Home,
                 Following = Sheep.Found,
             },
+            Rally = new RallySave { Best = rallyBest.ToArray() },
             Fireflies = new FirefliesSave { Caught = fireflies.Caught },
             Hunt = new HuntSave
             {
@@ -313,6 +314,8 @@ public partial class Game
         RestoreTracking(data.Tracking.Started, data.Tracking.Found);
         // And the shepherd's sheep, so that the sheepdog puppy knows whether he is owned.
         RestoreSheep(data.Sheep.Started, data.Sheep.Home, data.Sheep.Following);
+        // And the best times of the rally, so that the otter knows whether she is owned.
+        RestoreRally(data.Rally.Best);
         RestoreBuilds(data);
         UpdateDeliveryGuides();
         interaction.BeforePause = validEncounter ? data.State : GameState.Exploring;

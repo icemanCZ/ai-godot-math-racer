@@ -43,6 +43,7 @@ internal static class SaveRules
         ("balloon station", HasInvalidBalloon),
         ("forest keeper's book of tracks", HasInvalidTracking),
         ("shepherd's lost sheep", HasInvalidSheep),
+        ("ferrywoman's rally", HasInvalidRally),
         ("time of day", HasInvalidDay),
         ("decorations and the mayor's shop", HasInvalidDecorations),
         ("glass lamps and the lamp maker's shop", HasInvalidLamps),
@@ -89,6 +90,8 @@ internal static class SaveRules
         || data.Sheep is null
         || data.Sheep.Home is null
         || data.Sheep.Following is null
+        || data.Rally is null
+        || data.Rally.Best is null
         || data.Day is null;
 
     /// <summary>Throws when the save is not one the game can restore.</summary>
@@ -634,6 +637,23 @@ internal static class SaveRules
             || all.Distinct().Count() != all.Length
             || (!sheep.Started && all.Length > 0)
             || (data.State == GameState.ShepherdStatus && data.Nearby != World.ShepherdId);
+    }
+
+    /// <summary>
+    /// The rally: a best time for each of its four stages, none longer than an hour, none before the post brought the
+    /// ferrywoman her first letter, and her card's panel only at the ferrywoman.
+    /// </summary>
+    private static bool HasInvalidRally(SaveData data)
+    {
+        var best = data.Rally.Best;
+        return best.Length != RallyPlans.Stages
+            || best.Any(tenths => tenths is < 0 or > RallyPlans.LongestTenths)
+            || (
+                best.Any(tenths => tenths > 0)
+                && data.Post.Delivered is { Length: > (int)Border.River } delivered
+                && delivered[(int)Border.River] == 0
+            )
+            || (data.State == GameState.RallyStatus && data.Nearby != World.FerrywomanId);
     }
 
     /// <summary>The clock of the day is a number of seconds within one day.</summary>

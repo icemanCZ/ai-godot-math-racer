@@ -60,7 +60,8 @@ Proč právě takhle:
 
 1. Pošťák donese Boženě první dopis (`Post.Delivered[Forest] > 0`). Od té doby nad ní visí žlutá značka a její panel
    (`GameState.TrackingStatus` 35, `GameUi.TrackingPanel`) ukazuje knihu stop: otisky všech zvířátek, jména nalezených a
-   otazníky u ostatních. Zelená šipka (`UiIntent.TrackingStart`) pošle dítě po první stopě.
+   otazníky u ostatních. Zelená fajfka (`UiIntent.TrackingStart`) pošle dítě po první stopě a jak se stopuje, řekne
+   Božena nahlas.
 2. Rohový panel (`GameUi.TrackingHud`) ukazuje otisk, čí je to stopa a kolik z ní už auto ujelo. Když auto od stopy
    odjede dál než 24 m, objeví se v panelu šipka zpátky ke stopě (`TrackingHunt.Lead`).
 3. Otisk se počítá za dosažený, když se k němu auto přiblíží na 6 m (`TrackingHunt.Step`). Úsek, který je vidět, se

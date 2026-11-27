@@ -123,6 +123,9 @@ public partial class Game
             case UiIntent.SheepPen:
                 BeginSheepPen();
                 break;
+            case UiIntent.RallyStart start:
+                BeginRallyStage(start.Stage);
+                break;
             case UiIntent.StartFireflyHunt:
                 BeginFireflyHunt();
                 break;
