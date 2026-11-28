@@ -461,6 +461,7 @@ public partial class World
     /// </summary>
     internal Character? PickupActor(HaulLoad load, HaulSource? source = null) =>
         load == HaulLoad.Rails ? Engineer
+        : load == HaulLoad.Anchor ? Captain
         : HaulLoads.IsGoods(load) ? WorksFor(HaulLoads.ProductOf(load))!.Worker
         : HaulLoads.IsSpecial(load) ? SpecialGiver(load)
         : source is { } site && ExtraSources.Contains(site) ? ExtraSourceWorker(load)
@@ -489,6 +490,8 @@ public partial class World
             return new[] { ToymakerId };
         if (load == HaulLoad.Rails)
             return new[] { EngineerId };
+        if (load == HaulLoad.Anchor)
+            return new[] { CaptainId };
         if (HaulLoads.IsGoods(load))
             return new[] { WorksId(HaulLoads.ProductOf(load)) };
         if (load == HaulLoad.Wheat)

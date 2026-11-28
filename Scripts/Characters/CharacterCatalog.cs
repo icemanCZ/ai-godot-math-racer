@@ -223,6 +223,18 @@ internal static class CharacterCatalog
             "8f969b"
         );
 
+    /// <summary>
+    /// The walrus captain at the shipyard on the coast (<see cref="ActorIds.Captain"/>), who wants a big ship and sails it
+    /// to the turtle island (<c>docs/SHIP_PLAN.md</c>).
+    /// </summary>
+    public static CharacterSpec Captain { get; } =
+        new(
+            "Mrož kapitán Vojta",
+            "Ahoj, námořníku! Já jsem kapitán Vojta. Tady na pláži postavíme velkou loď Albatros a poplujeme na Želví ostrov. Pomůžeš mi?",
+            2,
+            "8c6a55"
+        );
+
     /// <summary>The pirate captain on the village square, who hides treasures for the player to dig up (<see cref="World.TreasurerId"/>).</summary>
     public static CharacterSpec Treasurer { get; } =
         new(

@@ -748,6 +748,56 @@ hub's apron). Checked by `mainline-checks`; `run.ps1 -Capture` shows it with the
 `line-5`, `line-9`, `line-14`, `line-far`, `line-night`, `line-forge`, `line-panel`, `line-panel-4`, `line-panel-9` and
 `line-ride`.
 
+### `Ship`, `Shipyard`, `TurtleIsland`, `ShipHelm`, `ShipPlans`, `World.Ship` and `Game.Ship`
+
+The ship Albatros and the turtle island (`docs/SHIP_PLAN.md`). `World.PlanShip` runs after the great railway, with no
+random numbers, so nothing planned before it moves. It walks the coast 160 to 470 m either way from the homestead of the
+sea and keeps a place (`ShipSite`: a frame from the waterline with +Seaward out to sea, the yard's `Edge` 16 m inside
+the valley, the drop, the captain's place, the return and the anchorage) whose beach is low and at least 40 m wide, far
+from the lighthouse, the cove of the shells, both rivers and the bird island, and whose ground on the edge is dry, open,
+nearly level and near a road (`ShipyardFits`, which logs the reasons it refused); of those it takes the one nearest the
+great line's station by the sea. `PlanTurtleIsland` puts the island 250 to 400 m out at sea and along the coast, off the
+bird island, and four buoys evenly along the way from the anchorage to the island's pier, each pushed out until it lies
+in deep water at low tide. No ground changes: the island has a mesh and a collision of its own. `InShipZone` (part of
+`InBorderfolkZone`) keeps the plants off the yard's ground. `ShipDepth` is the water the ship may sail on: negative on
+land, on both islands and beyond 380 m from the way. `Tests/Worlds/seed-N.ship.txt` holds the places, the captain and
+the treasures of the first three voyages, and no older fingerprint changes.
+
+`Ship` is the ship's model (local +Z the bow), shown part by part by `SetStage`: the keel, the ribs, four rows of
+strakes, the deck, the cabin with the wheel, the lanterns, the anchor, the masts and two sets of sails, which `SetSails`
+fills or furls; the shelf of treasures (`SouvenirModels`) and the cat Kormidlík on the bow follow `SetTreasures`, and
+`Float` rocks it on the water. `Shipyard` is the shed on the edge, the slipway with its cradle and scaffolding, the
+pier, the hedgehog Hoblík (hammering while the ship is built, fishing from the pier after) and the buoys (`Ring`).
+`TurtleIsland` is the island with its palms, pier and three nests (`Lay`, `Waiting`, `Reveal`).
+`TrailerModel.AnchorPile` draws the anchor on the trailer and beside the forge (`World.ForgedAnchor`).
+
+`Ship` is the `ITripTarget` of fourteen deliveries (`TripKinds.Ship`, `ShipPlans.Step`), tipped out on the edge of the
+yard. The anchor (`HaulLoad.Anchor` 16) comes from the forge of the great line (`SourceFor`), whose loading question the
+captain asks from afar; `ShipForgeTrip` (`TripKinds.ShipForge`) takes stone there first and the forge forges the anchor.
+In a valley without that forge the anchor's step is skipped, and without the log yard, the sawmill or the glassworks the
+ship floats from the start (`ShipBuildable`). The cloth of the sails is a special load the farmer gives. The last
+delivery launches the ship down the slipway to its anchorage (`TickLaunch`).
+
+The voyage is steered by the child. `ShipHelm` (scene-free, so the checks sail it with any input) turns the rudder with
+the steering, fills the sails with the accelerator and furls them with the brake, hands the helm to an autopilot towards
+the next buoy when the steering is left alone, and turns the bow away from water shallower than `LeastDepth`, so the
+ship can neither ground nor leave the sea. `ShipVoyage` rings the buoys it passes (`BuoyReach`, a coin each), skips
+those left behind and docks by itself near the berth. `Game.Ship` puts the car on the deck (`Vehicle.Carry`,
+`FollowCamera.Ride`), and `TickShip` (system `ship`) sails it; `ShipInputOverride` stands in for the player in the
+checks. At the island `World.TurtleIslandOpen` lets `SeaDepth` open the island to the car and nothing else beyond the
+valley. Each voyage (`UiIntent.ShipSail`, `Departure.ShipSail`) lays two turtles on treasures drawn by
+`World.TreasuresOfVoyage` from the seed, the voyage's number and the kinds already found (the first a missing kind), so
+the nests are not saved. A turtle the car stops by asks a question (`Departure.ShipTurtle`, asked in the state
+`Exploring` by the captain) and leaves its treasure for the cabin. The voyage home (`UiIntent.ShipHome`) needs no
+question and the pedals cut it short.
+
+Mrož kapitán Vojta (`CaptainRole`, `ActorIds.Captain` 86, registered after the engine driver and left out of the
+postcard stops and the driving courses) opens the panel `GameState.ShipStatus` 42 (`GameUi.CaptainPanel`, modes
+`CaptainMode.Build`, `Sail` and `Island`). The ship is saved as `SaveData.Ship` (`Stage`, `Anchor`, `Voyage`, `Kinds`;
+rule `HasInvalidShip`); a voyage and a stay on the island are not saved (the car stands at the yard). Checked by
+`ship-checks`; `run.ps1 -Capture` shows it with the views `ship-0`, `ship-4`, `ship-8`, `ship-12`, `ship`, `ship-night`,
+`ship-far`, `ship-panel`, `ship-panel-10`, `ship-sail`, `ship-island`, `ship-turtle` and `ship-cabin` (`ShipCaptures`).
+
 ### `MayorRole`, `TownDecorations` and `Village.Mayor`
 
 The mayor (`ActorIds.Mayor` 68, `MayorRole`, `GameState.MayorShop` 23) stands on the village square and sells eight

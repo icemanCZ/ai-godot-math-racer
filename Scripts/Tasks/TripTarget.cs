@@ -53,6 +53,12 @@ internal static class TripKinds
     /// <summary>Stone for the forge of the great line, which makes the rails of it.</summary>
     public const string MainLineForge = "mainline-forge";
 
+    /// <summary>Logs, planks, glass, the anchor and cloth for the ship Albatros on the slipway of the shipyard.</summary>
+    public const string Ship = "ship";
+
+    /// <summary>Stone for the forge of the great line, which forges the ship's anchor of it.</summary>
+    public const string ShipForge = "ship-forge";
+
     public static bool IsKnown(string? kind) =>
         kind
             is Build
@@ -72,7 +78,9 @@ internal static class TripKinds
                 or CastleBeacon
                 or CastleGuest
                 or MainLine
-                or MainLineForge;
+                or MainLineForge
+                or Ship
+                or ShipForge;
 }
 
 /// <summary>

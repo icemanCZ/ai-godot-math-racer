@@ -123,6 +123,7 @@ public partial class Game
                         or BirdwatcherRole
                         or CastleRole
                         or EngineerRole
+                        or CaptainRole
                     )
             )
             .ToArray();

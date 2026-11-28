@@ -82,6 +82,7 @@ internal static class TrailerModel
         parts.Piles[(int)HaulLoad.Flour] = Sacks("Flour", new[] { "f6f2ea", "ece6da", "fbf8f2" }, "d8d0c0");
         parts.Piles[(int)HaulLoad.Guest] = GuestBench();
         parts.Piles[(int)HaulLoad.Rails] = RailBundles();
+        parts.Piles[(int)HaulLoad.Anchor] = AnchorPile();
         foreach (var pile in parts.Piles)
         {
             pile.Visible = false;
@@ -181,6 +182,33 @@ internal static class TrailerModel
     }
 
     /// <summary>Steel rails from the forge: two layers of long bars lying along the bed, tied with a strap.</summary>
+    /// <summary>The ship's anchor lying on the bed, its stock across and its chain coiled beside it.</summary>
+    internal static Node3D AnchorPile()
+    {
+        var pile = new Node3D { Name = "Anchor" };
+        const string iron = "4a5258";
+        Art.Block(pile, new(0, .22f, 0), new(.24f, .2f, 1.7f), iron);
+        Art.Block(pile, new(0, .22f, -.8f), new(1.4f, .2f, .22f), iron);
+        foreach (int side in new[] { -1, 1 })
+        {
+            var arm = Art.Block(pile, new(side * .42f, .22f, .62f), new(.2f, .18f, .9f), iron);
+            arm.RotationDegrees = new Vector3(0, side * 38, 0);
+            Art.Block(pile, new(side * .7f, .22f, .32f), new(.36f, .16f, .3f), "3a4046");
+        }
+        Art.Cylinder(pile, new(0, .24f, -.98f), .2f, .2f, .14f, "6a757c");
+        for (int i = 0; i < 6; i++)
+        {
+            float a = i * Mathf.Tau / 6;
+            Art.Ball(
+                pile,
+                new(-.55f + Mathf.Cos(a) * .28f, .14f, .4f + Mathf.Sin(a) * .28f),
+                new(.16f, .1f, .16f),
+                "6a757c"
+            );
+        }
+        return pile;
+    }
+
     private static Node3D RailBundles()
     {
         var pile = new Node3D { Name = "Rails" };

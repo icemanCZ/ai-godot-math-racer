@@ -135,6 +135,9 @@ public partial class World
         // On the bird island, where the punt has brought the car, it may drive about but not off it.
         if (IslandOpen)
             return OnIsland(p) ? -1 : float.PositiveInfinity;
+        // On the turtle island, where the ship has brought the car, likewise.
+        if (TurtleIslandOpen)
+            return OnTurtleIsland(p) ? -1 : float.PositiveInfinity;
         if (
             p.Z < ValleyBounds.HalfSize - 1
             || Mathf.Abs(p.X) > ValleyBounds.HalfSize

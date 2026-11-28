@@ -554,6 +554,9 @@ public partial class Game
     {
         if ((ferryRide >= 0 || OnBirdIsland) && world.FerryPlace is { } site)
             return (world.Ground.At(site.Return.X, site.Return.Z) + Vector3.Up * .15f, site.Yaw);
+        // Nor is a voyage of the ship or a stay on the turtle island: the car stands at the shipyard again.
+        if ((shipVoyage != null || world.TurtleIslandOpen) && world.ShipPlace is { } yard)
+            return (world.Ground.At(yard.Return.X, yard.Return.Z) + Vector3.Up * .15f, yard.Yaw + Mathf.Pi);
         // A ride on the train is not saved either: the car stands on the apron of the hub again.
         if (lineRide >= 0 && world.MainLinePlace is { } line)
         {

@@ -20,9 +20,11 @@ obilí   (pole: sedlák Klásek)    ──► Mlýn (Mlynář Bruno)        ─�
                                                                                 ──► Pekař František (objednávky)
 
 kamení  (lom: Kvido, Zdeněk)     ──► Kovárna u horské stráně (Kuba) ──► koleje ──► velká trať přes údolí
+                                                                  └──► kotva  ──► loď Albatros (jednou)
 
 přímo bez závodu:  písek ──► most (poslední náklad)      klády ──► molo (piloty)
-od sběratelů:      látka (Farmář Tonda) ──► mlýn   kámen (sběratel drahokamů) ──► rozhledna   vlajka (hračkář) ──► molo
+od sběratelů:      látka (Farmář Tonda) ──► mlýn, plachty lodi   kámen (sběratel drahokamů) ──► rozhledna
+                   vlajka (hračkář) ──► molo
 ```
 
 ## Společná pravidla závodů
@@ -94,6 +96,10 @@ Platí pro pilu, cihelnu, štěrkovnu, sklárnu, pekárnu i mlýn (`Works`, `Flo
   třikrát (třetí úsek každého ze tří ramen trati), takže celá trať chce aspoň 2 náklady kamení.
 - Spotřeba: velká trať přes údolí, 17 nákladů (štěrk 4, cihly 4, prkna 3, koleje 3, sklo 3) a nejméně 2 náklady kamení
   pro kovárnu.
+- **Kotva lodi Albatros** (`docs/SHIP_PLAN.md`): jedenáctá dodávka lodi. Když kotva není ukutá, panel mrože kapitána
+  Vojty pošle přívěs s kamením do kovárny (`TripKinds.ShipForge`) a kovárna z jednoho nákladu ukuje kotvu, která leží
+  vedle ní, dokud ji přívěs neodveze. Kotva se ukládá v `SaveData.Ship.Anchor`, ne v zásobě kolejí, takže trať o nic
+  nepřijde. Otázku na naložení klade kapitán z dálky. Údolí bez kovárny kotvu vynechá.
 
 ### 7. Zvláštní náklady od sběratelů
 Nejsou to výrobky, ale poslední (desátý) náklad tří staveb; nakládá se po vyřešené otázce u sběratele:
@@ -101,6 +107,7 @@ Nejsou to výrobky, ale poslední (desátý) náklad tří staveb; nakládá se 
 | Náklad | Kdo ho dá | Stavba |
 | --- | --- | --- |
 | látka na plachty | Farmář Tonda | mlýn |
+| látka na plachty (2×) | Farmář Tonda | loď Albatros |
 | kámen na špičku | sběratel drahokamů | rozhledna |
 | vlajka | hračkář | molo |
 
@@ -120,6 +127,7 @@ Pořadí nákladů je pevné (`BuildPlans`, `PlotPlans`, `PlaygroundPlans`, `Rai
 | Železnice (Králíček výpravčí Špendlík) | 6 | Š P C P C P | 25 mincí |
 | Zoo (Medvěd ošetřovatel Bruno) | 12 | Š C P Š C P P C Š C P Š | 60 mincí |
 | Velká trať (Jezevec strojvůdce Kuba) | 17 | Š C, pak 3× (Š P koleje C sklo) | 10 + 3×20 + 40 mincí, krteček |
+| Loď Albatros (Mrož kapitán Vojta) | 14 | klády ×3, P ×6, sklo, kotva, klády, látka ×2 | 50 mincí, pak plavby |
 | Domky obyvatel (4×) | 2 P + 2 C každý, náhodně mezi 10 úkoly | – | 5 mincí za úkol |
 | Dokončený domek (4×) | 1 skleničky, pak 1 chléb | – | 5 mincí za každé |
 | Světlař Ignác | 1 skleničky na cestu, bez konce | – | 5 mincí za cestu |

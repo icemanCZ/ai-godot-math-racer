@@ -28,6 +28,7 @@ Co zůstalo otevřené, se píše do oddílu „Otevřené dluhy“ níže, ne j
 - [`FERRY_PLAN.md`](FERRY_PLAN.md) – přívoz a ptačí ostrůvek: hotovo.
 - [`CASTLE_PLAN.md`](CASTLE_PLAN.md) – hrad na kopci: hotovo.
 - [`MAINLINE_PLAN.md`](MAINLINE_PLAN.md) – velká trať přes údolí: hotovo.
+- [`SHIP_PLAN.md`](SHIP_PLAN.md) – loď Albatros a Želví ostrov: hotovo.
 
 `PRODUCTION_CHAINS.md`, `ALGORITHMS.md` a `VALIDATION.md` nejsou plány, ale popis hry, jak je.
 

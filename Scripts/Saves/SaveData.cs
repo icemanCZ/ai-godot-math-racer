@@ -113,6 +113,23 @@ public sealed class SaveData
 
     /// <summary>The great railway across the valley and its forge (<c>docs/MAINLINE_PLAN.md</c>).</summary>
     public MainLineSave MainLine { get; set; } = new();
+
+    /// <summary>The ship Albatros, its anchor and the treasures of the turtle island (<c>docs/SHIP_PLAN.md</c>).</summary>
+    public ShipSave Ship { get; set; } = new();
+}
+
+/// <summary>
+/// The ship Albatros at the shipyard on the coast: the deliveries it has had (0 to <see cref="Buildings.ShipPlans.Trips"/>),
+/// whether its anchor was forged and waits at the forge, the voyages it has made to the turtle island, and how many of
+/// each of the <see cref="Buildings.ShipPlans.Kinds"/> treasures stand in the captain's cabin. A save from before the
+/// ship has none of it. A voyage and a stay on the island are not saved: the car is saved at the shipyard again.
+/// </summary>
+public sealed class ShipSave
+{
+    public int Stage { get; set; }
+    public bool Anchor { get; set; }
+    public int Voyage { get; set; }
+    public int[] Kinds { get; set; } = new int[Buildings.ShipPlans.Kinds];
 }
 
 /// <summary>

@@ -686,6 +686,30 @@ internal sealed class EngineerRole : ActorRole
 }
 
 /// <summary>
+/// The walrus captain at the shipyard on the coast (<c>docs/SHIP_PLAN.md</c>). Talking to him shows the ship still to be
+/// built, or once it floats the voyage to the turtle island and the treasures of his cabin; his one quiz before a trailer
+/// trip or a voyage sends the player off, and he asks the loading question of the anchor from afar, since the forge has no
+/// worker.
+/// </summary>
+internal sealed class CaptainRole : ActorRole
+{
+    public override string Icon => "ship";
+    public override bool UsesDeliveryGuide => false;
+
+    public override bool InvitesTalk(bool expeditionActive) => true;
+
+    public override void ShowHint(GameUi ui, Character actor) => ui.CaptainHint();
+
+    public override void Open(Game game, Character actor) => game.OpenCaptain(actor);
+
+    public override bool CompleteQuiz(Game game, Character actor, bool handover)
+    {
+        game.CompleteCaptainQuiz(actor);
+        return true;
+    }
+}
+
+/// <summary>
 /// The postman on the village square. Talking to him opens the stamp album and gives out the next letter for a keeper
 /// of the borders; he asks no question.
 /// </summary>

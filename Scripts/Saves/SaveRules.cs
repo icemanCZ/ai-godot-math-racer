@@ -49,6 +49,7 @@ internal static class SaveRules
         ("ferry to the bird island", OutlandRules.HasInvalidFerry),
         ("castle on the hill", OutlandRules.HasInvalidCastle),
         ("great railway line", OutlandRules.HasInvalidMainLine),
+        ("ship and the turtle island", OutlandRules.HasInvalidShip),
         ("time of day", HasInvalidDay),
         ("decorations and the mayor's shop", HasInvalidDecorations),
         ("glass lamps and the lamp maker's shop", HasInvalidLamps),
@@ -110,6 +111,8 @@ internal static class SaveRules
         || data.Castle.Beacons is null
         || data.Castle.Guests is null
         || data.MainLine is null
+        || data.Ship is null
+        || data.Ship.Kinds is null
         || data.Day is null;
 
     /// <summary>Throws when the save is not one the game can restore.</summary>
@@ -292,6 +295,17 @@ internal static class SaveRules
             Game.Departure.MainLineRide => !World.IsEngineer(data.Nearby)
                 || data.Quiz.DepartureState != GameState.MainLineStatus
                 || !MainLinePlans.ArmDone(data.MainLine.Stage, 0),
+            Game.Departure.Ship => !World.IsCaptain(data.Nearby)
+                || data.Quiz.DepartureState != GameState.ShipStatus
+                || data.Ship.Stage >= ShipPlans.Trips,
+            Game.Departure.ShipSail => !World.IsCaptain(data.Nearby)
+                || data.Quiz.DepartureState != GameState.ShipStatus
+                || data.Ship.Stage < ShipPlans.Trips,
+            // A turtle's question is asked on the island, where the captain stands by the car.
+            Game.Departure.ShipTurtle => !World.IsCaptain(data.Nearby)
+                || data.Quiz.DepartureState != GameState.Exploring
+                || data.Ship.Stage < ShipPlans.Trips
+                || data.Ship.Voyage == 0,
             // The works' missing goods are asked for from a builder, a newcomer, a resident or the lamp maker.
             Game.Departure.Missing => data.Quiz.DepartureState switch
             {
@@ -307,6 +321,7 @@ internal static class SaveRules
                 GameState.FerryStatus => !World.IsBirdwatcher(data.Nearby),
                 GameState.CastleStatus => !World.IsCastellan(data.Nearby),
                 GameState.MainLineStatus => !World.IsEngineer(data.Nearby),
+                GameState.ShipStatus => !World.IsCaptain(data.Nearby),
                 // The baker of the village shop, whose bakery has run out of bread for his order.
                 GameState.TradeStatus => data.Nearby != World.FirstTraderId,
                 _ => true,

@@ -208,6 +208,7 @@ public partial class Game
         world.Birdwatcher?.Guide(BirdwatcherAwaits);
         world.Castellan?.Guide(CastellanAwaits);
         world.Engineer?.Guide(EngineerAwaits);
+        world.Captain?.Guide(CaptainAwaits);
     }
 
     /// <summary>The arrows of the letter move on; a delivery or a trailer trip under way shows its own instead.</summary>

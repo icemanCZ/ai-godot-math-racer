@@ -1,0 +1,16 @@
+seed 7421
+yard edge -433.22 -5.24 1112.70 waterline -455.11 -10.00 1193.80 seaward -0.26 0.00 0.97 road -226.41 11.58 1079.32
+drop -434.01 -5.24 1115.60 talk -426.73 -5.24 1115.49 return -440.17 -5.24 1107.72 anchorage -470.23 -10.00 1249.80
+island -711.54 -8.20 1529.79 berth -698.77 -8.20 1482.48 landing -703.20 -8.20 1498.89
+nest 0 -675.83 -8.20 1527.75
+nest 1 -717.79 -8.20 1552.96
+nest 2 -741.37 -8.20 1510.06
+buoy 0 -528.55 -10.00 1283.33
+buoy 1 -582.72 -10.00 1322.56
+buoy 2 -632.49 -10.00 1367.83
+buoy 3 -671.16 -10.00 1421.14
+buildable True forge True
+captain 86 Mrož kapitán Vojta -426.73 -5.57 1115.49
+voyage 1 ananas kompas -
+voyage 2 kokos - dalekohled
+voyage 3 - lodní zvon ananas

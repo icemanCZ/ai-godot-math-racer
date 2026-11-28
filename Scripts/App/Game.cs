@@ -61,6 +61,7 @@ public enum GameState
     FerryStatus = 39,
     CastleStatus = 40,
     MainLineStatus = 41,
+    ShipStatus = 42,
 }
 
 public partial class Game : Node3D
@@ -686,6 +687,7 @@ public partial class Game : Node3D
                 !a.Away
                 && !FerryHolds(a)
                 && !LineHolds(a)
+                && !ShipHolds(a)
                 && a.Position.DistanceTo(vehicle.Position) < Settings.InteractionRange
             )
             .OrderByDescending(a => a.RewardAvailable || CanChooseExpedition(a))

@@ -319,6 +319,45 @@ internal static class OutlandRules
     }
 
     /// <summary>
+    /// The ship: 0 to 14 deliveries, the anchor forged only while it is the next delivery, voyages only once the ship
+    /// floats, a count for each kind of treasure and no more treasures than two a voyage, the captain's panel only beside
+    /// him, and his questions only those before a trailer trip or a voyage, a turtle's on the island, before the goods
+    /// missing for a delivery, or the loading question of the anchor.
+    /// </summary>
+    internal static bool HasInvalidShip(SaveData data)
+    {
+        var ship = data.Ship;
+        if (
+            ship.Stage is < 0 or > ShipPlans.Trips
+            || (ship.Anchor && ship.Stage != ShipPlans.AnchorStep)
+            || ship.Voyage < 0
+            || (ship.Voyage > 0 && ship.Stage < ShipPlans.Trips)
+            || ship.Kinds.Length != ShipPlans.Kinds
+            || ship.Kinds.Any(count => count is < 0 or > ShipPlans.MostOfAKind)
+            || ship.Kinds.Sum(count => (long)count) > (long)ship.Voyage * ShipPlans.PerVoyage
+            || (data.State == GameState.ShipStatus && !World.IsCaptain(data.Nearby))
+        )
+            return true;
+        if (!World.IsCaptain(data.Nearby))
+            return false;
+        return data.Quiz.Handover
+            || data.Quiz.Challenge is DeliveryChallenge
+            || data.State
+                is not (GameState.Exploring or GameState.ShipStatus or GameState.Challenge or GameState.Reward)
+            || (
+                data.State == GameState.Challenge
+                && data.Quiz.Departure != 0
+                && (Game.Departure)data.Quiz.Departure
+                    is not (
+                        Game.Departure.Ship
+                        or Game.Departure.ShipSail
+                        or Game.Departure.ShipTurtle
+                        or Game.Departure.Missing
+                    )
+            );
+    }
+
+    /// <summary>
     /// A guest of the castle's feast asks the question at home before getting on the trailer's bench: a question that is
     /// not of the loading kind, while the trailer of that guest's trip stands empty.
     /// </summary>

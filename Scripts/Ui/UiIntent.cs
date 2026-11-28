@@ -128,6 +128,15 @@ internal abstract record UiIntent
     /// <summary>The ride back to the hub from the end of an arm.</summary>
     internal sealed record MainLineHome : UiIntent;
 
+    /// <summary>The captain's green check mark: the next load of the ship, or stone for its anchor.</summary>
+    internal sealed record ShipStart : UiIntent;
+
+    /// <summary>The voyage to the turtle island on the finished ship (a question first).</summary>
+    internal sealed record ShipSail : UiIntent;
+
+    /// <summary>The voyage home from the turtle island.</summary>
+    internal sealed record ShipHome : UiIntent;
+
     // The ferrywoman's rally: a stage waits for the car at its start arch.
     internal sealed record RallyStart(int Stage) : UiIntent;
 

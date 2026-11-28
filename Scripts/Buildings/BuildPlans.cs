@@ -40,6 +40,9 @@ public enum HaulLoad
 
     /// <summary>Rails the forge makes of stone, loaded at the forge and laid on the great line.</summary>
     Rails = 15,
+
+    /// <summary>The anchor the forge of the great line makes of stone for the ship of the shipyard, loaded at the forge.</summary>
+    Anchor = 16,
 }
 
 internal static class HaulLoads

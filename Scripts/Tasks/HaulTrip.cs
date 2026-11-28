@@ -70,6 +70,8 @@ public sealed partial class HaulTrip : Node3D
     internal CastleGuestTrip? Guest => Target as CastleGuestTrip;
     internal MainLine? Line => Target as MainLine;
     internal LineForgeTrip? ForgeTrip => Target as LineForgeTrip;
+    internal Ship? Ship => Target as Ship;
+    internal ShipForgeTrip? ShipForge => Target as ShipForgeTrip;
     internal Works? Works => Target as Works;
     internal int House => Target is HouseTripTarget house ? house.House : -1;
     internal bool ForGlassmaker => Target is GlassmakerTripTarget;

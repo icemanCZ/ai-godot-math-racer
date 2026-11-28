@@ -346,6 +346,20 @@ public partial class Game
                 return;
             (works, asker) = (missing, line.Engineer);
         }
+        else if (State == GameState.ShipStatus)
+        {
+            // The captain, for the planks and the glass of the ship.
+            if (
+                world.Ship is not { Complete: false } ship
+                || nearby is not { Role: CaptainRole }
+                || Haul != null
+                || ShipForgeNeeded(ship)
+                || ShipStepReady(ship)
+                || GoodsWorks(ShipPlans.CargoOf(ship.Stage)) is not { Full: false } missing
+            )
+                return;
+            (works, asker) = (missing, ship.Captain);
+        }
         else if (State == GameState.CastleStatus)
         {
             // The princess, for the gravel, the bricks, the planks and the glass of the castle.

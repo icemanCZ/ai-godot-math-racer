@@ -243,6 +243,7 @@ internal static class OutlandFraming
                 camera.LookAt(world.Ground.At(hub.Position.X, hub.Position.Z) + Vector3.Up * 2);
             }
         }
+        else if (ShipCaptures.Frame(camera, world, view)) { }
         else if (view.StartsWith("explorer") || view.StartsWith("shells")) { }
         else if (view is "sheep" or "sheep-panel" or "sheep-lost") { }
         else if (view is "rally" or "rally-gate" or "rally-panel") { }

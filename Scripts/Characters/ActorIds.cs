@@ -123,6 +123,9 @@ internal static class ActorIds
     /// <summary>The badger engine driver at the hub of the great line across the valley, who builds it and drives its train.</summary>
     public const int Engineer = Castellan + 1;
 
+    /// <summary>The walrus captain at the shipyard on the coast, who builds the ship Albatros and sails it to the turtle island.</summary>
+    public const int Captain = Engineer + 1;
+
     /// <summary>The highest actor ID that a save may name.</summary>
-    public const int Last = Engineer;
+    public const int Last = Captain;
 }

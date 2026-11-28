@@ -354,6 +354,44 @@ internal static class WorldFingerprint
         return lines;
     }
 
+    /// <summary>
+    /// What came after the great railway (<c>docs/SHIP_PLAN.md</c>): the shipyard on the coast, its anchorage and buoys,
+    /// the turtle island with its nests, the captain, and the treasures of the first voyages.
+    /// </summary>
+    internal static string ShipFileFor(int seed) => Path.Combine(Folder, $"seed-{seed}.ship.txt");
+
+    internal static List<string> ShipLines(World world)
+    {
+        var lines = new List<string> { $"seed {Settings.Seed}" };
+        if (world.ShipPlace is not { } site)
+        {
+            lines.Add($"ship none {world.ShipPlanNote}");
+            return lines;
+        }
+        lines.Add(
+            $"yard edge {P(site.Edge)} waterline {P(site.Waterline)} seaward {P(site.Seaward)} road {P(site.Road)}"
+        );
+        lines.Add($"drop {P(site.Drop)} talk {P(site.Talk)} return {P(site.Return)} anchorage {P(site.Anchorage)}");
+        lines.Add($"island {P(site.Island)} berth {P(site.IslandBerth)} landing {P(site.IslandLanding)}");
+        for (int nest = 0; nest < ShipPlans.Nests; nest++)
+            lines.Add($"nest {nest} {P(site.Nest(nest))}");
+        for (int buoy = 0; buoy < site.Buoys.Length; buoy++)
+            lines.Add($"buoy {buoy} {P(site.Buoys[buoy])}");
+        lines.Add($"buildable {world.ShipBuildable} forge {world.ShipHasForge}");
+        if (world.Captain is { } captain)
+            lines.Add($"captain {world.ActorId(captain)} {captain.DisplayName} {P(captain.Position)}");
+        var kinds = new int[ShipPlans.Kinds];
+        for (int voyage = 1; voyage <= 3; voyage++)
+        {
+            var nests = world.TreasuresOfVoyage(voyage, kinds);
+            lines.Add($"voyage {voyage} {string.Join(" ", nests.Select(k => k < 0 ? "-" : ShipPlans.Name(k)))}");
+            foreach (int kind in nests)
+                if (kind >= 0)
+                    kinds[kind]++;
+        }
+        return lines;
+    }
+
     internal static List<string> Lines(World world)
     {
         var lines = new List<string> { $"seed {Settings.Seed}" };
@@ -487,6 +525,7 @@ public partial class WorldFingerprintWriter : Node
                     (WorldFingerprint.FerryFileFor(Settings.Seed), WorldFingerprint.FerryLines(world)),
                     (WorldFingerprint.CastleFileFor(Settings.Seed), WorldFingerprint.CastleLines(world)),
                     (WorldFingerprint.Railway2FileFor(Settings.Seed), WorldFingerprint.Railway2Lines(world)),
+                    (WorldFingerprint.ShipFileFor(Settings.Seed), WorldFingerprint.ShipLines(world)),
                 }
             )
             {
@@ -572,6 +611,9 @@ public partial class WorldFingerprintChecks : Node
                 throw new InvalidOperationException(
                     $"No great railway fingerprint for seed {Settings.Seed}: {railway2Path}"
                 );
+            string shipPath = WorldFingerprint.ShipFileFor(Settings.Seed);
+            if (!File.Exists(shipPath))
+                throw new InvalidOperationException($"No ship fingerprint for seed {Settings.Seed}: {shipPath}");
             var expected = File.ReadAllLines(path)
                 .Concat(File.ReadAllLines(glassworksPath))
                 .Concat(File.ReadAllLines(outlandPath))
@@ -586,6 +628,7 @@ public partial class WorldFingerprintChecks : Node
                 .Concat(File.ReadAllLines(ferryPath))
                 .Concat(File.ReadAllLines(castlePath))
                 .Concat(File.ReadAllLines(railway2Path))
+                .Concat(File.ReadAllLines(shipPath))
                 .ToArray();
             var actual = WorldFingerprint
                 .Lines(world)
@@ -602,6 +645,7 @@ public partial class WorldFingerprintChecks : Node
                 .Concat(WorldFingerprint.FerryLines(world))
                 .Concat(WorldFingerprint.CastleLines(world))
                 .Concat(WorldFingerprint.Railway2Lines(world))
+                .Concat(WorldFingerprint.ShipLines(world))
                 .ToList();
             var different = new List<string>();
             for (int i = 0; i < Math.Max(expected.Length, actual.Count); i++)

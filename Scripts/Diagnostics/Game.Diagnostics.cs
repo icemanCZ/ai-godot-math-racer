@@ -881,6 +881,8 @@ public partial class Game
             for (int i = 0; i < 40; i++)
                 TickMainLine(.1);
         }
+        if (view.StartsWith("ship"))
+            ShipCaptures.Stage(this, world, vehicle, view);
         if (view == "log-yard" && world.LogYard is { } logYard)
             vehicle.SetPose(world.Ground.At(logYard.Position.X, logYard.Position.Z, .15f), 0);
         if (view is "beaver" or "load-question" && world.Beaver != null)

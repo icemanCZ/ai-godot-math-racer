@@ -116,6 +116,9 @@ public partial class Game
                         or Departure.Castle
                         or Departure.MainLine
                         or Departure.MainLineRide
+                        or Departure.Ship
+                        or Departure.ShipSail
+                        or Departure.ShipTurtle
                     ? quiz.DepartureState
                     : GameState.Title,
             },
@@ -222,6 +225,7 @@ public partial class Game
             },
             Castle = CaptureCastle(),
             MainLine = CaptureMainLine(),
+            Ship = CaptureShip(),
             Fireflies = new FirefliesSave { Caught = fireflies.Caught },
             Hunt = new HuntSave
             {
@@ -353,6 +357,8 @@ public partial class Game
         RestoreCastle(data.Castle);
         // And the great line with its forge and its driver, who wait at the hub.
         RestoreMainLine(data.MainLine);
+        // And the ship with its anchor and its cabin, which waits at the shipyard.
+        RestoreShip(data.Ship);
         RestoreBuilds(data);
         UpdateDeliveryGuides();
         interaction.BeforePause = validEncounter ? data.State : GameState.Exploring;

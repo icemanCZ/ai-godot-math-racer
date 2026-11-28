@@ -150,6 +150,15 @@ public partial class Game
             case UiIntent.MainLineHome:
                 BeginMainLineHome();
                 break;
+            case UiIntent.ShipStart:
+                BeginShipStart();
+                break;
+            case UiIntent.ShipSail:
+                BeginShipSail();
+                break;
+            case UiIntent.ShipHome:
+                BeginShipHome();
+                break;
             case UiIntent.RallyStart start:
                 BeginRallyStage(start.Stage);
                 break;

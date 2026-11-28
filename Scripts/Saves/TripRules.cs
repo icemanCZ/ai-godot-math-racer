@@ -120,6 +120,14 @@ internal static class TripRules
             }
             case TripKinds.MainLineForge when trip.Index == 0:
                 return (HaulLoad.Stones, World.AskerIds(HaulLoad.Stones, 0), trip.Loaded);
+            case TripKinds.Ship when trip.Index == 0 && data.Ship.Stage is >= 0 and < ShipPlans.Trips:
+            {
+                // The anchor is loaded at the forge, which has no worker: the captain asks the question.
+                var cargo = ShipPlans.CargoOf(data.Ship.Stage);
+                return (cargo, World.AskerIds(cargo, 0), trip.Loaded);
+            }
+            case TripKinds.ShipForge when trip.Index == 0:
+                return (HaulLoad.Stones, World.AskerIds(HaulLoad.Stones, 0), trip.Loaded);
             case TripKinds.CastleBeacon when trip.Index is >= 0 and < CastlePlans.Beacons:
                 return (HaulLoad.Logs, World.AskerIds(HaulLoad.Logs, 0), trip.Loaded);
             case TripKinds.CastleGuest when trip.Index is >= 0 and < CastlePlans.Guests:
@@ -188,6 +196,9 @@ internal static class TripRules
             TripKinds.MainLineForge => trip.Index != 0
                 || data.MainLine.Stage >= MainLinePlans.Trips
                 || data.MainLine.Stage < MainLinePlans.RailStep(0),
+            TripKinds.Ship => trip.Index != 0 || data.Ship.Stage >= ShipPlans.Trips,
+            // Stone for the forge is wanted when the next delivery is the anchor and it is not forged yet.
+            TripKinds.ShipForge => trip.Index != 0 || data.Ship.Stage != ShipPlans.AnchorStep || data.Ship.Anchor,
             // The beacons and the guests come once the castle stands, each one once.
             TripKinds.CastleBeacon => trip.Index is < 0 or >= CastlePlans.Beacons
                 || data.Castle.Stage < CastlePlans.Trips
@@ -260,6 +271,7 @@ internal static class TripRules
             : World.IsBirdwatcher(data.Nearby) ? GameState.FerryStatus
             : World.IsCastellan(data.Nearby) ? GameState.CastleStatus
             : World.IsEngineer(data.Nearby) ? GameState.MainLineStatus
+            : World.IsCaptain(data.Nearby) ? GameState.ShipStatus
             : null;
         if (panel == null)
         {
@@ -278,6 +290,7 @@ internal static class TripRules
                         or GameState.FerryStatus
                         or GameState.CastleStatus
                         or GameState.MainLineStatus
+                        or GameState.ShipStatus
                 || data.Quiz.Challenge is LoadChallenge;
         }
         if (data.State is not (GameState.Exploring or GameState.Challenge) && data.State != panel)

@@ -129,6 +129,11 @@ public static class Art
                 // The great railway: a steam engine with its chimney, a cab, two wheels and the rails under it.
                 "train" =>
                     "M10 100 H122 M16 100 V62 H46 V44 H86 V100 M46 62 H60 M86 66 H116 V100 M30 112 a9 9 0 1 0 18 0 a9 9 0 1 0 -18 0 M70 112 a9 9 0 1 0 18 0 a9 9 0 1 0 -18 0 M58 44 V24 H72 V44",
+                // The ship Albatros: a hull, a mast with two sails and a flag; its anchor with a ring, a stock and arms.
+                "ship" =>
+                    "M14 86 H118 L104 112 H30 Z M66 86 V14 M66 18 Q102 42 66 76 Z M60 26 L30 76 H60 Z M66 14 L82 19 L66 24",
+                "anchor" =>
+                    "M56 22 a10 10 0 1 0 20 0 a10 10 0 1 0 -20 0 M66 32 V116 M44 50 H88 M22 84 Q30 116 66 116 Q102 116 110 84 M22 84 L14 96 M22 84 L34 90 M110 84 L118 96 M110 84 L98 90",
                 // The animal at the end of a trail of the forest keeper: a paw print, a pad and four toes.
                 "paw" =>
                     "M40 98 Q40 72 66 72 Q92 72 92 98 Q92 114 66 114 Q40 114 40 98 Z M20 60 a10 12 0 1 0 20 0 a10 12 0 1 0 -20 0 M42 38 a10 12 0 1 0 20 0 a10 12 0 1 0 -20 0 M70 38 a10 12 0 1 0 20 0 a10 12 0 1 0 -20 0 M92 60 a10 12 0 1 0 20 0 a10 12 0 1 0 -20 0",
@@ -181,6 +186,13 @@ public static class Art
     /// the balloon station: "balloon" and "star", and of the castle: "castle", "beacon" and "guest". Null for any other
     /// name, which the picture draws itself.
     /// </summary>
+    /// <summary>A treasure of the captain's cabin on a round shelf, outlined like the other pictures.</summary>
+    private static string SouvenirPicture(string body) =>
+        "<ellipse cx='90' cy='140' rx='64' ry='7' fill='#c49a66'/>"
+        + "<g stroke='#3c5960' stroke-width='4' stroke-linejoin='round'>"
+        + body
+        + "</g>";
+
     public static Texture2D? Picture(string icon)
     {
         if (Pictures.TryGetValue(icon, out var cached))
@@ -308,6 +320,70 @@ public static class Art
                 + "<path d='M20 78 L160 40' stroke='#a7b2b9' stroke-width='7' stroke-linecap='round'/>"
                 + $"<path d='M30 122 L170 84' stroke='{ink}' stroke-width='14' stroke-linecap='round'/>"
                 + "<path d='M30 122 L170 84' stroke='#a7b2b9' stroke-width='7' stroke-linecap='round'/>",
+            // The ship Albatros on the sea: a brown hull, two white sails, a red flag and the waves.
+            "ship" => "<rect x='0' y='118' width='180' height='32' rx='8' fill='#5aa6d6'/>"
+                + $"<path d='M20 98 H160 L142 128 H38 Z' fill='#8a5a34' stroke='{ink}' stroke-width='5' stroke-linejoin='round'/>"
+                + "<path d='M30 108 H150' stroke='#e0b04a' stroke-width='4'/>"
+                + $"<path d='M92 98 V14 M56 98 V34' stroke='{ink}' stroke-width='6' stroke-linecap='round'/>"
+                + $"<path d='M96 20 Q140 50 96 88 Z' fill='#f6f4ee' stroke='{ink}' stroke-width='4' stroke-linejoin='round'/>"
+                + $"<path d='M60 38 Q92 62 60 90 Z' fill='#f6f4ee' stroke='{ink}' stroke-width='4' stroke-linejoin='round'/>"
+                + $"<path d='M92 14 L116 20 L92 27 Z' fill='#d23b2f' stroke='{ink}' stroke-width='3'/>"
+                + "<path d='M6 136 Q20 128 34 136 T62 136 T90 136 T118 136 T146 136 T174 136' fill='none' stroke='#f6f4ee' stroke-width='4'/>",
+            // The anchor of iron: a ring, a stock, a shank and two curved arms.
+            "anchor" => "<ellipse cx='90' cy='140' rx='70' ry='7' fill='#70b765'/>"
+                + $"<circle cx='90' cy='22' r='12' fill='none' stroke='{ink}' stroke-width='12'/>"
+                + "<circle cx='90' cy='22' r='12' fill='none' stroke='#6c767c' stroke-width='6'/>"
+                + $"<path d='M90 34 V128 M60 50 H120 M36 96 Q46 130 90 130 Q134 130 144 96' fill='none' stroke='{ink}' stroke-width='16' stroke-linecap='round'/>"
+                + "<path d='M90 34 V128 M60 50 H120 M36 96 Q46 130 90 130 Q134 130 144 96' fill='none' stroke='#6c767c' stroke-width='9' stroke-linecap='round'/>"
+                + $"<path d='M36 96 L26 110 L46 106 Z M144 96 L154 110 L134 106 Z' fill='#6c767c' stroke='{ink}' stroke-width='4' stroke-linejoin='round'/>",
+            // A sea turtle on the sand: a domed green shell with a pattern, a head and flippers.
+            "turtle" => "<ellipse cx='90' cy='136' rx='80' ry='10' fill='#eedca4'/>"
+                + $"<ellipse cx='40' cy='106' rx='22' ry='10' fill='#a8b87a' stroke='{ink}' stroke-width='4'/>"
+                + $"<ellipse cx='140' cy='106' rx='22' ry='10' fill='#a8b87a' stroke='{ink}' stroke-width='4'/>"
+                + $"<circle cx='150' cy='80' r='16' fill='#a8b87a' stroke='{ink}' stroke-width='4'/>"
+                + "<circle cx='156' cy='76' r='3' fill='#2b2b2e'/>"
+                + $"<path d='M30 118 Q30 52 90 52 Q144 52 144 118 Z' fill='#5f8a4a' stroke='{ink}' stroke-width='5' stroke-linejoin='round'/>"
+                + "<path d='M70 70 L90 62 L110 70 L110 92 L90 100 L70 92 Z M90 100 V118 M70 92 L48 110 M110 92 L130 110' fill='none' stroke='#3f6a32' stroke-width='4'/>",
+            // The eight treasures of the captain's cabin, in the order of ShipPlans.Names.
+            "souvenir0" => SouvenirPicture(
+                "<path d='M70 132 H110 V70 Q110 56 98 50 V30 H82 V50 Q70 56 70 70 Z' fill='#6fb08a'/>"
+                    + "<rect x='80' y='20' width='20' height='12' rx='3' fill='#a47a4a'/>"
+                    + "<rect x='78' y='76' width='24' height='40' fill='#f6eed6'/>"
+            ),
+            "souvenir1" => SouvenirPicture(
+                "<circle cx='90' cy='84' r='50' fill='#e0b04a'/><circle cx='90' cy='84' r='40' fill='#f6eed6'/>"
+                    + "<path d='M90 48 L100 84 L90 120 L80 84 Z' fill='#d23b2f'/>"
+                    + "<path d='M90 84 L100 84 L90 120 L80 84 Z' fill='#3c5960'/>"
+            ),
+            "souvenir2" => SouvenirPicture(
+                "<path d='M56 122 Q60 52 90 40 Q120 52 124 122 Z' fill='#e0b04a'/>"
+                    + "<circle cx='90' cy='34' r='10' fill='#e0b04a'/><circle cx='90' cy='128' r='9' fill='#8a6a2a'/>"
+            ),
+            "souvenir3" => SouvenirPicture(
+                "<path d='M30 100 L140 60 L146 76 L36 116 Z' fill='#8a6040'/>"
+                    + "<path d='M132 52 L156 44 L164 70 L140 78 Z' fill='#e0b04a'/>"
+                    + "<path d='M24 104 L34 100 L38 112 L28 116 Z' fill='#e0b04a'/>"
+            ),
+            "souvenir4" => SouvenirPicture(
+                "<circle cx='90' cy='88' r='46' fill='#6a4a30'/><circle cx='76' cy='70' r='6' fill='#3a2a1e'/>"
+                    + "<circle cx='92' cy='64' r='6' fill='#3a2a1e'/><circle cx='106' cy='72' r='6' fill='#3a2a1e'/>"
+            ),
+            "souvenir5" => SouvenirPicture(
+                "<ellipse cx='90' cy='100' rx='32' ry='38' fill='#e8b33a'/>"
+                    + "<path d='M76 88 L104 116 M104 88 L76 116 M90 80 V124' stroke='#c08a20'/>"
+                    + "<path d='M90 64 L72 24 L88 50 L90 18 L94 50 L110 24 Z' fill='#5c9a3e'/>"
+            ),
+            "souvenir6" => SouvenirPicture(
+                "<path d='M90 132 V70 M90 96 L60 56 M90 86 L120 46 M60 56 L52 30 M60 56 L40 50 M120 46 L130 22"
+                    + " M120 46 L144 44 M90 70 L84 34' fill='none' stroke='#ef7a6a' stroke-width='10'"
+                    + " stroke-linecap='round'/>"
+            ),
+            "souvenir7" => SouvenirPicture(
+                "<rect x='40' y='70' width='100' height='58' rx='6' fill='#8a5a30'/>"
+                    + "<path d='M38 72 Q38 40 90 40 Q142 40 142 72 Z' fill='#6b4022'/>"
+                    + "<rect x='82' y='64' width='16' height='22' rx='3' fill='#e0b04a'/>"
+                    + "<circle cx='56' cy='42' r='8' fill='#f3c23c'/><circle cx='122' cy='40' r='8' fill='#f3c23c'/>"
+            ),
             // A guest of the castle's feast: the bench of the trailer with its red cushion and a garland.
             "guest" => "<ellipse cx='90' cy='140' rx='76' ry='8' fill='#70b765'/>"
                 + $"<rect x='26' y='40' width='128' height='50' rx='10' fill='#c49a64' stroke='{ink}' stroke-width='5'/>"

@@ -57,6 +57,15 @@ public partial class Game
 
         /// <summary>The engine driver's question before a ride on the train of the great line.</summary>
         MainLineRide,
+
+        /// <summary>The captain's question before a trailer trip for the ship or for stone for the anchor's forge.</summary>
+        Ship,
+
+        /// <summary>Not a trip: the captain's question before the voyage to the turtle island.</summary>
+        ShipSail,
+
+        /// <summary>Not a trip: a turtle's question on the turtle island before it leaves its treasure.</summary>
+        ShipTurtle,
     }
 
     /// <summary>Asks the quiz that must be solved before a trip starts; the trip continues in StartDeparture.</summary>

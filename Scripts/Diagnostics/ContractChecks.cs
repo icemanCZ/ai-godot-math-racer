@@ -80,6 +80,7 @@ public partial class ContractChecks : Node
         ("FerryStatus", 39),
         ("CastleStatus", 40),
         ("MainLineStatus", 41),
+        ("ShipStatus", 42),
     };
 
     public override void _Ready()
@@ -153,7 +154,8 @@ public partial class ContractChecks : Node
                 && ActorIds.Cartographer == 82
                 && ActorIds.Birdwatcher == 83
                 && ActorIds.Castellan == 84
-                && ActorIds.Engineer == 85,
+                && ActorIds.Engineer == 85
+                && ActorIds.Captain == 86,
             "the actor ID ranges are the ones saved games use"
         );
 
@@ -197,6 +199,7 @@ public partial class ContractChecks : Node
                 : World.IsBirdwatcher(id) ? nameof(BirdwatcherRole)
                 : World.IsCastellan(id) ? nameof(CastleRole)
                 : World.IsEngineer(id) ? nameof(EngineerRole)
+                : World.IsCaptain(id) ? nameof(CaptainRole)
                 : "(no actor may have this ID)";
             Check(actor.Role.GetType().Name == expected, $"ID {id} ({actor.DisplayName}) is a {expected}");
             if (actor.Role is HouseResidentRole house)
@@ -347,6 +350,7 @@ public partial class ContractChecks : Node
             "Valley/World.Ferry.cs",
             "Valley/World.Castle.cs",
             "Valley/World.MainLine.cs",
+            "Valley/World.Ship.cs",
             "Valley/World.Fireflies.cs",
             "Valley/World.Hunter.cs",
             "Valley/World.Outland.cs",

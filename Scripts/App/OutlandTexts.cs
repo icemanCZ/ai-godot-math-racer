@@ -437,4 +437,40 @@ internal static class OutlandTexts
 
     public static string LineDone(int coins) =>
         $"Celá velká trať je hotová! Krteček Pražec teď půjde s tebou.  +{coins}";
+
+    // GameUi.Ship and Game.Ship
+    public const string CaptainHint = "Mrož kapitán Vojta";
+    public const string ShipWanted =
+        "Postavíme loď Albatros! Kýl a žebra z klád, trup a palubu z prken, okna ze skla, stěžně z klád a plachty z látky. A kotvu ukuje kovárna u velké trati z kamení.";
+    public const string ShipBringLoad = "Teď odvez náklad do loděnice, do žlutého kruhu.";
+    public const string ShipBringStone = "Teď odvez kamení do kovárny, do žlutého kruhu. Ukuje z něj kotvu.";
+    public const string ShipFetchAnchor = "Jeď do kovárny pro kotvu. Leží tam a čeká.";
+    public const string ShipAnchorMissing = "Kotva ještě není ukovaná. Kovárna ji ukuje z kamení, tak ho tam zavez!";
+    public const string ShipAnchorForgedSpeech = "Kovárna kuje kotvu! Až bude hotová, přivez mi ji s vozíkem.";
+    public const string ShipAnchorForged = "Kovárna ukovala kotvu!";
+    public const string ShipLaunchSpeech = "Albatros je hotový! Pozor, spouštíme ho na vodu!";
+    public const string ShipSailWanted =
+        "Albatros pluje! Poplujeme na Želví ostrov. Kormidluješ ty: zatáčíš jako s autem, plyn nafoukne plachty a brzda je stáhne.";
+    public const string ShipSailAsk = "Než vyplujeme, vyřeš úlohu.";
+    public const string ShipVoyageSpeech =
+        "Vyplouváme! Jeď kolem bójí, každá zazvoní. Když nebudeš kormidlovat, loď pluje k další bóji sama.";
+    public const string ShipIslandHello =
+        "Jsme na Želvím ostrově! Na pláži sedí želvy na pokladech. Zastav u želvy a vyřeš její úlohu.";
+    public const string ShipIslandSpeech = "Až budeš chtít domů, zmáčkni loď a poplujeme zpátky.";
+    public const string ShipHomeSpeech = "Plujeme domů do loděnice!";
+    public const string ShipHomeEnd = "Jsme doma v loděnici. Poplujeme zase někdy?";
+    public const string ShipTurtleAsk = "Želva ti dá poklad, když vyřešíš úlohu.";
+    public const string ShipSailButton = "Plout na Želví ostrov";
+    public const string ShipHomeButton = "Plout domů";
+    public const string ShipForgeButton = "Kamení do kovárny";
+
+    public static string ShipPart(string part, int stage, int all) => $"Hotovo: {part}!  {stage} / {all}";
+
+    public static string ShipDone(int coins) => $"Loď Albatros je hotová a pluje!  +{coins}";
+
+    public static string ShipTreasure(string name, bool first, int coins) =>
+        first ? $"Nový poklad do kajuty: {name}!  +{coins}" : $"Poklad do kajuty: {name}!  +{coins}";
+
+    public static string ShipCabinFull(int coins) =>
+        $"Kajuta je plná pokladů! Kocour Kormidlík teď sedí na přídi.  +{coins}";
 }
