@@ -5,3 +5,5 @@ obj/
 exports/
 artifacts/
 .vs/
+.claude/settings.local.json
+.claude/worktrees/

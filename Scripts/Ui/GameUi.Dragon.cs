@@ -16,7 +16,7 @@ public partial class GameUi
     internal void DragonHint()
     {
         talkButton.Visible = !modal.Visible;
-        talkButton.Text = (controller ? "A · " : "E · ") + Texts.DragonHint;
+        talkButton.Text = (controller ? "A · " : "E · ") + OutlandTexts.DragonHint;
     }
 
     internal void DragonPanel(Character dragon, DragonLair lair, HaulTrip? trip, bool canStart, bool canFly)
@@ -26,7 +26,7 @@ public partial class GameUi
         if (!lair.Complete)
         {
             StatusPicture("dragon");
-            Text(Texts.DragonNestUnfinished, 20);
+            Text(OutlandTexts.DragonNestUnfinished, 20);
             var loads = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, Name = "DragonLoads" };
             loads.AddThemeConstantOverride("separation", 6);
             content.AddChild(loads);
@@ -56,22 +56,22 @@ public partial class GameUi
         if (!lair.Hatched)
         {
             StatusPicture("egg");
-            Text(Texts.DragonRiddleWanted, 20);
+            Text(OutlandTexts.DragonRiddleWanted, 20);
             Text($"{lair.Riddle} / {DragonPlans.Riddles}", 30);
             var riddle = IconButton("check", () => Send(new UiIntent.DragonRiddle()), "StartDragonRiddle");
-            riddle.AccessibilityName = Texts.DragonRiddleStart;
+            riddle.AccessibilityName = OutlandTexts.DragonRiddleStart;
             riddle.GrabFocus();
             BackButton();
             return;
         }
         StatusPicture("dragon");
-        Text(Texts.DragonFlightWanted, 20);
+        Text(OutlandTexts.DragonFlightWanted, 20);
         if (canFly)
         {
             var fly = AcceptButton(
                 () => Send(new UiIntent.DragonFlight()),
                 "StartDragonFlight",
-                Texts.DragonFlightStart
+                OutlandTexts.DragonFlightStart
             );
             fly.GrabFocus();
             BackButton();

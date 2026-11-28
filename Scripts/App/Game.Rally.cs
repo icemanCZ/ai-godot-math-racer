@@ -84,9 +84,9 @@ public partial class Game
         EnterInteraction(GameState.RallyStatus, keeper);
         ShowRally();
         Speak(
-            rallyBest.All(time => time == 0) ? keeper.Greeting + "\n" + Texts.RallyWanted
-                : RallyMedals.All(medal => medal == RallyMedal.Gold) ? Texts.RallyAllGold
-                : Texts.RallyAgain,
+            rallyBest.All(time => time == 0) ? keeper.Greeting + "\n" + OutlandTexts.RallyWanted
+                : RallyMedals.All(medal => medal == RallyMedal.Gold) ? OutlandTexts.RallyAllGold
+                : OutlandTexts.RallyAgain,
             keeper
         );
         return true;
@@ -126,7 +126,7 @@ public partial class Game
         keeper.Celebrate();
         CloseInteraction();
         UpdatePostGuides();
-        Speak(Texts.RallyToStart(course.Stages[stage].Name), keeper);
+        Speak(OutlandTexts.RallyToStart(course.Stages[stage].Name), keeper);
     }
 
     /// <summary>The question of the next gate of the stage driven now hangs its answers over the gate's lanes.</summary>
@@ -178,7 +178,7 @@ public partial class Game
             {
                 case RallyEventKind.Started:
                     AskRallyGate();
-                    Speak(Texts.RallyGo);
+                    Speak(OutlandTexts.RallyGo);
                     break;
                 case RallyEventKind.Gate:
                     PassRallyGate(run, happened.Gate, happened.Lane);
@@ -187,7 +187,7 @@ public partial class Game
                     FinishRallyStage(run);
                     break;
                 case RallyEventKind.Abandoned:
-                    EndRally(Texts.RallyAbandoned);
+                    EndRally(OutlandTexts.RallyAbandoned);
                     break;
             }
         }
@@ -209,15 +209,15 @@ public partial class Game
         if (asking && !rallyQuestionRead && exploring)
         {
             rallyQuestionRead = true;
-            Speak(Texts.RallyQuestion(GateInstruction(rallyQuestion!)));
+            Speak(OutlandTexts.RallyQuestion(GateInstruction(rallyQuestion!)));
         }
         flash = rallyFlashTime > 0 ? rallyFlash : "";
         string note =
             flash != "" ? flash
-            : !drive.Racing ? Texts.RallyDriveToStart
-            : asking ? Texts.RallyPickLane
-            : drive.NextGate >= drive.Current.Gates.Length ? Texts.RallyToFinish
-            : Texts.RallyToGate;
+            : !drive.Racing ? OutlandTexts.RallyDriveToStart
+            : asking ? OutlandTexts.RallyPickLane
+            : drive.NextGate >= drive.Current.Gates.Length ? OutlandTexts.RallyToFinish
+            : OutlandTexts.RallyToGate;
         var stage = drive.Current;
         ui.RallyHud(
             exploring,
@@ -254,9 +254,9 @@ public partial class Game
     private static string GateInstruction(IChallenge question) =>
         question switch
         {
-            LetterChallenge letter => Texts.RallyLetter(letter.Letter),
-            ReadingChallenge reading => Texts.RallyReading(reading.Word),
-            CompareChallenge => Texts.RallyCompare,
+            LetterChallenge letter => OutlandTexts.RallyLetter(letter.Letter),
+            ReadingChallenge reading => OutlandTexts.RallyReading(reading.Word),
+            CompareChallenge => OutlandTexts.RallyCompare,
             _ => question.Expression.Replace("= ?", "").Trim(),
         };
 
@@ -273,13 +273,13 @@ public partial class Game
         if (correct)
         {
             AddCoins(RallyPlans.CoinsPerGate);
-            CelebrateAt(where, Texts.RallyRight);
-            Speak(Texts.RallyRight);
+            CelebrateAt(where, OutlandTexts.RallyRight);
+            Speak(OutlandTexts.RallyRight);
         }
         else
         {
             string answer = RallyGates.ChoiceText(question, question.Choices[right]);
-            FlashRally(Texts.RallyWrong(answer, (int)RallyPlans.PenaltySeconds));
+            FlashRally(OutlandTexts.RallyWrong(answer, (int)RallyPlans.PenaltySeconds));
         }
         AskRallyGate();
     }
@@ -304,22 +304,28 @@ public partial class Game
         gates.Golds = RallyMedals.Count(m => m == RallyMedal.Gold);
         int right = run.Answers.Count(answer => answer == true);
         int coins = RallyPlans.StageCoins(medal) + (better ? RallyPlans.NewMedalCoins : 0);
-        string message = Texts.RallyFinished(stage.Name, RallyPlans.Clock(time), medal, right, run.Answers.Length);
+        string message = OutlandTexts.RallyFinished(
+            stage.Name,
+            RallyPlans.Clock(time),
+            medal,
+            right,
+            run.Answers.Length
+        );
         if (better && was != RallyMedal.None)
-            message += "\n" + Texts.RallyBetterMedal(RallyPlans.NewMedalCoins);
+            message += "\n" + OutlandTexts.RallyBetterMedal(RallyPlans.NewMedalCoins);
         else if (best && before > 0)
-            message += "\n" + Texts.RallyBestTime;
+            message += "\n" + OutlandTexts.RallyBestTime;
         bool goesOn = run.GoOn();
         if (!goesOn)
         {
             coins += RallyPlans.LapCoins;
-            message += "\n" + Texts.RallyLap(RallyPlans.LapCoins);
+            message += "\n" + OutlandTexts.RallyLap(RallyPlans.LapCoins);
         }
         AddCoins(coins);
         var arch = course.At(stage.Finish) + Vector3.Up * 5;
         string? pets = EarnPets();
         CelebrateAt(arch, WithPets(message, pets));
-        Speak(pets != null ? Texts.RallyOtter : Texts.RallyMedalSpoken(medal));
+        Speak(pets != null ? OutlandTexts.RallyOtter : OutlandTexts.RallyMedalSpoken(medal));
         if (goesOn)
         {
             gates.Reset();

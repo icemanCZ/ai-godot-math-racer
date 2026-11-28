@@ -254,7 +254,7 @@ public partial class RallyChecks : Node
             Check(!ferrywoman.Guided, "and her mark goes out");
             Frames(1);
             Check(
-                game.RallyHudShown && game.RallyHudNote == Texts.RallyDriveToStart,
+                game.RallyHudShown && game.RallyHudNote == OutlandTexts.RallyDriveToStart,
                 "the corner panel points to the start"
             );
 
@@ -281,7 +281,10 @@ public partial class RallyChecks : Node
 
             // ---- The first gate: the right lane ----
             DriveTo(first.Gates[0] - Game.RallyQuestionAhead + 20, _ => 1);
-            Check(game.RallyHudAsks && game.RallyHudNote == Texts.RallyPickLane, "near the gate its question shows");
+            Check(
+                game.RallyHudAsks && game.RallyHudNote == OutlandTexts.RallyPickLane,
+                "near the gate its question shows"
+            );
             int rightLane = Enumerable.Range(0, 3).First(i => question!.Accepts(question.Choices[i]));
             float LaneAcross(int lane) => (lane - 1) * RallyCourse.LaneHalfWidth * 2;
             DriveTo(first.Gates[0] + 6, _ => LaneAcross(rightLane));
@@ -315,7 +318,7 @@ public partial class RallyChecks : Node
             Check(drive.Answers[2] == true, "the third gate is right");
             DriveTo(first.Finish - 10, _ => 0);
             Check(
-                game.RallyHudNote == Texts.RallyToFinish,
+                game.RallyHudNote == OutlandTexts.RallyToFinish,
                 "after the last gate the corner panel points to the finish"
             );
             int beforeFinish = game.Coins;
@@ -361,7 +364,7 @@ public partial class RallyChecks : Node
             car.SetPose(world.Ground.At(off.X, off.Z, .15f), 0);
             Frames(25, Step);
             Check(game.RallyDrive == null, "a car far off the road for long ends the drive");
-            Check(game.RallyHudNote == Texts.RallyAbandoned, "and the corner panel says so");
+            Check(game.RallyHudNote == OutlandTexts.RallyAbandoned, "and the corner panel says so");
             Check(game.RallyBest[1] == 0, "the stage left keeps no time");
 
             // ---- Gold on the last stage brings the otter ----

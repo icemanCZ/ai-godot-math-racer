@@ -49,10 +49,10 @@ public partial class Game
         ShowShepherd();
         var herd = Sheep;
         Speak(
-            !herd.Started ? keeper.Greeting + "\n" + Texts.SheepWanted
-                : herd.Complete ? Texts.SheepAllHome
-                : herd.FollowingCount > 0 ? Texts.SheepBrought(herd.FollowingCount)
-                : Texts.SheepStillLost(herd.LostCount + herd.WaitingCount),
+            !herd.Started ? keeper.Greeting + "\n" + OutlandTexts.SheepWanted
+                : herd.Complete ? OutlandTexts.SheepAllHome
+                : herd.FollowingCount > 0 ? OutlandTexts.SheepBrought(herd.FollowingCount)
+                : OutlandTexts.SheepStillLost(herd.LostCount + herd.WaitingCount),
             keeper
         );
         return true;
@@ -108,7 +108,7 @@ public partial class Game
         keeper.Celebrate();
         CloseInteraction();
         UpdateSheep();
-        Speak(Texts.SheepGoLook, keeper);
+        Speak(OutlandTexts.SheepGoLook, keeper);
         SaveProgress();
     }
 
@@ -130,7 +130,7 @@ public partial class Game
         if (!quizzed)
         {
             AskBeforeDeparture(Departure.Sheep);
-            Speak(Texts.SheepPenQuestion, keeper);
+            Speak(OutlandTexts.SheepPenQuestion, keeper);
             return;
         }
         ClearChallenge();
@@ -142,11 +142,11 @@ public partial class Game
         keeper.Celebrate();
         bool full = herd.Complete;
         int coins = penned.Count * SheepPlans.CoinsPerSheep + (full ? SheepPlans.FlockCoins : 0);
-        string message = Texts.SheepPenned(penned.Count, herd.HomeCount, herd.Count);
+        string message = OutlandTexts.SheepPenned(penned.Count, herd.HomeCount, herd.Count);
         if (full)
-            message += "\n" + Texts.SheepFlockDone(SheepPlans.FlockCoins);
+            message += "\n" + OutlandTexts.SheepFlockDone(SheepPlans.FlockCoins);
         CelebrateAt(world.FoldMiddle + Vector3.Up * 2, WithPets(message, EarnPets()));
-        Speak(full ? Texts.SheepAllHome : Texts.SheepThanks(herd.LostCount + herd.WaitingCount), keeper);
+        Speak(full ? OutlandTexts.SheepAllHome : OutlandTexts.SheepThanks(herd.LostCount + herd.WaitingCount), keeper);
         PayReward(coins);
     }
 
@@ -181,7 +181,7 @@ public partial class Game
             if (joined.Count > 0)
             {
                 int last = joined[^1];
-                string message = Texts.SheepJoined(SheepPlans.Name(last), herd.FollowingCount);
+                string message = OutlandTexts.SheepJoined(SheepPlans.Name(last), herd.FollowingCount);
                 CelebrateAt(flock.PositionOf(last) + Vector3.Up * 1.6f, message);
                 Speak(message);
                 UpdatePostGuides();
@@ -190,7 +190,7 @@ public partial class Game
             int waiting = herd.WaitingCount;
             if (waiting > sheepWaiting)
             {
-                Speak(Texts.SheepLeftBehind);
+                Speak(OutlandTexts.SheepLeftBehind);
                 UpdatePostGuides();
             }
             sheepWaiting = waiting;
@@ -212,21 +212,21 @@ public partial class Game
         if (waitingSheep >= 0)
         {
             goal = herd.WhereIs(waitingSheep);
-            note = Texts.SheepGoBack(SheepPlans.Name(waitingSheep));
+            note = OutlandTexts.SheepGoBack(SheepPlans.Name(waitingSheep));
         }
         else if (herd.FollowingCount > 0 && (lostSheep < 0 || herd.FollowingCount >= 3))
         {
             goal = world.Shepherd?.Position ?? world.FoldMiddle;
             who = world.Shepherd;
-            note = herd.Lag > SheepHerd.LagWarning ? Texts.SheepSlowDown : Texts.SheepTakeHome;
+            note = herd.Lag > SheepHerd.LagWarning ? OutlandTexts.SheepSlowDown : OutlandTexts.SheepTakeHome;
         }
         else if (lostSheep >= 0)
         {
             goal = herd.WhereIs(lostSheep);
             note =
-                herd.Lag > SheepHerd.LagWarning ? Texts.SheepSlowDown
-                : herd.FollowingCount > 0 ? Texts.SheepFindMore
-                : Texts.SheepListen;
+                herd.Lag > SheepHerd.LagWarning ? OutlandTexts.SheepSlowDown
+                : herd.FollowingCount > 0 ? OutlandTexts.SheepFindMore
+                : OutlandTexts.SheepListen;
         }
         else
         {

@@ -47,9 +47,9 @@ public partial class Game
         ShowTracking();
         var hunt = Tracking;
         Speak(
-            !hunt.Started ? keeper.Greeting + "\n" + Texts.TrackingWanted
-                : hunt.Current is { } trail ? Texts.TrackingFollow(trail.Animal)
-                : Texts.TrackingBookFull,
+            !hunt.Started ? keeper.Greeting + "\n" + OutlandTexts.TrackingWanted
+                : hunt.Current is { } trail ? OutlandTexts.TrackingFollow(trail.Animal)
+                : OutlandTexts.TrackingBookFull,
             keeper
         );
         return true;
@@ -84,7 +84,7 @@ public partial class Game
         keeper.Celebrate();
         CloseInteraction();
         UpdateTracking();
-        Speak(Texts.TrackingFirst(Tracking.Current!.Animal), keeper);
+        Speak(OutlandTexts.TrackingFirst(Tracking.Current!.Animal), keeper);
         SaveProgress();
     }
 
@@ -96,7 +96,7 @@ public partial class Game
         nearby = animal;
         vehicle.Active = false;
         BeginQuiz();
-        Speak(Texts.TrackingCoax(trail.Animal), animal);
+        Speak(OutlandTexts.TrackingCoax(trail.Animal), animal);
     }
 
     /// <summary>
@@ -116,12 +116,14 @@ public partial class Game
         UpdateTracking();
         bool full = Tracking.Complete;
         int coins = TrackingPlans.CoinsPerAnimal + (full ? TrackingPlans.BookCoins : 0);
-        string message = Texts.TrackingFound(trail.Animal, Tracking.Found, Tracking.Trails);
+        string message = OutlandTexts.TrackingFound(trail.Animal, Tracking.Found, Tracking.Trails);
         if (full)
-            message += "\n" + Texts.TrackingBookDone(TrackingPlans.BookCoins);
+            message += "\n" + OutlandTexts.TrackingBookDone(TrackingPlans.BookCoins);
         CelebrateAt(dens.Focus(den), WithPets(message, EarnPets()));
         Speak(
-            Tracking.Current is { } next ? Texts.TrackingNext(trail.Animal, next.Animal) : Texts.TrackingLast,
+            Tracking.Current is { } next
+                ? OutlandTexts.TrackingNext(trail.Animal, next.Animal)
+                : OutlandTexts.TrackingLast,
             animal
         );
         PayReward(coins);

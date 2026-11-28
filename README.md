@@ -1,6 +1,7 @@
 # MathRacer – Kouzelné údolí
 
-MathRacer is a calm, procedurally generated 3D driving game for children. The game uses Czech, with picture choices, symbols and short prompts. It is built in C# with Godot’s Compatibility renderer.
+MathRacer is a calm, procedurally generated 3D driving game for children. The game uses Czech, with picture choices,
+symbols and short prompts. It is built in C# with Godot’s Compatibility renderer.
 
 ## Running the game
 
@@ -8,16 +9,22 @@ MathRacer is a calm, procedurally generated 3D driving game for children. The ga
 - Godot 4.7.2 .NET and the .NET 10 SDK.
 - A NuGet package cache or an internet connection for the first restore.
 
-The local launcher finds the portable Godot .NET installation in `.tools/`. On another machine, download the matching .NET build from [Godot](https://godotengine.org/download/windows/) and extract it into `.tools/`, or set `GODOT_PATH` to the full path of the console executable.
+The local launcher finds the portable Godot .NET installation in `.tools/`. On another machine, download the matching
+.NET build from [Godot](https://godotengine.org/download/windows/) and extract it into `.tools/`, or set `GODOT_PATH` to
+the full path of the console executable.
 
 ```powershell
 ./run.ps1
 ./build.ps1 -Test
 ```
 
-On Windows, `run.cmd` and `build.cmd` also work when PowerShell script execution is restricted. With the matching .NET export templates installed, `./build.ps1 -Export` builds a standalone Windows x64 `exports/MathRacer.exe`. The game data and runtime are embedded. The project can use release and debug template binaries from `.tools/windows-export-templates/`.
+On Windows, `run.cmd` and `build.cmd` also work when PowerShell script execution is restricted. With the matching .NET
+export templates installed, `./build.ps1 -Export` builds a standalone Windows x64 `exports/MathRacer.exe`. The game data
+and runtime are embedded. The project can use release and debug template binaries from
+`.tools/windows-export-templates/`.
 
-`god-mode.bat` (or `./run.ps1 -GodMode`) starts the game in god mode: holding Shift makes the car five times faster. It plays the normal saved game.
+`god-mode.bat` (or `./run.ps1 -GodMode`) starts the game in god mode: holding Shift makes the car five times faster. It
+plays the normal saved game.
 
 ## Controls
 
@@ -32,68 +39,265 @@ On Windows, `run.cmd` and `build.cmd` also work when PowerShell script execution
 | Pause or resume | Esc | Menu |
 | Back or leave an activity | Back arrow on screen | B |
 
-The camera eases back behind the car after a short pause in camera input. The controller uses analog input with deadzones. Menu navigation is covered by simulated joypad input. Physical USB and Bluetooth compatibility still needs a hardware check.
+The camera eases back behind the car after a short pause in camera input. The controller uses analog input with
+deadzones. Menu navigation is covered by simulated joypad input. Physical USB and Bluetooth compatibility still needs a
+hardware check.
 
 ## Quiz settings
 
-Open the garage near the village entrance with **E / A**. Each quiz type has its own switch, and at least one type must stay enabled. All four types are enabled by default. Their icons show which types are active. The settings are saved and carry over when starting a new valley.
+Open the garage near the village entrance with **E / A**. Each quiz type has its own switch, and at least one type must
+stay enabled. All four types are enabled by default. Their icons show which types are active. The settings are saved and
+carry over when starting a new valley.
 
-| Garage option | Task |
-| --- | --- |
-| Initial letters (*Písmenka*) | Pick the picture whose name starts with the displayed capital letter. |
-| Syllables (*Slabiky*) | Look at one picture and pick its syllables from six tiles in any order. The game marks the correct selections and advances when all have been found. |
-| Reading (*Čtení*) | Match a three-letter uppercase Czech word, such as **LES**, **PES** or **DŮM**, to one of three pictures. |
-| Arithmetic (*Příklady*) | Level 1 uses two-number addition and subtraction within 10. Level 2 uses three-number addition with sums up to 10, such as `2 + 3 + 4`. |
+- **Initial letters (*Písmenka*)**: Pick the picture whose name starts with the displayed capital letter.
+- **Syllables (*Slabiky*)**: Look at one picture and pick its syllables from six tiles in any order. The game marks the
+  correct selections and advances when all have been found.
+- **Reading (*Čtení*)**: Match a three-letter uppercase Czech word, such as **LES**, **PES** or **DŮM**, to one of three
+  pictures.
+- **Arithmetic (*Příklady*)**: Level 1 uses two-number addition and subtraction within 10. Level 2 uses three-number
+  addition with sums up to 10, such as `2 + 3 + 4`.
 
-Roadside animals, village residents, shops and forest bandits cycle evenly through the enabled quiz types. Postcards have their own word questions, with arithmetic as a fallback. If arithmetic is off, a word quiz replaces cargo counting at handover. Wrong choices leave the current question open for another try. In a syllable quiz, select every syllable to enable **Potvrdit**.
+Roadside animals, village residents, shops and forest bandits cycle evenly through the enabled quiz types. Postcards
+have their own word questions, with arithmetic as a fallback. If arithmetic is off, a word quiz replaces cargo counting
+at handover. Wrong choices leave the current question open for another try. In a syllable quiz, select every syllable to
+enable **Potvrdit**.
 
 ## Exploring the valley
 
-- **Roadside friends.** Ten animals with floating question marks offer an original quiz. After solving it, choose a delivery or apple collection. Both choices start immediately. Delivery carries one to three items to another animal. Collection starts with an empty rack and guides the player to three apples and back. Navigation uses a directional arrow, road arrows and visual progress. Handover pays 10 coins. A solved opening quiz can be used to start its expedition later.
-- **Coins.** Finished tasks pay coins instead of car items: 10 for a roadside delivery or the golem, 8 for a shop order and 5 for a house task, collector delivery, postcard stamp, bandit encounter or driving course, plus 5 more for beating the ghost. Forty-five spinning coins are scattered at random along the roads; each is worth one coin and reappears elsewhere about 40 seconds after it is collected. The counter below the animal tally shows the total.
-- **The garage.** Buy car models (40 coins), paints (15) and accessories (20), switch between owned items, or equip a companion. Items you can afford are gold; dearer ones stay grey. Companions are earned by collections, not bought. The main garage catalogue has four car models, eight paints and fourteen standard accessories. Some activities unlock special items. Car previews show the actual 3D models. Garage visits and pause preserve active expeditions. **Wheel trails** (25 coins each) replace the tyre marks with a row of flowers, hearts or stars that pop up behind the rear wheels and shrink away; the plain tyre marks stay free and can be put back at any time.
-- **Village houses.** Vojtík, Róza, Hugo and Fialka each offer ten tasks, shuffled: two arithmetic quizzes, two letter quizzes, two apple collections, two loads of planks and two loads of bricks. Each success adds a visible improvement such as shutters, a balcony or party decorations. The task order is stable for the saved valley. When a resident wants planks or bricks, press play: the trailer goes to the sawmill or the brickworks, the worker there loads one unit from the stock (a counting question, or a word quiz), and you drive the load to the yellow ring on the road in front of the house. If the works has none in stock, the resident shows the raw material it needs (logs or soil) and sends you for it first, so the goods are made and the same resident then offers the trip. Like every trailer trip, it replaces the task under way.
-- **Collectors and companions.** Farmer Tonda, gardener Vítek, gem collector Jáchym and toymaker Pepa each have twelve off-road expeditions. Deliveries fill the farm pen, flower beds, museum pedestals and playground. Completing a collection earns a companion. Baltazar’s tower has a separate six-piece expedition for the golem. Enabled companions follow the car as it drives and wander nearby with short pauses when it stops.
-- **Materials, works and workers.** The quarry, the clay pit and the log yard each have a worker (Králíček lomař Kvido, Liška hlinařka Hanka, Medvěd dřevorubec Drvoš) and never run out. Talk to one and press play: the worker loads your trailer (a counting question, or a word quiz) and you drive the load to the matching works, where it is tipped into the yellow ring. The sawmill (*Pila*, Medvěd Pilař) turns logs into planks, the brickworks (*Cihelna*, Liška Cihlářka) soil into bricks and the gravel works (*Štěrkovna*, Zajíc Štěrkař) stones into gravel. Each load makes two units. The stock stands in plain view on the works' yard, one bundle, pallet or heap per unit, up to twelve, and starts empty; a full works asks for nothing more. The trailer is lent for every trip and unhitched afterwards. Field paths lead to every site. The works stand at the edge of the village, and each raw material has a second site far from the first (a second quarry, clay pit, sand pit and log yard): each second site has a worker of its own (the second quarry, clay pit, sand pit and log yard); the trailer is loaded at whichever of the two sites it reaches, the worker there asks the loading question, and a new trip starts at the nearer one. Every source, works and building site, and both driving courses, has its own icon above it, drawn like the others.
-- **Four buildings, ten deliveries each.** Bóďa the beaver builds the bridge; the miller (*Mlynář Bruno*) builds a windmill, the stargazer (*Hvězdář Kryštof*) a lookout tower and the fisherman (*Rybář Vilda*) a jetty. Each stands beside its own road or field path; the mill and the tower stand close to the village, and the jetty on the bank. Where a hill or a bank is too steep, the way is cut into the ground. Every delivery takes one unit of goods from a works (or a raw load from the pits and the log yard), so the planks need logs first, and the mill, tower and jetty can all be under construction at once. The builder's panel shows the ten loads and which are done, and which works is short of goods when the next one cannot start. The last delivery of the mill, tower and jetty is special: the farmer gives cloth for the sails, the gem collector the stone tip of the tower and the toymaker the flag of the jetty. Answer the collector's quiz to take it. Finishing a mill, tower or jetty pays 30 coins and a garage item that cannot be bought (a sack of flour, binoculars, the water-blue paint). A finished mill also turns its sails with the wind, grinds the farmer's wheat into flour for the bakery, and the baker pays 2 coins more for every order. The stargazer lets you look round the valley from the finished tower: the camera turns on the platform while tall beams light the coins and the friends who wait for a quiz, then he rests for a minute. A finished jetty has a little sailing boat that sails up and down the river beside it, and the fisherman's duck becomes a companion that follows the car. The jetty's duck is joined along the way by three ducklings (Žlutka, Pírko and Bublinka), one for every third delivery to the jetty, who trail behind it in a row.
-- **Six building plots.** Beside the village streets lie six staked-out building plots, each with a newcomer waiting on it (Králíček Ondra, Liška Alenka, Medvěd Bořek, Králíček Standa, Liška Dana and Medvídek Jarda). Talk to a newcomer and press play: the trailer fetches one unit of goods from a works, and you tip it into the yellow ring in front of the lot. Six loads finish a little house: gravel for the slab, two loads of bricks for the lower and upper walls and three of planks for the roof frame, the roof and the finishing touches (door, shutters, flower boxes, mailbox). Every load shows the next stage of the house, and the sixth lets the newcomer walk to the doorstep and move in; a finished house pays 10 coins. As with the other buildings, an empty works sends you for its raw material first, and all six plots can be under way at the same time. More kinds of houses will follow.
-- **The playground.** At the edge of the village, in sight of the houses, a yard is staked out with an arch and a sign, and Medvědice Madla waits beside it. Talk to her and press play: the trailer fetches one unit of goods from a works and you tip it into the yellow ring in front of the yard. Six loads (gravel, three of planks and two of bricks) bring six toys, and **every toy comes with a small animal who plays on it**: a gravel path and a sandbox (a child digs a castle), a pair of swings (one child swings high), a seesaw (a child at each end), a little brick playhouse (a child waves from the window), a slide (a child climbs the ladder, slides down, cheers and runs back round) and a roundabout under a red and white roof (two children go round). Every delivery makes all the children hop, and they cheer again each time the car drives up. The sixth delivery finishes the playground with bunting round the yard and a bunch of balloons on the arch, and pays 20 coins and a garage item that cannot be bought: **Balónky**, a bunch of balloons tied behind the roof of the car. Like the other goods trips, an empty works sends you for its raw material first. Every valley that has works has a playground: the search for its place loosens step by step, and the trees on the yard are taken out (a small friend who hid there is moved).
+- **Roadside friends.** Ten animals with floating question marks offer an original quiz. After solving it, choose a
+  delivery or apple collection. Both choices start immediately. Delivery carries one to three items to another animal.
+  Collection starts with an empty rack and guides the player to three apples and back. Navigation uses a directional
+  arrow, road arrows and visual progress. Handover pays 10 coins. A solved opening quiz can be used to start its
+  expedition later.
+- **Coins.** Finished tasks pay coins instead of car items: 10 for a roadside delivery or the golem, 8 for a shop order
+  and 5 for a house task, collector delivery, postcard stamp, bandit encounter or driving course, plus 5 more for
+  beating the ghost. Forty-five spinning coins are scattered at random along the roads; each is worth one coin and
+  reappears elsewhere about 40 seconds after it is collected. The counter below the animal tally shows the total.
+- **The garage.** Buy car models (40 coins), paints (15) and accessories (20), switch between owned items, or equip a
+  companion. Items you can afford are gold; dearer ones stay grey. Companions are earned by collections, not bought. The
+  main garage catalogue has four car models, eight paints and fourteen standard accessories. Some activities unlock
+  special items. Car previews show the actual 3D models. Garage visits and pause preserve active expeditions. **Wheel
+  trails** (25 coins each) replace the tyre marks with a row of flowers, hearts or stars that pop up behind the rear
+  wheels and shrink away; the plain tyre marks stay free and can be put back at any time.
+- **Village houses.** Vojtík, Róza, Hugo and Fialka each offer ten tasks, shuffled: two arithmetic quizzes, two letter
+  quizzes, two apple collections, two loads of planks and two loads of bricks. Each success adds a visible improvement
+  such as shutters, a balcony or party decorations. The task order is stable for the saved valley. When a resident wants
+  planks or bricks, press play: the trailer goes to the sawmill or the brickworks, the worker there loads one unit from
+  the stock (a counting question, or a word quiz), and you drive the load to the yellow ring on the road in front of the
+  house. If the works has none in stock, the resident shows the raw material it needs (logs or soil) and sends you for
+  it first, so the goods are made and the same resident then offers the trip. Like every trailer trip, it replaces the
+  task under way.
+- **Collectors and companions.** Farmer Tonda, gardener Vítek, gem collector Jáchym and toymaker Pepa each have twelve
+  off-road expeditions. Deliveries fill the farm pen, flower beds, museum pedestals and playground. Completing a
+  collection earns a companion. Baltazar’s tower has a separate six-piece expedition for the golem. Enabled companions
+  follow the car as it drives and wander nearby with short pauses when it stops.
+- **Materials, works and workers.** The quarry, the clay pit and the log yard each have a worker (Králíček lomař Kvido,
+  Liška hlinařka Hanka, Medvěd dřevorubec Drvoš) and never run out. Talk to one and press play: the worker loads your
+  trailer (a counting question, or a word quiz) and you drive the load to the matching works, where it is tipped into
+  the yellow ring. The sawmill (*Pila*, Medvěd Pilař) turns logs into planks, the brickworks (*Cihelna*, Liška Cihlářka)
+  soil into bricks and the gravel works (*Štěrkovna*, Zajíc Štěrkař) stones into gravel. Each load makes two units. The
+  stock stands in plain view on the works' yard, one bundle, pallet or heap per unit, up to twelve, and starts empty; a
+  full works asks for nothing more. The trailer is lent for every trip and unhitched afterwards. Field paths lead to
+  every site. The works stand at the edge of the village, and each raw material has a second site far from the first (a
+  second quarry, clay pit, sand pit and log yard): each second site has a worker of its own (the second quarry, clay
+  pit, sand pit and log yard); the trailer is loaded at whichever of the two sites it reaches, the worker there asks the
+  loading question, and a new trip starts at the nearer one. Every source, works and building site, and both driving
+  courses, has its own icon above it, drawn like the others.
+- **Four buildings, ten deliveries each.** Bóďa the beaver builds the bridge; the miller (*Mlynář Bruno*) builds a
+  windmill, the stargazer (*Hvězdář Kryštof*) a lookout tower and the fisherman (*Rybář Vilda*) a jetty. Each stands
+  beside its own road or field path; the mill and the tower stand close to the village, and the jetty on the bank. Where
+  a hill or a bank is too steep, the way is cut into the ground. Every delivery takes one unit of goods from a works (or
+  a raw load from the pits and the log yard), so the planks need logs first, and the mill, tower and jetty can all be
+  under construction at once. The builder's panel shows the ten loads and which are done, and which works is short of
+  goods when the next one cannot start. The last delivery of the mill, tower and jetty is special: the farmer gives
+  cloth for the sails, the gem collector the stone tip of the tower and the toymaker the flag of the jetty. Answer the
+  collector's quiz to take it. Finishing a mill, tower or jetty pays 30 coins and a garage item that cannot be bought (a
+  sack of flour, binoculars, the water-blue paint). A finished mill also turns its sails with the wind, grinds the
+  farmer's wheat into flour for the bakery, and the baker pays 2 coins more for every order. The stargazer lets you look
+  round the valley from the finished tower: the camera turns on the platform while tall beams light the coins and the
+  friends who wait for a quiz, then he rests for a minute. A finished jetty has a little sailing boat that sails up and
+  down the river beside it, and the fisherman's duck becomes a companion that follows the car. The jetty's duck is
+  joined along the way by three ducklings (Žlutka, Pírko and Bublinka), one for every third delivery to the jetty, who
+  trail behind it in a row.
+- **Six building plots.** Beside the village streets lie six staked-out building plots, each with a newcomer waiting on
+  it (Králíček Ondra, Liška Alenka, Medvěd Bořek, Králíček Standa, Liška Dana and Medvídek Jarda). Talk to a newcomer
+  and press play: the trailer fetches one unit of goods from a works, and you tip it into the yellow ring in front of
+  the lot. Six loads finish a little house: gravel for the slab, two loads of bricks for the lower and upper walls and
+  three of planks for the roof frame, the roof and the finishing touches (door, shutters, flower boxes, mailbox). Every
+  load shows the next stage of the house, and the sixth lets the newcomer walk to the doorstep and move in; a finished
+  house pays 10 coins. As with the other buildings, an empty works sends you for its raw material first, and all six
+  plots can be under way at the same time. More kinds of houses will follow.
+- **The playground.** At the edge of the village, in sight of the houses, a yard is staked out with an arch and a sign,
+  and Medvědice Madla waits beside it. Talk to her and press play: the trailer fetches one unit of goods from a works
+  and you tip it into the yellow ring in front of the yard. Six loads (gravel, three of planks and two of bricks) bring
+  six toys, and **every toy comes with a small animal who plays on it**: a gravel path and a sandbox (a child digs a
+  castle), a pair of swings (one child swings high), a seesaw (a child at each end), a little brick playhouse (a child
+  waves from the window), a slide (a child climbs the ladder, slides down, cheers and runs back round) and a roundabout
+  under a red and white roof (two children go round). Every delivery makes all the children hop, and they cheer again
+  each time the car drives up. The sixth delivery finishes the playground with bunting round the yard and a bunch of
+  balloons on the arch, and pays 20 coins and a garage item that cannot be bought: **Balónky**, a bunch of balloons tied
+  behind the roof of the car. Like the other goods trips, an empty works sends you for its raw material first. Every
+  valley that has works has a playground: the search for its place loosens step by step, and the trees on the yard are
+  taken out (a small friend who hid there is moved).
 
-- **The little railway.** Once the yard has its ring, the children want a ride, and Králíček výpravčí Špendlík, in a red cap with a signal paddle, waits on a staked-out platform beside the playground. Talk to him and press play: the trailer fetches one unit of goods from a works and you tip it into the playground's yellow ring. **Six loads build a railway round the whole playground**: a bed of gravel, sleepers and shining rails (with crossing signs where the track crosses the path), a little brick station with a clock and a platform, after which **the steam engine sets off on its own**, a bench, a lamp, a semaphore and the first wagon with two small passengers who wave to both sides, a tunnel through a green hill, and the second wagon with a string of flags. The engine puffs clouds of steam, slows down at the station, whistles ("Tuuut!") as it comes out of the tunnel and whenever the car drives up, and the train and the platform are full of waving animals. The track is flat, so the car drives over it; the station and the tunnel hill are solid. The finished railway pays 25 coins and earns a pet: **Výpravčí Píšťalka**, a tiny rabbit stationmaster with a red cap, a yellow neckerchief and a signal paddle, who waits on the platform until the railway is done and then trots behind the car like the other pets. As with the other goods trips, an empty works sends you for its raw material first.
-- **The zoo.** Beyond the playground the village has a construction site: red and white tape on pegs, a barrier across the future path, a counting sign, heaps of gravel, planks and bricks, a wheelbarrow, a cement mixer, a builders' hut and a little excavator whose arm digs. Medvěd ošetřovatel Bruno, in a safari hat with a bucket of fish, sends the trailer. **Every enclosure needs two loads of two different goods** (twelve in all): the first builds its fence and ground (a pool, a pond), the second brings the animals and their fittings. Penguins pace round an ice pool and flap their flippers, monkeys swing on a rope and hop on a climbing frame, an elephant raises her trunk and sprays water, a giraffe nods at her feeding tower and reaches for the basket, flamingos dip their necks in a pond beside a brick bridge, and a panda chews bamboo while her cub rolls over. Visitors stroll along the gravel path, and everyone hops when the car drives up. **When the last load is tipped out the site is cleared away and the gate with the panda and the giraffe opens.** The finished zoo pays 60 coins and earns a pet: **Pandička Bambulka**, a baby panda who trots behind the car. As with the other goods trips, an empty works sends you for its raw material first.
+- **The little railway.** Once the yard has its ring, the children want a ride, and Králíček výpravčí Špendlík, in a red
+  cap with a signal paddle, waits on a staked-out platform beside the playground. Talk to him and press play: the
+  trailer fetches one unit of goods from a works and you tip it into the playground's yellow ring. **Six loads build a
+  railway round the whole playground**: a bed of gravel, sleepers and shining rails (with crossing signs where the track
+  crosses the path), a little brick station with a clock and a platform, after which **the steam engine sets off on its
+  own**, a bench, a lamp, a semaphore and the first wagon with two small passengers who wave to both sides, a tunnel
+  through a green hill, and the second wagon with a string of flags. The engine puffs clouds of steam, slows down at the
+  station, whistles ("Tuuut!") as it comes out of the tunnel and whenever the car drives up, and the train and the
+  platform are full of waving animals. The track is flat, so the car drives over it; the station and the tunnel hill are
+  solid. The finished railway pays 25 coins and earns a pet: **Výpravčí Píšťalka**, a tiny rabbit stationmaster with a
+  red cap, a yellow neckerchief and a signal paddle, who waits on the platform until the railway is done and then trots
+  behind the car like the other pets. As with the other goods trips, an empty works sends you for its raw material
+  first.
+- **The zoo.** Beyond the playground the village has a construction site: red and white tape on pegs, a barrier across
+  the future path, a counting sign, heaps of gravel, planks and bricks, a wheelbarrow, a cement mixer, a builders' hut
+  and a little excavator whose arm digs. Medvěd ošetřovatel Bruno, in a safari hat with a bucket of fish, sends the
+  trailer. **Every enclosure needs two loads of two different goods** (twelve in all): the first builds its fence and
+  ground (a pool, a pond), the second brings the animals and their fittings. Penguins pace round an ice pool and flap
+  their flippers, monkeys swing on a rope and hop on a climbing frame, an elephant raises her trunk and sprays water, a
+  giraffe nods at her feeding tower and reaches for the basket, flamingos dip their necks in a pond beside a brick
+  bridge, and a panda chews bamboo while her cub rolls over. Visitors stroll along the gravel path, and everyone hops
+  when the car drives up. **When the last load is tipped out the site is cleared away and the gate with the panda and
+  the giraffe opens.** The finished zoo pays 60 coins and earns a pet: **Pandička Bambulka**, a baby panda who trots
+  behind the car. As with the other goods trips, an empty works sends you for its raw material first.
 
-- **The mayor and the decorations.** On the village square, off to the left beside the stalls, stands Liška starostka Božena in a flowered hat and a sash. Talk to her and she opens a shop of eight decorations for the town, each with a picture drawn by the same code that builds it: flower beds (10 coins), flagpoles by the garage (8), paper lanterns on strings (8), a golden bunny on a pedestal (25), a wishing well (15), a clock pillar (20), a decorated tree with lights (12) and a welcome arch over the entrance of the square (30). **A bought decoration appears in several places of the village at once**: the square, the front yards of the houses, the garage and the shops each get a copy, solid like the rest of the village, and it stays there in the save. Nothing is placed outside the ground that the square, the houses and the shops already reserve, so the trees and the characters do not move.
-- **The lamp maker.** Opposite the mayor on the village square stands Medvěd světlař Ignác in a leather apron, with a blowpipe in his paw and a worktable of his lamps beside him. Talk to him and pick one of two lamps, **a candle in a glass jar or a tall garden lamp with a pink glass shade**; they cost nothing and go into your bag (eight at most). Press **E, space or A** (the button you talk with) to put the next lamp down beside the car, anywhere on dry ground in the valley (up to thirty stand at a time), and press it again beside a standing lamp to **take it up again**; it is the same button as for everything else, and a character, a load or an envelope that is near comes first. The lamps are not solid, so the car can drive over them. By day the glass is clear and the flame is out; **at night every lamp lights up** with a warm glow, and the nearest few also light the ground. The bag and every standing lamp are saved. Ignác blows his lamps from the glasses of the glassworks (*Sklárna*), and his shop has a row for them: press play and the trailer fetches one unit of glasses from the glassworks (its worker asks the loading question), and you tip it into the yellow ring on the square between him and the fountain for 5 coins. He takes glasses again and again, whenever the glassworks has some, so the sand pit and the glassworks always have work; when the glassworks has none, the row shows the sand it needs and sends you for it first.
-- **The beaver's bridge.** Bóďa lives beside the river, at least 150 m from the main bridge. Roads lead down to the water on both banks. The bridge needs three loads of gravel for the piers and abutments, three of bricks for the ramps (one goes to the far bank over the main bridge), three of planks for the deck and a load of sand. The finished bridge is a shortcut across the river. The trailer then stays in the garage, where it can be hitched or unhitched and painted red or blue. A load slows the car slightly but never falls out.
-- **Village shops.** František the baker, Kamil the shopkeeper and Oliver the confectioner offer repeatable deliveries of bread, parcels and pastries. Answer a quiz, follow the road arrows and deliver the order to earn coins.
-- **Postcards.** The fountain square has an album with six illustrated clues. Near a roadside envelope, press E, Space or A to take a picture of the valley and the car while driving or stopped. Solve the card’s quiz to earn a stamp. Three stamps unlock the Valley Map garage sticker.
-- **Driving courses.** The Rainbow Gates (390 m) and Hay Bale Slalom (286 m) courses each have fourteen gates on outlying road loops, from a START gate to a CÍL gate. Repeat a course from the starting marker whenever you like. An active delivery stays loaded while driving a course.
-- **Racing the ghost.** Every course run is a race against a translucent ghost car. The clock starts when you pass the start gate, and the screen shows your time and whether you are ahead of or behind the ghost at each gate. At first the ghost drives at a gentle fixed pace. Beat it to earn 5 bonus coins and a record: from then on the ghost replays your own best run, saved with your progress. A slower run changes nothing, so the ghost never gets easier. The course signs show the time to beat.
-- **Forest bandits.** A group of three can run out from cover when the player drives past a suitable forest road. Solve three questions to send them back. After a short break, they can appear beside a different road. The encounter preserves any cargo on the car.
-- **Weather and wildlife.** The valley hosts 240 butterflies, birds, rabbits, foxes and deer. Animals move away from the car and eventually return to their home area. Weather cycles between clear skies, wind, rain and storms. The village witch offers weather selection: rain, wind, a storm, clear skies, and two that never come by themselves, a warm **evening** and a starry **night**. Tree trunks, branches, crowns, leaves and fruit bend together in wind.
-- **Wheat, flour, bread and the bakery.** A farm lies outside the village, a good drive from the houses but not far: Králíček sedlák Klásek, a red barn, a scarecrow, a heap of sacks and four fields of golden wheat that sway in the wind (the trees that stood there are gone). The wheat is ground at the windmill, so the farmer sends it only once the mill is finished: talk to him and press play, the trailer is loaded at the sacks (a counting question, or a word quiz) and the wheat is tipped on the mill's ring, where each load makes two sacks of flour that stand beside the mill (up to twelve). The miller then loads one sack of flour for the bakery (*Pekárna*, Králíček pekař Rohlík) at the edge of the village, where each load makes two loaves, shown on trays on the yard like the other goods (up to twelve). Once the mill grinds, František the baker sells this bread: an order takes its one to three loaves from the bakery, and when the bakery has too few his panel sends the player for flour from the mill, or for wheat when the mill has none. A finished house whose resident has received glasses asks once more for bread (a "breakfast"): fetch one loaf from the bakery on the trailer and tip it out in front of the house for 5 coins; with no bread it sends the player along the chain in the same way. Ten loads of wheat earn the pet Zrníčko, ten loads taken in by the bakery the bun Housánek. A valley without the room for both has neither; a valley that has the bakery but no mill takes the wheat straight to the bakery.
-- **Hide and seek in the valley.** Twenty-four small friends hide beside the roads: eight ladybugs on leaves, eight hedgehogs and eight frogs on lily pads. A yellow question mark grows over one when the car comes within about thirty metres; drive up close and it says "Pšt!", hops with a few hearts and a friend of the car says how many of that kind are found (`3/8`). The lookout tower lights the ones still hiding with orange beams. Finding all eight of a kind earns that animal as a pet, which waits around the witch until then: **Beruška Tečka**, **Ježek Bodlínek** and **Žabka Kvákalka**. The friends stand at the same places in every game of a valley and are saved by their numbers.
-- **Evening valley.** In the evening the sun sinks low and orange, the shadows grow long, the car turns on its headlights and the first fireflies drift over the meadows. At night the sky is dark blue with a moon and a few hundred stars, the fireflies blink between the trees, and the windows of every house whose resident has received glasses from the glassworks (and of every house a newcomer has moved into) shine yellow. The change takes a few seconds, lasts five minutes and then the day returns. On a starry night the stargazer lifts the look from the finished tower to the sky: halfway round he shows a picture made of stars joined by lines (a bunny, a car, a heart or a star) and says how many stars it has, so the child can count them.
-- **Firefly hunt (night).** On a starry night the witch has a panel of her own, and the hunt is switched on only there, with a green check mark of its own (the sun beside it leads on to the weather question as before): she lends a lantern that hangs on a pole over the car. A few fireflies blink over the open ground nearby; drive into one and it flies into the lantern, which shines brighter with every one. Ten fireflies light a new star of the child's collection in the night sky, the stars of the bunny, the car, the heart and the star pictures in turn, and the faint rings that mark the stars still to come show in her panel too. The hunt ends when the night does, and the number caught is saved.
+- **The mayor and the decorations.** On the village square, off to the left beside the stalls, stands Liška starostka
+  Božena in a flowered hat and a sash. Talk to her and she opens a shop of eight decorations for the town, each with a
+  picture drawn by the same code that builds it: flower beds (10 coins), flagpoles by the garage (8), paper lanterns on
+  strings (8), a golden bunny on a pedestal (25), a wishing well (15), a clock pillar (20), a decorated tree with lights
+  (12) and a welcome arch over the entrance of the square (30). **A bought decoration appears in several places of the
+  village at once**: the square, the front yards of the houses, the garage and the shops each get a copy, solid like the
+  rest of the village, and it stays there in the save. Nothing is placed outside the ground that the square, the houses
+  and the shops already reserve, so the trees and the characters do not move.
+- **The lamp maker.** Opposite the mayor on the village square stands Medvěd světlař Ignác in a leather apron, with a
+  blowpipe in his paw and a worktable of his lamps beside him. Talk to him and pick one of two lamps, **a candle in a
+  glass jar or a tall garden lamp with a pink glass shade**; they cost nothing and go into your bag (eight at most).
+  Press **E, space or A** (the button you talk with) to put the next lamp down beside the car, anywhere on dry ground in
+  the valley (up to thirty stand at a time), and press it again beside a standing lamp to **take it up again**; it is
+  the same button as for everything else, and a character, a load or an envelope that is near comes first. The lamps are
+  not solid, so the car can drive over them. By day the glass is clear and the flame is out; **at night every lamp
+  lights up** with a warm glow, and the nearest few also light the ground. The bag and every standing lamp are saved.
+  Ignác blows his lamps from the glasses of the glassworks (*Sklárna*), and his shop has a row for them: press play and
+  the trailer fetches one unit of glasses from the glassworks (its worker asks the loading question), and you tip it
+  into the yellow ring on the square between him and the fountain for 5 coins. He takes glasses again and again,
+  whenever the glassworks has some, so the sand pit and the glassworks always have work; when the glassworks has none,
+  the row shows the sand it needs and sends you for it first.
+- **The beaver's bridge.** Bóďa lives beside the river, at least 150 m from the main bridge. Roads lead down to the
+  water on both banks. The bridge needs three loads of gravel for the piers and abutments, three of bricks for the ramps
+  (one goes to the far bank over the main bridge), three of planks for the deck and a load of sand. The finished bridge
+  is a shortcut across the river. The trailer then stays in the garage, where it can be hitched or unhitched and painted
+  red or blue. A load slows the car slightly but never falls out.
+- **Village shops.** František the baker, Kamil the shopkeeper and Oliver the confectioner offer repeatable deliveries
+  of bread, parcels and pastries. Answer a quiz, follow the road arrows and deliver the order to earn coins.
+- **Postcards.** The fountain square has an album with six illustrated clues. Near a roadside envelope, press E, Space
+  or A to take a picture of the valley and the car while driving or stopped. Solve the card’s quiz to earn a stamp.
+  Three stamps unlock the Valley Map garage sticker.
+- **Driving courses.** The Rainbow Gates (390 m) and Hay Bale Slalom (286 m) courses each have fourteen gates on
+  outlying road loops, from a START gate to a CÍL gate. Repeat a course from the starting marker whenever you like. An
+  active delivery stays loaded while driving a course.
+- **Racing the ghost.** Every course run is a race against a translucent ghost car. The clock starts when you pass the
+  start gate, and the screen shows your time and whether you are ahead of or behind the ghost at each gate. At first the
+  ghost drives at a gentle fixed pace. Beat it to earn 5 bonus coins and a record: from then on the ghost replays your
+  own best run, saved with your progress. A slower run changes nothing, so the ghost never gets easier. The course signs
+  show the time to beat.
+- **Forest bandits.** A group of three can run out from cover when the player drives past a suitable forest road. Solve
+  three questions to send them back. After a short break, they can appear beside a different road. The encounter
+  preserves any cargo on the car.
+- **Weather and wildlife.** The valley hosts 240 butterflies, birds, rabbits, foxes and deer. Animals move away from the
+  car and eventually return to their home area. Weather cycles between clear skies, wind, rain and storms. The village
+  witch offers weather selection: rain, wind, a storm, clear skies, and two that never come by themselves, a warm
+  **evening** and a starry **night**. Tree trunks, branches, crowns, leaves and fruit bend together in wind.
+- **Wheat, flour, bread and the bakery.** A farm lies outside the village, a good drive from the houses but not far:
+  Králíček sedlák Klásek, a red barn, a scarecrow, a heap of sacks and four fields of golden wheat that sway in the wind
+  (the trees that stood there are gone). The wheat is ground at the windmill, so the farmer sends it only once the mill
+  is finished: talk to him and press play, the trailer is loaded at the sacks (a counting question, or a word quiz) and
+  the wheat is tipped on the mill's ring, where each load makes two sacks of flour that stand beside the mill (up to
+  twelve). The miller then loads one sack of flour for the bakery (*Pekárna*, Králíček pekař Rohlík) at the edge of the
+  village, where each load makes two loaves, shown on trays on the yard like the other goods (up to twelve). Once the
+  mill grinds, František the baker sells this bread: an order takes its one to three loaves from the bakery, and when
+  the bakery has too few his panel sends the player for flour from the mill, or for wheat when the mill has none. A
+  finished house whose resident has received glasses asks once more for bread (a "breakfast"): fetch one loaf from the
+  bakery on the trailer and tip it out in front of the house for 5 coins; with no bread it sends the player along the
+  chain in the same way. Ten loads of wheat earn the pet Zrníčko, ten loads taken in by the bakery the bun Housánek. A
+  valley without the room for both has neither; a valley that has the bakery but no mill takes the wheat straight to the
+  bakery.
+- **Hide and seek in the valley.** Twenty-four small friends hide beside the roads: eight ladybugs on leaves, eight
+  hedgehogs and eight frogs on lily pads. A yellow question mark grows over one when the car comes within about thirty
+  metres; drive up close and it says "Pšt!", hops with a few hearts and a friend of the car says how many of that kind
+  are found (`3/8`). The lookout tower lights the ones still hiding with orange beams. Finding all eight of a kind earns
+  that animal as a pet, which waits around the witch until then: **Beruška Tečka**, **Ježek Bodlínek** and **Žabka
+  Kvákalka**. The friends stand at the same places in every game of a valley and are saved by their numbers.
+- **Evening valley.** In the evening the sun sinks low and orange, the shadows grow long, the car turns on its
+  headlights and the first fireflies drift over the meadows. At night the sky is dark blue with a moon and a few hundred
+  stars, the fireflies blink between the trees, and the windows of every house whose resident has received glasses from
+  the glassworks (and of every house a newcomer has moved into) shine yellow. The change takes a few seconds, lasts five
+  minutes and then the day returns. On a starry night the stargazer lifts the look from the finished tower to the sky:
+  halfway round he shows a picture made of stars joined by lines (a bunny, a car, a heart or a star) and says how many
+  stars it has, so the child can count them.
+- **Firefly hunt (night).** On a starry night the witch has a panel of her own, and the hunt is switched on only there,
+  with a green check mark of its own (the sun beside it leads on to the weather question as before): she lends a lantern
+  that hangs on a pole over the car. A few fireflies blink over the open ground nearby; drive into one and it flies into
+  the lantern, which shines brighter with every one. Ten fireflies light a new star of the child's collection in the
+  night sky, the stars of the bunny, the car, the heart and the star pictures in turn, and the faint rings that mark the
+  stars still to come show in her panel too. The hunt ends when the night does, and the number caught is saved.
 
-Only one delivery, collection or trailer trip is active at a time: accepting a new task switches off the current one. The trailer is lent for a trip and unhitched afterwards, unless you hitch it for a parade in the garage. The car leaves fading tyre tracks and bends meadow grass as it passes. The river stops the car at the water, and the wooden bridge connects the banks. There are no task timers or game-over conditions; the only clock is the optional ghost race on the driving courses.
+Only one delivery, collection or trailer trip is active at a time: accepting a new task switches off the current one.
+The trailer is lent for a trip and unhitched afterwards, unless you hitch it for a parade in the garage. The car leaves
+fading tyre tracks and bends meadow grass as it passes. The river stops the car at the water, and the wooden bridge
+connects the banks. There are no task timers or game-over conditions; the only clock is the optional ghost race on the
+driving courses.
 
 ## Saved progress and world generation
 
-A new game creates a random seed for the valley. Roads, bridge position, woods, village plots and task locations vary with the seed. Every seed gets the beaver's bridge with its sources, the log yard and all three works: if the strict placement rules leave no room, the search relaxes them step by step. Continuing recreates the same map. The title screen and console display the seed.
+A new game creates a random seed for the valley. Roads, bridge position, woods, village plots and task locations vary
+with the seed. Every seed gets the beaver's bridge with its sources, the log yard and all three works: if the strict
+placement rules leave no room, the search relaxes them step by step. Continuing recreates the same map. The title screen
+and console display the seed.
 
-Autosaves store the car position, garage choices, coins, pending questions, collected syllables, cosmetics, companions, bandit encounters, postcards, ghost records and a running course clock, expedition cargo, building progress, the six building plots, the playground, the railway, the zoo, the decorations bought from the mayor, the glass lamps in the bag and on the ground, the trailer and the stock of every works. Starting a new game replaces the previous valley. On Windows the save is usually `%APPDATA%/Godot/app_userdata/MathRacer – Kouzelné údolí/progress.json`. The game writes it atomically and falls back to the previous `.bak` file if the primary save is damaged.
+Autosaves store the car position, garage choices, coins, pending questions, collected syllables, cosmetics, companions,
+bandit encounters, postcards, ghost records and a running course clock, expedition cargo, building progress, the six
+building plots, the playground, the railway, the zoo, the decorations bought from the mayor, the glass lamps in the bag
+and on the ground, the trailer and the stock of every works. Starting a new game replaces the previous valley. On
+Windows the save is usually `%APPDATA%/Godot/app_userdata/MathRacer – Kouzelné údolí/progress.json`. The game writes it
+atomically and falls back to the previous `.bak` file if the primary save is damaged.
 
-Pass `--seed=NUMBER` after Godot’s `--` separator to reproduce a valley during development. Explicit seeds, diagnostic checks, captures and `--no-save` bypass the player’s save.
+Pass `--seed=NUMBER` after Godot’s `--` separator to reproduce a valley during development. Explicit seeds, diagnostic
+checks, captures and `--no-save` bypass the player’s save.
 
 ## Development and previews
 
-`./build.ps1 -Test` runs gameplay, save, world generation, course, physics and simulated controller checks in parallel Godot processes: one per logical processor, at most sixteen. Road driving runs one process per route, and scenarios start roughly longest first. Use `-TestJobs 1` to run them in sequence or set a different concurrency limit with `-TestJobs`. Each scenario keeps its log and any test saves in its own folder under `artifacts/game-tests/`. `./test.ps1` runs the same checks in parallel without rebuilding and takes the suites to run and the seeds: `./test.ps1 -List`, `./test.ps1 -Suite ford-checks, works-checks`, `./test.ps1 -Suite track-checks -Seeds (1..40)`, `./test.ps1 -Build -Suite save`. The road audits verify connected loops, gradients and bridge clearance. The road-driving tests drive routes in both directions using the car physics.
+`./build.ps1 -Test` runs gameplay, save, world generation, course, physics and simulated controller checks in parallel
+Godot processes: one per logical processor, at most sixteen. Road driving runs one process per route, and scenarios
+start roughly longest first. Use `-TestJobs 1` to run them in sequence or set a different concurrency limit with
+`-TestJobs`. Each scenario keeps its log and any test saves in its own folder under `artifacts/game-tests/`.
+`./test.ps1` runs the same checks in parallel without rebuilding and takes the suites to run and the seeds: `./test.ps1
+-List`, `./test.ps1 -Suite ford-checks, works-checks`, `./test.ps1 -Suite track-checks -Seeds (1..40)`, `./test.ps1
+-Build -Suite save`. The road audits verify connected loops, gradients and bridge clearance. The road-driving tests
+drive routes in both directions using the car physics.
 
-C# code is formatted with [CSharpier](https://csharpier.com/), pinned in `dotnet-tools.json` and configured in `.csharpierrc.json` (120-character lines). Run `dotnet tool restore` once, then `dotnet csharpier format Scripts` before committing; `dotnet csharpier check Scripts` reports unformatted files.
+C# code is formatted with [CSharpier](https://csharpier.com/), pinned in `dotnet-tools.json` and configured in
+`.csharpierrc.json` (120-character lines). Run `dotnet tool restore` once, then `dotnet csharpier format Scripts` before
+committing; `dotnet csharpier check Scripts` reports unformatted files.
 
-`./run.ps1 -Capture -View reading` writes `artifacts/reading.png`. Other useful views include `wheat-farm`, `wheat-farm-far`, `pekarna`, `hidden-ladybug`, `hidden-hedgehog`, `hidden-frog`, `hidden-near`, `hidden-pets`, `village-evening`, `village-night`, `evening-drive`, `night-drive`, `constellation`, `weather-choice`, `syllables`, `letters`, `challenge-2`, `garage`, `task-choice`, `delivery`, `square`, `slalom`, `museum-full`, `toys-full`, `garden-full`, `farm-full`, `ford-0`, `ford-3`, `ford-6`, `bridge-roads`, `quarry`, `log-yard`, `mill-4`, `mill-10`, `tower-7`, `tower-10`, `jetty-6`, `jetty-10`, `playground-3`, `playground-6`, `railway-0`, `railway-3`, `railway-6`, `railway-close`, `railway-pet`, `zoo-0`, `zoo-1`, `zoo-6`, `zoo-12`, `zoo-close`, `zoo-pet`, `mayor`, `mayor-shop`, `mayor-town`, `mayor-house`, `glass`, `glass-shop`, `glass-night`, `glass-close`, `sawmill`, `brickworks`, `gravel-works`, `works-full`, `works-panel`, `trailer`, `beaver`, `load-question`, `wildlife`, `tree-impact`, `tree-wind`, `vegetation-detail` and `grass`.
+`./run.ps1 -Capture -View reading` writes `artifacts/reading.png`. Other useful views include `wheat-farm`,
+`wheat-farm-far`, `pekarna`, `hidden-ladybug`, `hidden-hedgehog`, `hidden-frog`, `hidden-near`, `hidden-pets`,
+`village-evening`, `village-night`, `evening-drive`, `night-drive`, `constellation`, `weather-choice`, `syllables`,
+`letters`, `challenge-2`, `garage`, `task-choice`, `delivery`, `square`, `slalom`, `museum-full`, `toys-full`,
+`garden-full`, `farm-full`, `ford-0`, `ford-3`, `ford-6`, `bridge-roads`, `quarry`, `log-yard`, `mill-4`, `mill-10`,
+`tower-7`, `tower-10`, `jetty-6`, `jetty-10`, `playground-3`, `playground-6`, `railway-0`, `railway-3`, `railway-6`,
+`railway-close`, `railway-pet`, `zoo-0`, `zoo-1`, `zoo-6`, `zoo-12`, `zoo-close`, `zoo-pet`, `mayor`, `mayor-shop`,
+`mayor-town`, `mayor-house`, `glass`, `glass-shop`, `glass-night`, `glass-close`, `sawmill`, `brickworks`,
+`gravel-works`, `works-full`, `works-panel`, `trailer`, `beaver`, `load-question`, `wildlife`, `tree-impact`,
+`tree-wind`, `vegetation-detail` and `grass`.
 
-The meshes, pictures and environments are generated in code. See the [architecture guide](docs/ARCHITECTURE.md), [algorithms](docs/ALGORITHMS.md) and [validation notes](docs/VALIDATION.md) for implementation details and recorded checks.
+The meshes, pictures and environments are generated in code. See the [architecture guide](docs/ARCHITECTURE.md),
+[algorithms](docs/ALGORITHMS.md) and [validation notes](docs/VALIDATION.md) for implementation details and recorded
+checks.
 
-When a Czech system voice is available, the game reads short instructions, highlighted menu choices and some activity announcements aloud. Syllable tiles stay silent. The camera clears the ground, while buildings can still block its view. The 1080p performance target and the simplified prompts still need real player testing.
+When a Czech system voice is available, the game reads short instructions, highlighted menu choices and some activity
+announcements aloud. Syllable tiles stay silent. The camera clears the ground, while buildings can still block its view.
+The 1080p performance target and the simplified prompts still need real player testing.

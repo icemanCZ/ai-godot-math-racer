@@ -47,7 +47,7 @@ public partial class GameUi
         foreach (var bird in birds)
             if (bird.Seen)
                 seen++;
-        telescope.AccessibilityName = Texts.FerryTelescopeSeen(seen, birds.Length);
+        telescope.AccessibilityName = OutlandTexts.FerryTelescopeSeen(seen, birds.Length);
     }
 
     /// <summary>Whether the view through the telescope shows, for the checks.</summary>
@@ -56,7 +56,7 @@ public partial class GameUi
     internal void BirdwatcherHint()
     {
         talkButton.Visible = !modal.Visible;
-        talkButton.Text = (controller ? "A · " : "E · ") + Texts.BirdwatcherHint;
+        talkButton.Text = (controller ? "A · " : "E · ") + OutlandTexts.BirdwatcherHint;
     }
 
     /// <summary>
@@ -152,19 +152,24 @@ public partial class GameUi
             first = AcceptButton(
                 () => Send(new UiIntent.FerryTelescope()),
                 "Telescope",
-                Texts.FerryTelescopeButton,
+                OutlandTexts.FerryTelescopeButton,
                 buttons
             );
             var home = Button("", () => Send(new UiIntent.FerryHome()), buttons);
             home.Name = "FerryHome";
             home.CustomMinimumSize = new(150, 76);
-            home.AccessibilityName = Texts.FerryHomeButton;
+            home.AccessibilityName = OutlandTexts.FerryHomeButton;
             var punt = new BirdPicture { Kind = BirdPicture.Punt, MouseFilter = Control.MouseFilterEnum.Ignore };
             home.AddChild(punt);
             punt.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         }
         else if (canSail)
-            first = AcceptButton(() => Send(new UiIntent.FerryStart()), "FerrySail", Texts.FerrySailButton, buttons);
+            first = AcceptButton(
+                () => Send(new UiIntent.FerryStart()),
+                "FerrySail",
+                OutlandTexts.FerrySailButton,
+                buttons
+            );
         var close = BackButton(parent: buttons);
         (first ?? close).GrabFocus();
     }

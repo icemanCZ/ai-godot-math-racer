@@ -99,7 +99,8 @@ public partial class GameUi
         bool pointing = target != Vector3.Zero;
         shellsArrow.Modulate = pointing ? Colors.White : new Color(1, 1, 1, .25f);
         shellsDistance.Text = distance;
-        shellsHud.AccessibilityName = $"{Texts.ShellsHud}. {distance}. {Texts.ShellsKinds(found, ShellPlans.Kinds)}";
+        shellsHud.AccessibilityName =
+            $"{OutlandTexts.ShellsHud}. {distance}. {OutlandTexts.ShellsKinds(found, ShellPlans.Kinds)}";
         var camera = GetViewport().GetCamera3D();
         if (camera == null || !pointing)
             return;

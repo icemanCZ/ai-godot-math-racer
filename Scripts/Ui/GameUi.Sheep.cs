@@ -153,8 +153,9 @@ public partial class GameUi
         sheepDistance.Text = distance;
         sheepNote.Text = note;
         sheepNote.Visible = note != "";
-        string behind = Texts.SheepBehind(following);
-        string count = behind == "" ? Texts.SheepHome(home, all) : $"{behind} · {Texts.SheepHome(home, all)}";
+        string behind = OutlandTexts.SheepBehind(following);
+        string count =
+            behind == "" ? OutlandTexts.SheepHome(home, all) : $"{behind} · {OutlandTexts.SheepHome(home, all)}";
         sheepHud.AccessibilityName = $"{count}. {note}";
         var camera = GetViewport().GetCamera3D();
         if (camera == null)
@@ -248,14 +249,14 @@ public partial class GameUi
         KeeperStamps(stamps);
         if (!started)
         {
-            var go = AcceptButton(() => Send(new UiIntent.SheepStart()), "StartSheep", Texts.SheepStart);
+            var go = AcceptButton(() => Send(new UiIntent.SheepStart()), "StartSheep", OutlandTexts.SheepStart);
             go.GrabFocus();
             BackButton();
             return;
         }
         if (following > 0)
         {
-            var pen = AcceptButton(() => Send(new UiIntent.SheepPen()), "PenSheep", Texts.SheepPenButton);
+            var pen = AcceptButton(() => Send(new UiIntent.SheepPen()), "PenSheep", OutlandTexts.SheepPenButton);
             pen.GrabFocus();
             BackButton();
             return;

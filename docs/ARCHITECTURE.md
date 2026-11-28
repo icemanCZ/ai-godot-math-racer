@@ -13,21 +13,26 @@ clashes with a type. A class that is written in several files (`Game`, `GameUi`,
 `Diagnostics/Game.Diagnostics.cs` is a part of `Game` and so is in `MathRacer.App`, which is why it can be left out of
 the release build together with its folder.
 
-| Folder (namespace `MathRacer.<folder>`) | What lives there |
-| --- | --- |
-| `App` | `Game` and every `Game.*.cs`, `Texts`, `Interaction`, `GameControls`, `Settings`, `LaunchOptions`, `GameState` |
-| `Ui` | `GameUi` and every `GameUi.*.cs`, `UiIntent`, `DeliveryPicture`, `TaskMarker` |
-| `Graphics` | `Art` (procedural meshes and icons), `Obstacles` (collision helpers), `Celebration`, `DistantDetails` (visibility ranges of small meshes, no shadow below half a metre), `StaticMeshes` (merges the village's plain parts per parent and look) |
-| `Quizzes` | `IChallenge` and the generators of the five kinds of question (`Mathematics`: arithmetic and comparing numbers; `Letters`), `QuizType`, `QuizSession` |
-| `Saves` | `SaveData` and its sections, `SaveDataV4`, `SaveRules`, `SaveMigrations`, `SaveStore`, `PostcardProgress` |
-| `Valley` | `World` and every `World.*.cs`, the terrain, roads, river, vegetation, grass, weather, wildlife |
-| `Settlement` | `Village` and every `Village.*.cs`, `HousePlot`, `PlotPlans` |
-| `Buildings` | `BuildProject`, `BuildPlans`, the mill, the tower, the jetty, the ford, the boat, the works |
-| `Tasks` | `HaulTrip`, `ITripTarget`, `Expedition`, `RouteGuide`, `TaskSlot`, `DrivingEvents` |
-| `Vehicles` | `Vehicle`, `VehicleModel`, `FollowCamera`, `WheelTracks`, `Trailer` |
-| `Garage` | the car items and looks (`Customization` of old), `CarRewards`, `Economy` |
-| `Characters` | `Character`, the roles, `ActorIds`, `CharacterCatalog`, the companions and the golem |
-| `Diagnostics` | the headless checks, the capture views and `DiagnosticSuites` |
+What lives in each folder (namespace `MathRacer.<folder>`):
+
+- `App`: `Game` and every `Game.*.cs`, `Texts`, `OutlandTexts`, `Interaction`, `GameControls`, `Settings`,
+  `LaunchOptions`, `GameState`
+- `Ui`: `GameUi` and every `GameUi.*.cs`, `UiIntent`, `DeliveryPicture`, `TaskMarker`
+- `Graphics`: `Art` (procedural meshes and icons), `Obstacles` (collision helpers), `Celebration`, `DistantDetails`
+  (visibility ranges of small meshes, no shadow below half a metre), `StaticMeshes` (merges the village's plain parts
+  per parent and look)
+- `Quizzes`: `IChallenge` and the generators of the five kinds of question (`Mathematics`: arithmetic and comparing
+  numbers; `Letters`), `QuizType`, `QuizSession`
+- `Saves`: `SaveData` and its sections, `SaveDataV4`, `SaveRules`, `TripRules`, `OutlandRules`, `SaveMigrations`,
+  `SaveStore`, `PostcardProgress`
+- `Valley`: `World` and every `World.*.cs`, the terrain, roads, river, vegetation, grass, weather, wildlife
+- `Settlement`: `Village` and every `Village.*.cs`, `HousePlot`, `PlotPlans`
+- `Buildings`: `BuildProject`, `BuildPlans`, the mill, the tower, the jetty, the ford, the boat, the works
+- `Tasks`: `HaulTrip`, `ITripTarget`, `Expedition`, `RouteGuide`, `TaskSlot`, `DrivingEvents`
+- `Vehicles`: `Vehicle`, `VehicleModel`, `FollowCamera`, `WheelTracks`, `Trailer`
+- `Garage`: the car items and looks (`Customization` of old), `CarRewards`, `Economy`
+- `Characters`: `Character`, the roles, `ActorIds`, `CharacterCatalog`, the companions and the golem
+- `Diagnostics`: the headless checks, the capture views and `DiagnosticSuites`
 
 The namespaces depend on one another in both directions (every one of them can reach every other), mostly because
 `Settings`, `GameState` and the constants of `Game` live in `App`. `docs/REFACTORING_PLAN.md` lists what a first step
@@ -84,7 +89,9 @@ like the strip of a rally stage with its gates and the car (`RallyStrip`).
 ### `Texts`
 
 The fixed Czech texts of `Game*.cs` and `GameUi*.cs` as constants (names made from the text without diacritics). Texts
-with values inside are methods (`Texts.NewPet(name)`). The texts of data tables (`CharacterCatalog`, `Works`,
+with values inside are methods (`Texts.NewPet(name)`). The texts of what lies beyond the old valley (the post, the
+lighthouse, the dragon, the balloon, the tracks, the sheep, the rally, the map, the shells, the ferry, the castle and
+the great railway) are in `OutlandTexts`, made the same way. The texts of data tables (`CharacterCatalog`, `Works`,
 `Village.*`, the word lists of the questions) stay next to the colours and numbers of their entry.
 
 ### `World`, `WorldLayout` and `Village`
@@ -296,7 +303,8 @@ the whole area (`ZooFootprintFits`: water, houses, roads, steep ground, friends)
 (`AreaIsFree`, which `YardIsFree` now shares). The keeper is registered last, after the stationmaster. `ZooPlans` lists
 twelve loads of goods: **every one of the six enclosures needs two deliveries of two different goods**
 (`ZooPlans.PenOf`); the first builds its fence and ground (`stages[2 * pen]`), the second brings the animals and their
-fittings (`stages[2 * pen + 1]`). `Zoo` is scene-only: it begins as a construction site (`marks`: tape, barrier,
+fittings (`stages[2 * pen + 1]`); `ZooPens` builds the enclosures and their animals into those stages. `Zoo` is
+scene-only: it begins as a construction site (`marks`: tape, barrier,
 counting sign, heaps, mixer, hut and a digging excavator) that is cleared with the last delivery, when the gate (`gate`)
 appears. Every animal is a `Beast` (home, pacing, an `Animate` callback that moves its parts: waddling penguins, a
 swinging monkey, an elephant whose spray is a pool of twelve drops, a nodding giraffe, flamingos that dip their necks, a
@@ -641,18 +649,18 @@ raise the landing's deck, the pier's piles and boards and the punt; a valley wit
 finished from the start (`World.FerryBuildable`). `BirdIsland` is the island's mesh with its collision, the pier, the
 hide with its telescope, the reeds and the eight birds' models (`Lay`, `HeadOf`, `Cheer`). The heron Klárka
 (`BirdwatcherRole`, `ActorIds.Birdwatcher`) opens the panel `GameState.FerryStatus` (`GameUi.BirdwatcherPanel`) in one
-of three modes: the loads still to bring, the atlas with the crossing, or the island's telescope and punt home. A crossing
-(`Departure.FerrySail`, then `Game.BeginCrossing`) carries the car (`Vehicle.Carry`) and the heron on the punt along the
-way while the camera rides behind (`FollowCamera.Ride`); the pedals cut it short. On the island `World.IslandOpen` lets
-`World.SeaDepth` allow the car on the island only. The telescope (`FollowCamera.ShowTelescope`, `SteerPanorama`) is
-turned by the steering or the mouse; the system `ferry` (`Game.TickFerry`) writes a bird kept within
+of three modes: the loads still to bring, the atlas with the crossing, or the island's telescope and punt home. A
+crossing (`Departure.FerrySail`, then `Game.BeginCrossing`) carries the car (`Vehicle.Carry`) and the heron on the punt
+along the way while the camera rides behind (`FollowCamera.Ride`); the pedals cut it short. On the island
+`World.IslandOpen` lets `World.SeaDepth` allow the car on the island only. The telescope (`FollowCamera.ShowTelescope`,
+`SteerPanorama`) is turned by the steering or the mouse; the system `ferry` (`Game.TickFerry`) writes a bird kept within
 `FerryPlans.SpotAngle` of the middle for `SpotSeconds` into `FerryLog` with its coins, more for the first of a kind, and
 the full atlas brings the kingfisher (`CollectorPetKind.Kingfisher`). `TelescopeOverlay` draws the lens, the filling
 ring, the arrow to the nearest bird still hidden and the birds of the crossing (`BirdPicture`). Saved as
 `SaveData.Ferry` (`Stage`, `Visit`, `Spotted`, `Kinds`; rule `HasInvalidFerry`); a crossing and a stay on the island are
-not, so such a save puts the car back at the landing (`Game.CarPoseToSave`). Checked by `ferry-checks`;
-`run.ps1 -Capture` shows it with the views `ferry`, `ferry-0`, `ferry-2`, `ferry-panel`, `ferry-ride`, `ferry-island`
-and `ferry-telescope`.
+not, so such a save puts the car back at the landing (`Game.CarPoseToSave`). Checked by `ferry-checks`; `run.ps1
+-Capture` shows it with the views `ferry`, `ferry-0`, `ferry-2`, `ferry-panel`, `ferry-ride`, `ferry-island` and
+`ferry-telescope`.
 
 ### `Castle`, `BeaconTower`, `CastleGuestTrip`, `CastlePlans`, `World.Castle` and `Game.Castle`
 
@@ -675,8 +683,8 @@ towers, the gatehouse, the drawbridge on its hinge, the palace, the keep, the ro
 with seven chairs, and the lanterns. Until it is finished a building site stands before it (the stakes of the plan, a
 treadwheel crane with a squirrel, heaps of stone and a sign with the count). Its tick (`Game.TickCastle`, system
 `castle`) turns the wheel, waves the flags, lowers the drawbridge while the car is near the gate or inside, lights the
-lanterns at night, burns the great fire on the keep (`KeepFire`) and sends up fireworks (`Fireworks`, three pooled
-bursts).
+lanterns at night, burns the great fire on the keep (`KeepFire`) and sends up fireworks (`Fireworks`;
+`CastleFireworks` keeps the three pooled bursts).
 
 `Castle` is the `ITripTarget` of sixteen deliveries (`TripKinds.Castle`, `CastlePlans.CargoOf`). Its four loads of stone
 come from the coast quarry and the mountain slope in turn (`StoneSource`, `ITripTarget.SourceFor`), whose loading
@@ -694,7 +702,7 @@ Lvice kněžna Libuše (`CastleRole`, `ActorIds.Castellan` 84, registered after 
 stops and the driving courses) opens the panel `GameState.CastleStatus` (`GameUi.CastlePanel`). Its four modes are the
 loads, the beacons by their borders, the guests' portraits with the ghost, and the feast held. One green check mark
 (`UiIntent.CastleStart`, `Departure.Castle`) sends the trailer for whatever comes next. The castle is saved as
-`SaveData.Castle` (`Stage`, `Beacons`, `Guests`, `Feast`; rule `HasInvalidCastle`). `SaveRules.AsksAsGuest` lets a
+`SaveData.Castle` (`Stage`, `Beacons`, `Guests`, `Feast`; rule `HasInvalidCastle`). `OutlandRules.AsksAsGuest` lets a
 guest's question at home be saved. Checked by `castle-checks`; `run.ps1 -Capture` shows it with the views `castle-0`,
 `castle-4`, `castle-8`, `castle-12`, `castle`, `castle-close`, `castle-night`, `castle-panel`, `castle-guests`,
 `castle-far` and `beacon`.
@@ -832,7 +840,7 @@ wheat is a trip of its own kind (`TripKinds.Mill`, index 0, only once the mill i
 (`TripKinds.Supply`, index 4) and asks its loading question, and `Game.CompleteHaulLoading` takes the sack.
 `Works.Input` is the spec's input except at the bakery of a valley without the mill, which takes the wheat itself. A
 supply trip of the bakery from a save made before the mill may hold the farmer's question about wheat:
-`SaveRules.ActiveTripAsker` accepts it and the farmer still loads the trailer. Once the mill grinds, the baker of the
+`TripRules.ActiveTripAsker` accepts it and the farmer still loads the trailer. Once the mill grinds, the baker of the
 village shop (`TraderRole` 0, `Game.BakesFromBakery`) takes `Expedition.OrderAmount` loaves from the bakery when his
 order sets off (`Game.StartTrade`); without enough bread `GameState.TradeStatus` shows `GameUi.BakerNeedsBread` and
 `Departure.Missing` from that state sends the player for what `Game.BreadSupply` names (flour, else wheat). The bakery
@@ -930,18 +938,35 @@ game (`Vehicle`, `Economy`, `Quiz`, `Task`, `Roadside`, `Village`, `Buildings`, 
 `Bandits`), each plain data with defaults, so a file that leaves a section out still loads. `SaveStore` reads and writes
 the file, falls back to the backup and sets aside copies of what the game could lose (`progress.vN.bak`,
 `progress.nenacteno-HASH.json`). `SaveRules.All` lists what a save must satisfy, one rule for each part, and `Validate`
-runs them. `SaveMigrations` moves an older file forward: a file of versions 1 to 4 is read into the flat `SaveDataV4`,
-which is never changed, goes through the steps to version 4 (one question field, coins instead of car rewards, ten
-deliveries for each building, one `Trip`) and `ToCurrent` moves it into the sections; `Repair` and `AfterValidation`
-mend what any version left behind (a damaged ghost record, a house whose task changed, the album that grew, the ten
-roadside friends). `Game.Persistence.cs` captures and restores the sections. Saved state that is new is a new section,
-its rule in `SaveRules.All` and its capture and restore; `SaveStore` does not change. Existing numeric `GameState`
-values and actor IDs are part of the JSON format.
+runs them. The rules of the trailer trip under way, the character asking about it, the works and the hauls are in
+`TripRules`, those of what lies beyond the old valley in `OutlandRules`; `SaveRules.All` names them all.
+`SaveMigrations` moves an older file forward: a file of versions 1 to 4 is read into the flat `SaveDataV4`, which is
+never changed, goes through the steps to version 4 (one question field, coins instead of car rewards, ten deliveries for
+each building, one `Trip`) and `ToCurrent` moves it into the sections; `Repair` and `AfterValidation` mend what any
+version left behind (a damaged ghost record, a house whose task changed, the album that grew, the ten roadside friends).
+`Game.Persistence.cs` captures and restores the sections. Saved state that is new is a new section, its rule in
+`SaveRules.All` and its capture and restore; `SaveStore` does not change. Existing numeric `GameState` values and actor
+IDs are part of the JSON format.
 
 ### `Scripts/Diagnostics`
 
 Launch headless checks, prepare screenshot views and exercise game entry points. `Game` reaches them only through
-`partial` hooks, and release exports (`ExportRelease`) leave the folder out of the build.
+`partial` hooks, and release exports (`ExportRelease`) leave the folder out of the build. A captured view is staged by
+`Game.PrepareCapture` (`Game.Diagnostics.cs`), which leaves the buildings of the valley to `SiteCaptures`, and framed by
+`VisualCapture`, which leaves what lies beyond the old valley to `OutlandFraming`; `CaptureViews` reads the views whose
+name carries a number or a model (`mill-5`, `plot-2-3`, `plane-rear`).
+
+### `RepoChecks`
+
+`--repo-checks` checks the files of the checkout, not the game, before any valley is generated: the rules of `CLAUDE.md`
+that nothing else would notice being broken. It runs `dotnet csharpier check Scripts`, reads every Markdown file that
+git lists (committed or new, not ignored) for lines longer than `RepoChecks.Columns` (120; a line that is one word, such
+as a long link, may be longer), counts the lines of every C# file of `Scripts` (at most `RepoChecks.MaxLines`, 1000),
+wants a `**Stav:**` line in each `docs/*_PLAN.md` and its link in `docs/PLANS.md`, and asks git whether any commit, the
+index or the working tree changed, deleted or renamed a file of `Tests/Saves` or `Tests/Worlds` (only added files are
+allowed). Every failure says how to put it right. It needs `git` and `dotnet` on the path and a git checkout. The hooks
+in `.claude/hooks` stop the same mistakes earlier, while Claude Code is editing; the check also catches what a person or
+a tool did.
 
 ## Start and game state
 

@@ -1,5 +1,7 @@
 # Rallye převoznice Venduly
 
+**Stav:** hotovo (`9b3b4a0`, 27. 11. 2026).
+
 Další obsah pro velkou mapu, po ovečkách pastýře Bohouše (`docs/SHEEP_PLAN.md`). Okruh kolem starého údolí měří přes
 pět a půl kilometru. Auto po něm zatím jen projíždělo k něčemu jinému. Rallye z okruhu dělá závodní trať a ptá se při
 plné jízdě.

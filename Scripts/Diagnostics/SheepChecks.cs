@@ -269,7 +269,10 @@ public partial class SheepChecks : Node
             Check(!shepherd.Guided, "and his mark goes out");
             Frames(1);
             Check(Enumerable.Range(0, 8).All(flock!.Shows), "every sheep grazes on its meadow");
-            Check(game.SheepHudShown && game.SheepHudNote == Texts.SheepListen, "the corner panel points to a sheep");
+            Check(
+                game.SheepHudShown && game.SheepHudNote == OutlandTexts.SheepListen,
+                "the corner panel points to a sheep"
+            );
 
             // ---- Finding a sheep ----
             int first = herd.Nearest(SheepStatus.Lost, car.Position);
@@ -306,14 +309,14 @@ public partial class SheepChecks : Node
             for (int i = 0; i < 90 && herd.StatusOf(first) == SheepStatus.Following; i++)
             {
                 Drive(inward, 25, 1);
-                warned |= game.SheepHudNote == Texts.SheepSlowDown;
+                warned |= game.SheepHudNote == OutlandTexts.SheepSlowDown;
             }
             Check(warned, "a fast drive makes the corner panel ask for a slower one");
             Check(herd.StatusOf(first) == SheepStatus.Waiting, "the sheep left far behind stops and waits");
             Frames(2);
             Check(flock.Beckons(first), "it shows its beacon");
             Check(
-                game.SheepHudNote == Texts.SheepGoBack(SheepPlans.Name(first)),
+                game.SheepHudNote == OutlandTexts.SheepGoBack(SheepPlans.Name(first)),
                 "the corner panel sends the car back"
             );
             RoundTrip("a sheep left behind");
@@ -369,7 +372,7 @@ public partial class SheepChecks : Node
             Frames(1);
             Check(herd.StatusOf(last) == SheepStatus.Following, "the last sheep follows the car");
             Frames(2);
-            Check(game.SheepHudShown && game.SheepHudNote == Texts.SheepTakeHome, "and the arrow points home");
+            Check(game.SheepHudShown && game.SheepHudNote == OutlandTexts.SheepTakeHome, "and the arrow points home");
             Pose(gate, home.Inward);
             Frames(3);
             coins = game.Coins;

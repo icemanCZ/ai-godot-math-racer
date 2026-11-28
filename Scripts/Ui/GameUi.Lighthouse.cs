@@ -27,12 +27,12 @@ public partial class GameUi
         StatusPicture("lighthouse");
         if (stage >= LighthousePlans.Trips)
         {
-            Text(Texts.LighthouseShining, 20);
+            Text(OutlandTexts.LighthouseShining, 20);
             KeeperStamps(stamps);
             BackButton().GrabFocus();
             return;
         }
-        Text(Texts.LighthouseUnfinished, 20);
+        Text(OutlandTexts.LighthouseUnfinished, 20);
         var loads = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, Name = "LighthouseLoads" };
         loads.AddThemeConstantOverride("separation", 6);
         content.AddChild(loads);

@@ -44,9 +44,9 @@ public partial class Game
         if (Haul != null)
             return true;
         Speak(
-            lighthouse.Complete ? Texts.LighthouseShining
+            lighthouse.Complete ? OutlandTexts.LighthouseShining
                 : !LighthouseStepReady(lighthouse) ? Texts.ZboziJesteNeniVyrobenePosluTe
-                : lighthouse.Stage == 0 ? Texts.LighthouseWanted
+                : lighthouse.Stage == 0 ? OutlandTexts.LighthouseWanted
                 : Texts.PrivezesMiDalsiMaterial,
             keeper
         );
@@ -73,7 +73,7 @@ public partial class Game
     private void UnlockLighthouse()
     {
         if (Lighthouse is { Complete: false, Stage: 0 })
-            Speak(Texts.LighthouseWanted, world.LighthouseKeeper, interrupt: false);
+            Speak(OutlandTexts.LighthouseWanted, world.LighthouseKeeper, interrupt: false);
     }
 
     internal void BeginLighthouseTrip() => BeginLighthouseTrip(false);
@@ -109,7 +109,7 @@ public partial class Game
         }
         CelebrateAt(
             lighthouse.Focus,
-            Texts.LighthousePart(LighthousePlans.Parts[trip.Step], lighthouse.Stage, LighthousePlans.Trips)
+            OutlandTexts.LighthousePart(LighthousePlans.Parts[trip.Step], lighthouse.Stage, LighthousePlans.Trips)
         );
         // The next load waits until the player asks the keeper for it again.
         EndHaul();
@@ -122,8 +122,8 @@ public partial class Game
     {
         EndHaul();
         AddCoins(LighthousePlans.Coins);
-        CelebrateAt(lighthouse.TopFocus, WithPets(Texts.LighthouseDone(LighthousePlans.Coins), EarnPets()));
-        Speak(Texts.LighthouseDoneSpeech, lighthouse.Keeper);
+        CelebrateAt(lighthouse.TopFocus, WithPets(OutlandTexts.LighthouseDone(LighthousePlans.Coins), EarnPets()));
+        Speak(OutlandTexts.LighthouseDoneSpeech, lighthouse.Keeper);
         var outward = followCamera.GlobalPosition - lighthouse.Focus;
         outward.Y = 0;
         followCamera.ShowMoment(lighthouse.Focus, outward.LengthSquared() > .01f ? outward.Normalized() : Vector3.Back);

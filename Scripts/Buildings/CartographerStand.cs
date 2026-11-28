@@ -128,7 +128,7 @@ public partial class CartographerStand : Node3D
         Art.Block(this, foot + new Vector3(0, 2.25f, -.06f), new(1.1f, .5f, .02f), "a9d48a");
         Art.Block(this, foot + new Vector3(0, 2.38f, -.07f), new(1.1f, .12f, .02f), "8d8a83");
         Art.Block(this, foot + new Vector3(0, 2.08f, -.07f), new(1.1f, .12f, .02f), "6fb2d9");
-        Art.Sign(this, foot + Vector3.Up * 3, Texts.SignMaps, 32);
+        Art.Sign(this, foot + Vector3.Up * 3, OutlandTexts.SignMaps, 32);
         Obstacles.Trunk(this, foot, .1f, 2.4f);
     }
 }

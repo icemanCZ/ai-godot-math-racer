@@ -91,7 +91,7 @@ public partial class GameUi
             }
         );
         letterName.Text = addressee.DisplayName;
-        letterHud.AccessibilityName = Texts.LetterFor(addressee.DisplayName);
+        letterHud.AccessibilityName = OutlandTexts.LetterFor(addressee.DisplayName);
         ShowLetterHud(true);
     }
 
@@ -101,13 +101,13 @@ public partial class GameUi
     internal void PostmanHint()
     {
         talkButton.Visible = !modal.Visible;
-        talkButton.Text = (controller ? "A · " : "E · ") + Texts.PostmanHint;
+        talkButton.Text = (controller ? "A · " : "E · ") + OutlandTexts.PostmanHint;
     }
 
     internal void KeeperHint()
     {
         talkButton.Visible = !modal.Visible;
-        talkButton.Text = (controller ? "A · " : "E · ") + Texts.KeeperHint;
+        talkButton.Text = (controller ? "A · " : "E · ") + OutlandTexts.KeeperHint;
     }
 
     /// <summary>The album: for every keeper the picture of the border and three stamps, the ones sent bright.</summary>
@@ -140,7 +140,7 @@ public partial class GameUi
                     }
                 );
         }
-        Text(Texts.PostStamps(post.AlbumStamps, Post.Keepers * Post.StampsPerKeeper), 20);
+        Text(OutlandTexts.PostStamps(post.AlbumStamps, Post.Keepers * Post.StampsPerKeeper), 20);
     }
 
     /// <summary>
@@ -155,12 +155,12 @@ public partial class GameUi
         if (carried != null || next == null)
         {
             if (carried != null)
-                Text(Texts.PostStillCarrying(carried.DisplayName), 20);
+                Text(OutlandTexts.PostStillCarrying(carried.DisplayName), 20);
             BackButton().GrabFocus();
             return;
         }
-        Text(Texts.LetterFor(next.DisplayName), 22);
-        var take = AcceptButton(() => Send(new UiIntent.TakeLetter()), "TakeLetter", Texts.PostTake);
+        Text(OutlandTexts.LetterFor(next.DisplayName), 22);
+        var take = AcceptButton(() => Send(new UiIntent.TakeLetter()), "TakeLetter", OutlandTexts.PostTake);
         take.GrabFocus();
         BackButton();
     }
@@ -172,7 +172,7 @@ public partial class GameUi
         Text(keeper.DisplayName, 30);
         StatusPicture(BorderIcon((int)border));
         KeeperStamps(stamps);
-        Text(Texts.KeeperAbout(border), 20);
+        Text(OutlandTexts.KeeperAbout(border), 20);
         BackButton().GrabFocus();
     }
 
@@ -181,7 +181,7 @@ public partial class GameUi
     {
         var row = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.Center, Name = "KeeperStamps" };
         row.AddThemeConstantOverride("separation", 6);
-        row.TooltipText = Texts.PostStamps(stamps, Post.StampsPerKeeper);
+        row.TooltipText = OutlandTexts.PostStamps(stamps, Post.StampsPerKeeper);
         content.AddChild(row);
         for (int stamp = 0; stamp < Post.StampsPerKeeper; stamp++)
             row.AddChild(

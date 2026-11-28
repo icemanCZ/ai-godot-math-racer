@@ -107,8 +107,8 @@ public partial class GameUi
         {
             trackingShown = shown;
             trackingPrint.Texture = TrackPicture(shown);
-            trackingName.Text = Texts.TrackingTrail(shown);
-            trackingHud.AccessibilityName = Texts.TrackingTrail(shown);
+            trackingName.Text = OutlandTexts.TrackingTrail(shown);
+            trackingHud.AccessibilityName = OutlandTexts.TrackingTrail(shown);
         }
         trackingBar.Value = fraction;
         trackingArrow.Visible = lost;
@@ -139,7 +139,7 @@ public partial class GameUi
     internal void TrackingDenHint()
     {
         talkButton.Visible = !modal.Visible;
-        talkButton.Text = (controller ? "A · " : "E · ") + Texts.TrackingDenHint;
+        talkButton.Text = (controller ? "A · " : "E · ") + OutlandTexts.TrackingDenHint;
     }
 
     /// <summary>
@@ -184,7 +184,7 @@ public partial class GameUi
                 Text =
                     number < found ? "✓ " + TrackingPlans.Name(animal)
                     : animal == current ? "… " + TrackingPlans.Name(animal)
-                    : Texts.TrackingHidden,
+                    : OutlandTexts.TrackingHidden,
                 HorizontalAlignment = HorizontalAlignment.Center,
             };
             name.AddThemeFontSizeOverride("font_size", 17);
@@ -204,7 +204,11 @@ public partial class GameUi
         KeeperStamps(stamps);
         if (!started)
         {
-            var go = AcceptButton(() => Send(new UiIntent.TrackingStart()), "StartTracking", Texts.TrackingStart);
+            var go = AcceptButton(
+                () => Send(new UiIntent.TrackingStart()),
+                "StartTracking",
+                OutlandTexts.TrackingStart
+            );
             go.GrabFocus();
             BackButton();
             return;

@@ -37,9 +37,9 @@ public partial class Game
         EnterInteraction(GameState.PostStatus, postman);
         ShowPost();
         Speak(
-            LetterAddressee is { } addressee ? Texts.PostStillCarrying(addressee.DisplayName)
+            LetterAddressee is { } addressee ? OutlandTexts.PostStillCarrying(addressee.DisplayName)
                 : Post.Total == 0 ? postman.Greeting
-                : Texts.PostAnotherLetter,
+                : OutlandTexts.PostAnotherLetter,
             postman
         );
     }
@@ -67,7 +67,7 @@ public partial class Game
             return;
         postman.Celebrate();
         CloseInteraction();
-        Speak(Texts.PostLetterFor(world.Keepers[keeper]!.DisplayName), postman);
+        Speak(OutlandTexts.PostLetterFor(world.Keepers[keeper]!.DisplayName), postman);
         UpdateLetterTrip();
         SaveProgress();
     }
@@ -99,7 +99,7 @@ public partial class Game
             return;
         EnterInteraction(GameState.KeeperStatus, keeper);
         ShowKeeper();
-        Speak(Post.Delivered[border] == 0 ? keeper.Greeting : Texts.KeeperAbout(role.Border), keeper);
+        Speak(Post.Delivered[border] == 0 ? keeper.Greeting : OutlandTexts.KeeperAbout(role.Border), keeper);
     }
 
     private void ShowKeeper()
@@ -130,7 +130,7 @@ public partial class Game
         int coins = Post.LetterCoins + (!wasFull && Post.AlbumFull ? Post.AlbumCoins : 0);
         ClearChallenge();
         keeper.Celebrate();
-        string message = Texts.LetterDelivered(
+        string message = OutlandTexts.LetterDelivered(
             stamp,
             !wasFull && Post.AlbumFull ? Post.AlbumCoins : 0,
             house >= 0 ? world.Village.Residents[house].DisplayName : null
@@ -159,7 +159,7 @@ public partial class Game
         nearby = resident;
         vehicle.Active = false;
         resident.Celebrate();
-        string message = Texts.ReplyDelivered;
+        string message = OutlandTexts.ReplyDelivered;
         CelebrateAt(resident.Position + Vector3.Up * 1.6f, message);
         Speak(message, resident);
         UpdateLetterTrip();

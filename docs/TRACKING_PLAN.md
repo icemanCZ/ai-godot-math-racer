@@ -1,5 +1,7 @@
 # Stopy hajné Boženy
 
+**Stav:** hotovo (`45a1b2b`, 26. 11. 2026).
+
 Další obsah pro velkou mapu, po balonu (`docs/BALLOON_PLAN.md`). Hajná Božena ze statku u lesní hranice byla v nápadech
 drakova plánu s krmelcem. Tady dostala jinou činnost, která vede autem napříč celým pásem za starým údolím.
 

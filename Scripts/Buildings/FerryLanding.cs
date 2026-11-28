@@ -128,7 +128,7 @@ public partial class FerryLanding : Node3D
         parts[0].AddChild(post);
         Art.Block(post, new Vector3(0, 1.1f, 0), new Vector3(.16f, 2.2f, .16f), "7a5536");
         Art.Block(post, new Vector3(0, 2.1f, 0), new Vector3(1.9f, .7f, .1f), "d7b47c");
-        Art.Sign(post, new Vector3(0, 2.1f, .1f), Texts.SignBirds, 30).Billboard = BaseMaterial3D
+        Art.Sign(post, new Vector3(0, 2.1f, .1f), OutlandTexts.SignBirds, 30).Billboard = BaseMaterial3D
             .BillboardModeEnum
             .Disabled;
         // A little punt with a bird above it, for those who cannot read the sign.

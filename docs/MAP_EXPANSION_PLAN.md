@@ -1,9 +1,12 @@
 # Implementační plán: šestkrát větší údolí s přírodními hranicemi
 
+**Stav:** hotovo, fáze 0 až 4 (`99709f4`, 23. 11. 2026); fáze 5 (obsah nového území) je odložená a obsah
+má vlastní plány.
+
 Údolí je dnes kruh o poloměru 525 m (`Settings.PlayableRadius`) uprostřed čtverce terénu ±555 m
 (`Settings.WorldRadius`). Cílem je hratelná plocha asi šestkrát větší, čtverec zhruba ±1100 m, a k tomu kulisy až do
 ±1400 m. Údolí má být ze čtyř stran uzavřené přírodou: na jedné straně horami, na druhé mořem, na třetí lesem a na
-čtvrté řekou. Nic z toho zatím není provedeno.
+čtvrté řekou.
 
 Údolí už se jednou zvětšovalo, a to desetkrát, z poloměru 166 m na 525 m (`SmokeTest`: „world playable area increased
 tenfold“). Tentokrát je ale jedna podmínka navíc: rozehrané hry si ponechají své údolí.
@@ -25,12 +28,11 @@ tenfold“). Tentokrát je ale jedna podmínka navíc: rozehrané hry si ponecha
 
 Strany jsou navržené tak, aby dávaly smysl i jako zeměpis. Dnešní řeka teče k +z (`River.Level` klesá s `z`), proto:
 
-| strana | co tam je | proč tam |
-|---|---|---|
-| sever (−z) | **hory**, hřbet vysoký 120 až 200 m | pramení tu dnešní řeka i hraniční řeka |
-| jih (+z) | **moře**, pláž, voda až k obzoru | dnešní řeka do něj ústí, už teď teče tímto směrem |
-| strana za dnešní řekou (`Side`) | **hraniční řeka**, široká 40 až 60 m, za ní louky jako kulisa | mezi oběma řekami vznikne „meziříčí“ |
-| opačná strana (`−Side`) | **les**, pás hustého lesa asi 150 m | les tak nestojí u vody |
+- sever (−z): **hory**, hřbet vysoký 120 až 200 m – pramení tu dnešní řeka i hraniční řeka
+- jih (+z): **moře**, pláž, voda až k obzoru – dnešní řeka do něj ústí, už teď teče tímto směrem
+- strana za dnešní řekou (`Side`): **hraniční řeka**, široká 40 až 60 m, za ní louky jako kulisa – mezi oběma řekami
+  vznikne „meziříčí“
+- opačná strana (`−Side`): **les**, pás hustého lesa asi 150 m – les tak nestojí u vody
 
 Řeka je podle seedu jednou vlevo a jednou vpravo (`WorldPlan.Side`), takže se s ní zrcadlí i les a hraniční řeka.
 

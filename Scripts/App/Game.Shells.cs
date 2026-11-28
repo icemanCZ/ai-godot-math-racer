@@ -114,14 +114,14 @@ public partial class Game
         if (shown && nearest != null && !shellsAnnounced)
         {
             shellsAnnounced = true;
-            Speak(Texts.ShellsLowTide);
+            Speak(OutlandTexts.ShellsLowTide);
         }
         ui.ShellsHud(
             shown,
             vehicle,
             nearest?.Position ?? Vector3.Zero,
             log.Kinds,
-            nearest != null ? $"{distance:0} m" : Texts.ShellsWait
+            nearest != null ? $"{distance:0} m" : OutlandTexts.ShellsWait
         );
     }
 
@@ -138,15 +138,15 @@ public partial class Game
         AddCoins(coins);
         string name = ShellPlans.Name(shell.Kind);
         string message = newKind
-            ? Texts.ShellNewKind(name, log.KindsFound, ShellPlans.Kinds, coins)
-            : Texts.ShellPicked(name, log.CountOf(shell.Kind));
+            ? OutlandTexts.ShellNewKind(name, log.KindsFound, ShellPlans.Kinds, coins)
+            : OutlandTexts.ShellPicked(name, log.CountOf(shell.Kind));
         if (full)
-            message += "\n" + Texts.ShellsAllKinds(ShellPlans.AllKindsCoins);
+            message += "\n" + OutlandTexts.ShellsAllKinds(ShellPlans.AllKindsCoins);
         string? pets = newKind ? EarnPets() : null;
         CelebrateAt(shell.Position + Vector3.Up, WithPets(message, pets));
         Speak(
-            full ? Texts.ShellsCrab
-            : newKind ? Texts.ShellNewKindSpoken(name)
+            full ? OutlandTexts.ShellsCrab
+            : newKind ? OutlandTexts.ShellNewKindSpoken(name)
             : name
         );
         SaveProgress();

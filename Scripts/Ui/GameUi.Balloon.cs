@@ -75,13 +75,13 @@ public partial class GameUi
             }
             BalloonKeys(balloonControls, 34);
         }
-        balloonHud.AccessibilityName = Texts.BalloonCaught(caught, stars);
+        balloonHud.AccessibilityName = OutlandTexts.BalloonCaught(caught, stars);
     }
 
     internal void BalloonHint()
     {
         talkButton.Visible = !modal.Visible;
-        talkButton.Text = (controller ? "A · " : "E · ") + Texts.BalloonHint;
+        talkButton.Text = (controller ? "A · " : "E · ") + OutlandTexts.BalloonHint;
     }
 
     /// <summary>
@@ -90,7 +90,7 @@ public partial class GameUi
     /// </summary>
     private void BalloonKeys(Container parent, int size)
     {
-        parent.TooltipText = Texts.BalloonControls;
+        parent.TooltipText = OutlandTexts.BalloonControls;
         foreach (var (key, pad, up) in new[] { ("W", "RT", true), ("S", "LT", false) })
         {
             var cap = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -155,7 +155,7 @@ public partial class GameUi
             var fly = AcceptButton(
                 () => Send(new UiIntent.BalloonFlight()),
                 "StartBalloonFlight",
-                Texts.BalloonFlightStart
+                OutlandTexts.BalloonFlightStart
             );
             fly.GrabFocus();
             BackButton();

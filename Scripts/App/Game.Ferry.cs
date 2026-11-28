@@ -119,17 +119,21 @@ public partial class Game
         var log = Ferry;
         string speech =
             OnBirdIsland
-                ? (BirdsNow.All(bird => log.IsSpotted(bird.Number)) ? Texts.FerryIslandAllSeen : Texts.FerryIslandHello)
+                ? (
+                    BirdsNow.All(bird => log.IsSpotted(bird.Number))
+                        ? OutlandTexts.FerryIslandAllSeen
+                        : OutlandTexts.FerryIslandHello
+                )
             : !landing.Complete
                 ? (
                     Haul != null ? ""
-                    : landing.Stage == 0 ? heron.Greeting + "\n" + Texts.FerryWanted
+                    : landing.Stage == 0 ? heron.Greeting + "\n" + OutlandTexts.FerryWanted
                     : !FerryStepReady(landing) ? Texts.ZboziJesteNeniVyrobenePosluTe
                     : Texts.PrivezesMiDalsiMaterial
                 )
-            : log.Complete ? Texts.FerryAtlasFull
-            : log.Visit == 0 ? Texts.FerryReady
-            : Texts.FerrySailAgain(FerryPlans.Kinds - log.KindsFound);
+            : log.Complete ? OutlandTexts.FerryAtlasFull
+            : log.Visit == 0 ? OutlandTexts.FerryReady
+            : OutlandTexts.FerrySailAgain(FerryPlans.Kinds - log.KindsFound);
         if (speech != "")
             Speak(speech, heron);
     }
@@ -192,7 +196,7 @@ public partial class Game
         if (!quizzed)
         {
             AskBeforeDeparture(Departure.FerrySail);
-            Speak(Texts.FerrySailQuestion, heron);
+            Speak(OutlandTexts.FerrySailQuestion, heron);
             return;
         }
         BeginCrossing(false);
@@ -217,14 +221,17 @@ public partial class Game
         {
             EndHaul();
             AddCoins(FerryPlans.Coins);
-            CelebrateAt(landing.Punt.Position + Vector3.Up * 2, Texts.FerryBuilt(FerryPlans.Coins));
-            Speak(Texts.FerryBuiltSpeech, landing.Heron);
+            CelebrateAt(landing.Punt.Position + Vector3.Up * 2, OutlandTexts.FerryBuilt(FerryPlans.Coins));
+            Speak(OutlandTexts.FerryBuiltSpeech, landing.Heron);
             UpdateDeliveryGuides();
             UpdatePostGuides();
             SaveProgress();
             return;
         }
-        CelebrateAt(landing.Focus, Texts.FerryPart(FerryPlans.Parts[trip.Step], landing.Stage, FerryPlans.Trips));
+        CelebrateAt(
+            landing.Focus,
+            OutlandTexts.FerryPart(FerryPlans.Parts[trip.Step], landing.Stage, FerryPlans.Trips)
+        );
         EndHaul();
         Speak(Texts.DekujuAzBudesChtitPrivezDalsi, landing.Heron);
         UpdatePostGuides();
@@ -255,7 +262,9 @@ public partial class Game
         followCamera.ShowTelescope(site.Eye, yaw + .5f, FerryPlans.TelescopeFov);
         world.BirdIsland!.LookingThrough = true;
         Speak(
-            BirdsNow.All(bird => Ferry.IsSpotted(bird.Number)) ? Texts.FerryIslandAllSeen : Texts.FerryTelescopeHow,
+            BirdsNow.All(bird => Ferry.IsSpotted(bird.Number))
+                ? OutlandTexts.FerryIslandAllSeen
+                : OutlandTexts.FerryTelescopeHow,
             heron
         );
     }
@@ -292,7 +301,7 @@ public partial class Game
         }
         PlaceOnPunt(landing, heron);
         followCamera.Ride(landing.Punt, new Vector3(5, 7, -13), new Vector3(0, -2, 30));
-        Speak(home ? Texts.FerryHomeSpeech : Texts.FerrySailSpeech, heron);
+        Speak(home ? OutlandTexts.FerryHomeSpeech : OutlandTexts.FerrySailSpeech, heron);
         UpdatePostGuides();
         SaveProgress();
     }
@@ -320,7 +329,7 @@ public partial class Game
             vehicle.SetPose(world.Ground.At(site.Return.X, site.Return.Z) + Vector3.Up * .15f, site.Yaw);
             heron.Position = world.Ground.At(site.Talk.X, site.Talk.Z);
             heron.Rotation = new Vector3(0, site.Yaw + Mathf.Pi, 0);
-            Speak(Texts.FerryHomeEnd, heron, interrupt: false);
+            Speak(OutlandTexts.FerryHomeEnd, heron, interrupt: false);
         }
         else
         {
@@ -329,7 +338,7 @@ public partial class Game
             vehicle.SetPose(site.IslandLanding + Vector3.Up * .3f, Mathf.Pi);
             heron.Position = site.IslandTalk;
             heron.Rotation = new Vector3(0, Mathf.Pi, 0);
-            Speak(Texts.FerryIslandHello, heron, interrupt: false);
+            Speak(OutlandTexts.FerryIslandHello, heron, interrupt: false);
         }
         if (State == GameState.Exploring)
             vehicle.Active = true;
@@ -507,10 +516,10 @@ public partial class Game
         AddCoins(coins);
         string name = FerryPlans.Name(bird.Kind);
         string message = newKind
-            ? Texts.FerryNewBird(name, log.KindsFound, FerryPlans.Kinds)
-            : Texts.FerryBirdAgain(name);
+            ? OutlandTexts.FerryNewBird(name, log.KindsFound, FerryPlans.Kinds)
+            : OutlandTexts.FerryBirdAgain(name);
         if (full)
-            message += "\n" + Texts.FerryAtlasDone(FerryPlans.AtlasCoins);
+            message += "\n" + OutlandTexts.FerryAtlasDone(FerryPlans.AtlasCoins);
         string? pets = newKind ? EarnPets() : null;
         var head = world.BirdIsland?.HeadOf(bird.Number) ?? Vector3.Zero;
         CelebrateAt(head + Vector3.Up, WithPets(message, pets));
@@ -534,7 +543,7 @@ public partial class Game
         if (State == GameState.Exploring)
             vehicle.Active = true;
         if (BirdsNow.All(bird => Ferry.IsSpotted(bird.Number)))
-            Speak(Texts.FerryIslandAllSeen, world.Birdwatcher, interrupt: false);
+            Speak(OutlandTexts.FerryIslandAllSeen, world.Birdwatcher, interrupt: false);
     }
 
     /// <summary>

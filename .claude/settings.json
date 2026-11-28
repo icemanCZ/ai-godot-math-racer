@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(./test.ps1 *)",
+      "PowerShell(./build.ps1 *)",
+      "PowerShell(dotnet csharpier *)",
+      "PowerShell(dotnet build *)",
+      "Bash(./test.ps1 *)",
+      "Bash(./build.ps1 *)",
+      "Bash(dotnet csharpier *)",
+      "Bash(dotnet build *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard.ps1\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"$CLAUDE_PROJECT_DIR/.claude/hooks/format.ps1\"",
+            "timeout": 60,
+            "statusMessage": "Formátuji C# (CSharpier)"
+          }
+        ]
+      }
+    ]
+  }
+}

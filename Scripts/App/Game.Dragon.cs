@@ -43,10 +43,10 @@ public partial class Game
         if (Haul != null && TripOf(lair) != null)
             return;
         Speak(
-            lair.Hatched ? (dragonFlown ? Texts.DragonFlightAgain : Texts.DragonFlightWanted)
-                : lair.Complete ? Texts.DragonRiddleWanted
-                : lair.Stage == 0 ? dragon.Greeting + "\n" + Texts.DragonNestWanted
-                : Texts.DragonNext,
+            lair.Hatched ? (dragonFlown ? OutlandTexts.DragonFlightAgain : OutlandTexts.DragonFlightWanted)
+                : lair.Complete ? OutlandTexts.DragonRiddleWanted
+                : lair.Stage == 0 ? dragon.Greeting + "\n" + OutlandTexts.DragonNestWanted
+                : OutlandTexts.DragonNext,
             dragon
         );
     }
@@ -83,9 +83,9 @@ public partial class Game
         var lair = trip.DragonLair!;
         lair.SetStage(trip.Step + 1);
         world.DragonBody?.Celebrate();
-        CelebrateAt(lair.Focus, Texts.DragonPart(DragonPlans.Parts[trip.Step], lair.Stage, DragonPlans.Trips));
+        CelebrateAt(lair.Focus, OutlandTexts.DragonPart(DragonPlans.Parts[trip.Step], lair.Stage, DragonPlans.Trips));
         EndHaul();
-        Speak(lair.Complete ? Texts.DragonRiddleWanted : Texts.DragonThanks, lair.Dragon);
+        Speak(lair.Complete ? OutlandTexts.DragonRiddleWanted : OutlandTexts.DragonThanks, lair.Dragon);
         UpdateDeliveryGuides();
         SaveProgress();
     }
@@ -100,7 +100,7 @@ public partial class Game
         )
             return;
         BeginQuiz();
-        Speak(Texts.DragonRiddle(lair.Riddle, DragonPlans.Riddles), dragon);
+        Speak(OutlandTexts.DragonRiddle(lair.Riddle, DragonPlans.Riddles), dragon);
     }
 
     /// <summary>
@@ -127,7 +127,7 @@ public partial class Game
         {
             SaveProgress();
             BeginQuiz();
-            Speak(Texts.DragonRiddle(lair.Riddle, DragonPlans.Riddles), dragon);
+            Speak(OutlandTexts.DragonRiddle(lair.Riddle, DragonPlans.Riddles), dragon);
             return;
         }
         Hatch(lair, dragon);
@@ -147,8 +147,8 @@ public partial class Game
         else
             lair.ShowHatched();
         AddCoins(DragonPlans.Coins);
-        CelebrateAt(lair.Focus, WithPets(Texts.DragonHatched(DragonPlans.Coins), EarnPets()));
-        Speak(Texts.DragonHatchedSpeech, dragon);
+        CelebrateAt(lair.Focus, WithPets(OutlandTexts.DragonHatched(DragonPlans.Coins), EarnPets()));
+        Speak(OutlandTexts.DragonHatchedSpeech, dragon);
         var outward = followCamera.GlobalPosition - lair.Focus;
         outward.Y = 0;
         followCamera.ShowMoment(lair.Focus, outward.LengthSquared() > .01f ? outward.Normalized() : lair.Site.Facing);
@@ -178,12 +178,12 @@ public partial class Game
             if (animal.RewardAvailable)
                 animal.Ping(seconds);
         world.Hidden.Ping(seconds);
-        Speak(Texts.DragonFlightSpeech, dragon);
+        Speak(OutlandTexts.DragonFlightSpeech, dragon);
         if (!dragonFlown)
         {
             dragonFlown = true;
             AddCoins(DragonPlans.FlightCoins);
-            CelebrateAt(body.GlobalPosition + Vector3.Up * 6, Texts.DragonFirstFlight(DragonPlans.FlightCoins));
+            CelebrateAt(body.GlobalPosition + Vector3.Up * 6, OutlandTexts.DragonFirstFlight(DragonPlans.FlightCoins));
             SaveProgress();
         }
     }
@@ -199,7 +199,7 @@ public partial class Game
         followCamera.EndRide();
         if (State == GameState.Exploring)
             vehicle.Active = true;
-        Speak(Texts.DragonFlightEnd, world.Dragon, interrupt: false);
+        Speak(OutlandTexts.DragonFlightEnd, world.Dragon, interrupt: false);
     }
 
     /// <summary>Puts the nest, the riddle and the flights back from a save; the egg is hatched at once.</summary>

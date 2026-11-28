@@ -467,7 +467,7 @@ public partial class BorderHome : Node3D
         }
         Art.Block(boat, new(0, .42f, .4f), new(1.1f, .06f, .36f), "a77a52");
         Obstacles.Box(this, new(bx, (top + Floor(bx, bz)) / 2 + .2f, bz), new(1.6f, top - Floor(bx, bz) + .9f, 4.4f));
-        Signboard(-6.4f, 1.6f, Texts.SignFerry);
+        Signboard(-6.4f, 1.6f, OutlandTexts.SignFerry);
         // A mooring post by the signpost.
         Post(-4.4f, 1.2f, .9f, .12f, "6b4a2e");
     }

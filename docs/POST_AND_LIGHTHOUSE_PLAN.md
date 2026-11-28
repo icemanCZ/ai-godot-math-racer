@@ -1,5 +1,7 @@
 # Implementační plán: pošta do čtyř koutů a maják na mysu
 
+**Stav:** hotovo (`c0d890c`, 24. 11. 2026), kromě pohlednice majáku.
+
 První obsah pro nové území kolem jádra (`docs/MAP_EXPANSION_PLAN.md`, fáze 5). Fáze 0 až 4 jsou provedené,
 kromě pohlednice majáku; kde se provedení od plánu liší, říká to oddíl **Jak to dopadlo** na konci.
 

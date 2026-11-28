@@ -96,7 +96,7 @@ public partial class BeachShells : Node3D
                     new(0, 0, -rib * 14);
             Art.Block(sign, new(0, 1.98f, face * .07f), new(.18f, .08f, .01f), "f4b48f");
         }
-        Art.Sign(sign, Vector3.Up * 3, Texts.SignShells, 32);
+        Art.Sign(sign, Vector3.Up * 3, OutlandTexts.SignShells, 32);
         Obstacles.Trunk(this, foot, .1f, 2.4f);
     }
 

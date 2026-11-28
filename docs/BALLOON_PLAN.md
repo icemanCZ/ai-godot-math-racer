@@ -1,5 +1,7 @@
 # Balónové stanoviště
 
+**Stav:** hotovo (`ebfd527`, 24. 11. 2026).
+
 Další obsah pro velkou mapu, po drakovi (`docs/DRAGON_PLAN.md`), kde byl horkovzdušný balon mezi dalšími nápady. Proti
 tamnímu nápadu stojí stanoviště daleko od vesnice, a let tak má vlastní činnost: chytání hvězdiček.
 
@@ -82,8 +84,8 @@ tak vidět, kam ještě dojet.
   načtení hry vrátí balon na lana. Hry uložené před stanovištěm se načtou s nulami.
 - **Kontroly**: `balloon-checks` (místo, pravidla uložení, první let, hořák a ventil, chycení a minutí hvězdičky,
   uložení během letu, předčasné přistání, kohoutek, let se všemi hvězdičkami a přistání), dále
-  `world-fingerprint-checks` a `content-checks`. Obrázky: `./run.ps1 -Capture -View balloon` (a `balloon-night`, `balloon-far`,
-  `balloon-far-night`, `balloon-panel`, `balloon-flight`).
+  `world-fingerprint-checks` a `content-checks`. Obrázky: `./run.ps1 -Capture -View balloon` (a `balloon-night`,
+  `balloon-far`, `balloon-far-night`, `balloon-panel`, `balloon-flight`).
 
 ## Jak to dopadlo
 

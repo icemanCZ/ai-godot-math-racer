@@ -216,7 +216,7 @@ public partial class BalloonStation : Node3D
         }
         Art.Block(this, new(c.X + 1.05f, y + 1.0f, front - .04f), new(.9f, 2.0f, .07f), "5b3a24");
         Art.Ball(this, new(c.X + .78f, y + 1.0f, front - .1f), Vector3.One * .06f, "f2c14e");
-        var sign = Art.Sign(this, new(c.X, y + height + 1, c.Y - .4f), Texts.SignBalloons, 64);
+        var sign = Art.Sign(this, new(c.X, y + height + 1, c.Y - .4f), OutlandTexts.SignBalloons, 64);
         sign.Modulate = new Color("fff5d9");
         // A small balloon painted on a board above the door: a ball of colour and a basket.
         Art.Block(this, new(c.X, y + height + .75f, front - .2f), new(2.6f, .7f, .08f), "f4f1e6");
@@ -276,7 +276,7 @@ public partial class BalloonStation : Node3D
         foreach (int side in new[] { -1, 1 })
             Art.Cylinder(this, foot + new Vector3(side * .7f, 1.1f, 0), .06f, .06f, 2.2f, "6b4a2e");
         Art.Block(this, foot + Vector3.Up * 1.9f, new(1.9f, .8f, .08f), "f4f1e6");
-        Art.Sign(this, foot + new Vector3(0, 2.75f, 0), Texts.SignBalloons, 44);
+        Art.Sign(this, foot + new Vector3(0, 2.75f, 0), OutlandTexts.SignBalloons, 44);
         Obstacles.Box(this, foot + Vector3.Up * 1.1f, new(1.8f, 2.2f, .3f));
     }
 

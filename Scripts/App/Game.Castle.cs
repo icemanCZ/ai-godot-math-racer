@@ -76,12 +76,14 @@ public partial class Game
         string speech = CastlePhase(castle) switch
         {
             _ when Haul != null => "",
-            CastleMode.Build => castle.Stage == 0 ? princess.Greeting + "\n" + Texts.CastleWanted
+            CastleMode.Build => castle.Stage == 0 ? princess.Greeting + "\n" + OutlandTexts.CastleWanted
             : !CastleStepReady(castle) ? Texts.ZboziJesteNeniVyrobenePosluTe
             : Texts.PrivezesMiDalsiMaterial,
-            CastleMode.Beacons => Texts.CastleBeaconsWanted,
-            CastleMode.Guests => GuestsSeated(castle) == 0 ? Texts.CastleBeaconsLit : Texts.CastleGuestsWanted,
-            _ => Texts.CastleFeastOver,
+            CastleMode.Beacons => OutlandTexts.CastleBeaconsWanted,
+            CastleMode.Guests => GuestsSeated(castle) == 0
+                ? OutlandTexts.CastleBeaconsLit
+                : OutlandTexts.CastleGuestsWanted,
+            _ => OutlandTexts.CastleFeastOver,
         };
         if (speech != "")
             Speak(speech, princess);
@@ -196,12 +198,15 @@ public partial class Game
             AddCoins(CastlePlans.Coins);
             foreach (var beacon in world.Beacons)
                 beacon?.SetBuilt(beacon.Built, true);
-            CelebrateAt(castle.TopFocus, Texts.CastleBuilt(CastlePlans.Coins));
-            Speak(Texts.CastleBuiltSpeech, castle.Princess);
+            CelebrateAt(castle.TopFocus, OutlandTexts.CastleBuilt(CastlePlans.Coins));
+            Speak(OutlandTexts.CastleBuiltSpeech, castle.Princess);
         }
         else
         {
-            CelebrateAt(castle.Focus, Texts.CastlePart(CastlePlans.Parts[trip.Step], castle.Stage, CastlePlans.Trips));
+            CelebrateAt(
+                castle.Focus,
+                OutlandTexts.CastlePart(CastlePlans.Parts[trip.Step], castle.Stage, CastlePlans.Trips)
+            );
             Speak(Texts.DekujuAzBudesChtitPrivezDalsi, castle.Princess);
         }
         UpdateDeliveryGuides();
@@ -219,11 +224,11 @@ public partial class Game
         EndHaul();
         AddCoins(CastlePlans.BeaconCoins);
         int lit = world.Beacons.Count(b => b is { Built: true });
-        CelebrateAt(beacon.Fire, Texts.BeaconLit(lit, world.BeaconCount, CastlePlans.BeaconCoins));
+        CelebrateAt(beacon.Fire, OutlandTexts.BeaconLit(lit, world.BeaconCount, CastlePlans.BeaconCoins));
         if (NextBeacon() == null && world.Castle is { } castle)
         {
             castle.KeepFire = true;
-            Speak(Texts.CastleBeaconsLit, beacon.Princess);
+            Speak(OutlandTexts.CastleBeaconsLit, beacon.Princess);
         }
         else
             Speak(Texts.DekujuAzBudesChtitPrivezDalsi, beacon.Princess);
@@ -251,16 +256,21 @@ public partial class Game
         {
             castle.Fireworks = true;
             AddCoins(CastlePlans.FeastCoins);
-            CelebrateAt(chair + Vector3.Up * 2, WithPets(Texts.CastleFeast(CastlePlans.FeastCoins), EarnPets()));
-            Speak(Texts.CastleFeastSpeech, castle.Princess);
+            CelebrateAt(chair + Vector3.Up * 2, WithPets(OutlandTexts.CastleFeast(CastlePlans.FeastCoins), EarnPets()));
+            Speak(OutlandTexts.CastleFeastSpeech, castle.Princess);
         }
         else
         {
             CelebrateAt(
                 chair + Vector3.Up * 2,
-                Texts.GuestSeated(guest.Character.DisplayName, seated, world.CastleGuestCount, CastlePlans.GuestCoins)
+                OutlandTexts.GuestSeated(
+                    guest.Character.DisplayName,
+                    seated,
+                    world.CastleGuestCount,
+                    CastlePlans.GuestCoins
+                )
             );
-            Speak(Texts.CastleGuestsWanted, castle.Princess);
+            Speak(OutlandTexts.CastleGuestsWanted, castle.Princess);
         }
         UpdateDeliveryGuides();
         UpdatePostGuides();

@@ -60,7 +60,6 @@ public partial class Castle : Node3D
     private readonly List<Node3D> flags = new();
     private readonly Node3D?[] seated = new Node3D?[CastlePlans.Guests];
     private readonly List<(Vector3 Position, float Yaw)> chairs = new();
-    private readonly Burst[] bursts = new Burst[3];
     private readonly OmniLight3D gateLight = new()
     {
         Name = "GateLight",
@@ -83,10 +82,9 @@ public partial class Castle : Node3D
     private float gateY;
     private float bridgeDown;
     private float bridgeAngle;
+    private readonly CastleFireworks fireworkShow;
     private float keepTop;
     private float time;
-    private float nextBurst = 1;
-    private readonly RandomNumberGenerator sparkle = new() { Seed = 4711 };
 
     internal CastleSite Site { get; }
 
@@ -146,8 +144,7 @@ public partial class Castle : Node3D
         BuildCourtyard();
         BuildLanterns();
         BuildSiteMarks();
-        for (int i = 0; i < bursts.Length; i++)
-            bursts[i] = new Burst(this);
+        fireworkShow = new CastleFireworks(this);
         SetStage(0);
     }
 
@@ -204,7 +201,7 @@ public partial class Castle : Node3D
         foreach (var shape in markSolids)
             shape.Disabled = Complete;
         scaffold.Visible = Stage is >= 3 and < Stages;
-        sign.Text = Texts.SignCastle + "\n" + $"{Stage} / {Stages}";
+        sign.Text = OutlandTexts.SignCastle + "\n" + $"{Stage} / {Stages}";
         // The drawbridge lies on the ground while the castle is built; once finished it stands up until the car comes.
         bridgeDown = 1;
         PlaceBridge();
@@ -829,7 +826,7 @@ public partial class Castle : Node3D
         foreach (float x in new[] { -.75f, .75f })
             Art.Cylinder(marks, post + new Vector3(x, .95f, 0), .07f, .07f, 1.9f, "7a5536");
         Art.Block(marks, post + new Vector3(0, 1.7f, 0), new(2.0f, .9f, .1f), "e9d3a2");
-        sign = Art.Sign(marks, post + new Vector3(0, 1.75f, -.12f), Texts.SignCastle, 34);
+        sign = Art.Sign(marks, post + new Vector3(0, 1.75f, -.12f), OutlandTexts.SignCastle, 34);
     }
 
     // ---- The guests of the feast ----
@@ -918,94 +915,9 @@ public partial class Castle : Node3D
             gateLight.LightEnergy = 1.4f * night + .15f * Mathf.Sin(time * 11);
             fireLight.LightEnergy = .5f + 3 * night + .3f * Mathf.Sin(time * 13);
         }
-        TickFireworks(delta, Fireworks && Complete && night > .3f);
-    }
-
-    private void TickFireworks(float delta, bool on)
-    {
-        foreach (var burst in bursts)
-            burst.Tick(delta);
-        if (!on)
-            return;
-        nextBurst -= delta;
-        if (nextBurst > 0)
-            return;
-        nextBurst = 1.1f + sparkle.Randf() * 1.4f;
-        foreach (var burst in bursts)
-            if (!burst.Active)
-            {
-                var at = new Vector3(
-                    sparkle.RandfRange(-14, 14),
-                    keepTop + 10 + sparkle.RandfRange(0, 12),
-                    sparkle.RandfRange(-12, 14)
-                );
-                burst.Start(at, FireworkColors[sparkle.RandiRange(0, FireworkColors.Length - 1)]);
-                break;
-            }
+        fireworkShow.Tick(delta, Fireworks && Complete && night > .3f, keepTop);
     }
 
     /// <summary>Whether fireworks are bursting over the castle now, for the checks.</summary>
-    internal bool Bursting => Array.Exists(bursts, burst => burst.Active);
-
-    private static readonly string[] FireworkColors = { "ff5a4a", "ffd23f", "5ad1ff", "9cf06a", "ff7ad8" };
-
-    /// <summary>One burst of the fireworks: fourteen sparks that fly out from a point, sink a little and fade.</summary>
-    private sealed class Burst
-    {
-        private const int Sparks = 14;
-        private const float Life = 1.7f;
-        private readonly Node3D root = new() { Name = "Burst", Visible = false };
-        private readonly MeshInstance3D[] sparks = new MeshInstance3D[Sparks];
-        private readonly Vector3[] directions = new Vector3[Sparks];
-        private readonly StandardMaterial3D material = new()
-        {
-            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-            Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
-        };
-        private float age = -1;
-
-        internal bool Active => age >= 0;
-
-        internal Burst(Node3D parent)
-        {
-            parent.AddChild(root);
-            for (int i = 0; i < Sparks; i++)
-            {
-                // Spread evenly over a sphere, by the golden angle.
-                float y = 1 - 2 * (i + .5f) / Sparks;
-                float r = Mathf.Sqrt(1 - y * y);
-                float a = i * 2.39996f;
-                directions[i] = new Vector3(Mathf.Cos(a) * r, y, Mathf.Sin(a) * r);
-                sparks[i] = Art.Ball(root, Vector3.Zero, Vector3.One * .45f, "ffffff");
-                sparks[i].MaterialOverride = material;
-                sparks[i].CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
-            }
-        }
-
-        internal void Start(Vector3 at, string color)
-        {
-            root.Position = at;
-            root.Visible = true;
-            material.AlbedoColor = new Color(color);
-            age = 0;
-        }
-
-        internal void Tick(float delta)
-        {
-            if (age < 0)
-                return;
-            age += delta;
-            if (age >= Life)
-            {
-                age = -1;
-                root.Visible = false;
-                return;
-            }
-            float t = age / Life;
-            float reach = 7 * (1 - (1 - t) * (1 - t));
-            for (int i = 0; i < Sparks; i++)
-                sparks[i].Position = directions[i] * reach + Vector3.Down * (2.5f * t * t);
-            material.AlbedoColor = material.AlbedoColor with { A = 1 - t * t };
-        }
-    }
+    internal bool Bursting => fireworkShow.Bursting;
 }

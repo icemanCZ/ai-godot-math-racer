@@ -60,10 +60,10 @@ public partial class Game
         ShowCartographer();
         int seen = log.Unrecorded.Length;
         Speak(
-            first ? owl.Greeting + "\n" + Texts.ExplorerWanted
-                : log.Complete ? Texts.ExplorerMapFull
-                : seen > 0 ? Texts.ExplorerSeen(seen)
-                : Texts.ExplorerStillHidden(ExplorerPlans.Landmarks - log.Spotted.Length),
+            first ? owl.Greeting + "\n" + OutlandTexts.ExplorerWanted
+                : log.Complete ? OutlandTexts.ExplorerMapFull
+                : seen > 0 ? OutlandTexts.ExplorerSeen(seen)
+                : OutlandTexts.ExplorerStillHidden(ExplorerPlans.Landmarks - log.Spotted.Length),
             owl
         );
         UpdatePostGuides();
@@ -137,7 +137,7 @@ public partial class Game
         if (!quizzed)
         {
             AskBeforeDeparture(Departure.Explorer);
-            Speak(Texts.ExplorerRecordQuestion, owl);
+            Speak(OutlandTexts.ExplorerRecordQuestion, owl);
             return;
         }
         ClearChallenge();
@@ -147,15 +147,20 @@ public partial class Game
         owl.Celebrate();
         bool full = log.Complete;
         int coins = added.Length * ExplorerPlans.CoinsPerLandmark + (full ? ExplorerPlans.MapCoins : 0);
-        string message = Texts.ExplorerRecorded(
+        string message = OutlandTexts.ExplorerRecorded(
             added.Select(ExplorerPlans.Name).ToArray(),
             log.RecordedCount,
             ExplorerPlans.Landmarks
         );
         if (full)
-            message += "\n" + Texts.ExplorerMapDone(ExplorerPlans.MapCoins);
+            message += "\n" + OutlandTexts.ExplorerMapDone(ExplorerPlans.MapCoins);
         CelebrateAt(owl.Position + Vector3.Up * 2, WithPets(message, EarnPets()));
-        Speak(full ? Texts.ExplorerMapFull : Texts.ExplorerThanks(ExplorerPlans.Landmarks - log.RecordedCount), owl);
+        Speak(
+            full
+                ? OutlandTexts.ExplorerMapFull
+                : OutlandTexts.ExplorerThanks(ExplorerPlans.Landmarks - log.RecordedCount),
+            owl
+        );
         UpdatePostGuides();
         PayReward(coins);
     }
@@ -172,7 +177,7 @@ public partial class Game
         owl.Celebrate();
         CloseInteraction();
         UpdateExplorerTrip();
-        Speak(Texts.ExplorerGo(ExplorerPlans.Name(target)), owl);
+        Speak(OutlandTexts.ExplorerGo(ExplorerPlans.Name(target)), owl);
         SaveProgress();
     }
 
@@ -240,7 +245,7 @@ public partial class Game
                 if (new Vector2(landmark.Center.X - car.X, landmark.Center.Z - car.Z).Length() > reach)
                     continue;
                 log.Spot(landmark.Kind);
-                string message = Texts.ExplorerSpotted(ExplorerPlans.Name(landmark.Kind));
+                string message = OutlandTexts.ExplorerSpotted(ExplorerPlans.Name(landmark.Kind));
                 CelebrateAt(landmark.Center + Vector3.Up * 4, message);
                 Speak(message);
                 UpdateExplorerTrip();

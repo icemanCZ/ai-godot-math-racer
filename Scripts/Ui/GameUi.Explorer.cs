@@ -101,7 +101,7 @@ public partial class GameUi
         explorerDistance.Text = distance;
         explorerCount.Text = $"{recorded} / {ExplorerPlans.Landmarks}";
         explorerHud.AccessibilityName =
-            $"{ExplorerPlans.Name(kind)}, {distance}. {Texts.ExplorerOnMap(recorded, ExplorerPlans.Landmarks)}";
+            $"{ExplorerPlans.Name(kind)}, {distance}. {OutlandTexts.ExplorerOnMap(recorded, ExplorerPlans.Landmarks)}";
         var camera = GetViewport().GetCamera3D();
         if (camera == null)
             return;
@@ -122,7 +122,7 @@ public partial class GameUi
     internal void CartographerHint()
     {
         talkButton.Visible = !modal.Visible;
-        talkButton.Text = (controller ? "A · " : "E · ") + Texts.CartographerHint;
+        talkButton.Text = (controller ? "A · " : "E · ") + OutlandTexts.CartographerHint;
     }
 
     /// <summary>
@@ -156,7 +156,7 @@ public partial class GameUi
                 Car = car,
                 Guided = guided,
                 CustomMinimumSize = new(380, 380),
-                TooltipText = Texts.ExplorerMap,
+                TooltipText = OutlandTexts.ExplorerMap,
             }
         );
         var row = new HBoxContainer { Name = "Landmarks", Alignment = BoxContainer.AlignmentMode.Center };
@@ -201,7 +201,7 @@ public partial class GameUi
             first = AcceptButton(
                 () => Send(new UiIntent.ExplorerRecord()),
                 "RecordLandmarks",
-                Texts.ExplorerRecordButton,
+                OutlandTexts.ExplorerRecordButton,
                 buttons
             );
         if (canGuide)
@@ -211,10 +211,10 @@ public partial class GameUi
                 : AcceptButton(
                     () => Send(new UiIntent.ExplorerGuide()),
                     "GuideLandmark",
-                    Texts.ExplorerGuideButton,
+                    OutlandTexts.ExplorerGuideButton,
                     buttons
                 );
-            guide.AccessibilityName = Texts.ExplorerGuideButton;
+            guide.AccessibilityName = OutlandTexts.ExplorerGuideButton;
             first ??= guide;
         }
         var back = BackButton(parent: buttons);

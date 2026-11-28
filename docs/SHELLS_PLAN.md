@@ -1,5 +1,7 @@
 # Mušle a příliv
 
+**Stav:** hotovo (`2151d5a`, 27. 11. 2026).
+
 Další obsah pro velkou mapu, spolu s mapou sovy (`docs/EXPLORER_PLAN.md`). Moře na jihu bylo dosud jen za okrajem údolí.
 Teď se k němu dá sjet a pláž žije: dvakrát denně moře ustoupí a nechá na mokrém písku mušle.
 

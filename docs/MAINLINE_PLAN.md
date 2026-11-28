@@ -1,5 +1,7 @@
 # Návrh: velká trať přes údolí
 
+**Stav:** hotovo (`6674845`, 27. 11. 2026; strana nástupišť opravena v `8b6a724`).
+
 Další obsah pro velkou mapu, po hradu na kopci (`docs/CASTLE_PLAN.md`). Cesta do nejvzdálenějšího rohu trvá asi 100 s
 jízdy. Tahle stavba velkou mapu využije a zároveň ji zpřístupní: je to první stavba, která roste **krajinou**, ne na
 jednom místě. Oddíl „Jak je to postavené“ na konci říká, v čem se hotová hra od návrhu liší.

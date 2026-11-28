@@ -1,5 +1,7 @@
 # Ztracené ovečky pastýře Bohouše
 
+**Stav:** hotovo (`a0dc4b4`, 26. 11. 2026).
+
 Další obsah pro velkou mapu, po stopách hajné Boženy (`docs/TRACKING_PLAN.md`). Ovečky pastýře Bohouše byly v nápadech
 drakova plánu. Tady dostaly činnost, při které se projede celý pás za starým údolím a auto vede stádo zpátky domů.
 
@@ -27,7 +29,8 @@ Proč právě takhle:
   panelu místo své vizitky ohradu se jmény oveček. V ohradě u salaše už stojí tři ovečky, které neutekly.
 - **Osm oveček** (`SheepPlans.Names`): Bělka, Kudrnka, Vločka, Chundelka, Mráček, Pampeliška, Ťapka a Kulička. Nejsou
   to postavy: najdou se tím, že k nim auto dojede, a kreslí je `SheepFlock`.
-- **Ovčácký pejsek Alík** (`CollectorPetKind.Sheepdog`): čeká u Bohouše a po osmé ovečce jezdí za autem. Beránek už na farmě je, proto pejsek.
+- **Ovčácký pejsek Alík** (`CollectorPetKind.Sheepdog`): čeká u Bohouše a po osmé ovečce jezdí za autem. Beránek už na
+  farmě je, proto pejsek.
 
 ## Kde se ovečky pasou
 

@@ -101,7 +101,7 @@ public partial class CoastQuarry : Node3D
             Art.Cylinder(this, foot + new Vector3(dx, .75f, 0), .07f, .07f, 1.9f, "7a5536");
         Art.Block(this, foot + new Vector3(0, 1.5f, 0), new(1.6f, .6f, .1f), "e9d3a2");
         Art.Block(this, foot + new Vector3(0, 1.5f, .02f), new(1.7f, .7f, .06f), "7a5536");
-        Art.Sign(this, foot + new Vector3(0, 1.52f, -.1f), Texts.SignQuarry, 36);
+        Art.Sign(this, foot + new Vector3(0, 1.52f, -.1f), OutlandTexts.SignQuarry, 36);
         Obstacles.Box(this, foot + Vector3.Up * .9f, new(1.5f, 1.8f, .3f));
     }
 

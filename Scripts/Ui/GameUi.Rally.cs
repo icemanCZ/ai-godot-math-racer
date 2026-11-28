@@ -320,7 +320,7 @@ public partial class GameUi
             var go = AcceptButton(
                 () => Send(new UiIntent.RallyStart(stage)),
                 $"RallyStart{i}",
-                Texts.RallyStageSpoken(i + 1, names[i], medals[i]),
+                OutlandTexts.RallyStageSpoken(i + 1, names[i], medals[i]),
                 grid
             );
             go.CustomMinimumSize = new(110, 58);

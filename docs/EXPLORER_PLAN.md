@@ -1,5 +1,7 @@
 # Mapa sovy kartografky
 
+**Stav:** hotovo (`2151d5a`, 27. 11. 2026).
+
 Další obsah pro velkou mapu, po rallye převoznice Venduly (`docs/RALLY_PLAN.md`). Tentokrát se nejezdí za jedním úkolem,
 ale objevuje se: kraj za starým údolím je velký a dítě v něm má co najít.
 

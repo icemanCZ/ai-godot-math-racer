@@ -83,13 +83,13 @@ extends from one world edge to the other. `WorldLayoutChecks` checks reproducibi
 boundary clearance and bridge placement across 128 seeds, and compares routing over natural terrain with the previous
 terrain-independent curves.
 
-Before terrain vertices and collision are built, form a broad floodplain with a rounded upper height envelope of `water +
-0.85 + 0.12d + 0.0008d²`, where d is distance past the sandy bank. This lets the valley meet hill feet gradually instead
-of cutting tall walls beside the water. Blend the small channel itself into a riverbed 1.2 m below water and low sandy
-banks. The water ribbon is sampled every metre and subdivided into 20 strips across its width. It extends slightly under
-the banks to hide mesh seams. Store channel depth in vertex color for the water shader. Vegetation rejects the river
-corridor; separate reeds and stones decorate its banks. Valley regressions sample both shorelines along the entire
-river, rejecting tall canyon-like banks, alongside the full road passability audit.
+Before terrain vertices and collision are built, form a broad floodplain with a rounded upper height envelope of
+`water + 0.85 + 0.12d + 0.0008d²`, where d is distance past the sandy bank. This lets the valley meet hill feet
+gradually instead of cutting tall walls beside the water. Blend the small channel itself into a riverbed 1.2 m below
+water and low sandy banks. The water ribbon is sampled every metre and subdivided into 20 strips across its width. It
+extends slightly under the banks to hide mesh seams. Store channel depth in vertex color for the water shader.
+Vegetation rejects the river corridor; separate reeds and stones decorate its banks. Valley regressions sample both
+shorelines along the entire river, rejecting tall canyon-like banks, alongside the full road passability audit.
 
 The bridge bank mask follows the straight deck rectangle instead of the river's changing centerline. Keep terrain 32 cm
 below the bridge reference height over the deck plus a terrain-cell margin, including interpolated collision triangles.

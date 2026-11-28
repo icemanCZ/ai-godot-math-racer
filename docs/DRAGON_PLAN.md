@@ -1,5 +1,7 @@
 # Návrh: drak pod horami
 
+**Stav:** hotovo (`82ca26b`, 24. 11. 2026); noční oheň nemá v `benchmark.ps1` vlastní přepínač.
+
 Další obsah pro velkou mapu, po poště a majáku (`docs/POST_AND_LIGHTHOUSE_PLAN.md`). Jména, příběh a odměny jsou
 návrh a čekají na potvrzení.
 

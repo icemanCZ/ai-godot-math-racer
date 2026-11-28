@@ -47,9 +47,10 @@ public partial class Game
         EnterInteraction(GameState.BalloonStatus, balloonist);
         ShowBalloon();
         Speak(
-            balloonFlights == 0 ? balloonist.Greeting + "\n" + Texts.BalloonFirst
-                : balloonStars >= BalloonPlans.RoosterStars ? Texts.BalloonAgain + "\n" + Texts.BalloonFact
-                : Texts.BalloonMoreStars(BalloonPlans.RoosterStars - balloonStars),
+            balloonFlights == 0 ? balloonist.Greeting + "\n" + OutlandTexts.BalloonFirst
+                : balloonStars >= BalloonPlans.RoosterStars
+                    ? OutlandTexts.BalloonAgain + "\n" + OutlandTexts.BalloonFact
+                : OutlandTexts.BalloonMoreStars(BalloonPlans.RoosterStars - balloonStars),
             balloonist
         );
     }
@@ -77,7 +78,7 @@ public partial class Game
         )
             return;
         BeginQuiz();
-        Speak(Texts.BalloonQuiz, balloonist);
+        Speak(OutlandTexts.BalloonQuiz, balloonist);
     }
 
     /// <summary>The question is solved: the air is hot, the ropes are let go and the balloon rises.</summary>
@@ -113,11 +114,11 @@ public partial class Game
                 animal.Ping(seconds);
         world.Hidden.Ping(seconds);
         ui.BalloonHud(true, 0, BalloonFlight.Stars);
-        Speak(Texts.BalloonTakeOff, balloonist);
+        Speak(OutlandTexts.BalloonTakeOff, balloonist);
         if (first)
         {
             AddCoins(BalloonPlans.FirstFlightCoins);
-            CelebrateAt(balloon.Focus, Texts.BalloonFirstFlight(BalloonPlans.FirstFlightCoins));
+            CelebrateAt(balloon.Focus, OutlandTexts.BalloonFirstFlight(BalloonPlans.FirstFlightCoins));
         }
         SaveProgress();
     }
@@ -135,9 +136,9 @@ public partial class Game
         ui.BalloonHud(true, ride.Caught, BalloonFlight.Stars);
         string? pets = EarnPets();
         var where = world.BalloonStars?.StarPosition(star) ?? vehicle.Position;
-        CelebrateAt(where, WithPets(Texts.BalloonStar(ride.Caught, BalloonFlight.Stars), pets));
+        CelebrateAt(where, WithPets(OutlandTexts.BalloonStar(ride.Caught, BalloonFlight.Stars), pets));
         if (pets != null)
-            Speak(Texts.BalloonRooster, world.Balloonist);
+            Speak(OutlandTexts.BalloonRooster, world.Balloonist);
         SaveProgress();
     }
 
@@ -172,10 +173,10 @@ public partial class Game
             AddCoins(BalloonPlans.AllStarsCoins);
             CelebrateAt(
                 BalloonStation?.Focus ?? vehicle.Position,
-                Texts.BalloonAllStars(BalloonFlight.Stars, BalloonPlans.AllStarsCoins)
+                OutlandTexts.BalloonAllStars(BalloonFlight.Stars, BalloonPlans.AllStarsCoins)
             );
         }
-        Speak(Texts.BalloonLanded(ride.Caught, BalloonFlight.Stars), world.Balloonist, interrupt: false);
+        Speak(OutlandTexts.BalloonLanded(ride.Caught, BalloonFlight.Stars), world.Balloonist, interrupt: false);
         SaveProgress();
     }
 
@@ -223,7 +224,7 @@ public partial class Game
         {
             vehicle.Active = false;
             lift = BalloonLift();
-            ui.HiddenFriendHint(Texts.BalloonLand);
+            ui.HiddenFriendHint(OutlandTexts.BalloonLand);
         }
         int caught = ride.Step(dt, lift);
         balloon.Transform = ride.Pose();

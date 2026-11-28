@@ -80,10 +80,10 @@ public partial class Game
         ShowEngineer();
         string speech =
             Haul != null ? ""
-            : lineAt >= 0 ? Texts.LineHomeSpeech
-            : line.Complete ? Texts.LineAllDone
-            : line.Stage == 0 ? engineer.Greeting + "\n" + Texts.LineWanted
-            : ForgeNeeded(line) ? Texts.LineRailsMissing
+            : lineAt >= 0 ? OutlandTexts.LineHomeSpeech
+            : line.Complete ? OutlandTexts.LineAllDone
+            : line.Stage == 0 ? engineer.Greeting + "\n" + OutlandTexts.LineWanted
+            : ForgeNeeded(line) ? OutlandTexts.LineRailsMissing
             : !LineStepReady(line) ? Texts.ZboziJesteNeniVyrobenePosluTe
             : Texts.PrivezesMiDalsiMaterial;
         if (speech != "")
@@ -186,8 +186,8 @@ public partial class Game
         if (plan.Part == LinePart.HubStation)
         {
             AddCoins(MainLinePlans.HubCoins);
-            CelebrateAt(line.Focus(trip.Step), Texts.LineHubDone(MainLinePlans.HubCoins));
-            Speak(Texts.LineHubReady, line.Engineer);
+            CelebrateAt(line.Focus(trip.Step), OutlandTexts.LineHubDone(MainLinePlans.HubCoins));
+            Speak(OutlandTexts.LineHubReady, line.Engineer);
         }
         else if (plan.Part == LinePart.Lamps)
         {
@@ -198,13 +198,13 @@ public partial class Game
                 pets = EarnPets();
                 CelebrateAt(
                     line.Focus(trip.Step),
-                    WithPets(Texts.LineDone(MainLinePlans.ArmCoins + MainLinePlans.Coins), pets)
+                    WithPets(OutlandTexts.LineDone(MainLinePlans.ArmCoins + MainLinePlans.Coins), pets)
                 );
-                Speak(Texts.LineAllDone, line.Engineer);
+                Speak(OutlandTexts.LineAllDone, line.Engineer);
             }
             else
             {
-                CelebrateAt(line.Focus(trip.Step), Texts.LineArmDone(plan.Arm, MainLinePlans.ArmCoins));
+                CelebrateAt(line.Focus(trip.Step), OutlandTexts.LineArmDone(plan.Arm, MainLinePlans.ArmCoins));
                 Speak(Texts.DekujuAzBudesChtitPrivezDalsi, line.Engineer);
             }
         }
@@ -212,7 +212,7 @@ public partial class Game
         {
             CelebrateAt(
                 line.Focus(trip.Step),
-                Texts.LinePart(MainLinePlans.Parts[trip.Step], line.Stage, MainLinePlans.Trips)
+                OutlandTexts.LinePart(MainLinePlans.Parts[trip.Step], line.Stage, MainLinePlans.Trips)
             );
             Speak(Texts.DekujuAzBudesChtitPrivezDalsi, line.Engineer);
         }
@@ -231,8 +231,8 @@ public partial class Game
         forge.Forge();
         line.Engineer.Celebrate();
         EndHaul();
-        CelebrateAt(forge.Position + Vector3.Up * 3, Texts.LineForged(forge.Rails));
-        Speak(Texts.LineForgedSpeech, line.Engineer);
+        CelebrateAt(forge.Position + Vector3.Up * 3, OutlandTexts.LineForged(forge.Rails));
+        Speak(OutlandTexts.LineForgedSpeech, line.Engineer);
         UpdateDeliveryGuides();
         UpdatePostGuides();
         SaveProgress();
@@ -246,7 +246,7 @@ public partial class Game
             return;
         linePending = arm;
         AskBeforeDeparture(Departure.MainLineRide);
-        Speak(Texts.LineRideAsk, engineer);
+        Speak(OutlandTexts.LineRideAsk, engineer);
     }
 
     /// <summary>The ticket is solved: the ride begins. A save made in the question has lost the arm, so the first finished one is taken.</summary>
@@ -295,7 +295,7 @@ public partial class Game
         PlaceOnTrain(line, route, lineRideFrom, 0, engineer);
         followCamera.Ride(line.Train, new Vector3(5, 6.5f, -17), new Vector3(0, -1, 26));
         line.Train.Whistle();
-        Speak(home ? Texts.LineHomeSpeech : Texts.LineRideSpeech(arm), engineer);
+        Speak(home ? OutlandTexts.LineHomeSpeech : OutlandTexts.LineRideSpeech(arm), engineer);
         UpdatePostGuides();
         SaveProgress();
     }
@@ -327,7 +327,7 @@ public partial class Game
             var talk = line.TalkAtHub();
             engineer.Position = talk;
             engineer.Rotation = new Vector3(0, site.Hub.Yaw + (site.Hub.Side > 0 ? -Mathf.Pi / 2 : Mathf.Pi / 2), 0);
-            Speak(Texts.LineHomeEnd, engineer, interrupt: false);
+            Speak(OutlandTexts.LineHomeEnd, engineer, interrupt: false);
         }
         else
         {
@@ -338,7 +338,7 @@ public partial class Game
             vehicle.SetPose(world.Ground.At(back.X, back.Z) + Vector3.Up * .15f, FacingRoad(terminal));
             engineer.Position = line.TalkAt(arm);
             engineer.Rotation = new Vector3(0, terminal.Yaw + (terminal.Side > 0 ? -Mathf.Pi / 2 : Mathf.Pi / 2), 0);
-            Speak(Texts.LineRideEnd(arm), engineer, interrupt: false);
+            Speak(OutlandTexts.LineRideEnd(arm), engineer, interrupt: false);
         }
         if (State == GameState.Exploring)
             vehicle.Active = true;

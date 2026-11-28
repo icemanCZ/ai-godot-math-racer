@@ -377,13 +377,13 @@ public partial class Game
             { Loaded: true, Railway: not null } => Texts.TedOdvezNakladNaNadraziA,
             { Loaded: true, Zoo: not null } => Texts.TedOdvezNakladDoZooA,
             { Loaded: true, ForGlassmaker: true } => Texts.TedOdvezSklenickyNaNaves,
-            { Loaded: true, ForgeTrip: not null } => Texts.LineBringStone,
+            { Loaded: true, ForgeTrip: not null } => OutlandTexts.LineBringStone,
             { Loaded: true, Line: not null } when MainLinePlans.Step(trip.Step).Part != LinePart.Section =>
-                Texts.LineBringStation,
-            { Loaded: true, Line: not null } => Texts.LineBringLoad,
-            { Loaded: true, Guest: not null } => Texts.CastleBringGuest,
-            { Loaded: true, Castle: not null } => Texts.CastleBringLoad,
-            { Loaded: true, Beacon: not null } => Texts.CastleBringLogs,
+                OutlandTexts.LineBringStation,
+            { Loaded: true, Line: not null } => OutlandTexts.LineBringLoad,
+            { Loaded: true, Guest: not null } => OutlandTexts.CastleBringGuest,
+            { Loaded: true, Castle: not null } => OutlandTexts.CastleBringLoad,
+            { Loaded: true, Beacon: not null } => OutlandTexts.CastleBringLogs,
             { Loaded: true } => Texts.TedOdvezNakladDoZlutehoKruhu,
             _ => trip.Load switch
             {
@@ -401,8 +401,10 @@ public partial class Game
                 HaulLoad.Fabric => Texts.JedSVozikemProLatkuK,
                 HaulLoad.Capstone => Texts.JedSVozikemProKamenKe,
                 HaulLoad.Flag => Texts.JedSVozikemProVlajeckuK,
-                HaulLoad.Guest when trip.Guest is { } guest => Texts.CastleFetchGuest(guest.Character.DisplayName),
-                HaulLoad.Rails => Texts.LineFetchRails,
+                HaulLoad.Guest when trip.Guest is { } guest => OutlandTexts.CastleFetchGuest(
+                    guest.Character.DisplayName
+                ),
+                HaulLoad.Rails => OutlandTexts.LineFetchRails,
                 _ => Texts.JedSVozikemProPisek,
             },
         };

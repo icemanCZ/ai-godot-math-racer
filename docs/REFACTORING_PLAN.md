@@ -1,6 +1,9 @@
 # Implementační plán: architektonické úpravy
 
-Plán vychází z architektonického review (osm nálezů, z toho pět doporučených oprav). Nic z něj zatím není provedeno.
+**Stav:** hotovo, fáze 0 až 5 (`48b38ce` až `dc9c0c3`, 18. 11. 2026); otevřené zůstalo, co uvádí
+`docs/PLANS.md` (řádky `Game`, cyklus jmenných prostorů, knihovna `MathRacer.Logic`).
+
+Plán vychází z architektonického review (osm nálezů, z toho pět doporučených oprav).
 
 ## Pravidla pro všechny fáze
 
@@ -59,14 +62,16 @@ aktualizaci načíst a pokračovat stejně, jako by se nic nestalo. Žádná fá
 
 ## Přehled a pořadí
 
-| Fáze | Co | Řeší nález | Odhad | Riziko |
-| --- | --- | --- | --- | --- |
-| 0 | Záchytná síť (fixtury uložených her, kontraktní testy) | podmínka všeho | 1–2 dny | nízké |
-| 1 | Rychlé zisky: `Is…` příznaky, registr ID postav, registr diagnostik | 3, 4, 7 | 2–3 dny | nízké |
-| 2 | Sjednocení trailerových tras (`HaulTrip`) + uložení `Trip` (verze 4) | 2 | 4–6 dnů | střední |
-| 3 | Vytažení stavu z `Game` do malých objektů | 1, 3 | 5–8 dnů | střední až vyšší |
-| 4 | Sekce v `SaveData`, řetěz migrací (verze 5) | 5 | 3–4 dny | střední |
-| 5 | Úklid: **složky a jmenné prostory**, přejmenování `Animal`, texty, magická čísla, čisté testy | 4, 6, 8 | 5–8 dnů | nízké; přesun souborů střední (viz 5.0) |
+- **Fáze 0**: Záchytná síť (fixtury uložených her, kontraktní testy). Řeší nález: podmínka všeho. Odhad: 1–2 dny.
+  Riziko: nízké.
+- **Fáze 1**: Rychlé zisky: `Is…` příznaky, registr ID postav, registr diagnostik. Řeší nález: 3, 4, 7. Odhad: 2–3 dny.
+  Riziko: nízké.
+- **Fáze 2**: Sjednocení trailerových tras (`HaulTrip`) + uložení `Trip` (verze 4). Řeší nález: 2. Odhad: 4–6 dnů.
+  Riziko: střední.
+- **Fáze 3**: Vytažení stavu z `Game` do malých objektů. Řeší nález: 1, 3. Odhad: 5–8 dnů. Riziko: střední až vyšší.
+- **Fáze 4**: Sekce v `SaveData`, řetěz migrací (verze 5). Řeší nález: 5. Odhad: 3–4 dny. Riziko: střední.
+- **Fáze 5**: Úklid: **složky a jmenné prostory**, přejmenování `Animal`, texty, magická čísla, čisté testy. Řeší nález:
+  4, 6, 8. Odhad: 5–8 dnů. Riziko: nízké; přesun souborů střední (viz 5.0).
 
 Pořadí je dané závislostmi: fáze 2 potřebuje fixtury (0) a čisté role (1), fáze 3 potřebuje sjednocené trasy (2), fáze 4
 staví na tom, že každý podsystém umí sám říct, co ukládá (3).
@@ -79,13 +84,12 @@ Cíl: odhalit regresi dřív, než ji pozná hráč.
 
 **Stav: provedeno.** Co přesně vzniklo, kde je to a co zůstalo mimo:
 
-| Krok | Výsledek |
-| --- | --- |
-| 1 Základní běh | všech 53 scénářů prošlo (`./build.ps1 -Test`, výstup 0) |
-| 2–3 Fixtury a jejich test | 33 fixtur v `Tests/Saves/v3/`, test `save-fixture-checks` (viz `Tests/README.md`) |
-| 4 Kontraktní testy | `contract-checks` pro seedy 1, 42, 7421 |
-| 5 Otisk světa | `Tests/Worlds/seed-{1,42,7421}.txt`, test `world-fingerprint-checks` |
-| 6 Nenačitatelný soubor | potvrzeno, že se přepisoval bez zálohy; doplněna ochrana v `SaveStore.Preserve`, testovaná v `save-checks` |
+- **1 Základní běh**: všech 53 scénářů prošlo (`./build.ps1 -Test`, výstup 0)
+- **2–3 Fixtury a jejich test**: 33 fixtur v `Tests/Saves/v3/`, test `save-fixture-checks` (viz `Tests/README.md`)
+- **4 Kontraktní testy**: `contract-checks` pro seedy 1, 42, 7421
+- **5 Otisk světa**: `Tests/Worlds/seed-{1,42,7421}.txt`, test `world-fingerprint-checks`
+- **6 Nenačitatelný soubor**: potvrzeno, že se přepisoval bez zálohy; doplněna ochrana v `SaveStore.Preserve`, testovaná
+  v `save-checks`
 
 Co fixtury **nepokrývají** (vědomě, aby fáze 0 zůstala hotová): rozdělanou pohlednici a výhled z věže. Uložení uprostřed
 kvízu před odjezdem je pokryté šesti fixturami `quiz-before-…-trip` až po opravě chyby (viz „K ověření“, bod 1). Fixtury
@@ -261,23 +265,27 @@ Odchylky a čísla, pro úplnost:
   zastavují auto a ukazují panel.
 - `Economy` a `Interaction` jsou malé; větší užitek mají `QuizSession` (generátory a rotace bez scény) a `TaskSlot`
   (vkládání a odebírání úkolu ze scény na jednom místě).
-- **Nalezeno cestou, není z refaktoringu, vyřešeno:** `track-checks` selhával na některých náhodných seedech (42, 1706514621)
-  už na původním commitu `c742645`. Příčina byla v testu, ne ve stopách kol: při plném zatočení doprava auto narazí do
-  kmene stromu asi 10 m od startu, zaklíní se a po pěti vteřinách ho `Vehicle` vrátí na start; ten skok o 9 m test
-  vyhodnotil jako mezeru ve stopách. Test teď skoky způsobené `PoseReset` přeskakuje a v registru má pevné seedy 1, 42 a 7421.
-  Prošel i na seedech 1–64.
+- **Nalezeno cestou, není z refaktoringu, vyřešeno:** `track-checks` selhával na některých náhodných seedech (42,
+  1706514621) už na původním commitu `c742645`. Příčina byla v testu, ne ve stopách kol: při plném zatočení doprava auto
+  narazí do kmene stromu asi 10 m od startu, zaklíní se a po pěti vteřinách ho `Vehicle` vrátí na start; ten skok o 9 m
+  test vyhodnotil jako mezeru ve stopách. Test teď skoky způsobené `PoseReset` přeskakuje a v registru má pevné seedy 1,
+  42 a 7421. Prošel i na seedech 1–64.
 
 Princip: **přesun, ne přepis.** Každý objekt vezme pole a metody, které dnes leží v `Game`, a `Game` na něj jen
 deleguje. Pořadí od nejmenšího rizika:
 
-| Krok | Objekt | Co převezme | Dnes v |
-| --- | --- | --- | --- |
-| 3.1 | `Economy` | `Coins`, `rewardCoins`, `CarRewards`, `PayReward` | `Game.Coins.cs`, `Game.Rewards.cs`, `Game.cs` |
-| 3.2 | `TaskSlot` | `Delivery`, `Haul`, `CancelActiveTask`, `StartHaul`, `EndHaul`, `EndExpedition`, `TaskActive`, přípojka vozíku | `Game.cs`, `Game.Ford.cs` |
-| 3.3 | `QuizSession` | `CurrentChallenge`, `rejectedAnswers`, `syllableSelection`, `handoverQuiz`, `PendingDeparture`, `enabledQuizzes`, `threeTermMath`, `nextQuiz`, generátory | `Game.Quizzes.cs`, `Game.cs` |
-| 3.4 | `Interaction` | `State`, `beforePause`, `nearby`, `EnterInteraction`, `Resume`, `TogglePause` | `Game.cs` |
-| 3.5 | `IGameSystem` | `Tick…` metody jako seznam systémů (`Companion`, `Golem`, `CollectorPets`, `Events`, `Postcards`, `Bandits`, `Coins`, `Mill`, `Lookout`) | `_Process` v `Game.cs` |
-| 3.6 | `PanelRegistry` | `ShowPanel` jako slovník `GameState → Func<bool>`; jeden zápis při registraci podsystému | `Game.cs` |
+- **3.1** `Economy` převezme `Coins`, `rewardCoins`, `CarRewards`, `PayReward`. Dnes v `Game.Coins.cs`,
+  `Game.Rewards.cs`, `Game.cs`.
+- **3.2** `TaskSlot` převezme `Delivery`, `Haul`, `CancelActiveTask`, `StartHaul`, `EndHaul`, `EndExpedition`,
+  `TaskActive`, přípojka vozíku. Dnes v `Game.cs`, `Game.Ford.cs`.
+- **3.3** `QuizSession` převezme `CurrentChallenge`, `rejectedAnswers`, `syllableSelection`, `handoverQuiz`,
+  `PendingDeparture`, `enabledQuizzes`, `threeTermMath`, `nextQuiz`, generátory. Dnes v `Game.Quizzes.cs`, `Game.cs`.
+- **3.4** `Interaction` převezme `State`, `beforePause`, `nearby`, `EnterInteraction`, `Resume`, `TogglePause`. Dnes v
+  `Game.cs`.
+- **3.5** `IGameSystem` převezme `Tick…` metody jako seznam systémů (`Companion`, `Golem`, `CollectorPets`, `Events`,
+  `Postcards`, `Bandits`, `Coins`, `Mill`, `Lookout`). Dnes v `_Process` v `Game.cs`.
+- **3.6** `PanelRegistry` převezme `ShowPanel` jako slovník `GameState → Func<bool>`; jeden zápis při registraci
+  podsystému. Dnes v `Game.cs`.
 
 Poznámky:
 
@@ -380,21 +388,24 @@ jsou jen `Diagnostics`, `Customization`, `Letters` a `Mathematics`.
 **Cíl:** složka je jmenný prostor. `Scripts/Saves/SaveStore.cs` má `namespace MathRacer.Saves;`. Jedna úroveň, žádné
 vnořování.
 
-| Složka a jmenný prostor | Soubory | Počet |
-| --- | --- | --- |
-| `App` (`MathRacer.App`) | `Game.cs` a všechny `Game.*.cs` (partialy zůstávají pohromadě), `GameControls`, `Interaction`, `Settings`, `LaunchOptions` | 26 |
-| `Ui` | `GameUi.cs` a `GameUi.*.cs`, `DeliveryPicture`, `TaskMarker` | 13 |
-| `Graphics` | `Art`, `Obstacles`, `Celebration` | 3 |
-| `Quizzes` | dnešní `Mathematics/*` a `Letters/*`, `QuizSession` (podsložky zůstanou) | 9 |
-| `Saves` | `SaveData`, `SaveDataV4`, `SaveMigrations`, `SaveRules`, `SaveStore` | 5 |
-| `Valley` | `World.*`, `WorldLayout`, `WorldCoins`, `Terrain`, `Roads`, `RoadGrading`, `River`, `RiverCourse`, `Tracks`, `Vegetation*`, `Grass`, `Puddles`, `Atmosphere`, `Weather`, `Wildlife`, `WildAnimal` | 22 |
-| `Settlement` | `Village.*`, `HousePlot`, `PlotPlans` | 12 |
-| `Buildings` | `BuildProject`, `BuildPlans`, `SitedProject`, `Mill`, `Lookout`, `Jetty`, `Ford`, `Boat`, `Works` | 9 |
-| `Tasks` | `HaulTrip`, `TripTarget`, `Expedition`, `RouteGuide`, `TaskSlot`, `DrivingEvents` (jízdní kurzy jsou časované úkoly) | 6 |
-| `Vehicles` | `Vehicle`, `VehicleModel`, `FollowCamera`, `WheelTracks`, `Trailer` | 5 |
-| `Garage` | dnešní `Customization/*`, `Economy` | 8 |
-| `Characters` | `Animal`, `ActorRoles`, `ActorIds`, `CharacterCatalog`, `CollectorPet`, `Golem`, `RoadsideProgress` | 7 |
-| `Diagnostics` | zůstává, jak je (kvůli `Compile Remove` v `.csproj` pro vydání) | 36 |
+- `App` (`MathRacer.App`) – `Game.cs` a všechny `Game.*.cs` (partialy zůstávají pohromadě), `GameControls`,
+  `Interaction`, `Settings`, `LaunchOptions` (počet: 26)
+- `Ui` – `GameUi.cs` a `GameUi.*.cs`, `DeliveryPicture`, `TaskMarker` (počet: 13)
+- `Graphics` – `Art`, `Obstacles`, `Celebration` (počet: 3)
+- `Quizzes` – dnešní `Mathematics/*` a `Letters/*`, `QuizSession` (podsložky zůstanou) (počet: 9)
+- `Saves` – `SaveData`, `SaveDataV4`, `SaveMigrations`, `SaveRules`, `SaveStore` (počet: 5)
+- `Valley` – `World.*`, `WorldLayout`, `WorldCoins`, `Terrain`, `Roads`, `RoadGrading`, `River`, `RiverCourse`,
+  `Tracks`, `Vegetation*`, `Grass`, `Puddles`, `Atmosphere`, `Weather`, `Wildlife`, `WildAnimal` (počet: 22)
+- `Settlement` – `Village.*`, `HousePlot`, `PlotPlans` (počet: 12)
+- `Buildings` – `BuildProject`, `BuildPlans`, `SitedProject`, `Mill`, `Lookout`, `Jetty`, `Ford`, `Boat`, `Works`
+  (počet: 9)
+- `Tasks` – `HaulTrip`, `TripTarget`, `Expedition`, `RouteGuide`, `TaskSlot`, `DrivingEvents` (jízdní kurzy jsou
+  časované úkoly) (počet: 6)
+- `Vehicles` – `Vehicle`, `VehicleModel`, `FollowCamera`, `WheelTracks`, `Trailer` (počet: 5)
+- `Garage` – dnešní `Customization/*`, `Economy` (počet: 8)
+- `Characters` – `Animal`, `ActorRoles`, `ActorIds`, `CharacterCatalog`, `CollectorPet`, `Golem`, `RoadsideProgress`
+  (počet: 7)
+- `Diagnostics` – zůstává, jak je (kvůli `Compile Remove` v `.csproj` pro vydání) (počet: 36)
 
 Návrh jsem zkusil na všech souborech: každý patří právě do jedné složky a žádný jmenný prostor nemá stejné jméno jako
 existující typ. To je podmínka, ne detail: jmenný prostor `World`, `Village` nebo `Game` by se srazil s třídami stejného
@@ -514,23 +525,26 @@ refaktoringu.
 
 ## Metriky úspěchu
 
-| Metrika | Dnes | Cíl |
-| --- | --- | --- |
-| Řádky `Game` (všechny partialy `Game.*.cs`) | 3 328 (5 388 s `GameUi`) | ≤ 2 500 — **nesplněno**, 3 295; `Game.cs` 719 → 628 |
-| Soubory dotčené novým druhem trasy | 21 | ≤ 5 |
-| Pole tras ve `SaveData` | 8 | 1 (`Trip`) — splněno |
-| Místa s ručním výčtem druhů tras | `Departure`, `FinishDump`, `RestoreBuilds`, `CaptureProgress`, `SaveStore` | 4 zbývají (viz fáze 2), `FinishDump`, `CaptureProgress` a `RestoreBuilds` už ne |
-| `Is…` příznaky a odvozené indexy v `Animal` | 8 + 2 (`TradeIndex`, `HouseIndex`) | 0 |
-| Místa, kde se registruje diagnostika | 2 (`Game.Diagnostics.cs`, `build.ps1`) | 1 |
-| Soubory ve `Scripts/` bez vlastní složky | 110 | 0 (hlídá `contract-checks`) |
-| Doba `./build.ps1 -Test` | základ z fáze 0 | ≤ +10 % |
+- Řádky `Game` (všechny partialy `Game.*.cs`): dnes 3 328 (5 388 s `GameUi`), cíl ≤ 2 500 — **nesplněno**, 3 295;
+  `Game.cs` 719 → 628
+- Soubory dotčené novým druhem trasy: dnes 21, cíl ≤ 5
+- Pole tras ve `SaveData`: dnes 8, cíl 1 (`Trip`) — splněno
+- Místa s ručním výčtem druhů tras: dnes `Departure`, `FinishDump`, `RestoreBuilds`, `CaptureProgress`, `SaveStore`, cíl
+  4 zbývají (viz fáze 2), `FinishDump`, `CaptureProgress` a `RestoreBuilds` už ne
+- `Is…` příznaky a odvozené indexy v `Animal`: dnes 8 + 2 (`TradeIndex`, `HouseIndex`), cíl 0
+- Místa, kde se registruje diagnostika: dnes 2 (`Game.Diagnostics.cs`, `build.ps1`), cíl 1
+- Soubory ve `Scripts/` bez vlastní složky: dnes 110, cíl 0 (hlídá `contract-checks`)
+- Doba `./build.ps1 -Test`: dnes základ z fáze 0, cíl ≤ +10 %
 
 ## Rizika a jejich ošetření
 
-| Riziko | Ošetření |
-| --- | --- |
-| Rozbité staré uložené hry (nepřijatelné) | brány z kapitoly „Nepřekročitelná podmínka“: nedotknutelné fixtury všech verzí, test pokračování ve hře, otisk světa, zálohy před přepsáním, ruční test na skutečném souboru, migrace se nemažou |
-| Regrese chování při přesunu stavu z `Game` | po každém kroku celá sada testů, přesun bez změn logiky |
-| Rozjetý rozsah fáze 3 | každý krok 3.1–3.6 je samostatný PR; po kroku 3.4 lze skončit a zbytek odložit |
-| Konflikty s paralelní funkční prací | fáze 2 a 3 dělat v době, kdy se nepřidávají nové aktivity; nové věci dělat až nad hotovým `ITripTarget`. Přesun do složek (5.0) mění řádky `namespace` a `using` ve všech souborech, takže ostatní větve nejdřív sloučit nebo po přesunu přebasovat |
-| Nové uložené hry ve starší verzi hry | přijato, nic se neřeší; starší sestavení může nový soubor odmítnout. Při vydání o tom stačí vědět, před návratem ke staré verzi je potřeba záloha `progress.v<N>.bak` |
+- **Rozbité staré uložené hry (nepřijatelné)**: brány z kapitoly „Nepřekročitelná podmínka“: nedotknutelné fixtury všech
+  verzí, test pokračování ve hře, otisk světa, zálohy před přepsáním, ruční test na skutečném souboru, migrace se
+  nemažou
+- **Regrese chování při přesunu stavu z `Game`**: po každém kroku celá sada testů, přesun bez změn logiky
+- **Rozjetý rozsah fáze 3**: každý krok 3.1–3.6 je samostatný PR; po kroku 3.4 lze skončit a zbytek odložit
+- **Konflikty s paralelní funkční prací**: fáze 2 a 3 dělat v době, kdy se nepřidávají nové aktivity; nové věci dělat až
+  nad hotovým `ITripTarget`. Přesun do složek (5.0) mění řádky `namespace` a `using` ve všech souborech, takže ostatní
+  větve nejdřív sloučit nebo po přesunu přebasovat
+- **Nové uložené hry ve starší verzi hry**: přijato, nic se neřeší; starší sestavení může nový soubor odmítnout. Při
+  vydání o tom stačí vědět, před návratem ke staré verzi je potřeba záloha `progress.v<N>.bak`

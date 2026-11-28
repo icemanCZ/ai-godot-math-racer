@@ -1,5 +1,7 @@
 # Návrh: hrad na kopci
 
+**Stav:** hotovo, všechny tři fáze (`a480c90`, 27. 11. 2026).
+
 Další obsah pro velkou mapu, po přívozu a ptačím ostrůvku (`docs/FERRY_PLAN.md`). Je to první **velká stavba** za
 starým údolím: zoo, mlýn, maják i molo přívozu stojí každé na jednom místě a vozí se k nim z kousku. Hrad se staví z
 kamene od moře a z hor, ze dřeva lesa a ze zboží závodů ve vesnici. Na konci posílá dítě do všech čtyř koutů mapy.

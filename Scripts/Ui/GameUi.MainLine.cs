@@ -13,7 +13,7 @@ public partial class GameUi
     internal void EngineerHint()
     {
         talkButton.Visible = !modal.Visible;
-        talkButton.Text = (controller ? "A · " : "E · ") + Texts.EngineerHint;
+        talkButton.Text = (controller ? "A · " : "E · ") + OutlandTexts.EngineerHint;
     }
 
     /// <summary>
@@ -99,7 +99,7 @@ public partial class GameUi
                 AcceptButton(
                         () => Send(new UiIntent.MainLineStart()),
                         "StartLineTrip",
-                        forge ? Texts.LineForgeButton : Texts.ZaprahnoutVozik
+                        forge ? OutlandTexts.LineForgeButton : Texts.ZaprahnoutVozik
                     )
                     .GrabFocus();
             else if (missing != null)
@@ -139,7 +139,7 @@ public partial class GameUi
                 rides.AddChild(cell);
                 cell.AddChild(BorderPicture(MainLinePlans.ArmBorder(arm), new(96, 80)));
                 var ride = IconButton("train", () => Send(new UiIntent.MainLineRide(target)), $"RideButton{arm}", cell);
-                ride.AccessibilityName = Texts.LineRideButton;
+                ride.AccessibilityName = OutlandTexts.LineRideButton;
                 ride.CustomMinimumSize = new(110, 62);
             }
         }

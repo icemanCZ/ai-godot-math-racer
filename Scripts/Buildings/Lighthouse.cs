@@ -176,7 +176,7 @@ public partial class Lighthouse : Node3D
             Art.Cylinder(sign, new(x, .75f, 0), .07f, .07f, 1.9f, "7a5536");
         Art.Block(sign, new(0, 1.5f, 0), new(2.0f, .65f, .1f), "e9d3a2");
         Art.Block(sign, new(0, 1.5f, .02f), new(2.1f, .75f, .06f), "7a5536");
-        Art.Sign(sign, new(0, 1.52f, -.1f), Texts.SignLighthouse, 34);
+        Art.Sign(sign, new(0, 1.52f, -.1f), OutlandTexts.SignLighthouse, 34);
     }
 
     /// <summary>Stage 1: a rough footing of stones set into the rock, from below the lowest ground to above the highest.</summary>

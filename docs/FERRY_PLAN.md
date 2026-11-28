@@ -1,5 +1,7 @@
 # Přívoz a ptačí ostrůvek
 
+**Stav:** hotovo (`fc8d509`, 27. 11. 2026).
+
 Další obsah pro velkou mapu, po mapě sovy (`docs/EXPLORER_PLAN.md`) a mušlích (`docs/SHELLS_PLAN.md`). Hraniční řeka
 byla dosud jen voda za okrajem údolí. Teď se po ní pluje: od statku převoznice Venduly dolů po proudu až do delty, kde
 řeka ústí do moře, na ptačí ostrůvek s pozorovatelnou.

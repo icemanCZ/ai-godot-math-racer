@@ -108,7 +108,7 @@ public partial class PostOffice : Node3D
             );
         }
         Art.Block(this, new(0, y + 2.75f, front - .06f), new(3.1f, .62f, .1f), PostBlue);
-        Art.Sign(this, new(0, y + 2.75f, front - .3f), Texts.SignPost, 40);
+        Art.Sign(this, new(0, y + 2.75f, front - .3f), OutlandTexts.SignPost, 40);
         PostHorn(new(0, y + height + .75f, front - .6f), .55f);
         foreach (float x in new[] { -2.3f, 2.3f })
         {

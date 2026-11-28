@@ -22,7 +22,7 @@ public partial class GameUi
     internal void CastellanHint()
     {
         talkButton.Visible = !modal.Visible;
-        talkButton.Text = (controller ? "A · " : "E · ") + Texts.CastellanHint;
+        talkButton.Text = (controller ? "A · " : "E · ") + OutlandTexts.CastellanHint;
     }
 
     /// <summary>

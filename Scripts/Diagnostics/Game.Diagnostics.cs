@@ -24,6 +24,14 @@ public partial class Game
             GetTree().Quit(UnitChecks.Run());
             return;
         }
+        if (LaunchOptions.Has("--repo-checks"))
+        {
+            // The rules of CLAUDE.md that are checked on the files of the checkout need no valley either.
+            handled = true;
+            SetProcess(false);
+            GetTree().Quit(RepoChecks.Run());
+            return;
+        }
         if (LaunchOptions.Has("--list-checks"))
         {
             // build.ps1 reads the suites of the test run from here.
@@ -405,136 +413,7 @@ public partial class Game
                 OpenWorks(works.Worker);
             }
         }
-        if (view is "lookout-day" or "lookout-night" && world.Projects.Length > BuildPlans.Tower)
-        {
-            // The finished tower with the car beside the stargazer; the capture starts the look itself.
-            var tower = world.Projects[BuildPlans.Tower];
-            tower.SetStage(BuildPlans.Trips);
-            var builder = tower.Builder.Position;
-            vehicle.SetPose(world.Ground.At(builder.X + 2, builder.Z, .15f), 0);
-            if (view == "lookout-night")
-                Weather.Begin(WeatherKind.Night, instant: true);
-        }
-        if (ParseBuildView(view) is var (viewProject, viewStage) && viewProject < world.Projects.Length)
-        {
-            var project = world.Projects[viewProject];
-            project.SetStage(viewStage);
-            // The finished mill shows its sacks of flour, ground for the bakery.
-            if (project.Complete && project is Mill)
-                world.FlourMill?.SetStock(8);
-            var drop = project.DropFor(0);
-            vehicle.SetPose(world.Ground.At(drop.X, drop.Z, .15f), 0);
-        }
-        if (ParsePlotView(view) is var (plotIndex, plotStage) && plotIndex < world.Village.BuildPlots.Count)
-        {
-            var plot = world.Village.BuildPlots[plotIndex];
-            plot.SetStage(plotStage);
-            vehicle.SetPose(world.Ground.At(plot.Drop.X, plot.Drop.Z, .15f), 0);
-        }
-        if (ParsePlaygroundView(view) is { } playgroundStage && world.Playground is { } yard)
-        {
-            yard.SetStage(playgroundStage);
-            // A few seconds pass so that the swings are swinging and the child is on the slide.
-            for (int i = 0; i < 35; i++)
-                yard._Process(.1);
-            vehicle.SetPose(world.Ground.At(yard.Drop.X, yard.Drop.Z, .15f), 0);
-        }
-        if (ParseRailwayView(view) is { } railwayStage && world.Railway is { } railway)
-        {
-            railway.SetStage(railwayStage);
-            // The train has gone a little way round the loop, with its steam and whistle.
-            for (int i = 0; i < 160; i++)
-                railway._Process(.1);
-            var parked = railway.Drop - railway.Site.Inward * (view is "railway-close" or "railway-pet" ? 30 : 6);
-            vehicle.SetPose(world.Ground.At(parked.X, parked.Z, .15f), 0);
-        }
-        if (ParseZooView(view) is { } zooStage && world.Zoo is { } zoo)
-        {
-            zoo.SetStage(zooStage);
-            // A few seconds pass so that the animals are at their business and the visitors are on the path.
-            for (int i = 0; i < 90; i++)
-                zoo._Process(.1);
-            var parked = zoo.Drop - zoo.Site.Inward * (view is "zoo-close" or "zoo-pet" ? 22 : 6);
-            vehicle.SetPose(world.Ground.At(parked.X, parked.Z, .15f), 0);
-        }
-        if (view.StartsWith("hunter-") && world.Pen is { } pen && world.Hunter is { } hunter)
-        {
-            // The hut with S of its four deliveries, the finished pen full of animals, the hunter close up or his panel.
-            var site = pen.Site;
-            pen.SetStage(ParseHunterView(view) ?? (view == "hunter-panel" ? 1 : HutPlans.Trips));
-            if (view is "hunter-pen" or "hunter-close")
-            {
-                Hunt.Restore(new[] { "Rabbit", "Fox", "Deer", "Rabbit", "Deer", "Fox", "Rabbit", "Deer" }, false, "");
-                pen.SetAnimals(Hunt.Penned);
-                for (int i = 0; i < 40; i++)
-                    pen.Tick(.1f, site.Gate, true);
-            }
-            var inward = site.Inward;
-            vehicle.SetPose(
-                world.Ground.At(site.Drop.X, site.Drop.Z, .15f),
-                Mathf.Atan2(-inward.X, -inward.Z) + (view == "hunter-panel" ? Mathf.Pi : 0)
-            );
-            if (view == "hunter-panel")
-            {
-                foreach (var works in world.Industry)
-                    works.SetStock(Works.Capacity);
-                OpenHunter(hunter);
-            }
-        }
-        if (view is "hunt" or "hunt-net" or "hunt-carry" && world.Pen is { } huntPen && world.Hunter is { } huntHunter)
-        {
-            // A hunt under way: the animals ahead of the car, the net come down on one of them, or one on the car's roof.
-            huntPen.SetStage(HutPlans.Trips);
-            Hunt.Restore(new[] { "Rabbit", "Fox" }, true, view == "hunt-carry" ? "Fox" : "");
-            huntPen.SetAnimals(Hunt.Penned);
-            var ahead = new Vector3(1, 0, .3f).Normalized();
-            var side = ahead.Cross(Vector3.Up);
-            float heading = Mathf.Atan2(-ahead.X, -ahead.Z);
-            if (view == "hunt-carry")
-            {
-                HuntGrounds.Clear();
-                HuntGrounds.Carry(WildKind.Fox, false);
-                var road = huntPen.Site.Road;
-                var gate = huntPen.Site.Gate;
-                var towards = gate - road;
-                towards.Y = 0;
-                towards = towards.Normalized();
-                var from = road - towards * 6;
-                vehicle.SetPose(world.Ground.At(from.X, from.Z, .15f), Mathf.Atan2(-towards.X, -towards.Z));
-            }
-            else
-            {
-                HuntGrounds.Begin(huntHunter.Position, Hunt.Caught);
-                var target = HuntGrounds.PositionOf(0);
-                HuntGrounds.Place(0, world.Ground.At(target.X, target.Z));
-                if (view == "hunt")
-                {
-                    var second = target + side * 4 + ahead * 3;
-                    var third = target - side * 5 + ahead * 6;
-                    HuntGrounds.Place(1, world.Ground.At(second.X, second.Z));
-                    HuntGrounds.Place(2, world.Ground.At(third.X, third.Z));
-                    var from = target - ahead * 15;
-                    vehicle.SetPose(world.Ground.At(from.X, from.Z, .15f), heading);
-                }
-                else
-                {
-                    for (int i = 1; i < HuntGrounds.HerdCount; i++)
-                    {
-                        var aside = target + side * (14 + i * 4) + ahead * 10;
-                        HuntGrounds.Place(i, world.Ground.At(aside.X, aside.Z));
-                    }
-                    var from = target - ahead * 14;
-                    vehicle.SetPose(world.Ground.At(from.X, from.Z, .15f), heading);
-                    HuntGrounds.Throw();
-                    for (int i = 0; i < 10; i++)
-                        HuntGrounds.Tick(.1f, true);
-                    // The car has driven up to its catch.
-                    var caught = HuntGrounds.NetSpot ?? target;
-                    var near = caught - ahead * 6 + side * 2;
-                    vehicle.SetPose(world.Ground.At(near.X, near.Z, .15f), heading);
-                }
-            }
-        }
+        SiteCaptures.Prepare(this, world, vehicle, view);
         if (view is "mayor" or "mayor-shop" or "mayor-town" or "mayor-house" or "mayor-close")
         {
             world.Village.RestoreDecorations(Settlement.TownDecorations.All.Select(d => d.Id));
@@ -1021,7 +900,7 @@ public partial class Game
         if (view == "decorated")
             foreach (var accessory in CarAccessory.All)
                 vehicle.Appearance.ToggleAccessory(accessory.Id);
-        if (ParseModelView(view) is { } modelView)
+        if (CaptureViews.ParseModelView(view) is { } modelView)
         {
             vehicle.Appearance.ApplyModel(modelView.Model);
             vehicle.Appearance.Apply(CarLook.All.First(look => look.Id == "ocean"));
@@ -1034,54 +913,7 @@ public partial class Game
                 vehicle.Appearance.ToggleAccessory(id);
         }
     }
-}
 
-public partial class Game
-{
-    /// <summary>A view such as <c>mill-5</c> or <c>tower-10</c>: the building and how many deliveries are shown.</summary>
-    /// <summary>"plot-N" shows plot N with all its stages delivered, "plot-N-S" with S of them.</summary>
-    internal static (int Plot, int Stage)? ParsePlotView(string view)
-    {
-        if (!view.StartsWith("plot-"))
-            return null;
-        var parts = view["plot-".Length..].Split('-');
-        if (parts.Length is < 1 or > 2 || !int.TryParse(parts[0], out int plot) || plot is < 0 or >= PlotPlans.Count)
-            return null;
-        int stage = PlotPlans.Trips;
-        if (parts.Length == 2 && (!int.TryParse(parts[1], out stage) || stage is < 0 or > PlotPlans.Trips))
-            return null;
-        return (plot, stage);
-    }
-
-    /// <summary>"railway-S" shows the railway with S of its six deliveries made, "railway-close" the finished station and "railway-pet" the station one delivery short, with the pet waiting.</summary>
-    internal static int? ParseRailwayView(string view) =>
-        view == "railway-close" ? RailwayPlans.Trips
-        : view == "railway-pet" ? RailwayPlans.Trips - 1
-        : view.StartsWith("railway-")
-        && int.TryParse(view["railway-".Length..], out int stage)
-        && stage is >= 0 and <= RailwayPlans.Trips
-            ? stage
-        : null;
-
-    /// <summary>"zoo-S" shows the zoo with S of its six deliveries made, "zoo-close" the finished zoo from the gate and "zoo-pet" the zoo one delivery short, with the pet waiting.</summary>
-    internal static int? ParseZooView(string view) =>
-        view == "zoo-close" ? ZooPlans.Trips
-        : view == "zoo-pet" ? ZooPlans.Trips - 1
-        : view.StartsWith("zoo-")
-        && int.TryParse(view["zoo-".Length..], out int stage)
-        && stage is >= 0 and <= ZooPlans.Trips
-            ? stage
-        : null;
-
-    /// <summary>"hunter-S" shows the hunter's hut with S of its four deliveries made.</summary>
-    internal static int? ParseHunterView(string view) =>
-        view.StartsWith("hunter-")
-        && int.TryParse(view["hunter-".Length..], out int stage)
-        && stage is >= 0 and <= HutPlans.Trips
-            ? stage
-            : null;
-
-    /// <summary>"playground-S" shows the playground with S of its six deliveries made.</summary>
     /// <summary>
     /// Turns the open telescope straight at <paramref name="point"/>, as the steering would, for the checks and the
     /// captures, which do not turn the camera frame by frame.
@@ -1097,49 +929,5 @@ public partial class Game
         followCamera.SteerPanorama(Mathf.Wrap(yaw - now.X, -Mathf.Pi, Mathf.Pi), elevation - now.Y);
         followCamera.GlobalPosition = site.Eye;
         followCamera.LookAt(point);
-    }
-
-    internal static int? ParsePlaygroundView(string view) =>
-        view.StartsWith("playground-")
-        && int.TryParse(view["playground-".Length..], out int stage)
-        && stage is >= 0 and <= PlaygroundPlans.Trips
-            ? stage
-            : null;
-
-    internal static (int Project, int Stage)? ParseBuildView(string view)
-    {
-        foreach (
-            var (prefix, project) in new[]
-            {
-                ("mill-", BuildPlans.Mill),
-                ("tower-", BuildPlans.Tower),
-                ("jetty-", BuildPlans.Jetty),
-            }
-        )
-            if (
-                view.StartsWith(prefix)
-                && int.TryParse(view[prefix.Length..], out int stage)
-                && stage is >= 0 and <= BuildPlans.Trips
-            )
-                return (project, stage);
-        return null;
-    }
-}
-
-public partial class Game
-{
-    /// <summary>
-    /// A view of one model, as <c>plane</c>, <c>plane-decorated</c> (every accessory on) or <c>plane-rear</c> (decorated,
-    /// seen from behind); the model is the id of a <see cref="CarBody"/>.
-    /// </summary>
-    internal static (string Model, bool Decorated, bool Rear)? ParseModelView(string view)
-    {
-        bool rear = view.EndsWith("-rear"),
-            decorated = rear || view.EndsWith("-decorated");
-        string model =
-            rear ? view[..^"-rear".Length]
-            : decorated ? view[..^"-decorated".Length]
-            : view;
-        return CarBody.All.Any(body => body.Id == model) ? (model, decorated, rear) : null;
     }
 }
