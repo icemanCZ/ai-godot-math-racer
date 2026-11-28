@@ -110,7 +110,7 @@ public sealed partial class MainLine : Node3D
             AddChild(terminals[arm]);
             var terminalRoute = Slice(route, goal, route.Count - 1);
             BuildTrack(terminals[arm], route, goal, route.Count - 1);
-            BuildStation(terminals[arm], terminalRoute, terminal, false, MainLinePlans.ArmSign(arm));
+            BuildStation(terminals[arm], terminalRoute, terminal, MainLinePlans.ArmSign(arm));
             terminalStakes[arm] = new Node3D { Name = $"Terminal{arm}Stakes" };
             AddChild(terminalStakes[arm]);
             BuildStakes(terminalStakes[arm], route, goal, route.Count - 1);
@@ -425,7 +425,8 @@ public sealed partial class MainLine : Node3D
             float top = middle.Y + PlatformRise;
             float groundMiddle = (track.Ground(i).Y + track.Ground(i + 1).Y) / 2;
             float height = Mathf.Max(.6f, top - groundMiddle + .5f);
-            var side = basis.X * station.Side;
+            // LookingAt turns −Z along the track, so its X points to the track's left; the platform is on the road's side.
+            var side = -basis.X * station.Side;
             boxes.Add(
                 new Transform3D(
                     basis * Basis.FromScale(new Vector3(PlatformWidth, height, length + .06f)),
@@ -455,11 +456,11 @@ public sealed partial class MainLine : Node3D
         BuildLamps(hubStation, hubRoute, hub);
     }
 
-    private void BuildStation(Node3D parent, LineRoute track, LineStationSite station, bool hub, string sign)
+    /// <summary>A terminal station: its platform and its building; its lamps come with the arm's glass.</summary>
+    private void BuildStation(Node3D parent, LineRoute track, LineStationSite station, string sign)
     {
         BuildPlatform(parent, track, station);
         BuildBuilding(parent, station, track, 9, 5.6f, sign, false);
-        BuildLamps(parent, track, station);
     }
 
     /// <summary>A station building across the track from the platform: brick walls, a gabled roof, a clock and a sign.</summary>
@@ -558,7 +559,7 @@ public sealed partial class MainLine : Node3D
         }
     }
 
-    /// <summary>The lamps of an arm: a semaphore beside the track where each stretch ends and lamps at its terminal.</summary>
+    /// <summary>The lamps of an arm: a semaphore beside the track where each stretch ends and the lamps of its terminal's platform.</summary>
     private void BuildLamps(Node3D parent, int arm)
     {
         var route = Site.Arms[arm];
@@ -576,12 +577,6 @@ public sealed partial class MainLine : Node3D
             Art.Window(parent, at + Vector3.Up * 4.5f, new(.3f, .3f, .3f), "6fd36f");
         }
         var terminal = Site.Terminals[arm];
-        for (int i = 0; i < 3; i++)
-        {
-            var p = terminal.Local(terminal.Side * 8, -terminal.Half + 6 + i * 11);
-            float y = ground.Height(p.X, p.Z);
-            Art.Cylinder(parent, new Vector3(p.X, y + 1.7f, p.Z), .06f, .06f, 3.4f, "30363a");
-            Art.Window(parent, new Vector3(p.X, y + 3.55f, p.Z), new(.34f, .28f, .34f), "ffe9a0");
-        }
+        BuildLamps(parent, StationRoute(terminal), terminal);
     }
 }
